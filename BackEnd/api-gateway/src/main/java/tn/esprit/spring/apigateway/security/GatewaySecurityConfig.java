@@ -38,6 +38,7 @@ public class GatewaySecurityConfig {
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .pathMatchers("/api/auth/login").permitAll()
                         .pathMatchers("/api/auth/refresh").permitAll()
+                        .pathMatchers("/api/auth/resend-verification").permitAll()
                         .pathMatchers("/ops/**").permitAll()
                         .pathMatchers("/actuator/**").permitAll()
 

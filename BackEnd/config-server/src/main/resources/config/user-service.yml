@@ -44,6 +44,8 @@ keycloak:
   auth:
     client-id: nephro-backend
     client-secret: nephro-backend-secret
+  verification:
+    enabled: true
 
 internal:
   api-key: my-super-secret-internal-key

@@ -100,6 +100,7 @@ public class UserServiceImpl implements UserService {
                 keycloakId,
                 "HR"
         );
+        triggerEmailVerificationWorkflow(user);
         saveAudit(user.getId(), "HrAccountCreated", null, userSnapshot(user));
 
         return UserMapper.toResponse(user);
@@ -147,6 +148,7 @@ public class UserServiceImpl implements UserService {
                 keycloakId,
                 "internal staff"
         );
+        triggerEmailVerificationWorkflow(user);
         saveAudit(user.getId(), "InternalAccountCreated", null, userSnapshot(user));
 
         return UserMapper.toResponse(user);
@@ -191,6 +193,7 @@ public class UserServiceImpl implements UserService {
                 keycloakId,
                 "staff"
         );
+        triggerEmailVerificationWorkflow(user);
         saveAudit(user.getId(), "StaffAccountCreated", null, userSnapshot(user));
 
         return UserMapper.toResponse(user);
@@ -245,6 +248,7 @@ public class UserServiceImpl implements UserService {
                 keycloakId,
                 "guardian"
         );
+        triggerEmailVerificationWorkflow(user);
         saveAudit(user.getId(), "GuardianAccountCreated", null, userSnapshot(user));
 
         return UserMapper.toResponse(user);
@@ -278,6 +282,9 @@ public class UserServiceImpl implements UserService {
         user.setAccountStatus(enabled ? AccountStatus.ACTIVE : AccountStatus.INACTIVE);
 
         User saved = userRepository.save(user);
+        if (enabled) {
+            triggerEmailVerificationWorkflow(saved);
+        }
         saveAudit(saved.getId(), "AccountStatusChanged", before, userSnapshot(saved));
         notifyAccountStatusChanged(saved, before, userSnapshot(saved));
         return UserMapper.toResponse(saved);
@@ -294,6 +301,9 @@ public class UserServiceImpl implements UserService {
         user.setAccountStatus(accountStatus);
         user.setEnabled(enabled);
         User saved = userRepository.save(user);
+        if (enabled) {
+            triggerEmailVerificationWorkflow(saved);
+        }
         saveAudit(saved.getId(), "AccountStatusChanged", before, userSnapshot(saved));
         notifyAccountStatusChanged(saved, before, userSnapshot(saved));
         return UserMapper.toResponse(saved);
@@ -330,6 +340,7 @@ public class UserServiceImpl implements UserService {
                 request.getLastName().trim(),
                 request.getRole()
         );
+        triggerEmailVerificationWorkflowByChange(user, normalizedEmail);
 
         user.setFirstName(request.getFirstName().trim());
         user.setLastName(request.getLastName().trim());
@@ -367,6 +378,7 @@ public class UserServiceImpl implements UserService {
                 request.getLastName().trim(),
                 Role.HR
         );
+        triggerEmailVerificationWorkflowByChange(user, normalizedEmail);
 
         user.setFirstName(request.getFirstName().trim());
         user.setLastName(request.getLastName().trim());
@@ -408,6 +420,7 @@ public class UserServiceImpl implements UserService {
                 request.getLastName().trim(),
                 Role.GUARDIAN
         );
+        triggerEmailVerificationWorkflowByChange(user, normalizedEmail);
 
         user.setFirstName(request.getFirstName().trim());
         user.setLastName(request.getLastName().trim());
@@ -548,6 +561,7 @@ public class UserServiceImpl implements UserService {
                 request.getFirstName().trim(),
                 request.getLastName().trim()
         );
+        triggerEmailVerificationWorkflowByChange(user, normalizedEmail);
 
         user.setFirstName(request.getFirstName().trim());
         user.setLastName(request.getLastName().trim());
@@ -881,6 +895,30 @@ public class UserServiceImpl implements UserService {
             case "light", "dark", "system" -> normalized;
             default -> throw new IllegalArgumentException("Unsupported theme. Allowed values: light, dark, system.");
         };
+    }
+
+    private void triggerEmailVerificationWorkflow(User user) {
+        if (user == null || user.getKeycloakId() == null || user.getKeycloakId().isBlank()) {
+            return;
+        }
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            return;
+        }
+        keycloakAdminService.ensureEmailVerificationRequired(user.getKeycloakId());
+        keycloakAdminService.sendVerificationEmailIfPossible(user.getKeycloakId());
+    }
+
+    private void triggerEmailVerificationWorkflowByChange(User user, String newEmail) {
+        if (user == null || user.getKeycloakId() == null || user.getKeycloakId().isBlank()) {
+            return;
+        }
+        String oldEmail = user.getEmail() == null ? "" : user.getEmail().trim();
+        String normalizedNewEmail = newEmail == null ? "" : newEmail.trim();
+        if (oldEmail.equalsIgnoreCase(normalizedNewEmail) || normalizedNewEmail.isBlank()) {
+            return;
+        }
+        keycloakAdminService.ensureEmailVerificationRequired(user.getKeycloakId());
+        keycloakAdminService.sendVerificationEmailIfPossible(user.getKeycloakId());
     }
 }
 
