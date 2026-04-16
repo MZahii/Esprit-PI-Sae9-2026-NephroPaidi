@@ -11,6 +11,17 @@
 </div>
 
 <div class="main-content">
+  <div class="alert alert-info" *ngIf="loadingSafety">
+    Loading medication safety insight from OpenFDA...
+  </div>
+  <div class="alert alert-warning" *ngIf="safetyError">{{ safetyError }}</div>
+  <div class="alert alert-secondary" *ngIf="safetySignal">
+    <strong>Drug safety metric:</strong>
+    {{ safetySignal.queriedDrug }} | Risk {{ safetySignal.level }}
+    <span *ngIf="safetySignal.boxedWarning">| Boxed warning detected</span>
+    <span>| Warnings {{ safetySignal.warningCount }}</span>
+  </div>
+
   <div class="card stretch stretch-full" *ngIf="loading">
     <div class="card-body text-muted">Loading hospitalization progress...</div>
   </div>

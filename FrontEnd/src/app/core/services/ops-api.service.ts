@@ -205,71 +205,39 @@ export class OpsApiService {
   }
 
   getHospitalizationById(hospitalizationId: string): Observable<HospitalizationCaseResponse> {
-    return this.getDossierById(hospitalizationId).pipe(
-      map((dossier) => ({
-        id: dossier.id,
-        patientId: dossier.patientId,
-        consultationId: dossier.sourceConsultationId,
-        doctorKeycloakId: dossier.primaryDoctorId,
-        doctorUsername: dossier.primaryDoctorId,
-        reason: dossier.admissionReason,
-        status: this.mapDossierStatusToHospitalizationStatus(dossier.status),
-        createdAt: dossier.createdAt,
-        updatedAt: dossier.updatedAt,
-        tasks: []
-      }))
+    return this.http.get<HospitalizationCaseResponse>(
+      `${this.hospitalizationBaseUrl}/hospitalizations/${hospitalizationId}`,
+      { headers: this.userContextHeaders() }
     );
   }
 
   listActiveHospitalizationsForNurse(): Observable<HospitalizationSummaryResponse[]> {
-    const role = this.normalizeActorRole(this.authStorage.getRole());
-    const source$ = role === 'NURSE'
-      ? this.listMyAssignedDossiers(0, 50)
-      : this.listDossiers({ page: 0, size: 50 });
-
-    return source$.pipe(
-      map((page) => this.toHospitalizationSummaries(page.content ?? [])),
-      catchError(() => {
-        if (role === 'NURSE') {
-          return of([] as HospitalizationSummaryResponse[]);
-        }
-
-        return this.listMyAssignedDossiers(0, 50).pipe(
-          map((page) => this.toHospitalizationSummaries(page.content ?? [])),
-          catchError(() => of([] as HospitalizationSummaryResponse[]))
-        );
-      })
+    return this.http.get<HospitalizationSummaryResponse[]>(
+      `${this.hospitalizationBaseUrl}/nurse/hospitalizations/active`,
+      { headers: this.userContextHeaders() }
     );
-  }
-
-  private toHospitalizationSummaries(items: PatientDossierSummaryResponse[]): HospitalizationSummaryResponse[] {
-    return items.map((item) => ({
-      id: item.id,
-      patientId: item.patientId,
-      consultationId: '',
-      doctorUsername: '-',
-      reason: `Priority ${item.admissionPriority}`,
-      status: this.mapDossierStatusToHospitalizationStatus(item.status),
-      totalTasks: 0,
-      completedTasks: 0,
-      pendingTasks: 0,
-      createdAt: item.admittedAt,
-      updatedAt: item.admittedAt
-    }));
   }
 
   addHospitalizationTask(
     hospitalizationId: string,
     payload: HospitalizationTaskRequest
   ): Observable<HospitalizationTaskResponse> {
-    return throwError(() => new Error('Task workflow is not available on current ops-service API.'));
+    return this.http.post<HospitalizationTaskResponse>(
+      `${this.hospitalizationBaseUrl}/hospitalizations/${hospitalizationId}/tasks`,
+      payload,
+      { headers: this.userContextHeaders() }
+    );
   }
 
   updateHospitalizationTask(
     taskId: string,
     payload: HospitalizationTaskUpdateRequest
   ): Observable<HospitalizationTaskResponse> {
-    return throwError(() => new Error('Task workflow is not available on current ops-service API.'));
+    return this.http.put<HospitalizationTaskResponse>(
+      `${this.hospitalizationBaseUrl}/nurse/tasks/${taskId}`,
+      payload,
+      { headers: this.userContextHeaders() }
+    );
   }
 
   updateTask(
@@ -277,16 +245,6 @@ export class OpsApiService {
     payload: HospitalizationTaskUpdateRequest
   ): Observable<HospitalizationTaskResponse> {
     return this.updateHospitalizationTask(taskId, payload);
-  }
-
-  private mapDossierStatusToHospitalizationStatus(status: string): 'REQUESTED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' {
-    if (status === 'DISCHARGED' || status === 'ARCHIVED') {
-      return 'COMPLETED';
-    }
-    if (status === 'ACTIVE' || status === 'IN_PROGRESS' || status === 'READY_FOR_DISCHARGE') {
-      return 'ACTIVE';
-    }
-    return 'REQUESTED';
   }
 
   private userContextHeaders(): HttpHeaders {
