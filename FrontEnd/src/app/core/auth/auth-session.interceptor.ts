@@ -6,6 +6,14 @@ import { AuthStorageService } from './auth-storage.service';
 
 let sessionRedirectScheduled = false;
 
+function shouldForceLogoutOnUnauthorized(url: string): boolean {
+  return (
+    url.includes('/api/auth/refresh') ||
+    url.includes('/api/auth/me') ||
+    url.includes('/api/auth/session')
+  );
+}
+
 function mapFriendlyMessage(status: number): string {
   switch (status) {
     case 0:
@@ -60,7 +68,7 @@ export const authSessionInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401) {
+      if (error.status === 401 && shouldForceLogoutOnUnauthorized(req.url)) {
         authStorage.clear();
         if (!sessionRedirectScheduled && router.url !== '/login') {
           sessionRedirectScheduled = true;

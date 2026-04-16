@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, catchError, map, of, throwError } from 'rxjs';
+import { Observable, timeout } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthStorageService } from '../auth/auth-storage.service';
 import {
@@ -53,7 +53,8 @@ export type HospitalizationTaskType = HospitalizationTaskRequest['type'];
 @Injectable({ providedIn: 'root' })
 export class OpsApiService {
   private readonly baseUrl = `${environment.apiBaseUrl}/api/ops/dossiers`;
-  private readonly hospitalizationBaseUrl = `${environment.apiBaseUrl}/api`;
+  private readonly hospitalizationBaseUrl = `${environment.apiBaseUrl}/api/ops`;
+  private readonly requestTimeoutMs = 12000;
 
   constructor(
     private http: HttpClient,
@@ -189,10 +190,12 @@ export class OpsApiService {
   }
 
   createHospitalization(payload: CreateHospitalizationPayload): Observable<HospitalizationCaseResponse> {
-    return this.http.post<HospitalizationCaseResponse>(
-      `${this.hospitalizationBaseUrl}/hospitalizations`,
-      payload,
-      { headers: this.userContextHeaders() }
+    return this.withRequestTimeout(
+      this.http.post<HospitalizationCaseResponse>(
+        `${this.hospitalizationBaseUrl}/hospitalizations`,
+        payload,
+        { headers: this.userContextHeaders() }
+      )
     );
   }
 
@@ -205,16 +208,20 @@ export class OpsApiService {
   }
 
   getHospitalizationById(hospitalizationId: string): Observable<HospitalizationCaseResponse> {
-    return this.http.get<HospitalizationCaseResponse>(
-      `${this.hospitalizationBaseUrl}/hospitalizations/${hospitalizationId}`,
-      { headers: this.userContextHeaders() }
+    return this.withRequestTimeout(
+      this.http.get<HospitalizationCaseResponse>(
+        `${this.hospitalizationBaseUrl}/hospitalizations/${hospitalizationId}`,
+        { headers: this.userContextHeaders() }
+      )
     );
   }
 
   listActiveHospitalizationsForNurse(): Observable<HospitalizationSummaryResponse[]> {
-    return this.http.get<HospitalizationSummaryResponse[]>(
-      `${this.hospitalizationBaseUrl}/nurse/hospitalizations/active`,
-      { headers: this.userContextHeaders() }
+    return this.withRequestTimeout(
+      this.http.get<HospitalizationSummaryResponse[]>(
+        `${this.hospitalizationBaseUrl}/nurse/hospitalizations/active`,
+        { headers: this.userContextHeaders() }
+      )
     );
   }
 
@@ -222,10 +229,12 @@ export class OpsApiService {
     hospitalizationId: string,
     payload: HospitalizationTaskRequest
   ): Observable<HospitalizationTaskResponse> {
-    return this.http.post<HospitalizationTaskResponse>(
-      `${this.hospitalizationBaseUrl}/hospitalizations/${hospitalizationId}/tasks`,
-      payload,
-      { headers: this.userContextHeaders() }
+    return this.withRequestTimeout(
+      this.http.post<HospitalizationTaskResponse>(
+        `${this.hospitalizationBaseUrl}/hospitalizations/${hospitalizationId}/tasks`,
+        payload,
+        { headers: this.userContextHeaders() }
+      )
     );
   }
 
@@ -233,10 +242,12 @@ export class OpsApiService {
     taskId: string,
     payload: HospitalizationTaskUpdateRequest
   ): Observable<HospitalizationTaskResponse> {
-    return this.http.put<HospitalizationTaskResponse>(
-      `${this.hospitalizationBaseUrl}/nurse/tasks/${taskId}`,
-      payload,
-      { headers: this.userContextHeaders() }
+    return this.withRequestTimeout(
+      this.http.put<HospitalizationTaskResponse>(
+        `${this.hospitalizationBaseUrl}/nurse/tasks/${taskId}`,
+        payload,
+        { headers: this.userContextHeaders() }
+      )
     );
   }
 
@@ -315,5 +326,9 @@ export class OpsApiService {
     if (role === 'NURSE') return 'NURSE';
     if (role === 'SYSTEM') return 'SYSTEM';
     return '';
+  }
+
+  private withRequestTimeout<T>(request$: Observable<T>): Observable<T> {
+    return request$.pipe(timeout({ first: this.requestTimeoutMs }));
   }
 }

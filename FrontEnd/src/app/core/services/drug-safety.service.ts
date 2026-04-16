@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, timeout } from 'rxjs';
 
 export type DrugSafetyLevel = 'LOW' | 'MODERATE' | 'HIGH' | 'UNKNOWN';
 
@@ -25,6 +25,7 @@ interface OpenFdaResponse {
 @Injectable({ providedIn: 'root' })
 export class DrugSafetyService {
   private readonly baseUrl = 'https://api.fda.gov/drug/label.json';
+  private readonly requestTimeoutMs = 7000;
 
   constructor(private http: HttpClient) {}
 
@@ -35,6 +36,7 @@ export class DrugSafetyService {
       .set('limit', '1');
 
     return this.http.get<OpenFdaResponse>(this.baseUrl, { params }).pipe(
+      timeout({ first: this.requestTimeoutMs }),
       map((response) => this.toSignal(cleaned, response.results?.[0]))
     );
   }

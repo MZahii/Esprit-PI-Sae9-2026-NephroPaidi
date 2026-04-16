@@ -65,7 +65,7 @@ export class NurseHospitalizationsPage implements OnInit {
       },
       error: () => {
         this.loading = false;
-        this.error = 'Unable to load active hospitalization cases.';
+        this.error = this.timeoutMessage('Unable to load active hospitalization cases.');
       }
     });
   }
@@ -84,8 +84,8 @@ export class NurseHospitalizationsPage implements OnInit {
         });
         this.loadSafetyMetric(item);
       },
-      error: () => {
-        this.detailError = 'Unable to load hospitalization details.';
+      error: (err) => {
+        this.detailError = this.timeoutMessage('Unable to load hospitalization details.', err);
       }
     });
   }
@@ -109,9 +109,9 @@ export class NurseHospitalizationsPage implements OnInit {
         }
         this.loadActiveHospitalizations();
       },
-      error: () => {
+      error: (err) => {
         this.savingTaskId = '';
-        this.detailError = 'Unable to save task update.';
+        this.detailError = this.timeoutMessage('Unable to save task update.', err);
       }
     });
   }
@@ -160,5 +160,13 @@ export class NurseHospitalizationsPage implements OnInit {
 
     const token = cleaned.split(/\s+/)[0];
     return token.replace(/[^a-zA-Z0-9-]/g, '');
+  }
+
+  private timeoutMessage(defaultMessage: string, err?: unknown): string {
+    const maybeTimeout = (err as { name?: string; message?: string } | undefined);
+    if (maybeTimeout?.name === 'TimeoutError' || (maybeTimeout?.message ?? '').includes('Timeout has occurred')) {
+      return 'Request timed out after 12 seconds. Please retry or check that ops-service is running.';
+    }
+    return defaultMessage;
   }
 }
