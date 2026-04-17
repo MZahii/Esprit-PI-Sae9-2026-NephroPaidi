@@ -9,5 +9,5 @@ RUN JAR_FILE=$(ls /app/target/*.jar | grep -v '\.original$' | head -n 1) && cp "
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 COPY --from=build /app/app.jar app.jar
-EXPOSE 8761
+EXPOSE 8084
 ENTRYPOINT ["java","-jar","/app/app.jar"]

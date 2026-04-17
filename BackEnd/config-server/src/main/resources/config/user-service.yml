@@ -35,7 +35,7 @@ eureka:
       defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
 
 keycloak:
-  server-url: http://localhost:8080
+  server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8080}
   realm: nephrospaidi
   admin:
     client-id: admin-cli
