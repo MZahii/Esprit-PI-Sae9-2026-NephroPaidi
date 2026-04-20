@@ -2,10 +2,12 @@
   "realm": "nephrospaidi",
   "enabled": true,
   "registrationAllowed": false,
+  "registrationEmailAsUsername": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
   "verifyEmail": true,
+  "emailTheme": "nephrospaidi",
   "editUsernameAllowed": false,
 
   "roles": {

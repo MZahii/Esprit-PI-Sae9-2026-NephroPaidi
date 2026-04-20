@@ -25,10 +25,13 @@ services:
 
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
+      KC_SPI_THEME_CACHE_THEMES: "false"
+      KC_SPI_THEME_CACHE_TEMPLATES: "false"
     ports:
       - "8080:8080"
     volumes:
       - ./realm:/opt/keycloak/data/import
+      - ./themes:/opt/keycloak/themes
 
 volumes:
   keycloak_db:

@@ -197,7 +197,7 @@ public class AuthService {
     }
 
     private void enforceEmailVerification(User user) {
-        KeycloakAdminService.KeycloakUserState keycloakState = keycloakAdminService.getUserState(user.getKeycloakId());
+        KeycloakAdminService.KeycloakUserState keycloakState = resolveKeycloakState(user);
 
         if (!keycloakState.hasEmail()) {
             throw new ResponseStatusException(
@@ -211,6 +211,24 @@ public class AuthService {
                     FORBIDDEN,
                     "Email is not verified. Please verify your email before accessing the application."
             );
+        }
+    }
+
+    private KeycloakAdminService.KeycloakUserState resolveKeycloakState(User user) {
+        try {
+            return keycloakAdminService.getUserState(user.getKeycloakId());
+        } catch (Exception ex) {
+            String recoveredKeycloakId = keycloakAdminService.findUserIdByUsername(user.getUsername());
+            if (recoveredKeycloakId == null || recoveredKeycloakId.isBlank()) {
+                throw new ResponseStatusException(
+                        FORBIDDEN,
+                        "Account identity is out of sync with Keycloak. Please contact an administrator."
+                );
+            }
+
+            user.setKeycloakId(recoveredKeycloakId);
+            userRepository.save(user);
+            return keycloakAdminService.getUserState(recoveredKeycloakId);
         }
     }
 

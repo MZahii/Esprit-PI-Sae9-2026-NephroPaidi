@@ -56,6 +56,10 @@ public class KeycloakAdminService {
             String role,
             boolean enabled
     ) {
+        if (username == null || username.isBlank()) {
+            throw new IllegalArgumentException("Username is required and cannot be generated from email.");
+        }
+
         RealmResource realmResource = keycloak.realm(keycloakConfig.getRealm());
 
         UserRepresentation user = new UserRepresentation();
@@ -286,6 +290,19 @@ public class KeycloakAdminService {
                 Boolean.TRUE.equals(representation.isEnabled()),
                 requiredActions
         );
+    }
+
+    public String findUserIdByUsername(String username) {
+        if (username == null || username.isBlank()) {
+            return null;
+        }
+
+        RealmResource realmResource = keycloak.realm(keycloakConfig.getRealm());
+        List<UserRepresentation> users = realmResource.users().searchByUsername(username, true);
+        if (users == null || users.isEmpty()) {
+            return null;
+        }
+        return users.get(0).getId();
     }
 
     public void ensureEmailVerificationRequired(String keycloakId) {

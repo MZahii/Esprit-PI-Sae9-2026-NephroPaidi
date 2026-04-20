@@ -130,7 +130,35 @@ npx ng serve
 - Gateway routes not working: verify Eureka is up and services are registered.
 - Auth issues: confirm Keycloak container is running and realm import succeeded.
 
-## 6. Daily Start/Stop Commands
+## 6. Branded Keycloak Verification Emails
+
+Keycloak email verification is now themed with a custom template:
+
+- Theme path: `BackEnd/keycloak/themes/nephrospaidi/email`
+- Realm setting: `emailTheme: "nephrospaidi"` in `BackEnd/keycloak/realm/nephrospaidi-realm.json`
+- Docker mount: `./keycloak/themes:/opt/keycloak/themes` in infra compose files
+
+How to apply changes:
+
+```powershell
+cd BackEnd
+docker compose -f docker-compose.infra.yml up -d --force-recreate keycloak
+```
+
+How to customize branding:
+
+1. Edit layout/style: `BackEnd/keycloak/themes/nephrospaidi/email/html/template.ftl`
+2. Edit verification subject/body text: `BackEnd/keycloak/themes/nephrospaidi/email/messages/messages_en.properties`
+3. Recreate Keycloak container with the command above.
+
+How to test email rendering:
+
+1. Open Keycloak Admin (`http://localhost:8080`) and go to realm `nephrospaidi`.
+2. Ensure SMTP is configured in `Realm settings -> Email`.
+3. Open a user and click `Send verify email`.
+4. Check the received email (subject, branding, button, footer text).
+
+## 7. Daily Start/Stop Commands
 
 Start infra:
 
