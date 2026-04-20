@@ -97,6 +97,7 @@ services:
       PROCEDURE_SERVICE_URI: http://procedure-service:8089
       PHARMACY_SERVICE_URI: http://pharmacy-service:8088
       OPS_SERVICE_URI: http://ops-service:8082
+      CORE_OPS_SERVICE_URI: http://core-ops-service:8086
     ports:
       - "8083:8083"
     depends_on:
@@ -261,19 +262,14 @@ services:
     container_name: nephro-core-ops-service
     restart: unless-stopped
     environment:
-      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
-      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
-      EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
-      EUREKA_INSTANCE_HOSTNAME: core-ops-service
-      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
-      CORE_OPS_DB_URL: ${CORE_OPS_DB_URL:-jdbc:postgresql://ep-cool-breeze-agqhhjlc.c-2.eu-central-1.aws.neon.tech/nephros_core_ops_service_db?sslmode=require&channel_binding=require}
-      ENVIRONMENT: docker
+      SERVICE_NAME: core-ops-service
+      PORT: 8086
+      CORE_OPS_DB_URL: ${CORE_OPS_DB_URL:-postgresql://neondb_owner:npg_Zb1Kda5LPlin@ep-cool-breeze-agqhhjlc.c-2.eu-central-1.aws.neon.tech:5432/nephros_core_ops_service_db?sslmode=require}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://admin:admin123@rabbitmq:5672/%2F}
     ports:
       - "8086:8086"
     depends_on:
-      - config-server
-      - eureka
-      - keycloak
+      - rabbitmq
     cpus: "0.60"
     mem_limit: "640m"
     networks:

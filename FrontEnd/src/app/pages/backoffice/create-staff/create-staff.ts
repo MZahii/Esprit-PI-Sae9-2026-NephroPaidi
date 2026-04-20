@@ -40,6 +40,7 @@ export class CreateStaff {
     dateOfBirth: string;
     sex: Sex;
     role: StaffRole | '';
+    avatarUrl: string;
   } = {
     username: '',
     cin: '',
@@ -49,7 +50,8 @@ export class CreateStaff {
     phone: '',
     dateOfBirth: '',
     sex: '',
-    role: ''
+    role: '',
+    avatarUrl: ''
   };
 
   readonly roleOptions: StaffRole[] = [
@@ -177,7 +179,8 @@ export class CreateStaff {
       phone: this.formatPhoneForApi(phoneLocal),
       dateOfBirth: this.staffForm.dateOfBirth,
       sex: this.staffForm.sex,
-      role: this.staffForm.role
+      role: this.staffForm.role,
+      avatarUrl: this.staffForm.avatarUrl.trim() || null
     };
 
     this.loading = true;
@@ -202,7 +205,8 @@ export class CreateStaff {
         phone: '',
         dateOfBirth: '',
         sex: '',
-        role: ''
+        role: '',
+        avatarUrl: ''
       };
       this.cdr.detectChanges();
 

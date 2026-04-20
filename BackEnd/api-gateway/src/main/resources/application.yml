@@ -37,11 +37,25 @@ spring:
               predicates:
                 - Path=/api/users/**,/api/auth/**
 
+            - id: user-service-openapi
+              uri: ${USER_SERVICE_URI:http://localhost:8090}
+              predicates:
+                - Path=/v3/api-docs/user-service
+              filters:
+                - SetPath=/v3/api-docs
+
             - id: administration-service-api-fallback
               uri: ${ADMINISTRATION_SERVICE_URI:http://localhost:8087}
               order: -100
               predicates:
                 - Path=/api/patients/**,/api/contracts/**,/api/observability/**
+
+            - id: administration-service-openapi
+              uri: ${ADMINISTRATION_SERVICE_URI:http://localhost:8087}
+              predicates:
+                - Path=/v3/api-docs/administration-service
+              filters:
+                - SetPath=/v3/api-docs
 
             - id: administration-service-structure-api-fallback
               uri: ${ADMINISTRATION_SERVICE_URI:http://localhost:8087}
@@ -59,17 +73,38 @@ spring:
               filters:
                 - RewritePath=/api/clinical/?(?<segment>.*), /clinical/$\{segment}
 
+            - id: clinical-service-openapi
+              uri: ${CLINICAL_SERVICE_URI:http://localhost:8084}
+              predicates:
+                - Path=/v3/api-docs/clinical-service
+              filters:
+                - SetPath=/v3/api-docs
+
             - id: communication-service-api-fallback
               uri: ${COMMUNICATION_SERVICE_URI:http://localhost:8085}
               order: -100
               predicates:
                 - Path=/api/communication/**,/api/appointments/**
 
+            - id: communication-service-openapi
+              uri: ${COMMUNICATION_SERVICE_URI:http://localhost:8085}
+              predicates:
+                - Path=/v3/api-docs/communication-service
+              filters:
+                - SetPath=/v3/api-docs
+
             - id: procedure-service-api-fallback
               uri: ${PROCEDURE_SERVICE_URI:http://localhost:8089}
               order: -100
               predicates:
                 - Path=/api/procedures/**
+
+            - id: procedure-service-openapi
+              uri: ${PROCEDURE_SERVICE_URI:http://localhost:8089}
+              predicates:
+                - Path=/v3/api-docs/procedure-service
+              filters:
+                - SetPath=/v3/api-docs
 
             - id: pharmacy-service-api-fallback
               uri: ${PHARMACY_SERVICE_URI:http://localhost:8088}
@@ -79,6 +114,13 @@ spring:
               filters:
                 - RewritePath=/api/pharmacy/?(.*), /api/$1
 
+            - id: pharmacy-service-openapi
+              uri: ${PHARMACY_SERVICE_URI:http://localhost:8088}
+              predicates:
+                - Path=/v3/api-docs/pharmacy-service
+              filters:
+                - SetPath=/v3/api-docs
+
             - id: ops-service-api-fallback
               uri: ${OPS_SERVICE_URI:http://localhost:8082}
               order: -100
@@ -86,6 +128,29 @@ spring:
                 - Path=/api/ops/**
               filters:
                 - RewritePath=/api/ops/?(.*), /api/$1
+
+            - id: ops-service-openapi
+              uri: ${OPS_SERVICE_URI:http://localhost:8082}
+              predicates:
+                - Path=/v3/api-docs/ops-service
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: core-ops-service-api-fallback
+              uri: ${CORE_OPS_SERVICE_URI:http://localhost:8086}
+              order: -100
+              predicates:
+                - Path=/api/core-ops/**
+              filters:
+                - RewritePath=/api/core-ops/?(.*), /api/$1
+
+            - id: core-ops-service-openapi
+              uri: ${CORE_OPS_SERVICE_URI:http://localhost:8086}
+              predicates:
+                - Path=/v3/api-docs/core-ops-service
+              filters:
+                - SetPath=/v3/api-docs
+
   security:
     oauth2:
       resourceserver:

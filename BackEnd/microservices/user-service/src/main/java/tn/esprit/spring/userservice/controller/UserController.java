@@ -78,6 +78,11 @@ public class UserController {
         return userService.getGuardians();
     }
 
+    @GetMapping("/public/doctors")
+    public List<UserResponse> getPublicDoctors() {
+        return userService.getDoctors();
+    }
+
     @PostMapping("/staff/search")
     public StaffSearchResponse searchStaff(@RequestBody StaffSearchRequest request) {
         return userService.searchStaff(request);

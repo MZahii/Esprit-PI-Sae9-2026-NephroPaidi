@@ -41,6 +41,7 @@ import tn.esprit.spring.userservice.service.UserService;
 import java.time.LocalDateTime;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,6 +97,7 @@ public class UserServiceImpl implements UserService {
                         .accountStatus(AccountStatus.PENDING_CONTRACT)
                         .enabled(false)
                         .mustChangePassword(true)
+                        .avatarUrl(trimOrNull(request.getAvatarUrl()))
                         .build(),
                 keycloakId,
                 "HR"
@@ -189,6 +191,7 @@ public class UserServiceImpl implements UserService {
                         .accountStatus(AccountStatus.PENDING_CONTRACT)
                         .enabled(false)
                         .mustChangePassword(true)
+                        .avatarUrl(trimOrNull(request.getAvatarUrl()))
                         .build(),
                 keycloakId,
                 "staff"
@@ -266,6 +269,19 @@ public class UserServiceImpl implements UserService {
     public List<UserResponse> getGuardians() {
         return userRepository.findByRoleAndDeletedFalse(Role.GUARDIAN)
                 .stream()
+                .map(UserMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public List<UserResponse> getDoctors() {
+        return userRepository.findByRoleAndDeletedFalse(Role.DOCTOR)
+                .stream()
+                .filter(User::isEnabled)
+                .sorted(Comparator
+                        .comparing((User user) -> user.getFirstName() == null ? "" : user.getFirstName(), String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(user -> user.getLastName() == null ? "" : user.getLastName(), String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(user -> user.getUsername() == null ? "" : user.getUsername(), String.CASE_INSENSITIVE_ORDER))
                 .map(UserMapper::toResponse)
                 .toList();
     }
@@ -349,6 +365,7 @@ public class UserServiceImpl implements UserService {
         user.setDateOfBirth(request.getDateOfBirth());
         user.setSex(request.getSex());
         user.setRole(request.getRole());
+        user.setAvatarUrl(trimOrNull(request.getAvatarUrl()));
 
         User saved = userRepository.save(user);
         saveAudit(saved.getId(), "StaffProfileUpdated", before, userSnapshot(saved));
@@ -567,8 +584,7 @@ public class UserServiceImpl implements UserService {
         user.setLastName(request.getLastName().trim());
         user.setEmail(normalizedEmail);
         user.setPhone((normalizedPhone == null || normalizedPhone.isEmpty()) ? null : normalizedPhone);
-        // Avatar URL self-edit is intentionally disabled in settings UI for safer profile management.
-        // Keep persisted value unchanged here.
+        user.setAvatarUrl(trimOrNull(request.getAvatarUrl()));
 
         User saved = userRepository.save(user);
         saveAudit(saved.getId(), "MyProfileUpdated", before, userSnapshot(saved));

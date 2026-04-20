@@ -1,13 +1,14 @@
-FROM maven:3.9.9-eclipse-temurin-17 AS build
-WORKDIR /app
-COPY pom.xml .
-RUN mvn -q -e -DskipTests dependency:go-offline
-COPY src ./src
-RUN mvn -q -DskipTests package
-RUN JAR_FILE=$(ls /app/target/*.jar | grep -v '\.original$' | head -n 1) && cp "$JAR_FILE" /app/app.jar
+FROM python:3.12-slim
 
-FROM eclipse-temurin:17-jre
 WORKDIR /app
-COPY --from=build /app/app.jar app.jar
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app ./app
+
 EXPOSE 8086
-ENTRYPOINT ["java","-jar","/app/app.jar"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8086"]

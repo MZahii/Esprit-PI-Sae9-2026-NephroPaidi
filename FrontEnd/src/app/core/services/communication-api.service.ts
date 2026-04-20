@@ -216,7 +216,7 @@ export class CommunicationApiService {
   }
 
   getDoctorsDirectory(): Observable<StaffDirectoryItem[]> {
-    return this.http.get<StaffDirectoryItem[]>(`${this.baseUrl}/backoffice/doctors`);
+    return this.http.get<StaffDirectoryItem[]>(`${this.baseUrl}/api/users/public/doctors`);
   }
 
   listTemplates(messageType?: MessageType): Observable<QuickReplyTemplate[]> {

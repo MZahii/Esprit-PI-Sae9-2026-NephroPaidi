@@ -26,6 +26,7 @@ public interface UserService {
     UserResponse createGuardian(CreateGuardianAccountRequest request);
     List<UserResponse> getAllUsers();
     List<UserResponse> getGuardians();
+    List<UserResponse> getDoctors();
 
     UserResponse updateActivation(Long userId, boolean enabled);
     UserResponse updateAccountStatus(Long userId, AccountStatus accountStatus);

@@ -6,11 +6,9 @@ import { AuthStorageService } from './auth-storage.service';
 
 let sessionRedirectScheduled = false;
 
-function shouldForceLogoutOnUnauthorized(url: string): boolean {
+function isPublicApiRequest(url: string): boolean {
   return (
-    url.includes('/api/auth/refresh') ||
-    url.includes('/api/auth/me') ||
-    url.includes('/api/auth/session')
+    url.includes('/api/users/public/doctors')
   );
 }
 
@@ -68,8 +66,14 @@ export const authSessionInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && shouldForceLogoutOnUnauthorized(req.url)) {
+      if (
+        error.status === 401
+        && !isLoginRequest
+        && !isPublicApiRequest(req.url)
+        && authStorage.isAuthenticated()
+      ) {
         authStorage.clear();
+        authStorage.setPostLoginRedirect(router.url);
         if (!sessionRedirectScheduled && router.url !== '/login') {
           sessionRedirectScheduled = true;
           setTimeout(() => {

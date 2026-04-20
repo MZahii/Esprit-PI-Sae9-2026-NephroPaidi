@@ -84,6 +84,7 @@
               <div><strong>Full Name:</strong> {{ fullName }}</div>
               <div><strong>Email:</strong> {{ user.email || '-' }}</div>
               <div><strong>Phone:</strong> {{ user.phone || '-' }}</div>
+              <div><strong>Avatar URL:</strong> {{ user.avatarUrl || '-' }}</div>
               <div><strong>Date Of Birth:</strong> {{ user.dateOfBirth || '-' }}</div>
               <div><strong>Sex:</strong> {{ user.sex || '-' }}</div>
               <div><strong>Role:</strong> {{ user.role }}</div>
@@ -101,6 +102,10 @@
               <div>
                 <label class="form-label">Email</label>
                 <input class="form-control" [(ngModel)]="profileForm.email" />
+              </div>
+              <div>
+                <label class="form-label">Avatar URL</label>
+                <input class="form-control" type="url" [(ngModel)]="profileForm.avatarUrl" placeholder="https://example.com/photo.jpg" />
               </div>
               <div>
                 <label class="form-label">Date Of Birth</label>

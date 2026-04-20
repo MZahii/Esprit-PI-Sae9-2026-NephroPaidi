@@ -1,17 +1,187 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ClinicalApiService } from '../../../core/services/clinical-api.service';
 import {
+  CarePlanDoseItem,
   ConsultationWorkspaceDraft,
   ConsultationWorkspaceService,
   DiagnosisItem,
   LabRequestItem,
   PrescriptionItem
 } from './consultation-workspace.service';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
-type WorkspaceTab = 'notes' | 'diagnosis' | 'plan' | 'labs' | 'prescriptions';
+type WorkspaceTab = 'notes' | 'diagnosis' | 'plan' | 'labs' | 'prescriptions' | 'adherence';
+
+interface EgfrTrendPoint {
+  consultationId: string;
+  dateTime: string;
+  egfr: number | null;
+  creatinineMgDl: number | null;
+}
+
+const HEIGHT_MEDIAN_BY_AGE: Record<number, number> = {
+  2: 87,
+  3: 95,
+  4: 102,
+  5: 109,
+  6: 116,
+  7: 121,
+  8: 127,
+  9: 132,
+  10: 138,
+  11: 144,
+  12: 150,
+  13: 156,
+  14: 161,
+  15: 165,
+  16: 167,
+  17: 168,
+  18: 168
+};
+
+const HEIGHT_SD_BY_AGE: Record<number, number> = {
+  2: 3.6,
+  3: 4,
+  4: 4.3,
+  5: 4.6,
+  6: 4.9,
+  7: 5.1,
+  8: 5.4,
+  9: 5.7,
+  10: 6,
+  11: 6.5,
+  12: 7,
+  13: 7.4,
+  14: 7.8,
+  15: 8.1,
+  16: 8.4,
+  17: 8.6,
+  18: 8.8
+};
+
+const WEIGHT_MEDIAN_BY_AGE: Record<number, number> = {
+  2: 12.5,
+  3: 14.5,
+  4: 16.5,
+  5: 18.5,
+  6: 21,
+  7: 23,
+  8: 26,
+  9: 29,
+  10: 32,
+  11: 36,
+  12: 41,
+  13: 46,
+  14: 51,
+  15: 56,
+  16: 60,
+  17: 62,
+  18: 63
+};
+
+const WEIGHT_SD_BY_AGE: Record<number, number> = {
+  2: 1.8,
+  3: 2.1,
+  4: 2.4,
+  5: 2.8,
+  6: 3.2,
+  7: 3.8,
+  8: 4.2,
+  9: 4.7,
+  10: 5.3,
+  11: 6,
+  12: 7,
+  13: 8,
+  14: 8.8,
+  15: 9.3,
+  16: 9.7,
+  17: 10,
+  18: 10.2
+};
+
+const SBP_P90_BY_AGE: Record<number, number> = {
+  2: 104,
+  3: 106,
+  4: 108,
+  5: 109,
+  6: 111,
+  7: 113,
+  8: 115,
+  9: 117,
+  10: 119,
+  11: 121,
+  12: 123,
+  13: 125,
+  14: 127,
+  15: 129,
+  16: 131,
+  17: 132,
+  18: 133
+};
+
+const SBP_P95_BY_AGE: Record<number, number> = {
+  2: 107,
+  3: 109,
+  4: 111,
+  5: 113,
+  6: 115,
+  7: 117,
+  8: 119,
+  9: 121,
+  10: 123,
+  11: 125,
+  12: 127,
+  13: 129,
+  14: 131,
+  15: 133,
+  16: 135,
+  17: 136,
+  18: 137
+};
+
+const DBP_P90_BY_AGE: Record<number, number> = {
+  2: 63,
+  3: 64,
+  4: 66,
+  5: 67,
+  6: 68,
+  7: 69,
+  8: 70,
+  9: 71,
+  10: 72,
+  11: 73,
+  12: 74,
+  13: 75,
+  14: 76,
+  15: 77,
+  16: 78,
+  17: 79,
+  18: 80
+};
+
+const DBP_P95_BY_AGE: Record<number, number> = {
+  2: 66,
+  3: 67,
+  4: 69,
+  5: 70,
+  6: 72,
+  7: 73,
+  8: 74,
+  9: 75,
+  10: 76,
+  11: 77,
+  12: 78,
+  13: 79,
+  14: 80,
+  15: 81,
+  16: 82,
+  17: 83,
+  18: 84
+};
 
 @Component({
   selector: 'app-consultation-workspace',
@@ -26,7 +196,9 @@ export class ConsultationWorkspacePage implements OnInit {
   history: any[] = [];
   previousEgfr: number | null = null;
   previousEgfrDate: string | null = null;
+  egfrTrendPoints: EgfrTrendPoint[] = [];
   returnUrl: string | null = null;
+  private lastSavedSnapshot = '';
 
   loading = false;
   error = '';
@@ -48,11 +220,14 @@ export class ConsultationWorkspacePage implements OnInit {
     followUpDate: '',
     labRequests: [],
     prescriptions: [],
+    carePlanDoses: [],
     metrics: {
       heightCm: undefined,
       creatinineMgDl: undefined,
       weightKg: undefined,
-      ageYears: undefined
+      ageYears: undefined,
+      systolicBpMmHg: undefined,
+      diastolicBpMmHg: undefined
     }
   };
 
@@ -83,6 +258,14 @@ export class ConsultationWorkspacePage implements OnInit {
     this.minFollowUpDate = this.toLocalDateTimeMin(new Date());
     this.loadConsultation();
     this.loadDraft();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges) {
+      event.preventDefault();
+      event.returnValue = true;
+    }
   }
 
   setTab(tab: WorkspaceTab): void {
@@ -120,6 +303,7 @@ export class ConsultationWorkspacePage implements OnInit {
   loadDraft(): void {
     this.workspace.getDraft(this.consultationId).subscribe((draft) => {
       this.draft = draft;
+      this.lastSavedSnapshot = this.buildDraftSnapshot();
       if (draft.followUpDate && !this.followUpForm.scheduledAt) {
         this.followUpForm.scheduledAt = draft.followUpDate;
       }
@@ -133,6 +317,9 @@ export class ConsultationWorkspacePage implements OnInit {
     this.workspace.saveDraft(this.consultationId, this.draft).subscribe({
       next: (saved) => {
         this.saving = false;
+        if (saved) {
+          this.lastSavedSnapshot = this.buildDraftSnapshot();
+        }
         this.infoMessage = saved
           ? 'Draft saved to backend.'
           : 'Backend save failed. A local backup was kept.';
@@ -164,6 +351,7 @@ export class ConsultationWorkspacePage implements OnInit {
           next: () => {
             this.saving = false;
             this.completed = true;
+            this.lastSavedSnapshot = this.buildDraftSnapshot();
             this.infoMessage = 'Consultation marked as completed.';
             this.loadConsultation();
           },
@@ -262,6 +450,117 @@ export class ConsultationWorkspacePage implements OnInit {
     this.draft.prescriptions = [...(this.draft.prescriptions || []), item];
   }
 
+  addCarePlanDose(): void {
+    const item: CarePlanDoseItem = {
+      medication: '',
+      scheduleTime: '',
+      taken: false,
+      missedReason: ''
+    };
+    this.draft.carePlanDoses = [...(this.draft.carePlanDoses || []), item];
+  }
+
+  removeCarePlanDose(index: number): void {
+    this.draft.carePlanDoses = (this.draft.carePlanDoses || []).filter((_, i) => i !== index);
+  }
+
+  get hasUnsavedChanges(): boolean {
+    return this.buildDraftSnapshot() !== this.lastSavedSnapshot;
+  }
+
+  get egfrTrajectoryLabel(): string {
+    const values = this.egfrTrendPoints
+      .map((point) => point.egfr)
+      .filter((value): value is number => value !== null);
+
+    if (values.length < 2) return 'Insufficient data';
+
+    const first = values[0];
+    const last = values[values.length - 1];
+    if (!first) return 'Insufficient data';
+
+    const changePct = ((last - first) / first) * 100;
+    if (changePct <= -15) return 'Worsening trend';
+    if (changePct >= 10) return 'Improving trend';
+    return 'Stable trend';
+  }
+
+  get latestEgfrDeltaPct(): number | null {
+    const values = this.egfrTrendPoints
+      .map((point) => point.egfr)
+      .filter((value): value is number => value !== null);
+    if (values.length < 2 || !values[values.length - 2]) return null;
+    const previous = values[values.length - 2];
+    const current = values[values.length - 1];
+    return Math.round((((current - previous) / previous) * 100) * 10) / 10;
+  }
+
+  get weightPercentileLabel(): string {
+    const percentile = this.computePercentileByAge(
+      this.draft.metrics.ageYears,
+      this.draft.metrics.weightKg,
+      WEIGHT_MEDIAN_BY_AGE,
+      WEIGHT_SD_BY_AGE
+    );
+    return percentile === null ? 'N/A' : `P${percentile}`;
+  }
+
+  get heightPercentileLabel(): string {
+    const percentile = this.computePercentileByAge(
+      this.draft.metrics.ageYears,
+      this.draft.metrics.heightCm,
+      HEIGHT_MEDIAN_BY_AGE,
+      HEIGHT_SD_BY_AGE
+    );
+    return percentile === null ? 'N/A' : `P${percentile}`;
+  }
+
+  get bloodPressurePercentileLabel(): string {
+    const age = Number(this.draft.metrics.ageYears);
+    const sbp = Number(this.draft.metrics.systolicBpMmHg);
+    const dbp = Number(this.draft.metrics.diastolicBpMmHg);
+    if (!Number.isFinite(age) || !Number.isFinite(sbp) || !Number.isFinite(dbp)) return 'N/A';
+
+    const sbpP90 = this.interpolateByAge(age, SBP_P90_BY_AGE);
+    const sbpP95 = this.interpolateByAge(age, SBP_P95_BY_AGE);
+    const dbpP90 = this.interpolateByAge(age, DBP_P90_BY_AGE);
+    const dbpP95 = this.interpolateByAge(age, DBP_P95_BY_AGE);
+
+    if (sbpP95 === null || dbpP95 === null || sbpP90 === null || dbpP90 === null) return 'N/A';
+
+    if (sbp >= sbpP95 || dbp >= dbpP95) return '>=P95 (Hypertension range)';
+    if (sbp >= sbpP90 || dbp >= dbpP90) return 'P90-P94 (Elevated range)';
+    return '<P90 (Expected range)';
+  }
+
+  get carePlanAdherenceRate(): number {
+    const doses = this.draft.carePlanDoses || [];
+    if (doses.length === 0) return 0;
+    const taken = doses.filter((dose) => dose.taken).length;
+    return Math.round((taken / doses.length) * 100);
+  }
+
+  get carePlanMissedCount(): number {
+    return (this.draft.carePlanDoses || []).filter((dose) => !dose.taken).length;
+  }
+
+  get adherenceAlerts(): string[] {
+    const alerts: string[] = [];
+    const doses = this.draft.carePlanDoses || [];
+    if (doses.length === 0) return alerts;
+
+    if (this.carePlanAdherenceRate < 80) {
+      alerts.push(`Adherence at ${this.carePlanAdherenceRate}%: consider caregiver counseling.`);
+    }
+
+    const missedWithoutReason = doses.filter((dose) => !dose.taken && !(dose.missedReason || '').trim()).length;
+    if (missedWithoutReason > 0) {
+      alerts.push(`${missedWithoutReason} missed dose(s) without reason documented.`);
+    }
+
+    return alerts;
+  }
+
   removePrescription(index: number): void {
     this.draft.prescriptions = (this.draft.prescriptions || []).filter((_, i) => i !== index);
   }
@@ -282,7 +581,7 @@ export class ConsultationWorkspacePage implements OnInit {
   }
 
   get alerts(): string[] {
-    return [...this.egfrAlerts, ...this.doseAlerts];
+    return [...this.egfrAlerts, ...this.doseAlerts, ...this.adherenceAlerts];
   }
 
   get egfrAlerts(): string[] {
@@ -298,6 +597,14 @@ export class ConsultationWorkspacePage implements OnInit {
         const label = this.previousEgfrDate ? `since ${this.previousEgfrDate}` : 'since last visit';
         alerts.push(`Rapid progression: eGFR decreased by ${Math.abs(Math.round(deltaPct))}% ${label}.`);
       }
+    }
+
+    if (this.egfrTrajectoryLabel === 'Worsening trend') {
+      alerts.push('Longitudinal trend shows worsening renal function across recent visits.');
+    }
+
+    if (this.bloodPressurePercentileLabel.includes('Hypertension')) {
+      alerts.push('Blood pressure percentile is in hypertension range for age.');
     }
 
     return alerts;
@@ -427,24 +734,92 @@ export class ConsultationWorkspacePage implements OnInit {
     if (!patientId) {
       this.previousEgfr = null;
       this.previousEgfrDate = null;
+      this.egfrTrendPoints = [];
       return;
     }
 
     const history = (this.history || [])
       .filter(item => Number(item.patientId) === Number(patientId) && item.dateTime)
-      .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
+      .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
 
-    const previous = history.find(item => item.id !== this.consultationId);
-    if (!previous) {
-      this.previousEgfr = null;
-      this.previousEgfrDate = null;
+    if (history.length === 0) {
+      this.egfrTrendPoints = [];
       return;
     }
 
-    this.workspace.getDraft(previous.id).subscribe((draft) => {
-      this.previousEgfr = this.calculateEgfr(draft.metrics.heightCm, draft.metrics.creatinineMgDl);
-      this.previousEgfrDate = previous.dateTime;
+    const requests = history.map((item) =>
+      this.workspace.getDraft(item.id).pipe(
+        map((draft) => ({
+          consultationId: String(item.id),
+          dateTime: String(item.dateTime),
+          egfr: this.calculateEgfr(draft.metrics.heightCm, draft.metrics.creatinineMgDl),
+          creatinineMgDl: Number.isFinite(Number(draft.metrics.creatinineMgDl))
+            ? Number(draft.metrics.creatinineMgDl)
+            : null
+        } as EgfrTrendPoint)),
+        catchError(() => of({
+          consultationId: String(item.id),
+          dateTime: String(item.dateTime),
+          egfr: null,
+          creatinineMgDl: null
+        } as EgfrTrendPoint))
+      )
+    );
+
+    forkJoin(requests).subscribe((points) => {
+      this.egfrTrendPoints = points
+        .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
+        .slice(-8);
+
+      const previousPoint = [...this.egfrTrendPoints]
+        .reverse()
+        .find((point) => point.consultationId !== this.consultationId && point.egfr !== null);
+
+      this.previousEgfr = previousPoint?.egfr ?? null;
+      this.previousEgfrDate = previousPoint?.dateTime ?? null;
     });
+  }
+
+  private computePercentileByAge(
+    ageYears: number | undefined,
+    value: number | undefined,
+    medianTable: Record<number, number>,
+    sdTable: Record<number, number>
+  ): number | null {
+    const age = Number(ageYears);
+    const numericValue = Number(value);
+    if (!Number.isFinite(age) || !Number.isFinite(numericValue)) return null;
+
+    const median = this.interpolateByAge(age, medianTable);
+    const sd = this.interpolateByAge(age, sdTable);
+    if (median === null || sd === null || sd <= 0) return null;
+
+    const z = (numericValue - median) / sd;
+    const percentile = 50 + z * 34;
+    return Math.max(1, Math.min(99, Math.round(percentile)));
+  }
+
+  private interpolateByAge(ageYears: number, table: Record<number, number>): number | null {
+    const keys = Object.keys(table).map(Number).sort((a, b) => a - b);
+    if (keys.length === 0) return null;
+
+    if (ageYears <= keys[0]) return table[keys[0]];
+    if (ageYears >= keys[keys.length - 1]) return table[keys[keys.length - 1]];
+
+    const lower = Math.floor(ageYears);
+    const upper = Math.ceil(ageYears);
+    if (lower === upper) return table[lower] ?? null;
+
+    const lowerValue = table[lower];
+    const upperValue = table[upper];
+    if (!Number.isFinite(lowerValue) || !Number.isFinite(upperValue)) return null;
+
+    const ratio = ageYears - lower;
+    return lowerValue + (upperValue - lowerValue) * ratio;
+  }
+
+  private buildDraftSnapshot(): string {
+    return JSON.stringify(this.draft);
   }
 
   private calculateEgfr(heightCm?: number, creatinineMgDl?: number): number | null {
@@ -474,6 +849,10 @@ export class ConsultationWorkspacePage implements OnInit {
   }
 
   goBack(): void {
+    if (this.hasUnsavedChanges) {
+      const confirmed = window.confirm('You have unsaved changes in this workspace. Leave without saving?');
+      if (!confirmed) return;
+    }
     if (this.returnUrl) {
       this.router.navigateByUrl(this.returnUrl);
     } else {

@@ -55,7 +55,8 @@ export class Login {
       }));
       this.authStorage.saveSession(response, this.form.rememberMe);
       this.cdr.detectChanges();
-      this.router.navigateByUrl(getLandingRouteByRole() || response.redirectTo || '/');
+      const preservedRedirect = this.authStorage.consumePostLoginRedirect();
+      this.router.navigateByUrl(preservedRedirect || getLandingRouteByRole() || response.redirectTo || '/');
     } catch (err: any) {
       this.errorMessage =
         err?.error?.message ||

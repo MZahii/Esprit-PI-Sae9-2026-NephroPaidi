@@ -47,6 +47,11 @@
         <input class="form-control" placeholder="Phone" [(ngModel)]="profileForm.phone" />
       </label>
 
+      <label class="field-wrap">
+        <span class="field-label">Avatar URL</span>
+        <input class="form-control" placeholder="https://example.com/photo.jpg" [(ngModel)]="profileForm.avatarUrl" />
+      </label>
+
       <aside class="readonly-block">
         <h6>Read-only Account Data</h6>
         <div><strong>Username:</strong> {{ settings.username }}</div>

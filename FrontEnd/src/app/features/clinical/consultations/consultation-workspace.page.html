@@ -60,6 +60,36 @@
             <span>Previous eGFR</span>
             <strong>{{ previousEgfr }} mL/min/1.73m2</strong>
           </div>
+          <div class="metric-row">
+            <span>Trajectory</span>
+            <strong>{{ egfrTrajectoryLabel }}</strong>
+          </div>
+          <div class="metric-row" *ngIf="latestEgfrDeltaPct !== null">
+            <span>Last Delta</span>
+            <strong [class.text-danger]="latestEgfrDeltaPct < 0" [class.text-success]="latestEgfrDeltaPct > 0">
+              {{ latestEgfrDeltaPct }}%
+            </strong>
+          </div>
+          <div class="metric-row">
+            <span>Height Percentile</span>
+            <strong>{{ heightPercentileLabel }}</strong>
+          </div>
+          <div class="metric-row">
+            <span>Weight Percentile</span>
+            <strong>{{ weightPercentileLabel }}</strong>
+          </div>
+          <div class="metric-row">
+            <span>BP Percentile</span>
+            <strong>{{ bloodPressurePercentileLabel }}</strong>
+          </div>
+
+          <div class="trend-list mt-3" *ngIf="egfrTrendPoints.length > 0">
+            <div class="trend-title">eGFR Trend (last {{ egfrTrendPoints.length }} visits)</div>
+            <div class="trend-item" *ngFor="let point of egfrTrendPoints">
+              <span>{{ point.dateTime | date:'shortDate' }}</span>
+              <strong>{{ point.egfr !== null ? point.egfr : 'N/A' }}</strong>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -71,6 +101,10 @@
           <div class="score-row">
             <span>Score</span>
             <strong>{{ completenessScore }}/100</strong>
+          </div>
+          <div class="score-row">
+            <span>Adherence</span>
+            <strong>{{ carePlanAdherenceRate }}%</strong>
           </div>
           <div class="mt-2">
             <span class="badge" [ngClass]="completenessClass">{{ completenessLabel }}</span>
@@ -114,6 +148,7 @@
           <div class="d-flex align-items-center gap-2">
             <span class="badge" [ngClass]="statusBadge(consultation?.status)">{{ consultation?.status || 'OPEN' }}</span>
             <span class="badge" [ngClass]="completenessClass">{{ completenessScore }}/100</span>
+            <span class="badge bg-soft-warning text-warning" *ngIf="hasUnsavedChanges">Unsaved changes</span>
           </div>
         </div>
 
@@ -143,6 +178,9 @@
             </li>
             <li class="nav-item">
               <button class="nav-link" [class.active]="activeTab === 'prescriptions'" (click)="setTab('prescriptions')">Prescriptions</button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" [class.active]="activeTab === 'adherence'" (click)="setTab('adherence')">Adherence</button>
             </li>
           </ul>
 
@@ -181,6 +219,14 @@
                 <div class="col-md-6">
                   <label class="form-label">Age (years)</label>
                   <input type="number" class="form-control" [(ngModel)]="draft.metrics.ageYears" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Systolic BP (mmHg)</label>
+                  <input type="number" class="form-control" [(ngModel)]="draft.metrics.systolicBpMmHg" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Diastolic BP (mmHg)</label>
+                  <input type="number" class="form-control" [(ngModel)]="draft.metrics.diastolicBpMmHg" />
                 </div>
               </div>
             </div>
@@ -353,6 +399,46 @@
                   <div class="col-md-6">
                     <label class="form-label">Notes</label>
                     <input class="form-control" [(ngModel)]="item.note" placeholder="Notes" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tab-pane" [class.active]="activeTab === 'adherence'">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="mb-0">Care Plan Adherence</h6>
+                <button class="btn btn-light btn-sm" (click)="addCarePlanDose()">Add Dose Slot</button>
+              </div>
+
+              <div class="adherence-summary mb-3">
+                <span>Adherence Rate: <strong>{{ carePlanAdherenceRate }}%</strong></span>
+                <span>Missed: <strong>{{ carePlanMissedCount }}</strong></span>
+              </div>
+
+              <div *ngIf="draft.carePlanDoses.length === 0" class="text-muted">No medication schedule slots yet.</div>
+
+              <div class="prescription-item" *ngFor="let item of draft.carePlanDoses; let i = index">
+                <div class="row g-2 align-items-end">
+                  <div class="col-md-4">
+                    <label class="form-label">Medication</label>
+                    <input class="form-control" [(ngModel)]="item.medication" placeholder="Medication" />
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">Schedule Time</label>
+                    <input class="form-control" [(ngModel)]="item.scheduleTime" placeholder="08:00" />
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Taken</label>
+                    <div>
+                      <input type="checkbox" [(ngModel)]="item.taken" />
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <button class="btn btn-outline-danger w-100" (click)="removeCarePlanDose(i)">Remove</button>
+                  </div>
+                  <div class="col-md-8" *ngIf="!item.taken">
+                    <label class="form-label">Missed Reason</label>
+                    <input class="form-control" [(ngModel)]="item.missedReason" placeholder="Reason for missed dose" />
                   </div>
                 </div>
               </div>

@@ -1,10 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
 import { DocumentExportService } from '../../../core/services/document-export.service';
 import { AuthStorageService } from '../../../core/auth/auth-storage.service';
@@ -115,11 +114,8 @@ export class ClinicalAuditLogsComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
     try {
-      const token = await getValidToken();
-      const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
       const response = await firstValueFrom(this.http.get<ClinicalAuditEvent[] | unknown>(
         `${environment.apiBaseUrl}/api/clinical/audit?limit=500`,
-        { headers }
       ));
       this.logs = (Array.isArray(response) ? response : [])
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

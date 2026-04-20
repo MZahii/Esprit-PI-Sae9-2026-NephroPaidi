@@ -342,14 +342,23 @@
 @keyframes toastIn { 0% { opacity:0; transform:translateY(16px) scale(.95); } 70% { transform:translateY(-3px) scale(1.01); } 100% { opacity:1; transform:translateY(0) scale(1); } }
 @keyframes resultIn { from { opacity:0; transform:scale(.96) translateY(6px); } to { opacity:1; transform:scale(1) translateY(0); } }
 
-:root { --phx-primary:#4f46e5; --phx-radius:12px; }
+:root { --phx-primary:#2563eb; --phx-radius:12px; }
 
-.phx-page { padding: 24px; background:#f8fafc; min-height:100vh; }
+.phx-page { padding: 0; background: transparent; min-height: auto; }
 
 /* Header */
-.phx-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; }
+.phx-header {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  margin-bottom:14px;
+  border:1px solid #dbe7f5;
+  border-radius:16px;
+  background:linear-gradient(130deg,#f7fbff 0%,#eef4ff 100%);
+  padding:18px 20px;
+}
 .phx-header-left { display:flex; align-items:center; gap:16px; }
-.phx-header-icon { width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg,#4f46e5,#7c3aed); display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; }
+.phx-header-icon { width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg,#2563eb,#1d4ed8); display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; }
 .phx-title { font-size:22px; font-weight:800; color:#1e293b; margin:0; }
 
 /* Buttons */
@@ -362,8 +371,8 @@
 .phx-btn:not(:disabled):hover  { transform:translateY(-2px); }
 .phx-btn:not(:disabled):active { transform:translateY(0) scale(.97); }
 .phx-btn-sm { padding:6px 13px; font-size:12.5px; border-radius:8px; }
-.phx-btn-primary { background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; box-shadow:0 4px 14px rgba(79,70,229,.3); }
-.phx-btn-primary:not(:disabled):hover { box-shadow:0 8px 20px rgba(79,70,229,.4); }
+.phx-btn-primary { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; box-shadow:0 4px 14px rgba(37,99,235,.3); }
+.phx-btn-primary:not(:disabled):hover { box-shadow:0 8px 20px rgba(37,99,235,.4); }
 .phx-btn-success { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; box-shadow:0 4px 12px rgba(22,163,74,.3); }
 .phx-btn-success:not(:disabled):hover { box-shadow:0 8px 18px rgba(22,163,74,.4); }
 .phx-btn-warning { background:#f59e0b; color:#fff; box-shadow:0 4px 12px rgba(245,158,11,.3); }
@@ -384,9 +393,9 @@
 
 /* Badges & pills */
 .phx-badge { padding:4px 12px; border-radius:999px; font-size:12px; font-weight:700; }
-.phx-badge-primary { background:#ede9fe; color:#4f46e5; }
+.phx-badge-primary { background:#dbeafe; color:#1d4ed8; }
 .phx-pill { display:inline-block; padding:4px 11px; border-radius:999px; font-size:12px; font-weight:700; }
-.phx-pill-indigo { background:#ede9fe; color:#4f46e5; }
+.phx-pill-indigo { background:#dbeafe; color:#1d4ed8; }
 .phx-pill.bg-success { background:#dcfce7!important; color:#16a34a!important; }
 .phx-pill.bg-warning { background:#fef9c3!important; color:#854d0e!important; }
 .phx-pill.bg-danger { background:#fee2e2!important; color:#dc2626!important; }
@@ -484,7 +493,7 @@
 .phx-page   { animation:pageEnter .45s cubic-bezier(.22,1,.36,1) both; }
 .phx-header { animation:headerSlide .4s cubic-bezier(.22,1,.36,1) .05s both; }
 .phx-header-icon { transition:transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease; }
-.phx-header-icon:hover { transform:rotate(-6deg) scale(1.12); box-shadow:0 6px 20px rgba(3,105,161,.35); }
+.phx-header-icon:hover { transform:rotate(-6deg) scale(1.12); box-shadow:0 6px 20px rgba(37,99,235,.35); }
 
 /* Stat cards */
 .phx-stat-card { animation:statPop .45s cubic-bezier(.34,1.56,.64,1) both; }
@@ -521,4 +530,45 @@
 .phx-btn:not(:disabled):hover { transform:translateY(-3px) scale(1.02); }
 .phx-btn:not(:disabled):active { transform:translateY(0) scale(.98); }
 .phx-input:focus { transform:scale(1.005); transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+
+/* Sync with shared backoffice visual language (User/Clinical) */
+.phx-btn,
+.phx-btn-sm {
+  border-radius: 8px;
+  box-shadow: none !important;
+}
+
+.phx-btn-primary,
+.phx-btn-info {
+  background: #2563eb !important;
+  color: #fff !important;
+}
+
+.phx-btn-warning {
+  background: #f59e0b !important;
+  color: #fff !important;
+}
+
+.phx-btn-danger,
+.phx-btn-alert {
+  background: #dc2626 !important;
+  color: #fff !important;
+}
+
+.phx-btn-ghost {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+.phx-card,
+.phx-reorder-panel {
+  border: 1px solid #dbe7f5;
+  box-shadow: none;
+}
+
+.phx-card-header {
+  background: #f8fbff;
+  border-bottom-color: #e3edf9;
+}
 </style>

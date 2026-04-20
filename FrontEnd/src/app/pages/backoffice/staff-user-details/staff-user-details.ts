@@ -21,6 +21,7 @@ interface UserRow {
   role: string;
   accountStatus: string;
   enabled: boolean;
+  avatarUrl?: string;
   deleted?: boolean;
 }
 
@@ -100,7 +101,8 @@ export class StaffUserDetails implements OnInit {
     phone: '',
     dateOfBirth: '',
     sex: 'MALE' as Sex,
-    role: 'DOCTOR' as StaffRole
+    role: 'DOCTOR' as StaffRole,
+    avatarUrl: ''
   };
 
   contractForm = {
@@ -263,7 +265,8 @@ export class StaffUserDetails implements OnInit {
       phone: this.user.phone ?? '',
       dateOfBirth: this.user.dateOfBirth ?? '',
       sex: (this.user.sex as Sex) || 'MALE',
-      role: (this.user.role as StaffRole) || 'DOCTOR'
+      role: (this.user.role as StaffRole) || 'DOCTOR',
+      avatarUrl: this.user.avatarUrl ?? ''
     };
   }
 
@@ -324,7 +327,8 @@ export class StaffUserDetails implements OnInit {
             lastName,
             email,
             dateOfBirth,
-            sex: this.profileForm.sex
+            sex: this.profileForm.sex,
+            avatarUrl: this.profileForm.avatarUrl.trim() || null
           }
         : {
             firstName,
@@ -333,7 +337,8 @@ export class StaffUserDetails implements OnInit {
             phone: this.user.phone || null,
             dateOfBirth,
             sex: this.profileForm.sex,
-            role: this.user.role
+            role: this.user.role,
+            avatarUrl: this.profileForm.avatarUrl.trim() || null
           };
       const endpoint = isHrAccount
         ? `${environment.apiBaseUrl}/api/users/hr/${this.user.id}`

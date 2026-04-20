@@ -7,6 +7,7 @@ export const passwordChangeGuard: CanActivateFn = (route, state) => {
   const authStorage = inject(AuthStorageService);
 
   if (!authStorage.isAuthenticated()) {
+    authStorage.setPostLoginRedirect(state.url || router.url);
     return router.parseUrl('/login');
   }
 

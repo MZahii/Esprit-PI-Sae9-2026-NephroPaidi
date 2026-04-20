@@ -39,6 +39,15 @@ export interface ConsultationMetrics {
   creatinineMgDl?: number;
   weightKg?: number;
   ageYears?: number;
+  systolicBpMmHg?: number;
+  diastolicBpMmHg?: number;
+}
+
+export interface CarePlanDoseItem {
+  medication: string;
+  scheduleTime: string;
+  taken: boolean;
+  missedReason?: string;
 }
 
 export interface ConsultationWorkspaceDraft {
@@ -49,6 +58,7 @@ export interface ConsultationWorkspaceDraft {
   followUpDate?: string;
   labRequests: LabRequestItem[];
   prescriptions: PrescriptionItem[];
+  carePlanDoses: CarePlanDoseItem[];
   metrics: ConsultationMetrics;
   updatedAt?: string;
 }
@@ -154,6 +164,8 @@ export class ConsultationWorkspaceService {
     if (Number.isFinite(Number(metrics?.creatinineMgDl))) normalized.creatinineMgDl = Number(metrics?.creatinineMgDl);
     if (Number.isFinite(Number(metrics?.weightKg))) normalized.weightKg = Number(metrics?.weightKg);
     if (Number.isFinite(Number(metrics?.ageYears))) normalized.ageYears = Number(metrics?.ageYears);
+    if (Number.isFinite(Number(metrics?.systolicBpMmHg))) normalized.systolicBpMmHg = Number(metrics?.systolicBpMmHg);
+    if (Number.isFinite(Number(metrics?.diastolicBpMmHg))) normalized.diastolicBpMmHg = Number(metrics?.diastolicBpMmHg);
 
     return normalized;
   }
@@ -172,11 +184,14 @@ export class ConsultationWorkspaceService {
       followUpDate: '',
       labRequests: [],
       prescriptions: [],
+      carePlanDoses: [],
       metrics: {
         heightCm: undefined,
         creatinineMgDl: undefined,
         weightKg: undefined,
-        ageYears: undefined
+        ageYears: undefined,
+        systolicBpMmHg: undefined,
+        diastolicBpMmHg: undefined
       }
     };
   }

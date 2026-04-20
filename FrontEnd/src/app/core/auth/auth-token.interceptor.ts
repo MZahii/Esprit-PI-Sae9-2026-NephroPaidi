@@ -1,6 +1,6 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, from, switchMap } from 'rxjs';
+import { catchError, from, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthStorageService } from './auth-storage.service';
 import { getValidToken } from './keycloak.service';
@@ -21,6 +21,14 @@ export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   return from(getValidToken()).pipe(
+    catchError(() => {
+      return throwError(() => new HttpErrorResponse({
+        error: { message: 'Your session has expired. Please login again.' },
+        status: 401,
+        statusText: 'Unauthorized',
+        url: req.url
+      }));
+    }),
     switchMap((token) => {
       const authReq = req.clone({
         setHeaders: {
@@ -29,7 +37,6 @@ export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
       });
 
       return next(authReq);
-    }),
-    catchError(() => next(req))
+    })
   );
 };

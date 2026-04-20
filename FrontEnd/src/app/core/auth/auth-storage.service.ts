@@ -10,6 +10,7 @@ export class AuthStorageService {
   private readonly REFRESH_TOKEN_KEY = 'np_refresh_token';
   private readonly ROLE_KEY = 'np_role';
   private readonly REDIRECT_KEY = 'np_redirect_to';
+  private readonly POST_LOGIN_REDIRECT_KEY = 'np_post_login_redirect_to';
   private readonly USER_KEY = 'np_user';
   private readonly PREF_THEME_KEY = 'np_pref_theme';
   private readonly PREF_LANGUAGE_KEY = 'np_pref_language';
@@ -80,6 +81,32 @@ export class AuthStorageService {
       ?? sessionStorage.getItem(this.REDIRECT_KEY);
   }
 
+  setPostLoginRedirect(url: string): void {
+    const normalized = (url || '').trim();
+    if (!normalized || normalized === '/login') {
+      return;
+    }
+
+    const storage = localStorage.getItem(this.ACCESS_TOKEN_KEY) ? localStorage : sessionStorage;
+    storage.setItem(this.POST_LOGIN_REDIRECT_KEY, normalized);
+  }
+
+  consumePostLoginRedirect(): string | null {
+    const fromLocal = localStorage.getItem(this.POST_LOGIN_REDIRECT_KEY);
+    if (fromLocal) {
+      localStorage.removeItem(this.POST_LOGIN_REDIRECT_KEY);
+      return fromLocal;
+    }
+
+    const fromSession = sessionStorage.getItem(this.POST_LOGIN_REDIRECT_KEY);
+    if (fromSession) {
+      sessionStorage.removeItem(this.POST_LOGIN_REDIRECT_KEY);
+      return fromSession;
+    }
+
+    return null;
+  }
+
   getUser(): any | null {
     const raw =
       localStorage.getItem(this.USER_KEY)
@@ -113,6 +140,7 @@ export class AuthStorageService {
     localStorage.removeItem(this.PREF_THEME_KEY);
     localStorage.removeItem(this.PREF_LANGUAGE_KEY);
     localStorage.removeItem(this.PREF_NOTIFICATIONS_KEY);
+    localStorage.removeItem(this.POST_LOGIN_REDIRECT_KEY);
 
     sessionStorage.removeItem(this.ACCESS_TOKEN_KEY);
     sessionStorage.removeItem(this.REFRESH_TOKEN_KEY);
@@ -122,6 +150,7 @@ export class AuthStorageService {
     sessionStorage.removeItem(this.PREF_THEME_KEY);
     sessionStorage.removeItem(this.PREF_LANGUAGE_KEY);
     sessionStorage.removeItem(this.PREF_NOTIFICATIONS_KEY);
+    sessionStorage.removeItem(this.POST_LOGIN_REDIRECT_KEY);
   }
 
   setPreferences(preferences: { theme?: string; preferredLanguage?: string; notificationsEnabled?: boolean }): void {

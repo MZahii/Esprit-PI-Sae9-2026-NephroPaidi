@@ -53,7 +53,8 @@ export class AccountSettingsComponent implements OnInit {
     firstName: '',
     lastName: '',
     email: '',
-    phone: ''
+    phone: '',
+    avatarUrl: ''
   };
 
   preferencesForm = {
@@ -107,7 +108,8 @@ export class AccountSettingsComponent implements OnInit {
         firstName: response.firstName ?? '',
         lastName: response.lastName ?? '',
         email: response.email ?? '',
-        phone: response.phone ?? ''
+        phone: response.phone ?? '',
+        avatarUrl: response.avatarUrl ?? ''
       };
       this.preferencesForm = {
         preferredLanguage: response.preferredLanguage ?? 'en',
@@ -151,7 +153,8 @@ export class AccountSettingsComponent implements OnInit {
           firstName: this.profileForm.firstName,
           lastName: this.profileForm.lastName,
           email: this.profileForm.email,
-          phone: this.profileForm.phone || null
+          phone: this.profileForm.phone || null,
+          avatarUrl: this.profileForm.avatarUrl.trim() || null
         }, { headers })
       );
       this.successMessage = 'Profile updated successfully.';

@@ -125,23 +125,23 @@
 </div>
 
 <style>
-.phx-page { padding:24px; background:#f8fafc; min-height:100vh; }
-.phx-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
+.phx-page { padding:0; background:transparent; min-height:auto; }
+.phx-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:12px; border:1px solid #dbe7f5; border-radius:16px; background:linear-gradient(130deg,#f7fbff 0%,#eef4ff 100%); padding:18px 20px; }
 .phx-header-left { display:flex; align-items:center; gap:16px; }
 .phx-header-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; flex-shrink:0; }
 .phx-title { font-size:22px; font-weight:800; color:#1e293b; margin:0; }
 .phx-btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:10px; font-weight:600; font-size:13.5px; border:none; cursor:pointer; transition:all .2s; }
 .phx-btn-sm { padding:8px 14px; font-size:13px; border-radius:9px; }
-.phx-btn-primary { background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; box-shadow:0 4px 14px rgba(79,70,229,.3); }
+.phx-btn-primary { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; box-shadow:0 4px 14px rgba(37,99,235,.3); }
 .phx-date-wrap { position:relative; display:flex; align-items:center; }
 .phx-date-wrap i { position:absolute; left:12px; color:#64748b; font-size:14px; pointer-events:none; }
 .phx-date-input { padding:8px 12px 8px 34px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:13.5px; outline:none; background:#fff; }
-.phx-date-input:focus { border-color:#4f46e5; }
+.phx-date-input:focus { border-color:#2563eb; }
 .phx-stat-card { background:#fff; border-radius:16px; padding:20px; display:flex; align-items:center; gap:16px; box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04); border:1px solid #f1f5f9; }
 .phx-stat-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
 .phx-stat-value { font-size:28px; font-weight:800; line-height:1; }
 .phx-stat-label { font-size:12px; color:#64748b; font-weight:600; margin-top:3px; }
-.phx-stat-indigo .phx-stat-icon { background:#ede9fe; color:#4f46e5; } .phx-stat-indigo .phx-stat-value { color:#4f46e5; }
+.phx-stat-indigo .phx-stat-icon { background:#dbeafe; color:#1d4ed8; } .phx-stat-indigo .phx-stat-value { color:#1d4ed8; }
 .phx-stat-green .phx-stat-icon { background:#dcfce7; color:#16a34a; } .phx-stat-green .phx-stat-value { color:#16a34a; }
 .phx-stat-cyan .phx-stat-icon { background:#cffafe; color:#0891b2; } .phx-stat-cyan .phx-stat-value { color:#0891b2; }
 .phx-card { background:#fff; border-radius:16px; box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04); border:1px solid #f1f5f9; overflow:hidden; margin-bottom:20px; }
@@ -204,4 +204,27 @@
 .phx-btn:not(:disabled):hover { transform:translateY(-3px) scale(1.02); }
 .phx-btn:not(:disabled):active { transform:translateY(0) scale(.98); }
 .phx-input:focus { transform:scale(1.005); transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+.phx-input:focus { transform:scale(1.005); }
+
+/* Sync with shared backoffice visual language (User/Clinical) */
+.phx-btn,
+.phx-btn-sm {
+  border-radius: 8px;
+  box-shadow: none !important;
+}
+
+.phx-btn-primary {
+  background: #2563eb !important;
+  color: #fff !important;
+}
+
+.phx-card {
+  border: 1px solid #dbe7f5;
+  box-shadow: none;
+}
+
+.phx-card-header {
+  background: #f8fbff;
+  border-bottom-color: #e3edf9;
+}
 </style>

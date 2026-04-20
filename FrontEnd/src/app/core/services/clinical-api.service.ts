@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { AuthStorageService } from '../auth/auth-storage.service';
 
 export interface DoctorSearchResult {
@@ -12,6 +12,9 @@ export interface DoctorSearchResult {
   lastName?: string;
   email?: string;
   role?: string;
+  phone?: string;
+  avatarUrl?: string;
+  enabled?: boolean;
 }
 
 export interface ConsultationMetricsRequest {
@@ -19,6 +22,8 @@ export interface ConsultationMetricsRequest {
   creatinineMgDl?: number;
   weightKg?: number;
   ageYears?: number;
+  systolicBpMmHg?: number;
+  diastolicBpMmHg?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -195,6 +200,12 @@ export class ClinicalApiService {
       { headers: this.authHeaders() }
     ).pipe(
       map((res) => res?.items ?? [])
+    );
+  }
+
+  getPublicDoctors(): Observable<DoctorSearchResult[]> {
+    return this.http.get<DoctorSearchResult[]>(`${this.base}/api/users/public/doctors`).pipe(
+      catchError(() => of([]))
     );
   }
 
