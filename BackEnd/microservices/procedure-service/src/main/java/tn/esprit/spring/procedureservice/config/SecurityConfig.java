@@ -26,6 +26,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/procedures/whatsapp/test").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/procedures/**")
                     .hasAnyRole("SURGEON", "DOCTOR", "NURSE", "GUARDIAN")
                 .requestMatchers(HttpMethod.POST, "/api/procedures/**").hasRole("SURGEON")

@@ -5,7 +5,6 @@ import java.util.Optional;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Service;
-import tn.esprit.spring.procedureservice.notification.service.ResendEmailService;
 import tn.esprit.spring.procedureservice.shared.exception.BusinessException;
 import tn.esprit.spring.procedureservice.shared.exception.NotFoundException;
 import tn.esprit.spring.procedureservice.surgical.domain.entity.PreOpAssessment;
@@ -15,6 +14,7 @@ import tn.esprit.spring.procedureservice.surgical.dto.request.DecideTransplantOf
 import tn.esprit.spring.procedureservice.surgical.dto.request.UpdateSurgicalCaseRequest;
 import tn.esprit.spring.procedureservice.surgical.repository.PreOpAssessmentRepository;
 import tn.esprit.spring.procedureservice.surgical.repository.SurgicalCaseRepository;
+import tn.esprit.spring.procedureservice.whatsapp.service.ProcedureWhatsAppAlertService;
 
 @Service
 public class SurgicalCaseService {
@@ -44,16 +44,16 @@ public class SurgicalCaseService {
 
     private final SurgicalCaseRepository repository;
     private final PreOpAssessmentRepository preOpAssessmentRepository;
-    private final ResendEmailService resendEmailService;
+    private final ProcedureWhatsAppAlertService whatsAppAlertService;
 
     public SurgicalCaseService(
         SurgicalCaseRepository repository,
         PreOpAssessmentRepository preOpAssessmentRepository,
-        ResendEmailService resendEmailService
+        ProcedureWhatsAppAlertService whatsAppAlertService
     ) {
         this.repository = repository;
         this.preOpAssessmentRepository = preOpAssessmentRepository;
-        this.resendEmailService = resendEmailService;
+        this.whatsAppAlertService = whatsAppAlertService;
     }
 
     public SurgicalCase create(CreateSurgicalCaseRequest request) {
@@ -81,7 +81,7 @@ public class SurgicalCaseService {
         surgicalCase.setStatus("OPEN");
         surgicalCase.setOfferStatus("PENDING");
         SurgicalCase saved = repository.save(surgicalCase);
-        resendEmailService.sendSurgicalCaseCreatedNotification(saved);
+        whatsAppAlertService.sendSurgicalCaseCreatedAlert(saved);
         return saved;
     }
 

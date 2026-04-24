@@ -44,6 +44,7 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
 
   loading = false;
   saving = false;
+  sendingWhatsAppTest = false;
   downloadingPdfId: number | null = null;
   createAttempted = false;
   errorMessage = '';
@@ -394,7 +395,7 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
         this.patientError = '';
         this.surgeonError = '';
         this.createAttempted = false;
-        this.successMessage = 'Surgical case created successfully.';
+        this.successMessage = 'Surgical case created successfully. WhatsApp alert triggered for the surgical coordination scenario.';
         this.saving = false;
         this.refreshView();
         this.loadCases();
@@ -402,6 +403,29 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
       error: (err: { error?: { message?: string }; message?: string }) => {
         this.saving = false;
         this.errorMessage = this.formatApiError(err, 'Failed to create surgical case.');
+        this.refreshView();
+      }
+    });
+  }
+
+  sendWhatsAppTest(): void {
+    if (this.sendingWhatsAppTest) {
+      return;
+    }
+
+    this.sendingWhatsAppTest = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.procedureApi.sendWhatsAppTestMessage().subscribe({
+      next: () => {
+        this.sendingWhatsAppTest = false;
+        this.successMessage = 'WhatsApp test message sent successfully.';
+        this.refreshView();
+      },
+      error: (err: { error?: { message?: string }; message?: string }) => {
+        this.sendingWhatsAppTest = false;
+        this.errorMessage = this.formatApiError(err, 'Failed to send WhatsApp test message.');
         this.refreshView();
       }
     });

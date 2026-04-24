@@ -33,8 +33,11 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka
 
-resend:
-  enabled: ${RESEND_ENABLED:false}
-  api-key: ${RESEND_API_KEY:}
-  from-email: ${RESEND_FROM_EMAIL:onboarding@resend.dev}
-  demo-recipient: ${RESEND_DEMO_RECIPIENT:}
+twilio:
+  whatsapp:
+    enabled: true
+    account-sid: AC0feb6066c968b534f4081ae75d1fec29
+    auth-token: 23ce7ef575dcc6b01871a732bca172e1
+    from: whatsapp:+14155238886
+    default-recipient: whatsapp:+21654503952
+    api-base-url: https://api.twilio.com

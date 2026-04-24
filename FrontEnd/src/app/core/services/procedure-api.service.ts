@@ -93,6 +93,10 @@ export interface CareTask {
   done: boolean;
 }
 
+export interface WhatsAppTestResponse {
+  status: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -302,5 +306,9 @@ export class ProcedureApiService {
 
   updateCareTask(id: number, payload: { title: string; done: boolean }): Observable<CareTask> {
     return this.http.put<CareTask>(`${this.baseUrl}/api/procedures/surgical/care-tasks/${id}`, payload);
+  }
+
+  sendWhatsAppTestMessage(): Observable<WhatsAppTestResponse> {
+    return this.http.post<WhatsAppTestResponse>(`${this.baseUrl}/api/procedures/whatsapp/test`, {});
   }
 }

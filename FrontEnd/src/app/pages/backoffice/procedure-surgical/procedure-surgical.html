@@ -252,8 +252,16 @@
 
     <div class="col-12 col-xl-7 col-xxl-8">
       <div class="card stretch stretch-full mb-3">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center gap-2">
           <h5 class="card-title mb-0">Procedure Workflow</h5>
+          <button
+            type="button"
+            class="btn btn-success btn-sm workflow-whatsapp-btn"
+            (click)="sendWhatsAppTest()"
+            [disabled]="sendingWhatsAppTest"
+          >
+            {{ sendingWhatsAppTest ? 'Sending...' : 'Test WhatsApp' }}
+          </button>
         </div>
         <div class="card-body compact-workflow">
           <div class="row g-2">
