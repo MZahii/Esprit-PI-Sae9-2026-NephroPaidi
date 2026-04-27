@@ -118,10 +118,14 @@ services:
       SERVER_PORT: 8090
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:postgresql://ep-cool-breeze-agqhhjlc.c-2.eu-central-1.aws.neon.tech/nephros_user_service_db?sslmode=require&channel_binding=require
-      SPRING_DATASOURCE_USERNAME: neondb_owner
-      SPRING_DATASOURCE_PASSWORD: npg_Zb1Kda5LPlin
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://ep-cool-breeze-agqhhjlc-pooler.c-2.eu-central-1.aws.neon.tech:5432/nephros_user_service_db?sslmode=require&channel_binding=require}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-neondb_owner}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-npg_Zb1Kda5LPlin}
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_SHOW_SQL: "false"
+      LOGGING_LEVEL_ROOT: INFO
+      LOGGING_LEVEL_SPRING_WEB: DEBUG
       EUREKA_URL: http://eureka:8761/eureka
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: user-service
@@ -146,6 +150,12 @@ services:
     mem_limit: "640m"
     networks:
       - nephro-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   administration-service:
     build:
@@ -264,7 +274,7 @@ services:
     environment:
       SERVICE_NAME: core-ops-service
       PORT: 8086
-      CORE_OPS_DB_URL: ${CORE_OPS_DB_URL:-postgresql://neondb_owner:npg_Zb1Kda5LPlin@ep-cool-breeze-agqhhjlc.c-2.eu-central-1.aws.neon.tech:5432/nephros_core_ops_service_db?sslmode=require}
+      CORE_OPS_DB_URL: ${CORE_OPS_DB_URL:-postgresql://neondb_owner:npg_Zb1Kda5LPlin@ep-cool-breeze-agqhhjlc-pooler.c-2.eu-central-1.aws.neon.tech:5432/nephros_core_ops_service_db?sslmode=require}
       RABBITMQ_URL: ${RABBITMQ_URL:-amqp://admin:admin123@rabbitmq:5672/%2F}
     ports:
       - "8086:8086"
