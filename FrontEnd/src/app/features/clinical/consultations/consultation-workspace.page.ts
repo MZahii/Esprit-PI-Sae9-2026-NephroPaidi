@@ -223,11 +223,16 @@ export class ConsultationWorkspacePage implements OnInit {
     carePlanDoses: [],
     metrics: {
       heightCm: undefined,
-      creatinineMgDl: undefined,
+      creatinineMgDl: undefined,  // From lab results (read-only in UI)
       weightKg: undefined,
       ageYears: undefined,
+      sex: undefined,  // 'M' or 'F' - required for CKD-EPI
       systolicBpMmHg: undefined,
-      diastolicBpMmHg: undefined
+      diastolicBpMmHg: undefined,
+      egfr: undefined,  // Auto-calculated by backend
+      egfrQualityIndicator: undefined,  // HIGH_QUALITY, MEDIUM_QUALITY, LOW_QUALITY
+      ckdStage: undefined,  // From backend
+      egfrLastUpdatedAt: undefined
     }
   };
 
@@ -823,12 +828,115 @@ export class ConsultationWorkspacePage implements OnInit {
   }
 
   private calculateEgfr(heightCm?: number, creatinineMgDl?: number): number | null {
+    // LEGACY METHOD - eGFR is now calculated by backend using CKD-EPI formula
+    // This method kept for backward compatibility with local estimation only
     const height = Number(heightCm);
     const creatinine = Number(creatinineMgDl);
     if (!Number.isFinite(height) || height <= 0) return null;
     if (!Number.isFinite(creatinine) || creatinine <= 0) return null;
     const value = (0.413 * height) / creatinine;
     return Math.round(value * 10) / 10;
+  }
+
+  // ============================================================
+  // CKD-EPI Metrics Display Helpers
+  // ============================================================
+
+  /**
+   * Get CKD stage display color based on stage value
+   * Used for visual alerts in UI: green (normal) → yellow (stage 2) → red (stage 4)
+   */
+  getCkdStageColor(stage?: string): string {
+    if (!stage) return 'text-secondary';  // Gray for unknown
+    switch (stage.toUpperCase()) {
+      case 'STAGE_NORMAL':
+      case 'NORMAL':
+        return 'text-success';  // Green
+      case 'STAGE_1':
+      case 'STAGE1':
+        return 'text-success';  // Green
+      case 'STAGE_2':
+      case 'STAGE2':
+        return 'text-warning';  // Yellow
+      case 'STAGE_3':
+      case 'STAGE3':
+        return 'text-danger';   // Red
+      case 'STAGE_4':
+      case 'STAGE4':
+        return 'text-danger';   // Dark red
+      case 'STAGE_5':
+      case 'STAGE5':
+        return 'text-danger';   // Dark red
+      default:
+        return 'text-secondary';
+    }
+  }
+
+  /**
+   * Get CKD stage display name
+   */
+  getCkdStageName(stage?: string): string {
+    if (!stage) return 'Unknown';
+    return stage.replace(/_/g, ' ').toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  /**
+   * Format eGFR value with units and clinical interpretation
+   */
+  formatEgfr(egfr?: number): string {
+    if (egfr === undefined || egfr === null) {
+      return 'Awaiting lab results...';
+    }
+    const formatted = egfr.toFixed(1);
+    if (egfr >= 90) return `${formatted} mL/min/1.73m² (Normal)`;
+    if (egfr >= 60) return `${formatted} mL/min/1.73m² (Mild)`;
+    if (egfr >= 30) return `${formatted} mL/min/1.73m² (Moderate)`;
+    if (egfr >= 15) return `${formatted} mL/min/1.73m² (Severe)`;
+    return `${formatted} mL/min/1.73m² (Kidney Failure)`;
+  }
+
+  /**
+   * Get quality badge class for display
+   */
+  getQualityBadgeClass(quality?: string): string {
+    if (!quality) return 'badge bg-secondary';
+    switch (quality.toUpperCase()) {
+      case 'HIGH_QUALITY':
+        return 'badge bg-success';
+      case 'MEDIUM_QUALITY':
+        return 'badge bg-warning';
+      case 'LOW_QUALITY':
+        return 'badge bg-danger';
+      default:
+        return 'badge bg-secondary';
+    }
+  }
+
+  /**
+   * Format creatinine value with units
+   */
+  formatCreatinine(creatinine?: number, unit: string = 'mg/dL'): string {
+    if (creatinine === undefined || creatinine === null) {
+      return 'Awaiting lab results...';
+    }
+    return `${creatinine.toFixed(2)} ${unit}`;
+  }
+
+  /**
+   * Format last updated timestamp
+   */
+  formatLastUpdated(timestamp?: string): string {
+    if (!timestamp) return 'Not yet calculated';
+    try {
+      const date = new Date(timestamp);
+      if (Number.isNaN(date.getTime())) return 'Invalid date';
+      return date.toLocaleString();
+    } catch {
+      return 'Invalid date';
+    }
   }
 
   private isPastDatetime(value: string): boolean {

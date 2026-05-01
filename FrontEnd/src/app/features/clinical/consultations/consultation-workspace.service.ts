@@ -41,6 +41,23 @@ export interface ConsultationMetrics {
   ageYears?: number;
   systolicBpMmHg?: number;
   diastolicBpMmHg?: number;
+  // CKD-EPI formula fields
+  sex?: string;  // 'M' or 'F' - REQUIRED for CKD-EPI
+  creatinineUmol?: number;  // SI units (calculated by backend)
+  serumCreatinineUnit?: string;  // "MICROMOL_L" or "MG_DL"
+  egfrFormulaUsed?: string;  // "CKD_EPI_2021" or "COCKCROFT_GAULT"
+  ckdEpiEgfr?: number;  // CKD-EPI eGFR result
+  egfr?: number;  // eGFR value (display)
+  ckdStage?: string;  // KDIGO classification: "NORMAL", "STAGE_1", "STAGE_2", "STAGE_3", "STAGE_4"
+  previousEgfr?: number;  // Previous eGFR for trend
+  egfrChange?: number;  // Absolute change from previous
+  egfrChangePercent?: number;  // Percentage change from previous
+  egfrTrend?: string;  // "STABLE", "IMPROVING", "DECLINING", "RAPIDLY_DECLINING"
+  egfrQualityIndicator?: string;  // "HIGH_QUALITY", "MEDIUM_QUALITY", "LOW_QUALITY"
+  egfrLastUpdatedAt?: string;  // ISO timestamp when eGFR was calculated
+  alertLowEgfr?: boolean;  // Alert flag for low eGFR
+  alertRapidDecline?: boolean;  // Alert flag for rapid decline
+  alertMessage?: string;  // Clinical alert message
 }
 
 export interface CarePlanDoseItem {
@@ -160,12 +177,33 @@ export class ConsultationWorkspaceService {
   private normalizeMetrics(metrics: ConsultationMetrics): ConsultationMetricsRequest {
     const normalized: ConsultationMetricsRequest = {};
 
+    // Input/output biometric fields
     if (Number.isFinite(Number(metrics?.heightCm))) normalized.heightCm = Number(metrics?.heightCm);
     if (Number.isFinite(Number(metrics?.creatinineMgDl))) normalized.creatinineMgDl = Number(metrics?.creatinineMgDl);
     if (Number.isFinite(Number(metrics?.weightKg))) normalized.weightKg = Number(metrics?.weightKg);
     if (Number.isFinite(Number(metrics?.ageYears))) normalized.ageYears = Number(metrics?.ageYears);
     if (Number.isFinite(Number(metrics?.systolicBpMmHg))) normalized.systolicBpMmHg = Number(metrics?.systolicBpMmHg);
     if (Number.isFinite(Number(metrics?.diastolicBpMmHg))) normalized.diastolicBpMmHg = Number(metrics?.diastolicBpMmHg);
+
+    // CKD-EPI formula requirement: sex is REQUIRED
+    if (metrics?.sex) normalized.sex = metrics.sex;
+
+    // Backend-calculated fields (read-only, returned by server)
+    if (Number.isFinite(Number(metrics?.creatinineUmol))) normalized.creatinineUmol = Number(metrics?.creatinineUmol);
+    if (metrics?.serumCreatinineUnit) normalized.serumCreatinineUnit = metrics.serumCreatinineUnit;
+    if (metrics?.egfrFormulaUsed) normalized.egfrFormulaUsed = metrics.egfrFormulaUsed;
+    if (Number.isFinite(Number(metrics?.ckdEpiEgfr))) normalized.ckdEpiEgfr = Number(metrics?.ckdEpiEgfr);
+    if (Number.isFinite(Number(metrics?.egfr))) normalized.egfr = Number(metrics?.egfr);
+    if (metrics?.ckdStage) normalized.ckdStage = metrics.ckdStage;
+    if (Number.isFinite(Number(metrics?.previousEgfr))) normalized.previousEgfr = Number(metrics?.previousEgfr);
+    if (Number.isFinite(Number(metrics?.egfrChange))) normalized.egfrChange = Number(metrics?.egfrChange);
+    if (Number.isFinite(Number(metrics?.egfrChangePercent))) normalized.egfrChangePercent = Number(metrics?.egfrChangePercent);
+    if (metrics?.egfrTrend) normalized.egfrTrend = metrics.egfrTrend;
+    if (metrics?.egfrQualityIndicator) normalized.egfrQualityIndicator = metrics.egfrQualityIndicator;
+    if (metrics?.egfrLastUpdatedAt) normalized.egfrLastUpdatedAt = metrics.egfrLastUpdatedAt;
+    if (typeof metrics?.alertLowEgfr === 'boolean') normalized.alertLowEgfr = metrics.alertLowEgfr;
+    if (typeof metrics?.alertRapidDecline === 'boolean') normalized.alertRapidDecline = metrics.alertRapidDecline;
+    if (metrics?.alertMessage) normalized.alertMessage = metrics.alertMessage;
 
     return normalized;
   }
@@ -191,7 +229,24 @@ export class ConsultationWorkspaceService {
         weightKg: undefined,
         ageYears: undefined,
         systolicBpMmHg: undefined,
-        diastolicBpMmHg: undefined
+        diastolicBpMmHg: undefined,
+        // CKD-EPI fields
+        sex: undefined,  // Required: 'M' or 'F'
+        creatinineUmol: undefined,  // Calculated by backend
+        serumCreatinineUnit: undefined,
+        egfrFormulaUsed: undefined,
+        ckdEpiEgfr: undefined,
+        egfr: undefined,
+        ckdStage: undefined,
+        previousEgfr: undefined,
+        egfrChange: undefined,
+        egfrChangePercent: undefined,
+        egfrTrend: undefined,
+        egfrQualityIndicator: undefined,
+        egfrLastUpdatedAt: undefined,
+        alertLowEgfr: undefined,
+        alertRapidDecline: undefined,
+        alertMessage: undefined
       }
     };
   }

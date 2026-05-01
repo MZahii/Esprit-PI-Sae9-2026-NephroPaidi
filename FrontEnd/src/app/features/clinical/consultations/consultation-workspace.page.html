@@ -204,13 +204,10 @@
                   <textarea class="form-control" rows="3" [(ngModel)]="draft.soap.plan" placeholder="Immediate plan linked to assessment..."></textarea>
                 </div>
 
+                <!-- Patient Biometrics -->
                 <div class="col-md-6">
                   <label class="form-label">Height (cm)</label>
                   <input type="number" class="form-control" [(ngModel)]="draft.metrics.heightCm" />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Creatinine (mg/dL)</label>
-                  <input type="number" class="form-control" [(ngModel)]="draft.metrics.creatinineMgDl" />
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Weight (kg)</label>
@@ -220,6 +217,62 @@
                   <label class="form-label">Age (years)</label>
                   <input type="number" class="form-control" [(ngModel)]="draft.metrics.ageYears" />
                 </div>
+                <div class="col-md-6">
+                  <label class="form-label">Sex/Gender</label>
+                  <select class="form-control" [(ngModel)]="draft.metrics.sex">
+                    <option value="">Select gender...</option>
+                    <option value="M">Male</option>
+                    <option value="F">Female</option>
+                  </select>
+                </div>
+
+                <!-- Serum Creatinine (from Lab Results - READ-ONLY) -->
+                <div class="col-md-6">
+                  <label class="form-label">Serum Creatinine (from Lab)</label>
+                  <div class="form-control-static border rounded p-2 bg-light">
+                    <small class="d-block text-muted">{{ formatCreatinine(draft.metrics.creatinineMgDl, 'mg/dL') }}</small>
+                    <small class="d-block text-muted" *ngIf="draft.metrics.creatinineUmol">
+                      ({{ draft.metrics.creatinineUmol.toFixed(2) }} µmol/L)
+                    </small>
+                  </div>
+                </div>
+
+                <!-- eGFR (Auto-Calculated - READ-ONLY) -->
+                <div class="col-md-6">
+                  <label class="form-label">eGFR (CKD-EPI)</label>
+                  <div class="form-control-static border rounded p-2 bg-light" [ngClass]="getCkdStageColor(draft.metrics.ckdStage)">
+                    <strong>{{ formatEgfr(draft.metrics.egfr) }}</strong>
+                  </div>
+                </div>
+
+                <!-- CKD Stage Classification -->
+                <div class="col-md-6">
+                  <label class="form-label">CKD Stage</label>
+                  <div class="form-control-static">
+                    <span class="badge" [ngClass]="getCkdStageColor(draft.metrics.ckdStage)">
+                      {{ getCkdStageName(draft.metrics.ckdStage) || 'Not yet calculated' }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Quality Indicator -->
+                <div class="col-md-6">
+                  <label class="form-label">Calculation Quality</label>
+                  <div class="form-control-static">
+                    <span [ngClass]="getQualityBadgeClass(draft.metrics.egfrQualityIndicator)">
+                      {{ draft.metrics.egfrQualityIndicator?.replace(/_/g, ' ') || 'Pending' }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Last Updated -->
+                <div class="col-md-6">
+                  <label class="form-label">Last Calculated</label>
+                  <div class="form-control-static border rounded p-2 bg-light">
+                    <small class="d-block text-muted">{{ formatLastUpdated(draft.metrics.egfrLastUpdatedAt) }}</small>
+                  </div>
+                </div>
+                <!-- Blood Pressure -->
                 <div class="col-md-6">
                   <label class="form-label">Systolic BP (mmHg)</label>
                   <input type="number" class="form-control" [(ngModel)]="draft.metrics.systolicBpMmHg" />

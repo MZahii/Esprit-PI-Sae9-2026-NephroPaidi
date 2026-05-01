@@ -24,6 +24,23 @@ export interface ConsultationMetricsRequest {
   ageYears?: number;
   systolicBpMmHg?: number;
   diastolicBpMmHg?: number;
+  sex?: string;  // 'M' or 'F' - REQUIRED for CKD-EPI formula
+  // Response fields (calculated by backend)
+  creatinineUmol?: number;  // SI units storage
+  serumCreatinineUnit?: string;  // "MICROMOL_L" or "MG_DL"
+  egfrFormulaUsed?: string;  // "CKD_EPI_2021" or "COCKCROFT_GAULT"
+  ckdEpiEgfr?: number;  // CKD-EPI result
+  previousEgfr?: number;  // Trend comparison
+  egfrChange?: number;  // Absolute change
+  egfrChangePercent?: number;  // Percentage change
+  egfrTrend?: string;  // "STABLE", "DECLINING", etc.
+  egfrQualityIndicator?: string;  // "HIGH_QUALITY", "MEDIUM_QUALITY", "LOW_QUALITY"
+  egfrLastUpdatedAt?: string;  // ISO timestamp
+  egfr?: number;  // eGFR value
+  ckdStage?: string;  // "NORMAL", "STAGE_1", etc.
+  alertLowEgfr?: boolean;  // Low eGFR alert
+  alertRapidDecline?: boolean;  // Rapid decline alert
+  alertMessage?: string;  // Clinical alert message
 }
 
 @Injectable({ providedIn: 'root' })
