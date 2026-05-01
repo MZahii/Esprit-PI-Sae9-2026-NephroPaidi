@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ClinicalApiService } from '../../../core/services/clinical-api.service';
+import { ProcedureApiService, SurgeryRequest } from '../../../core/services/procedure-api.service';
 import {
   ConsultationWorkspaceDraft,
   ConsultationWorkspaceService,
@@ -63,11 +64,21 @@ export class ConsultationWorkspacePage implements OnInit {
   followUpError = '';
   followUpSuccess = '';
   minFollowUpDate = '';
+  surgeryRequestSubmitting = false;
+  surgeryRequestError = '';
+  surgeryRequestSuccess = '';
+  surgeryRequests: SurgeryRequest[] = [];
+  surgeryRequestForm = {
+    reason: '',
+    urgencyLevel: 'SCHEDULED',
+    clinicalNote: ''
+  };
 
   constructor(
     private route: ActivatedRoute,
     private api: ClinicalApiService,
-    private workspace: ConsultationWorkspaceService
+    private workspace: ConsultationWorkspaceService,
+    private procedureApi: ProcedureApiService
   ) {}
 
   ngOnInit(): void {
@@ -94,6 +105,7 @@ export class ConsultationWorkspacePage implements OnInit {
         this.consultation = item;
         this.loading = false;
         this.loadHistory();
+        this.loadSurgeryRequests();
       },
       error: () => {
         this.api.listMyConsultations().subscribe({
@@ -101,6 +113,7 @@ export class ConsultationWorkspacePage implements OnInit {
             this.consultation = (items || []).find(c => c.id === this.consultationId) || null;
             this.loading = false;
             this.setHistory(items || []);
+            this.loadSurgeryRequests();
             if (!this.consultation) {
               this.error = 'Consultation not found.';
             }
@@ -206,6 +219,52 @@ export class ConsultationWorkspacePage implements OnInit {
       },
       error: () => {
         this.followUpError = 'Unable to schedule follow-up appointment.';
+      }
+    });
+  }
+
+  submitSurgeryRequest(): void {
+    this.surgeryRequestError = '';
+    this.surgeryRequestSuccess = '';
+
+    if (!this.consultation?.patientId || !this.consultationId || !this.consultation?.doctorId) {
+      this.surgeryRequestError = 'Missing consultation, patient or doctor context.';
+      return;
+    }
+
+    const reason = this.surgeryRequestForm.reason.trim();
+    if (reason.length < 10) {
+      this.surgeryRequestError = 'Reason for surgery must contain at least 10 characters.';
+      return;
+    }
+
+    const patientName = String(this.consultation?.patientName || '').trim();
+    const { firstName, lastName } = this.splitPatientName(patientName);
+
+    this.surgeryRequestSubmitting = true;
+    this.procedureApi.createSurgeryRequest({
+      patientId: String(this.consultation.patientId),
+      consultationId: this.consultationId,
+      requestedByDoctorId: String(this.consultation.doctorId),
+      patientFirstName: firstName,
+      patientLastName: lastName,
+      reason,
+      urgencyLevel: this.surgeryRequestForm.urgencyLevel,
+      clinicalNote: this.surgeryRequestForm.clinicalNote.trim() || this.draft.soap.assessment || ''
+    }).subscribe({
+      next: (request) => {
+        this.surgeryRequestSubmitting = false;
+        this.surgeryRequestSuccess = `Surgery request #${request.id} sent to procedure planning.`;
+        this.surgeryRequestForm = {
+          reason: '',
+          urgencyLevel: 'SCHEDULED',
+          clinicalNote: ''
+        };
+        this.loadSurgeryRequests();
+      },
+      error: () => {
+        this.surgeryRequestSubmitting = false;
+        this.surgeryRequestError = 'Unable to create surgery request.';
       }
     });
   }
@@ -357,6 +416,12 @@ export class ConsultationWorkspacePage implements OnInit {
     return this.completenessScore >= 70;
   }
 
+  surgeryRequestStatusClass(status?: string): string {
+    if (status === 'PLANNED') return 'bg-soft-success text-success';
+    if (status === 'REJECTED' || status === 'CANCELLED') return 'bg-soft-danger text-danger';
+    return 'bg-soft-warning text-warning';
+  }
+
   get patientHistory(): any[] {
     const patientId = this.consultation?.patientId;
     if (!patientId) return [];
@@ -391,6 +456,22 @@ export class ConsultationWorkspacePage implements OnInit {
         this.history = [];
         this.previousEgfr = null;
         this.previousEgfrDate = null;
+      }
+    });
+  }
+
+  private loadSurgeryRequests(): void {
+    if (!this.consultationId) {
+      this.surgeryRequests = [];
+      return;
+    }
+
+    this.procedureApi.getSurgeryRequests({ consultationId: this.consultationId }).subscribe({
+      next: (items) => {
+        this.surgeryRequests = items ?? [];
+      },
+      error: () => {
+        this.surgeryRequests = [];
       }
     });
   }
@@ -449,5 +530,19 @@ export class ConsultationWorkspacePage implements OnInit {
   private normalizeDateTime(value: string): string {
     if (!value) return value;
     return value.length === 16 ? `${value}:00` : value;
+  }
+
+  private splitPatientName(fullName: string): { firstName: string; lastName: string } {
+    const parts = fullName.split(/\s+/).filter(Boolean);
+    if (parts.length === 0) {
+      return { firstName: 'Patient', lastName: String(this.consultation?.patientId ?? '') };
+    }
+    if (parts.length === 1) {
+      return { firstName: parts[0], lastName: String(this.consultation?.patientId ?? '') };
+    }
+    return {
+      firstName: parts[0],
+      lastName: parts.slice(1).join(' ')
+    };
   }
 }

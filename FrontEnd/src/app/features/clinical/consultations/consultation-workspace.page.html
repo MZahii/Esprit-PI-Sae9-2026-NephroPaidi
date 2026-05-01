@@ -259,6 +259,57 @@
                   <span class="text-success ms-2" *ngIf="followUpSuccess">{{ followUpSuccess }}</span>
                 </div>
               </div>
+
+              <div class="followup-card mt-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h6 class="mb-0">Surgery Referral</h6>
+                  <span class="badge bg-soft-primary text-primary">Doctor Decision</span>
+                </div>
+
+                <div class="text-muted small mb-3">
+                  Use this section when the patient must be transferred into the surgical planning flow.
+                </div>
+
+                <div class="row g-3">
+                  <div class="col-md-8">
+                    <label class="form-label">Reason for Surgery</label>
+                    <textarea class="form-control" rows="3" [(ngModel)]="surgeryRequestForm.reason" placeholder="Summarize why surgery is required..."></textarea>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Urgency</label>
+                    <select class="form-select" [(ngModel)]="surgeryRequestForm.urgencyLevel">
+                      <option value="SCHEDULED">Scheduled</option>
+                      <option value="URGENT">Urgent</option>
+                    </select>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Clinical Note for Surgical Team</label>
+                    <textarea class="form-control" rows="3" [(ngModel)]="surgeryRequestForm.clinicalNote" placeholder="Relevant renal, hemodynamic, imaging, and preparation context..."></textarea>
+                  </div>
+                </div>
+
+                <div class="mt-3">
+                  <button class="btn btn-primary btn-sm" (click)="submitSurgeryRequest()" [disabled]="surgeryRequestSubmitting">
+                    {{ surgeryRequestSubmitting ? 'Sending...' : 'Send to Surgical Planning' }}
+                  </button>
+                  <span class="text-danger ms-2" *ngIf="surgeryRequestError">{{ surgeryRequestError }}</span>
+                  <span class="text-success ms-2" *ngIf="surgeryRequestSuccess">{{ surgeryRequestSuccess }}</span>
+                </div>
+
+                <div class="mt-3">
+                  <div class="small fw-semibold mb-2">Requests linked to this consultation</div>
+                  <div *ngIf="surgeryRequests.length === 0" class="text-muted small">No surgery request created yet for this consultation.</div>
+                  <div *ngFor="let request of surgeryRequests" class="history-item">
+                    <div>
+                      <div class="fw-semibold">Request #{{ request.id }} - {{ request.patientFirstName }} {{ request.patientLastName }}</div>
+                      <div class="text-muted small">
+                        {{ request.reason }}
+                      </div>
+                    </div>
+                    <span class="badge" [ngClass]="surgeryRequestStatusClass(request.status)">{{ request.status }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="tab-pane" [class.active]="activeTab === 'labs'">

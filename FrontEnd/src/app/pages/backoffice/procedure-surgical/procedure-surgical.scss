@@ -61,6 +61,174 @@
   white-space: nowrap;
 }
 
+.request-filter {
+  min-width: 180px;
+}
+
+.workspace-select {
+  min-width: 280px;
+  max-width: 420px;
+}
+
+.workspace-panel {
+  height: 100%;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #fff;
+}
+
+.workspace-section-label {
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #667085;
+}
+
+.workspace-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #101828;
+}
+
+.workspace-meta {
+  margin-top: 0.2rem;
+  color: #667085;
+  font-size: 0.85rem;
+}
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(90px, 120px) minmax(0, 1fr);
+  gap: 0.55rem 0.75rem;
+  align-items: start;
+
+  span {
+    color: #667085;
+    font-size: 0.82rem;
+  }
+
+  strong {
+    color: #101828;
+    font-size: 0.88rem;
+  }
+}
+
+.workspace-note {
+  padding: 0.75rem;
+  border-radius: 6px;
+  background: #f8f9fc;
+  color: #344054;
+  font-size: 0.88rem;
+}
+
+.request-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid #e9ecef;
+
+  &.selected {
+    margin: 0 -0.4rem;
+    padding: 0.9rem 0.4rem;
+    border-radius: 8px;
+    background: #eef6ff;
+    border-bottom-color: transparent;
+  }
+
+  &:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+}
+
+.planning-empty-state {
+  padding: 0.9rem 1rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #344054;
+}
+
+.planning-request-meta {
+  display: flex;
+  gap: 0.75rem 1rem;
+  flex-wrap: wrap;
+  color: #344054;
+
+  span {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: baseline;
+  }
+}
+
+.queue-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem 1rem;
+  align-items: start;
+}
+
+.queue-stat {
+  padding: 0.9rem 1rem;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #fff;
+
+  strong {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 1.45rem;
+    line-height: 1.1;
+    color: #101828;
+  }
+}
+
+.queue-label {
+  display: block;
+  color: #667085;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.queue-note {
+  grid-column: 1 / -1;
+  padding: 0.95rem 1rem;
+  border-radius: 8px;
+  background: #f8f9fc;
+  color: #344054;
+  font-size: 0.9rem;
+}
+
+.schedule-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid #e9ecef;
+
+  &:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+}
+
+.request-main {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.request-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
 .surgical-stats {
   .card {
     margin-bottom: 0;
@@ -90,6 +258,31 @@
     background: #ffe3e3;
     color: #c92a2a;
   }
+}
+
+.schedule-groups {
+  display: grid;
+  gap: 1rem;
+}
+
+.schedule-group {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 0.95rem 1rem;
+  background: #fff;
+}
+
+.schedule-group-title {
+  margin-bottom: 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #667085;
+}
+
+.schedule-item.attention {
+  border-left: 3px solid #f97316;
+  padding-left: 0.75rem;
 }
 
 .table td,
@@ -143,10 +336,102 @@
   }
 }
 
+.workspace-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.workspace-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+
+  .btn.active {
+    background: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+  }
+}
+
+.attention-item {
+  padding: 0.85rem 0.95rem;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.checklist-item {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #e9ecef;
+
+  &:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+}
+
+.check-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  margin-top: 0.2rem;
+  background: #d0d5dd;
+
+  &.done {
+    background: #12b76a;
+  }
+}
+
 @media (min-width: 1200px) {
   .surgical-management-page {
     .stretch-full {
       height: auto;
+    }
+  }
+}
+
+@media (max-width: 767.98px) {
+  .queue-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .workspace-hero {
+    flex-direction: column;
+  }
+
+  .workspace-select {
+    min-width: 100%;
+    max-width: none;
+  }
+
+  .request-item {
+    flex-direction: column;
+  }
+
+  .request-actions {
+    width: 100%;
+    flex-wrap: wrap;
+
+    .status-select,
+    .btn {
+      width: 100%;
     }
   }
 }

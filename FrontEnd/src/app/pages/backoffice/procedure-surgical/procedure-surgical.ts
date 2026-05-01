@@ -2,7 +2,8 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ProcedureApiService, SurgicalCase } from '../../../core/services/procedure-api.service';
+import { AuthStorageService } from '../../../core/auth/auth-storage.service';
+import { ProcedureApiService, SurgicalCase, SurgeryRequest } from '../../../core/services/procedure-api.service';
 import { ClinicalApiService, DoctorSearchResult } from '../../../core/services/clinical-api.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -166,15 +167,24 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
   ];
   selectedPatient: PatientLookupItem | null = null;
   availablePatients: PatientLookupItem[] = [];
+  surgeryRequests: SurgeryRequest[] = [];
+  requestStatusFilter = 'ALL';
+  readonly surgeryRequestStatuses = ['PENDING', 'PLANNED', 'REJECTED', 'CANCELLED'];
+  editRequestStatus: Record<number, string> = {};
+  selectedWorkspaceCaseId = '';
+  workspaceSection: 'overview' | 'patient' | 'referral' | 'planning' = 'overview';
   patientLoading = false;
   patientError = '';
   availableSurgeons: DoctorSearchResult[] = [];
   selectedSurgeon: DoctorSearchResult | null = null;
   surgeonLoading = false;
   surgeonError = '';
+  role = '';
 
   createForm = {
     patientId: '',
+    consultationId: '',
+    surgeryRequestId: null as number | null,
     firstName: '',
     lastName: '',
     age: 0,
@@ -201,15 +211,121 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   constructor(
+    private authStorage: AuthStorageService,
     private procedureApi: ProcedureApiService,
     private clinicalApi: ClinicalApiService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
+    this.role = this.authStorage.getRole() ?? '';
     this.loadPatients();
     this.loadSurgeons();
+    this.loadSurgeryRequests();
     this.loadCases();
+  }
+
+  get isReceptionist(): boolean {
+    return this.role === 'RECEPTIONIST';
+  }
+
+  get isSurgeon(): boolean {
+    return this.role === 'SURGEON';
+  }
+
+  get canPlanCases(): boolean {
+    return this.isReceptionist || this.isSurgeon;
+  }
+
+  get canManageWorkflow(): boolean {
+    return this.isSurgeon;
+  }
+
+  get pageTitle(): string {
+    return this.isReceptionist ? 'Surgical Planning Desk' : 'Surgical Management';
+  }
+
+  get intakeTitle(): string {
+    return 'Plan Surgical Case';
+  }
+
+  get intakeSummaryTitle(): string {
+    return 'Planning workspace';
+  }
+
+  get intakeSummaryText(): string {
+    return 'Use this panel to transform a validated surgery request into a scheduled surgical case.';
+  }
+
+  get workspaceTitle(): string {
+    return this.isReceptionist ? 'Planned Case Review' : 'Surgeon Workspace';
+  }
+
+  get workspaceSubtitle(): string {
+    return this.isReceptionist
+      ? 'Review the patient snapshot and the final scheduling data after a case has been created.'
+      : 'Read-only patient and referral context for the selected surgical case.';
+  }
+
+  get boardTitle(): string {
+    return this.isSurgeon ? 'My Surgical Cases' : 'Scheduled Surgical Cases';
+  }
+
+  get boardSubtitle(): string {
+    return this.isSurgeon
+      ? 'Only cases assigned to you are shown here for intra-op and follow-up actions.'
+      : 'Track created cases, review their schedule, and confirm what has already been handed off to the surgical team.';
+  }
+
+  get currentWorkflowSteps(): Array<{ code: string; label: string; detail: string }> {
+    if (this.isReceptionist) {
+      return [
+        { code: 'REQUEST', label: 'Review Request', detail: 'Validate referral, urgency and consultation context.' },
+        { code: 'ASSIGN', label: 'Assign Surgeon', detail: 'Choose the responsible surgeon and supporting team.' },
+        { code: 'SCHEDULE', label: 'Schedule Slot', detail: 'Set date, time, room and estimated duration.' },
+        { code: 'CREATE', label: 'Create Case', detail: 'Generate the surgical case for surgeon handoff.' }
+      ];
+    }
+
+    return [
+      { code: 'OPEN', label: 'Operation Review', detail: 'Check planning, referral and patient file.' },
+      { code: 'READY_FOR_INTERVENTION', label: 'Pre-Op Ready', detail: 'Proceed once pre-op clearance is complete.' },
+      { code: 'IN_PROGRESS', label: 'Intervention', detail: 'Track the intra-operative execution state.' },
+      { code: 'POSTOP_STABLE', label: 'Recovery', detail: 'Follow the patient after the operation.' }
+    ];
+  }
+
+  get planningQueueCount(): number {
+    return this.surgeryRequests.filter((item) => item.status === 'PENDING').length;
+  }
+
+  get plannedRequestsCount(): number {
+    return this.surgeryRequests.filter((item) => item.status === 'PLANNED').length;
+  }
+
+  get myScheduledCases(): SurgicalCase[] {
+    return [...this.roleScopedCases]
+      .filter((item) => item.status !== 'ARCHIVED' && item.status !== 'CANCELLED')
+      .sort((a, b) => this.caseDateTimeValue(a) - this.caseDateTimeValue(b));
+  }
+
+  get myTodayCases(): SurgicalCase[] {
+    const today = this.todayIsoDate();
+    return this.myScheduledCases.filter((item) => item.scheduledDate === today);
+  }
+
+  get myUpcomingCases(): SurgicalCase[] {
+    const today = this.todayIsoDate();
+    return this.myScheduledCases.filter((item) => !!item.scheduledDate && item.scheduledDate > today);
+  }
+
+  get needsAttentionCases(): SurgicalCase[] {
+    return this.myScheduledCases.filter((item) =>
+      item.urgencyLevel === 'URGENT'
+      || item.status === 'BLOCKED_PREOP'
+      || item.status === 'POSTOP_UNSTABLE'
+      || !String(item.operatingRoom ?? '').trim()
+    );
   }
 
   ngOnDestroy(): void {
@@ -219,7 +335,7 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
 
   get filteredCases(): SurgicalCase[] {
     const term = this.searchTerm.trim().toLowerCase();
-    return this.cases.filter((surgicalCase) => {
+    return this.roleScopedCases.filter((surgicalCase) => {
       const isArchived = surgicalCase.status === 'ARCHIVED';
       if (!this.showArchived && isArchived) {
         return false;
@@ -244,19 +360,176 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
   }
 
   get totalCases(): number {
-    return this.cases.length;
+    return this.roleScopedCases.length;
   }
 
   get activeCasesCount(): number {
-    return this.cases.filter((item) => item.status !== 'ARCHIVED' && item.status !== 'DONE' && item.status !== 'CANCELLED').length;
+    return this.roleScopedCases.filter((item) => item.status !== 'ARCHIVED' && item.status !== 'DONE' && item.status !== 'CANCELLED').length;
   }
 
   get blockedCasesCount(): number {
-    return this.cases.filter((item) => item.status === 'BLOCKED_PREOP' || item.status === 'POSTOP_UNSTABLE').length;
+    return this.roleScopedCases.filter((item) => item.status === 'BLOCKED_PREOP' || item.status === 'POSTOP_UNSTABLE').length;
   }
 
   get archivedCasesCount(): number {
-    return this.cases.filter((item) => item.status === 'ARCHIVED').length;
+    return this.roleScopedCases.filter((item) => item.status === 'ARCHIVED').length;
+  }
+
+  get plannedCasesCount(): number {
+    return this.roleScopedCases.filter((item) => item.status === 'OPEN' || item.status === 'READY_FOR_INTERVENTION').length;
+  }
+
+  get todayCasesCount(): number {
+    const today = this.todayIsoDate();
+    return this.roleScopedCases.filter((item) => item.scheduledDate === today && item.status !== 'CANCELLED' && item.status !== 'ARCHIVED').length;
+  }
+
+  get upcomingCasesCount(): number {
+    const today = this.todayIsoDate();
+    return this.roleScopedCases.filter((item) => !!item.scheduledDate && item.scheduledDate > today && item.status !== 'CANCELLED' && item.status !== 'ARCHIVED').length;
+  }
+
+  get filteredSurgeryRequests(): SurgeryRequest[] {
+    return this.surgeryRequests.filter((item) =>
+      this.requestStatusFilter === 'ALL' || item.status === this.requestStatusFilter
+    );
+  }
+
+  get selectedPlanningRequest(): SurgeryRequest | undefined {
+    const requestId = this.createForm.surgeryRequestId;
+    if (!requestId) {
+      return undefined;
+    }
+    return this.surgeryRequests.find((item) => item.id === requestId);
+  }
+
+  get selectedWorkspaceCase(): SurgicalCase | undefined {
+    const id = Number(this.selectedWorkspaceCaseId);
+    return this.roleScopedCases.find((item) => item.id === id) ?? this.cases.find((item) => item.id === id);
+  }
+
+  get selectedWorkspacePatient(): PatientLookupItem | undefined {
+    const surgicalCase = this.selectedWorkspaceCase;
+    if (!surgicalCase) {
+      return undefined;
+    }
+    return this.availablePatients.find((item) => String(item.id) === String(surgicalCase.patientId));
+  }
+
+  get selectedWorkspaceRequest(): SurgeryRequest | undefined {
+    const surgicalCase = this.selectedWorkspaceCase;
+    if (!surgicalCase?.surgeryRequestId) {
+      return undefined;
+    }
+    return this.surgeryRequests.find((item) => item.id === surgicalCase.surgeryRequestId);
+  }
+
+  get selectedWorkspacePatientName(): string {
+    const surgicalCase = this.selectedWorkspaceCase;
+    if (!surgicalCase) {
+      return '-';
+    }
+    return `${surgicalCase.firstName || ''} ${surgicalCase.lastName || ''}`.trim() || '-';
+  }
+
+  get selectedWorkspacePatientAge(): string {
+    const age = Number(this.selectedWorkspaceCase?.age ?? NaN);
+    return Number.isFinite(age) && age >= 0 ? `${age} years` : '-';
+  }
+
+  get selectedWorkspaceDob(): string {
+    const dateOfBirth = this.selectedWorkspacePatient?.dateOfBirth;
+    if (!dateOfBirth) {
+      return '-';
+    }
+    const parsed = new Date(dateOfBirth);
+    return Number.isNaN(parsed.getTime()) ? dateOfBirth : parsed.toLocaleDateString();
+  }
+
+  get selectedWorkspaceStatusSummary(): string {
+    const surgicalCase = this.selectedWorkspaceCase;
+    if (!surgicalCase) {
+      return '-';
+    }
+    return this.workflowStepLabel(surgicalCase);
+  }
+
+  get selectedWorkspaceOperationSummary(): Array<{ label: string; value: string }> {
+    const surgicalCase = this.selectedWorkspaceCase;
+    if (!surgicalCase) {
+      return [];
+    }
+
+    return [
+      { label: 'Procedure', value: surgicalCase.procedureName || '-' },
+      { label: 'Surgery type', value: surgicalCase.surgeryType || '-' },
+      { label: 'Schedule', value: this.formatDateTime(surgicalCase.scheduledDate, surgicalCase.scheduledStartTime) },
+      { label: 'Operating room', value: surgicalCase.operatingRoom || '-' },
+      { label: 'Lead surgeon', value: surgicalCase.surgeonId || '-' },
+      { label: 'Status', value: this.labelFrom(this.caseStatusLabels, surgicalCase.status) }
+    ];
+  }
+
+  get selectedWorkspaceAttentionItems(): string[] {
+    const surgicalCase = this.selectedWorkspaceCase;
+    const items: string[] = [];
+    if (!surgicalCase) {
+      return items;
+    }
+
+    if (surgicalCase.urgencyLevel === 'URGENT') {
+      items.push('Urgent case requiring priority scheduling and pre-op validation.');
+    }
+    if (surgicalCase.status === 'BLOCKED_PREOP') {
+      items.push('Pre-op clearance is blocked. Do not proceed until blocking issues are resolved.');
+    }
+    if (surgicalCase.status === 'POSTOP_UNSTABLE') {
+      items.push('Post-op instability flagged. Escalated monitoring is required.');
+    }
+    if (!String(surgicalCase.operatingRoom ?? '').trim()) {
+      items.push('Operating room has not been assigned yet.');
+    }
+    if (!String(surgicalCase.nurseTeam ?? '').trim()) {
+      items.push('Nurse team has not been documented yet.');
+    }
+
+    return items;
+  }
+
+  get selectedWorkspacePlanningChecklist(): Array<{ label: string; done: boolean; value: string }> {
+    const surgicalCase = this.selectedWorkspaceCase;
+    const request = this.selectedWorkspaceRequest;
+    if (!surgicalCase) {
+      return [];
+    }
+
+    return [
+      {
+        label: 'Referral linked',
+        done: !!request,
+        value: request ? `Request #${request.id}` : 'No linked request'
+      },
+      {
+        label: 'Operating room',
+        done: !!String(surgicalCase.operatingRoom ?? '').trim(),
+        value: surgicalCase.operatingRoom || 'Missing'
+      },
+      {
+        label: 'Lead surgeon',
+        done: !!String(surgicalCase.surgeonId ?? '').trim(),
+        value: surgicalCase.surgeonId || 'Missing'
+      },
+      {
+        label: 'Schedule fixed',
+        done: !!String(surgicalCase.scheduledDate ?? '').trim() && !!String(surgicalCase.scheduledStartTime ?? '').trim(),
+        value: this.formatDateTime(surgicalCase.scheduledDate, surgicalCase.scheduledStartTime)
+      },
+      {
+        label: 'Nurse team',
+        done: !!String(surgicalCase.nurseTeam ?? '').trim(),
+        value: surgicalCase.nurseTeam || 'Missing'
+      }
+    ];
   }
 
   get generatedPatientReference(): string {
@@ -297,12 +570,30 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
           this.editOfferStatus[surgicalCase.id] = surgicalCase.offerStatus;
         }
 
+        this.syncSelectedWorkspaceCase();
         this.loading = false;
         this.refreshView();
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
         this.loading = false;
         this.errorMessage = this.formatApiError(err, 'Failed to load surgical cases.');
+        this.refreshView();
+      }
+    });
+  }
+
+  loadSurgeryRequests(): void {
+    this.procedureApi.getSurgeryRequests().subscribe({
+      next: (items) => {
+        this.surgeryRequests = items ?? [];
+        this.editRequestStatus = {};
+        for (const request of this.surgeryRequests) {
+          this.editRequestStatus[request.id] = request.status;
+        }
+        this.refreshView();
+      },
+      error: () => {
+        this.surgeryRequests = [];
         this.refreshView();
       }
     });
@@ -323,7 +614,7 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
     const lastName = this.createForm.lastName.trim();
     const age = Number(this.createForm.age);
     const gender = this.createForm.gender.trim();
-    const medicalRecordNumber = this.createForm.medicalRecordNumber.trim();
+    const medicalRecordNumber = this.generatedPatientReference;
     const surgeryType = this.createForm.surgeryType.trim();
     const procedureName = this.requiresCustomProcedureName
       ? this.createForm.customProcedureName.trim()
@@ -341,6 +632,8 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
     const status = 'OPEN';
 
     const patientId = this.createForm.patientId.trim();
+    const consultationId = this.createForm.consultationId.trim() || null;
+    const surgeryRequestId = this.createForm.surgeryRequestId;
 
     this.saving = true;
     this.errorMessage = '';
@@ -348,6 +641,8 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
 
     this.procedureApi.createSurgicalCase({
       patientId,
+      consultationId,
+      surgeryRequestId,
       firstName,
       lastName,
       age,
@@ -370,6 +665,8 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
       next: () => {
         this.createForm = {
           patientId: '',
+          consultationId: '',
+          surgeryRequestId: null,
           firstName: '',
           lastName: '',
           age: 0,
@@ -395,9 +692,12 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
         this.patientError = '';
         this.surgeonError = '';
         this.createAttempted = false;
-        this.successMessage = 'Surgical case created successfully. WhatsApp alert triggered for the surgical coordination scenario.';
+        this.successMessage = this.isReceptionist
+          ? 'Surgical case created and linked to the planning request.'
+          : 'Surgical case created successfully. WhatsApp alert triggered for the surgical coordination scenario.';
         this.saving = false;
         this.refreshView();
+        this.loadSurgeryRequests();
         this.loadCases();
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
@@ -479,6 +779,102 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
         this.refreshView();
       }
     });
+  }
+
+  updateSurgeryRequestStatus(request: SurgeryRequest): void {
+    const status = (this.editRequestStatus[request.id] ?? '').trim().toUpperCase();
+    if (!status) {
+      this.errorMessage = 'Surgery request status is required.';
+      this.refreshView();
+      return;
+    }
+
+    this.procedureApi.updateSurgeryRequestStatus(request.id, { status }).subscribe({
+      next: () => {
+        this.successMessage = 'Surgery request status updated.';
+        this.refreshView();
+        this.loadSurgeryRequests();
+      },
+      error: (err: { error?: { message?: string }; message?: string }) => {
+        this.errorMessage = this.formatApiError(err, 'Failed to update surgery request.');
+        this.refreshView();
+      }
+    });
+  }
+
+  startPlanningRequest(request: SurgeryRequest): void {
+    const patient = this.availablePatients.find((item) => String(item.id) === String(request.patientId)) ?? null;
+    this.selectedPatient = patient;
+    this.patientError = '';
+
+    this.createForm.patientId = request.patientId;
+    this.createForm.consultationId = request.consultationId;
+    this.createForm.surgeryRequestId = request.id;
+    this.createForm.firstName = request.patientFirstName;
+    this.createForm.lastName = request.patientLastName;
+    this.createForm.medicalRecordNumber = this.generatedPatientReference;
+    this.createForm.surgeryType = '';
+    this.createForm.procedureName = this.otherProcedureOption;
+    this.createForm.customProcedureName = request.reason;
+    this.createForm.surgeryCategory = 'MAJOR_SURGERY';
+    this.createForm.urgencyLevel = request.urgencyLevel || 'SCHEDULED';
+    this.createForm.surgeonId = '';
+    this.createForm.assistantSurgeonId = '';
+    this.createForm.anesthesiologistId = '';
+    this.createForm.nurseTeam = '';
+    this.createForm.scheduledDate = '';
+    this.createForm.scheduledStartTime = '';
+    this.createForm.estimatedDurationMinutes = 180;
+    this.createForm.operatingRoom = '';
+    this.selectedSurgeon = null;
+
+    if (patient) {
+      const age = this.patientAge(patient.dateOfBirth);
+      this.createForm.age = age ?? 0;
+      this.createForm.gender = this.mapPatientGender(patient.sex);
+    } else {
+      this.createForm.age = 0;
+      this.createForm.gender = 'MALE';
+    }
+
+    this.createAttempted = false;
+    this.errorMessage = '';
+    this.successMessage = `Planning surgery request #${request.id}. Complete the scheduling fields, then create the surgical case.`;
+    this.refreshView();
+  }
+
+  clearPlanningRequest(): void {
+    this.clearSelectedPatient();
+    this.createForm.consultationId = '';
+    this.createForm.surgeryRequestId = null;
+    this.createForm.procedureName = '';
+    this.createForm.customProcedureName = '';
+    this.createForm.medicalRecordNumber = '';
+    this.createForm.urgencyLevel = 'SCHEDULED';
+    this.createForm.surgeonId = '';
+    this.createForm.assistantSurgeonId = '';
+    this.createForm.anesthesiologistId = '';
+    this.createForm.nurseTeam = '';
+    this.createForm.scheduledDate = '';
+    this.createForm.scheduledStartTime = '';
+    this.createForm.estimatedDurationMinutes = 180;
+    this.createForm.operatingRoom = '';
+    this.selectedSurgeon = null;
+    this.successMessage = '';
+    this.refreshView();
+  }
+
+  openWorkspace(surgicalCase: SurgicalCase): void {
+    this.selectedWorkspaceCaseId = String(surgicalCase.id);
+    this.workspaceSection = 'overview';
+    this.errorMessage = '';
+    this.successMessage = `Workspace opened for ${surgicalCase.firstName} ${surgicalCase.lastName}.`;
+    this.refreshView();
+  }
+
+  setWorkspaceSection(section: 'overview' | 'patient' | 'referral' | 'planning'): void {
+    this.workspaceSection = section;
+    this.refreshView();
   }
 
   archiveCase(surgicalCase: SurgicalCase): void {
@@ -725,6 +1121,20 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
     }
   }
 
+  surgeryRequestStatusClass(status: string | null | undefined): string {
+    if (status === 'PLANNED') {
+      return 'bg-soft-success text-success';
+    }
+    if (status === 'REJECTED' || status === 'CANCELLED') {
+      return 'bg-soft-danger text-danger';
+    }
+    return 'bg-soft-warning text-warning';
+  }
+
+  isPlanningRequestSelected(request: SurgeryRequest): boolean {
+    return this.createForm.surgeryRequestId === request.id;
+  }
+
   nextActionLabel(surgicalCase: SurgicalCase): string {
     switch (surgicalCase.status) {
       case 'OPEN':
@@ -771,8 +1181,65 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
     return this.availableStatusesFor(surgicalCase).includes('ARCHIVED') && surgicalCase.status !== 'ARCHIVED';
   }
 
+  workspaceReadinessLabel(surgicalCase: SurgicalCase | undefined): string {
+    if (!surgicalCase) {
+      return '-';
+    }
+
+    switch (surgicalCase.status) {
+      case 'READY_FOR_INTERVENTION':
+        return 'Ready for intervention';
+      case 'OPEN':
+        return 'Awaiting final pre-op review';
+      case 'BLOCKED_PREOP':
+        return 'Pre-op blocked';
+      case 'IN_PROGRESS':
+        return 'Intervention in progress';
+      default:
+        return this.labelFrom(this.caseStatusLabels, surgicalCase.status);
+    }
+  }
+
   private refreshView(): void {
     this.cdr.markForCheck();
+  }
+
+  private syncSelectedWorkspaceCase(): void {
+    if (this.roleScopedCases.length === 0) {
+      this.selectedWorkspaceCaseId = '';
+      return;
+    }
+
+    const selectedId = Number(this.selectedWorkspaceCaseId);
+    const exists = this.roleScopedCases.some((item) => item.id === selectedId);
+    if (!this.selectedWorkspaceCaseId || Number.isNaN(selectedId) || !exists) {
+      const nextCase = this.roleScopedCases.find((item) => item.status !== 'ARCHIVED' && item.status !== 'CANCELLED') ?? this.roleScopedCases[0];
+      this.selectedWorkspaceCaseId = String(nextCase.id);
+    }
+  }
+
+  get roleScopedCases(): SurgicalCase[] {
+    if (!this.isSurgeon) {
+      return this.cases;
+    }
+
+    const actorId = this.authStorage.getUser()?.keycloakId;
+    if (!actorId) {
+      return [];
+    }
+
+    return this.cases.filter((item) => String(item.surgeonId ?? '').trim() === String(actorId).trim());
+  }
+
+  private caseDateTimeValue(surgicalCase: SurgicalCase): number {
+    const datePart = String(surgicalCase.scheduledDate ?? '').trim();
+    const timePart = String(surgicalCase.scheduledStartTime ?? '').trim() || '00:00';
+    const parsed = new Date(`${datePart}T${timePart}`);
+    return Number.isNaN(parsed.getTime()) ? Number.MAX_SAFE_INTEGER : parsed.getTime();
+  }
+
+  private todayIsoDate(): string {
+    return new Date().toISOString().slice(0, 10);
   }
 
   private loadPatients(): void {
@@ -826,7 +1293,6 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
     const firstName = this.createForm.firstName.trim();
     const lastName = this.createForm.lastName.trim();
     const age = Number(this.createForm.age);
-    const medicalRecordNumber = this.createForm.medicalRecordNumber.trim();
     const surgeryType = this.createForm.surgeryType.trim();
     const procedureName = this.requiresCustomProcedureName
       ? this.createForm.customProcedureName.trim()
@@ -839,11 +1305,15 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
 
     return {
       patientId: !patientId ? 'Please select an existing pediatric patient before creating the case.' : null,
+      consultationId: null,
+      surgeryRequestId: this.isReceptionist && !this.createForm.surgeryRequestId
+        ? 'Select a surgery request from the planning queue before creating the case.'
+        : null,
       firstName: firstName.length < 2 ? 'First name must contain at least 2 characters.' : null,
       lastName: lastName.length < 2 ? 'Last name must contain at least 2 characters.' : null,
       age: !Number.isFinite(age) || age < 0 || age > 17 ? 'Age must be between 0 and 17 years for pediatric care.' : null,
       gender: !this.createForm.gender ? 'Gender is required.' : null,
-      medicalRecordNumber: medicalRecordNumber.length < 3 ? 'Medical record number is required.' : null,
+      medicalRecordNumber: null,
       surgeryType: !surgeryType ? 'Please select a surgery type.' : null,
       procedureName: procedureName.length < 3 ? 'Procedure name must contain at least 3 characters.' : null,
       customProcedureName: null,
