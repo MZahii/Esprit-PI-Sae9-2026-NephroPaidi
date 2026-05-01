@@ -9,6 +9,7 @@ public record SurgicalCaseResponse(
     String patientId,
     String consultationId,
     String appointmentId,
+    Long surgeryRequestId,
     String firstName,
     String lastName,
     Integer age,

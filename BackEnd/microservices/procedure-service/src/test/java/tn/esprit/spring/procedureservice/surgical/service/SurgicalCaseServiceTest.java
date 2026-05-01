@@ -63,6 +63,7 @@ class SurgicalCaseServiceTest {
             "15",
             null,
             null,
+            null,
             "Sami",
             "Kid",
             12,
