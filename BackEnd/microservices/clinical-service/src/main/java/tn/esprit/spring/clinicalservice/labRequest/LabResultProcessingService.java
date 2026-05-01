@@ -5,9 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tn.esprit.spring.clinicalservice.consultation.dto.ConsultationMetricsRequest;
+// import tn.esprit.spring.clinicalservice.consultation.dto.ConsultationMetricsRequest; // Phase 10
 import tn.esprit.spring.clinicalservice.consultation.metrics.*;
-import tn.esprit.spring.clinicalservice.consultation.repository.ConsultationRepository;
+// import tn.esprit.spring.clinicalservice.consultation.repository.ConsultationRepository; // Phase 10
 import tn.esprit.spring.clinicalservice.labRequest.events.LabResultUploadedEvent;
 
 import java.time.LocalDateTime;
@@ -38,8 +38,8 @@ public class LabResultProcessingService {
     private final CKDStageResolver stageResolver;
     private final TrendAnalysisService trendAnalyzer;
     private final LabUnitConversionService unitConverter;
-    private final ConsultationRepository consultationRepository;
-    private final ConsultationMetricsService metricsService;
+    // private final ConsultationRepository consultationRepository; // Inject when Phase 10 auto-scheduling ready
+    // private final ConsultationMetricsService metricsService; // Inject when metrics update ready
     // private final NotificationService notificationService; // Inject when ready
     // private final ReceptionistSchedulingService schedulingService; // Inject when ready
 
@@ -152,7 +152,8 @@ public class LabResultProcessingService {
         log.info("📤 Publishing LabResultProcessedEvent for downstream: consultation={}", result.getConsultationId());
         // eventPublisher.publishEvent(new LabResultProcessedEvent(...));
     }
-     * 
+
+    /**
      * Main orchestration method that:
      * - Validates inputs
      * - Converts units
@@ -203,17 +204,11 @@ public class LabResultProcessingService {
             TrendAnalysisService.TrendData trendData = fetchAndAnalyzeTrend(consultationId, eGFR);
 
             // Step 7: Update consultation metrics in database
-            ConsultationMetricsRequest metricsRequest = buildMetricsRequest(
-                    serumCreatinineMicromolPerL,
-                    patientAge,
-                    patientSex,
-                    eGFR,
-                    ckdStage.name(),
-                    trendData,
-                    qualityFlag.name()
-            );
-
-            // Note: This would update the database
+            // TODO: Implement when metricsService is ready for Phase 10
+            // ConsultationMetricsRequest metricsRequest = buildMetricsRequest(
+            //         serumCreatinineMicromolPerL, patientAge, patientSex,
+            //         eGFR, ckdStage.name(), trendData, qualityFlag.name()
+            // );
             // ConsultationMetrics updatedMetrics = metricsService.upsert(consultationId, metricsRequest);
 
             // Step 8: Build response
@@ -290,7 +285,9 @@ public class LabResultProcessingService {
 
     /**
      * Build metrics request for storage
+     * TODO: Enable in Phase 10 when metricsService is injected
      */
+    /*
     private ConsultationMetricsRequest buildMetricsRequest(
             double scrMicromolPerL,
             int ageYears,
@@ -321,6 +318,7 @@ public class LabResultProcessingService {
 
         return request;
     }
+    */
 
     /**
      * Trigger notifications to relevant staff
