@@ -375,6 +375,14 @@ export class ClinicalApiService {
     );
   }
 
+  startConsultation(appointmentId: string): Observable<any> {
+    return this.http.post<any>(
+      `${this.base}/api/clinical/appointments/${appointmentId}/start`,
+      {},
+      { headers: this.doctorHeaders() }
+    );
+  }
+
   startAppointmentConsultation(id: string): Observable<{ consultationId: string }> {
     return this.http.post<{ consultationId: string }>(
       `${this.base}/api/clinical/appointments/${id}/start-consultation`,

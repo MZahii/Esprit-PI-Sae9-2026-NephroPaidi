@@ -252,3 +252,16 @@
   gap: 2px;
   font-size: 13px;
 }
+
+.day-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.day-actions .btn {
+  white-space: nowrap;
+  font-size: 12px;
+  padding: 4px 8px;
+}
