@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { ClinicalApiService } from '../../../core/services/clinical-api.service';
+import { AppointmentsApiService } from '../../../core/services/appointments-api.service';
 import { GuardianPatientsService } from '../../../features/administrative/api/guardian-patients.service';
 
 interface CalendarDay {
@@ -31,6 +32,7 @@ export class CalendarPage implements OnInit {
 
   constructor(
     private api: ClinicalApiService,
+    private appointmentsApi: AppointmentsApiService,
     private guardianPatients: GuardianPatientsService
   ) {}
 
@@ -74,7 +76,7 @@ export class CalendarPage implements OnInit {
     const start = new Date(this.viewDate.getFullYear(), this.viewDate.getMonth(), 1, 0, 0, 0);
     const end = new Date(this.viewDate.getFullYear(), this.viewDate.getMonth() + 1, 0, 23, 59, 59);
 
-    this.guardianPatients.getGuardianPatientIds().pipe(
+    const clinical$ = this.guardianPatients.getGuardianPatientIds().pipe(
       switchMap((patientIds: number[]) => {
         if (!patientIds.length) return of([]);
         const requests = patientIds.map((patientId: number) =>
@@ -84,11 +86,33 @@ export class CalendarPage implements OnInit {
             to: this.toIso(end)
           }).pipe(catchError(() => of([])))
         );
-        return forkJoin(requests).pipe(
-          map((sets: any[][]) => sets.flat())
-        );
+        return forkJoin(requests).pipe(map((sets: any[][]) => sets.flat()));
       }),
-      map((items: any[]) => this.dedupeAppointments(items)),
+      catchError(() => of([]))
+    );
+
+    const approvedRequests$ = this.appointmentsApi.getMyRequests().pipe(
+      map((items) => (items || [])
+        .filter((item) => item.status === 'APPROVED')
+        .map((item) => ({
+          id: `REQ-${item.id}`,
+          patientId: item.patientId,
+          scheduledAt: item.scheduledDate || item.requestedDate,
+          status: 'CONFIRMED',
+          reason: item.reason,
+          source: 'REQUEST'
+        }))
+        .filter((item) => !!item.scheduledAt)
+        .filter((item) => {
+          const dt = new Date(item.scheduledAt as string);
+          return dt >= start && dt <= end;
+        })
+      ),
+      catchError(() => of([]))
+    );
+
+    forkJoin([clinical$, approvedRequests$]).pipe(
+      map(([clinicalItems, requestItems]) => this.mergeAndDedupeAppointments(clinicalItems as any[], requestItems as any[])),
       catchError(() => {
         this.error = 'Failed to load calendar appointments.';
         return of([]);
@@ -168,5 +192,28 @@ export class CalendarPage implements OnInit {
       seen.add(key);
       return true;
     });
+  }
+
+  private mergeAndDedupeAppointments(clinicalItems: any[], requestItems: any[]): any[] {
+    const clinical = this.dedupeAppointments(clinicalItems || []);
+    const request = this.dedupeAppointments(requestItems || []);
+
+    const clinicalTimeKeys = new Set(
+      clinical.map((item) => `${item?.patientId ?? ''}|${this.toMinuteKey(item?.scheduledAt)}`)
+    );
+
+    const filteredRequests = request.filter((item) => {
+      const key = `${item?.patientId ?? ''}|${this.toMinuteKey(item?.scheduledAt)}`;
+      return !clinicalTimeKeys.has(key);
+    });
+
+    return [...clinical, ...filteredRequests].sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+  }
+
+  private toMinuteKey(value: any): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 }

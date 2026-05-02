@@ -17,6 +17,7 @@ public class KeycloakAdminConfig {
     private String realm;
     private Admin admin = new Admin();
     private Auth auth = new Auth();
+    private Verification verification = new Verification();
 
     @Data
     public static class Admin {
@@ -29,6 +30,11 @@ public class KeycloakAdminConfig {
     public static class Auth {
         private String clientId;
         private String clientSecret;
+    }
+
+    @Data
+    public static class Verification {
+        private boolean enabled = true;
     }
 
     @Bean

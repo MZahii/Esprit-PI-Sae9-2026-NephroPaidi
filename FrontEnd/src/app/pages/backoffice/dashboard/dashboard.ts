@@ -12,9 +12,32 @@ import { environment } from '../../../../environments/environment';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 
 declare global {
-  interface Window {
+interface Window {
     feather?: any;
   }
+}
+
+interface HospitalStructureSummary {
+  initialized: boolean;
+  totalFloors: number;
+  totalWorkspaces: number;
+  floors: Array<{ id: number; floorLabel: string; workspaces: Array<{ workspaceTypeLabel: string }> }>;
+}
+
+interface EquipmentInventorySummary {
+  total: number;
+  available: number;
+  underMaintenance: number;
+  outOfService: number;
+  archived: number;
+}
+
+interface PlacementFloorSummary {
+  floorId: number;
+  floorLabel: string;
+  eligibleWorkspaceCount: number;
+  totalPlacedEquipment: number;
+  workspaces: Array<{ workspaceId: number; workspaceName: string; workspaceType: string; placedCount: number }>;
 }
 
 @Component({
@@ -38,6 +61,17 @@ export class Dashboard implements AfterViewInit, OnInit {
     profilesMissingRequiredData: 0
   };
   latestNotifications: Array<{ id: number; type: string; title: string; message: string; createdAt: string }> = [];
+  clinicStructure: HospitalStructureSummary | null = null;
+  equipmentSummary: EquipmentInventorySummary | null = null;
+  placementFloors: PlacementFloorSummary[] = [];
+  assignmentCounts: Record<string, number> = {
+    ADMIN: 0,
+    HR: 0,
+    DOCTOR: 0,
+    LAB_AGENT: 0,
+    PHARMACIST: 0,
+    RECEPTIONIST: 0
+  };
 
   get expiringContractsPreview(): Array<{
     id: number;
@@ -149,7 +183,7 @@ export class Dashboard implements AfterViewInit, OnInit {
 
   get staffUsers(): any[] {
     return this.allUsers.filter((user) =>
-      ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST'].includes(user.role)
+      ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST', 'LAB_AGENT'].includes(user.role)
     );
   }
 
@@ -202,7 +236,7 @@ export class Dashboard implements AfterViewInit, OnInit {
   }
 
   get roleBreakdown(): Array<{ role: string; count: number }> {
-    const roles = ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST'];
+    const roles = ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST', 'LAB_AGENT'];
     return roles.map(role => ({
       role,
       count: this.staffUsers.filter(u => u.role === role).length
@@ -396,6 +430,33 @@ export class Dashboard implements AfterViewInit, OnInit {
     ];
   }
 
+  get clinicWorkspaceTypesCount(): number {
+    const counters = new Set<string>();
+    for (const floor of this.clinicStructure?.floors ?? []) {
+      for (const workspace of floor.workspaces ?? []) {
+        if (workspace.workspaceTypeLabel) {
+          counters.add(workspace.workspaceTypeLabel);
+        }
+      }
+    }
+    return counters.size;
+  }
+
+  get totalPlacedEquipment(): number {
+    return this.placementFloors.reduce((sum, floor) => sum + Number(floor.totalPlacedEquipment ?? 0), 0);
+  }
+
+  get emptyEligibleWorkspaces(): number {
+    return this.placementFloors.reduce((sum, floor) => {
+      const floorEmpty = (floor.workspaces ?? []).filter((workspace) => Number(workspace.placedCount ?? 0) === 0).length;
+      return sum + floorEmpty;
+    }, 0);
+  }
+
+  get floorsWithEquipmentPlacements(): number {
+    return this.placementFloors.filter((floor) => Number(floor.totalPlacedEquipment ?? 0) > 0).length;
+  }
+
   async ngOnInit(): Promise<void> {
     await this.loadGlobalStats();
   }
@@ -424,6 +485,33 @@ export class Dashboard implements AfterViewInit, OnInit {
         }));
         this.allUsers = Array.isArray(response?.users) ? response.users : [];
         this.allContracts = Array.isArray(response?.contracts) ? response.contracts : [];
+      }
+
+      if (this.isAdmin) {
+        const [structure, equipmentSummary, placementFloors, adminAssignments, hrAssignments, doctorAssignments, labAssignments, pharmacistAssignments, receptionistAssignments] =
+          await Promise.all([
+            firstValueFrom(this.http.get<HospitalStructureSummary>(`${environment.apiBaseUrl}/api/hospital-structure`, { headers })),
+            firstValueFrom(this.http.get<EquipmentInventorySummary>(`${environment.apiBaseUrl}/api/hospital-resources/equipment/summary`, { headers })),
+            firstValueFrom(this.http.get<PlacementFloorSummary[]>(`${environment.apiBaseUrl}/api/hospital-resources/placement/floors`, { headers })),
+            firstValueFrom(this.http.get<any[] | unknown>(`${environment.apiBaseUrl}/api/staff-assignments`, { headers, params: { role: 'ADMIN' } })),
+            firstValueFrom(this.http.get<any[] | unknown>(`${environment.apiBaseUrl}/api/staff-assignments`, { headers, params: { role: 'HR' } })),
+            firstValueFrom(this.http.get<any[] | unknown>(`${environment.apiBaseUrl}/api/staff-assignments`, { headers, params: { role: 'DOCTOR' } })),
+            firstValueFrom(this.http.get<any[] | unknown>(`${environment.apiBaseUrl}/api/staff-assignments`, { headers, params: { role: 'LAB_AGENT' } })),
+            firstValueFrom(this.http.get<any[] | unknown>(`${environment.apiBaseUrl}/api/staff-assignments`, { headers, params: { role: 'PHARMACIST' } })),
+            firstValueFrom(this.http.get<any[] | unknown>(`${environment.apiBaseUrl}/api/staff-assignments`, { headers, params: { role: 'RECEPTIONIST' } }))
+          ]);
+
+        this.clinicStructure = structure;
+        this.equipmentSummary = equipmentSummary;
+        this.placementFloors = Array.isArray(placementFloors) ? placementFloors : [];
+        this.assignmentCounts = {
+          ADMIN: Array.isArray(adminAssignments) ? adminAssignments.length : 0,
+          HR: Array.isArray(hrAssignments) ? hrAssignments.length : 0,
+          DOCTOR: Array.isArray(doctorAssignments) ? doctorAssignments.length : 0,
+          LAB_AGENT: Array.isArray(labAssignments) ? labAssignments.length : 0,
+          PHARMACIST: Array.isArray(pharmacistAssignments) ? pharmacistAssignments.length : 0,
+          RECEPTIONIST: Array.isArray(receptionistAssignments) ? receptionistAssignments.length : 0
+        };
       }
 
       if (this.isReceptionist || this.isAdmin) {

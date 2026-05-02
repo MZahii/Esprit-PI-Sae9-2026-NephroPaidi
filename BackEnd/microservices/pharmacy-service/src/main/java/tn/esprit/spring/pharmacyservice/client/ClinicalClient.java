@@ -3,11 +3,9 @@ package tn.esprit.spring.pharmacyservice.client;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @FeignClient(
     name = "clinical-service",
-    url = "${services.clinical.url:http://localhost:8083}",
     configuration = FeignClientConfiguration.class
 )
 public interface ClinicalClient {

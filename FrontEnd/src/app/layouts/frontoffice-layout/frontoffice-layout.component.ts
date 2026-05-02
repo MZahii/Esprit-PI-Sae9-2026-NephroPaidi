@@ -52,6 +52,11 @@ export class FrontofficeLayoutComponent implements OnInit, OnDestroy {
 
   userMenuOpen = false;
 
+  get isServicesActive(): boolean {
+    const url = this.router.url;
+    return url.includes('/frontoffice/pharmacy') || url === '/services' || url.includes('/doctors');
+  }
+
   constructor(
     private templateAssetsService: TemplateAssetsService,
     private router: Router,

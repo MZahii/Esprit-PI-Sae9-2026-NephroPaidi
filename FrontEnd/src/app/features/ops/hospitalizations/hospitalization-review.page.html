@@ -1,0 +1,122 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Hospitalization Progress</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Home</a></li>
+      <li class="breadcrumb-item">Hospitalization</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="alert alert-info" *ngIf="loadingSafety">
+    Loading medication safety insight from OpenFDA...
+  </div>
+  <div class="alert alert-warning" *ngIf="safetyError">{{ safetyError }}</div>
+  <div class="alert alert-secondary" *ngIf="safetySignal">
+    <strong>Drug safety metric:</strong>
+    {{ safetySignal.queriedDrug }} | Risk {{ safetySignal.level }}
+    <span *ngIf="safetySignal.boxedWarning">| Boxed warning detected</span>
+    <span>| Warnings {{ safetySignal.warningCount }}</span>
+  </div>
+
+  <div class="card stretch stretch-full" *ngIf="loading">
+    <div class="card-body text-muted">Loading hospitalization progress...</div>
+  </div>
+
+  <div class="card stretch stretch-full" *ngIf="error">
+    <div class="card-body">
+      <div class="alert alert-danger mb-0">{{ error }}</div>
+    </div>
+  </div>
+
+  <ng-container *ngIf="hospitalization && !loading">
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="card stretch stretch-full">
+          <div class="card-header">
+            <h5 class="card-title">Overview</h5>
+          </div>
+          <div class="card-body">
+            <div class="info-line">
+              <span>Status</span>
+              <span class="badge" [ngClass]="caseStatusClass(hospitalization.status)">{{ hospitalization.status }}</span>
+            </div>
+            <div class="info-line">
+              <span>Patient ID</span>
+              <strong>{{ hospitalization.patientId }}</strong>
+            </div>
+            <div class="info-line">
+              <span>Consultation</span>
+              <strong>{{ hospitalization.consultationId || '-' }}</strong>
+            </div>
+            <div class="info-line">
+              <span>Doctor</span>
+              <strong>{{ hospitalization.doctorUsername }}</strong>
+            </div>
+            <div class="info-line">
+              <span>Created</span>
+              <strong>{{ hospitalization.createdAt | date:'medium' }}</strong>
+            </div>
+            <div class="mt-3">
+              <label class="form-label">Reason</label>
+              <div class="reason-box">{{ hospitalization.reason }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <div class="card stretch stretch-full">
+          <div class="card-header">
+            <h5 class="card-title">Task Progress</h5>
+          </div>
+          <div class="card-body">
+            <div *ngIf="hospitalization.tasks.length === 0" class="text-muted">
+              No hospitalization tasks have been added yet.
+            </div>
+
+            <div class="task-card" *ngFor="let task of hospitalization.tasks">
+              <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                <div>
+                  <div class="fw-semibold">{{ task.title }}</div>
+                  <div class="text-muted small">{{ task.type }}</div>
+                </div>
+                <span class="badge" [ngClass]="taskStatusClass(task.status)">{{ task.status }}</span>
+              </div>
+
+              <div class="text-muted mt-2" *ngIf="task.instructions">{{ task.instructions }}</div>
+
+              <div class="task-meta mt-3">
+                <div><span>Last nurse</span><strong>{{ task.lastUpdatedByNurseUsername || '-' }}</strong></div>
+                <div><span>Last update</span><strong>{{ task.lastUpdatedAt ? (task.lastUpdatedAt | date:'medium') : '-' }}</strong></div>
+                <div><span>Latest note</span><strong>{{ task.latestNote || '-' }}</strong></div>
+                <div><span>Latest value</span><strong>{{ task.latestNumericValue ?? task.latestTextValue ?? '-' }} {{ task.latestUnit || '' }}</strong></div>
+              </div>
+
+              <div class="execution-history mt-3" *ngIf="task.executions.length > 0">
+                <h6 class="mb-2">Execution History</h6>
+                <div class="execution-row" *ngFor="let execution of task.executions">
+                  <div class="d-flex justify-content-between gap-3 flex-wrap">
+                    <strong>{{ execution.nurseUsername }}</strong>
+                    <span class="text-muted small">{{ execution.recordedAt | date:'medium' }}</span>
+                  </div>
+                  <div class="small mt-1">
+                    Status: <span class="fw-semibold">{{ execution.status }}</span>
+                    <span *ngIf="execution.numericValue !== null && execution.numericValue !== undefined">
+                      | Value: {{ execution.numericValue }} {{ execution.unit || '' }}
+                    </span>
+                    <span *ngIf="execution.textValue">| Value: {{ execution.textValue }}</span>
+                  </div>
+                  <div class="text-muted small mt-1" *ngIf="execution.note">{{ execution.note }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

@@ -23,6 +23,12 @@ public class Supplier {
 
     private String contactInfo;
 
+    private String email;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
+
     @OneToMany(mappedBy = "supplier", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<SupplyOrder> orders;
 }

@@ -36,6 +36,11 @@ public class SupplyOrder {
 
     private Integer orderedQuantity;
 
+    private LocalDate expectedDeliveryDate;
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
     public void placeOrder() {
         this.status = OrderStatus.PENDING;
         this.orderDate = LocalDate.now();

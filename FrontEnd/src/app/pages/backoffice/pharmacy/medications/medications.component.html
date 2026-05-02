@@ -1,216 +1,574 @@
-<div class="nxl-content-page">
+<div class="phx-page">
 
-  <!-- Page Header -->
-  <div class="nxl-head-breadcrumb d-flex align-items-center justify-content-between mb-4">
-    <div>
-      <h4 class="mb-0">Medications</h4>
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb mb-0">
-          <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
-          <li class="breadcrumb-item active">Medications</li>
-        </ol>
-      </nav>
+  <!-- ── Page Header ─────────────────────────────────────────────────────── -->
+  <div class="phx-header">
+    <div class="phx-header-left">
+      <div class="phx-header-icon">
+        <i class="bi bi-capsule-pill"></i>
+      </div>
+      <div>
+        <h4 class="phx-title">Medications</h4>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item active">Medications</li>
+          </ol>
+        </nav>
+      </div>
     </div>
-    <button class="btn btn-primary d-flex align-items-center gap-2" (click)="openAdd()">
-      <i class="bi bi-plus-circle-fill"></i> Add Medication
-    </button>
+    <div class="d-flex gap-2">
+      <button class="phx-btn phx-btn-alert" (click)="openAlertModal()">
+        <i class="bi bi-envelope-fill"></i> Send Stock Alert
+      </button>
+      <button class="phx-btn phx-btn-primary" (click)="openAdd()">
+        <i class="bi bi-plus-lg"></i> Add Medication
+      </button>
+    </div>
   </div>
 
-  <!-- Loading -->
-  <div class="text-center py-5" *ngIf="loading()">
+  <!-- ── Reorder Alert Banner ────────────────────────────────────────────── -->
+  <div class="phx-reorder-banner" *ngIf="reorderAlerts().length > 0" (click)="showReorderPanel=!showReorderPanel">
+    <i class="bi bi-bell-fill"></i>
+    <span><strong>{{ reorderAlerts().length }} medication(s) below minimum stock</strong> — reorder needed</span>
+    <span class="phx-reorder-toggle">{{ showReorderPanel ? 'Hide' : 'View details' }} <i class="bi" [class.bi-chevron-up]="showReorderPanel" [class.bi-chevron-down]="!showReorderPanel"></i></span>
+  </div>
+
+  <!-- ── Reorder Details Panel ────────────────────────────────────────────── -->
+  <div class="phx-reorder-panel" *ngIf="showReorderPanel && reorderAlerts().length > 0">
+    <div class="phx-card-header" style="padding:14px 18px">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-cart-plus" style="color:#dc2626"></i>
+        <span class="fw-700" style="color:#dc2626">Reorder Alerts</span>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="phx-table">
+        <thead>
+          <tr>
+            <th>Medication</th>
+            <th>Form</th>
+            <th>Current Stock</th>
+            <th>Minimum Stock</th>
+            <th>Deficit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of reorderAlerts()" class="phx-row-danger">
+            <td class="fw-700">{{ a.name }}</td>
+            <td><span class="phx-pill phx-pill-indigo">{{ a.form | titlecase }}</span></td>
+            <td><span class="fw-700 text-danger">{{ a.currentTotalStock }}</span></td>
+            <td class="text-muted">{{ a.minimumStock }}</td>
+            <td><span class="phx-pill phx-pill-danger">−{{ a.deficit }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Loading ─────────────────────────────────────────────────────────── -->
+  <div class="phx-loader" *ngIf="loading()">
     <div class="spinner-border text-primary"></div>
-    <p class="mt-2 text-muted small">Loading medications...</p>
+    <span>Loading medications...</span>
   </div>
 
-  <!-- Table Card -->
-  <div class="card shadow-sm" *ngIf="!loading()">
-    <div class="card-header d-flex align-items-center justify-content-between bg-white">
-      <h6 class="mb-0 fw-bold">Medication List</h6>
-      <span class="badge bg-secondary">{{ medications().length }} medication(s)</span>
-    </div>
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle mb-0">
-          <thead class="table-white">
-            <tr>
-              <th class="ps-3" style="width:60px">#ID</th>
-              <th>Name</th>
-              <th style="width:120px">Form</th>
-              <th>Pediatric Dosage</th>
-              <th class="text-center" style="width:200px">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let med of medications()">
-              <td class="ps-3 text-muted small">{{ med.medicationId }}</td>
-              <td class="fw-semibold">{{ med.name }}</td>
-              <td>
-                <span class="badge bg-primary text-capitalize px-2 py-1">{{ med.form }}</span>
-              </td>
-              <td class="text-muted small font-monospace">{{ med.pediatricDosage }}</td>
-              <td class="text-center">
-                <button class="btn btn-sm btn-info text-white me-1" (click)="openBatches(med)" title="View Batches">
-                  <i class="bi bi-box-seam me-1"></i> Batches
-                </button>
-                <button class="btn btn-sm btn-warning me-1" (click)="openEdit(med)" title="Edit">
-                  <i class="bi bi-pencil-fill me-1"></i> Edit
-                </button>
-                <button class="btn btn-sm btn-danger" (click)="delete(med)" title="Delete">
-                  <i class="bi bi-trash-fill me-1"></i> Delete
-                </button>
-              </td>
-            </tr>
-            <tr *ngIf="medications().length === 0">
-              <td colspan="5" class="text-center py-5 text-muted">
-                <i class="bi bi-inbox d-block mx-auto mb-2" style="font-size:2rem;opacity:.4"></i>
-                No medications found. Click <strong>Add Medication</strong> to get started.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+  <!-- ── Table Card ──────────────────────────────────────────────────────── -->
+  <div class="phx-card" *ngIf="!loading()">
+    <div class="phx-card-header">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-list-ul" style="color:var(--phx-primary)"></i>
+        <span class="fw-700">Medication List</span>
       </div>
+      <span class="phx-badge phx-badge-primary">{{ medications().length }} total</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="phx-table">
+        <thead>
+          <tr>
+            <th style="width:60px">#</th>
+            <th>Name</th>
+            <th style="width:130px">Form</th>
+            <th>Pediatric Dosage</th>
+            <th style="width:210px" class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let med of medications()">
+            <td class="text-muted small fw-600">{{ med.medicationId }}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="phx-dot bg-primary"></div>
+                <span class="fw-700">{{ med.name }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="phx-pill phx-pill-indigo">{{ med.form | titlecase }}</span>
+            </td>
+            <td class="text-muted small font-monospace">{{ med.pediatricDosage || '—' }}</td>
+            <td class="text-center">
+              <button class="phx-btn phx-btn-sm phx-btn-info me-1" (click)="openBatches(med)">
+                <i class="bi bi-box-seam"></i> Batches
+              </button>
+              <button class="phx-btn phx-btn-sm phx-btn-warning me-1" (click)="openEdit(med)">
+                <i class="bi bi-pencil-fill"></i> Edit
+              </button>
+              <button class="phx-btn phx-btn-sm phx-btn-danger" (click)="delete(med)">
+                <i class="bi bi-trash-fill"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="medications().length === 0">
+            <td colspan="5" class="phx-empty">
+              <i class="bi bi-inbox"></i>
+              <p>No medications yet. Click <strong>Add Medication</strong> to start.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add / Edit Modal ─────────────────────────────────────────────────── -->
+<div class="phx-overlay" *ngIf="showModal" (click)="showModal=false"></div>
+<div class="phx-modal" [class.phx-modal-open]="showModal">
+  <div class="phx-modal-dialog">
+    <div class="phx-modal-header" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)">
+      <div class="d-flex align-items-center gap-2 text-white">
+        <i class="bi bi-capsule-pill fs-5"></i>
+        <h5 class="mb-0">{{ editMode ? 'Edit' : 'Add' }} Medication</h5>
+      </div>
+      <button class="phx-close-btn" (click)="showModal=false"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="phx-modal-body">
+      <div class="phx-field">
+        <label>Name <span class="text-danger">*</span></label>
+        <input class="phx-input" [ngModel]="currentMed.name"
+               (ngModelChange)="onNameChange($event)"
+               placeholder="e.g. Furosemide"
+               [class.phx-input-error]="nameError()"/>
+        <div class="phx-field-error" *ngIf="nameError()">
+          <i class="bi bi-exclamation-circle-fill"></i> {{ nameError() }}
+        </div>
+      </div>
+      <div class="phx-field">
+        <label>Form</label>
+        <select class="phx-input" [(ngModel)]="currentMed.form">
+          <option value="tablet">Tablet</option>
+          <option value="capsule">Capsule</option>
+          <option value="syrup">Syrup</option>
+          <option value="injection">Injection</option>
+          <option value="drops">Drops</option>
+          <option value="cream">Cream</option>
+          <option value="powder">Powder</option>
+        </select>
+      </div>
+      <div class="phx-field">
+        <label>Pediatric Dosage</label>
+        <input class="phx-input" [(ngModel)]="currentMed.pediatricDosage" placeholder="e.g. 1mg/kg"/>
+      </div>
+      <div class="phx-field">
+        <label>Minimum Stock Threshold
+          <span class="phx-hint-inline">(optional — triggers reorder alert)</span>
+        </label>
+        <input type="number" class="phx-input" [(ngModel)]="currentMed.minimumStock"
+               min="0" placeholder="e.g. 50"/>
+      </div>
+    </div>
+    <div class="phx-modal-footer">
+      <button class="phx-btn phx-btn-ghost" (click)="showModal=false">Cancel</button>
+      <button class="phx-btn phx-btn-primary" (click)="save()" [disabled]="!currentMed.name || !!nameError() || saving()">
+        <span *ngIf="saving()" class="phx-spin me-1"></span>
+        <i *ngIf="!saving()" class="bi bi-check-lg"></i>
+        {{ saving() ? 'Saving…' : (editMode ? 'Update' : 'Create') }}
+      </button>
     </div>
   </div>
 </div>
 
-<!-- ─── Add / Edit Modal ───────────────────────────────────────────────── -->
-<div class="modal fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content shadow">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title">
-          <i class="bi bi-capsule me-2"></i>{{ editMode ? 'Edit' : 'Add' }} Medication
-        </h5>
-        <button class="btn-close btn-close-white" (click)="showModal = false"></button>
+<!-- ── Batches Modal ─────────────────────────────────────────────────────── -->
+<div class="phx-overlay" *ngIf="showBatchModal" (click)="showBatchModal=false"></div>
+<div class="phx-modal" [class.phx-modal-open]="showBatchModal">
+  <div class="phx-modal-dialog phx-modal-lg">
+    <div class="phx-modal-header" style="background:linear-gradient(135deg,#0891b2,#0e7490)">
+      <div class="d-flex align-items-center gap-2 text-white">
+        <i class="bi bi-box-seam fs-5"></i>
+        <h5 class="mb-0">Batches — {{ selectedMed?.name }}</h5>
       </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
-          <input class="form-control" [(ngModel)]="currentMed.name" placeholder="e.g. Furosemide"/>
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Form</label>
-          <select class="form-select" [(ngModel)]="currentMed.form">
-            <option value="tablet">Tablet</option>
-            <option value="capsule">Capsule</option>
-            <option value="syrup">Syrup</option>
-            <option value="injection">Injection</option>
-            <option value="drops">Drops</option>
-            <option value="cream">Cream</option>
-            <option value="powder">Powder</option>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Pediatric Dosage</label>
-          <input class="form-control" [(ngModel)]="currentMed.pediatricDosage" placeholder="e.g. 1mg/kg"/>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="showModal = false">
-          <i class="bi bi-x-circle me-1"></i> Cancel
-        </button>
-        <button class="btn btn-primary" (click)="save()" [disabled]="!currentMed.name">
-          <i class="bi bi-check-circle me-1"></i> {{ editMode ? 'Update' : 'Create' }}
-        </button>
-      </div>
+      <button class="phx-close-btn" (click)="showBatchModal=false"><i class="bi bi-x-lg"></i></button>
     </div>
-  </div>
-</div>
-<div class="modal-backdrop fade show" *ngIf="showModal" (click)="showModal = false"></div>
+    <div class="phx-modal-body">
 
-<!-- ─── Batches Modal ──────────────────────────────────────────────────── -->
-<div class="modal fade" [class.show]="showBatchModal" [style.display]="showBatchModal ? 'block' : 'none'" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content shadow">
-      <div class="modal-header bg-info text-white">
-        <h5 class="modal-title">
-          <i class="bi bi-box-seam me-2"></i> Batches — {{ selectedMed?.name }}
-        </h5>
-        <button class="btn-close btn-close-white" (click)="showBatchModal = false"></button>
-      </div>
-      <div class="modal-body">
-
-        <!-- Add batch form -->
-        <div class="card border border-success mb-3">
-          <div class="card-header bg-success text-white small fw-semibold">
-            <i class="bi bi-plus-circle me-1"></i> Add New Batch
-          </div>
-          <div class="card-body bg-light">
-            <div class="row g-2 align-items-end">
-              <div class="col-md-3">
-                <label class="form-label small fw-semibold">Batch Number</label>
-                <input class="form-control form-control-sm" [(ngModel)]="newBatch.batchNumber" placeholder="B001"/>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label small fw-semibold">Quantity</label>
-                <input type="number" class="form-control form-control-sm" [(ngModel)]="newBatch.quantity" min="1"/>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label small fw-semibold">Manufacture Date</label>
-                <input type="date" class="form-control form-control-sm" [(ngModel)]="newBatch.manufactureDate"/>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label small fw-semibold">Expiration Date <span class="text-danger">*</span></label>
-                <input type="date" class="form-control form-control-sm" [(ngModel)]="newBatch.expirationDate"/>
-              </div>
-              <div class="col-12 text-end mt-2">
-                <button class="btn btn-success btn-sm px-3" (click)="addBatch()"
-                  [disabled]="!newBatch.batchNumber || !newBatch.quantity || !newBatch.expirationDate">
-                  <i class="bi bi-plus-lg me-1"></i> Add Batch
-                </button>
-              </div>
-            </div>
-          </div>
+      <!-- Add batch form -->
+      <div class="phx-section-box phx-section-success">
+        <div class="phx-section-label">
+          <i class="bi bi-plus-circle-fill"></i> Add New Batch
         </div>
 
-        <!-- Batch table -->
-        <table class="table table-bordered table-sm table-hover align-middle">
-          <thead class="table-dark">
+        <div class="alert alert-danger py-2 small mb-3" *ngIf="batchError()">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ batchError() }}
+        </div>
+
+        <div class="row g-2">
+          <div class="col-md-3">
+            <label class="phx-label-sm">Batch Number <span class="text-danger">*</span></label>
+            <input class="phx-input phx-input-sm" [(ngModel)]="newBatch.batchNumber"
+              placeholder="e.g. B2026-001" (ngModelChange)="batchError.set('')"/>
+          </div>
+          <div class="col-md-2">
+            <label class="phx-label-sm">Quantity <span class="text-danger">*</span></label>
+            <input type="number" class="phx-input phx-input-sm" [(ngModel)]="newBatch.quantity"
+              min="1" (ngModelChange)="batchError.set('')"/>
+          </div>
+          <div class="col-md-3">
+            <label class="phx-label-sm">Manufacture Date</label>
+            <input type="date" class="phx-input phx-input-sm" [(ngModel)]="newBatch.manufactureDate"
+              [max]="today" (ngModelChange)="batchError.set('')"/>
+          </div>
+          <div class="col-md-4">
+            <label class="phx-label-sm">Expiration Date <span class="text-danger">*</span></label>
+            <input type="date" class="phx-input phx-input-sm" [(ngModel)]="newBatch.expirationDate"
+              [min]="today" (ngModelChange)="batchError.set('')"/>
+          </div>
+        </div>
+        <div class="d-flex justify-content-end gap-2 mt-3">
+          <button class="phx-btn phx-btn-sm phx-btn-ghost" (click)="resetBatchForm()">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset
+          </button>
+          <button class="phx-btn phx-btn-sm phx-btn-success" (click)="addBatch()"
+            [disabled]="!newBatch.batchNumber || !newBatch.quantity || !newBatch.expirationDate || addingBatch()">
+            <span *ngIf="addingBatch()" class="phx-spin phx-spin-dark me-1"></span>
+            <i *ngIf="!addingBatch()" class="bi bi-plus-lg"></i>
+            {{ addingBatch() ? 'Adding…' : 'Add Batch' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Batch table -->
+      <div class="table-responsive mt-3">
+        <table class="phx-table">
+          <thead>
             <tr>
-              <th>Batch #</th>
+              <th style="width:60px">#ID</th>
+              <th>Batch Number</th>
               <th>Quantity</th>
-              <th>Manufacture</th>
-              <th>Expiration</th>
+              <th>Manufacture Date</th>
+              <th>Expiration Date</th>
               <th class="text-center">Status</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let b of batches()">
-              <td class="font-monospace small fw-semibold">{{ b.batchNumber }}</td>
-              <td>{{ b.quantity }}</td>
+            <tr *ngFor="let b of batches()"
+              [class.phx-row-danger]="b.expired"
+              [class.phx-row-warning]="!b.expired && daysUntilExpiry(b.expirationDate) <= 30">
+              <td class="text-muted small">{{ b.batchId }}</td>
+              <td class="font-monospace fw-700 small">{{ b.batchNumber }}</td>
+              <td class="fw-600">{{ b.quantity }}</td>
               <td class="small text-muted">{{ b.manufactureDate ? (b.manufactureDate | date:'dd MMM yyyy') : '—' }}</td>
-              <td class="small">{{ b.expirationDate | date:'dd MMM yyyy' }}</td>
+              <td class="small fw-600"
+                [class.text-danger]="b.expired"
+                [class.text-warning]="!b.expired && daysUntilExpiry(b.expirationDate) <= 30">
+                {{ b.expirationDate | date:'dd MMM yyyy' }}
+              </td>
               <td class="text-center">
-                <span class="badge px-2 py-1"
-                  [class.bg-success]="!b.expired"
-                  [class.bg-danger]="b.expired">
-                  {{ b.expired ? 'Expired' : 'Valid' }}
-                </span>
+                <span class="phx-pill" [ngClass]="expiryBadgeClass(b)">{{ expiryLabel(b) }}</span>
               </td>
             </tr>
             <tr *ngIf="batches().length === 0">
-              <td colspan="5" class="text-center text-muted py-3 small">No batches yet</td>
+              <td colspan="6" class="phx-empty">
+                <i class="bi bi-inbox"></i>
+                <p>No batches yet — add one above.</p>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="showBatchModal = false">
-          <i class="bi bi-x-circle me-1"></i> Close
-        </button>
+
+      <div class="phx-legend mt-2">
+        <span class="phx-pill bg-success text-white">Valid</span> &gt;30 days &nbsp;
+        <span class="phx-pill bg-warning text-dark">Expires soon</span> ≤30 days &nbsp;
+        <span class="phx-pill bg-danger text-white">Expired</span>
       </div>
     </div>
-  </div>
-</div>
-<div class="modal-backdrop fade show" *ngIf="showBatchModal" (click)="showBatchModal = false"></div>
-
-<!-- Toast -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999" *ngIf="toast()">
-  <div class="toast show align-items-center text-white border-0"
-    [class.bg-success]="toastOk()" [class.bg-danger]="!toastOk()">
-    <div class="d-flex">
-      <div class="toast-body fw-semibold">{{ toast() }}</div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" (click)="toast.set('')"></button>
+    <div class="phx-modal-footer">
+      <button class="phx-btn phx-btn-ghost" (click)="showBatchModal=false">Close</button>
     </div>
   </div>
 </div>
+
+<!-- ── Low-Stock Alert Modal ─────────────────────────────────────────────── -->
+<div class="phx-overlay" *ngIf="showAlertModal" (click)="showAlertModal=false"></div>
+<div class="phx-modal" [class.phx-modal-open]="showAlertModal">
+  <div class="phx-modal-dialog">
+    <div class="phx-modal-header" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">
+      <div class="d-flex align-items-center gap-2 text-white">
+        <i class="bi bi-envelope-fill fs-5"></i>
+        <h5 class="mb-0">Send Low-Stock Alert</h5>
+      </div>
+      <button class="phx-close-btn" (click)="showAlertModal=false"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="phx-modal-body">
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 16px;display:flex;gap:12px;margin-bottom:18px;">
+        <i class="bi bi-info-circle-fill" style="color:#dc2626;font-size:18px;flex-shrink:0;margin-top:1px;"></i>
+        <p style="margin:0;font-size:13.5px;color:#7f1d1d;line-height:1.5;">An HTML email report will be sent listing all medications currently below their minimum stock threshold.</p>
+      </div>
+      <div class="phx-field">
+        <label>Recipient Email <span class="text-danger">*</span></label>
+        <input type="email" class="phx-input" [(ngModel)]="alertEmail" placeholder="pharmacist@hospital.com"/>
+      </div>
+    </div>
+    <div class="phx-modal-footer">
+      <button class="phx-btn phx-btn-ghost" (click)="showAlertModal=false">Cancel</button>
+      <button class="phx-btn phx-btn-alert" (click)="sendAlert()" [disabled]="!alertEmail || sendingAlert()">
+        <span *ngIf="sendingAlert()" class="phx-spin me-1"></span>
+        <i *ngIf="!sendingAlert()" class="bi bi-send-fill"></i>
+        {{ sendingAlert() ? 'Sending…' : 'Send Alert' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ────────────────────────────────────────────────────────────── -->
+<div class="phx-toast" [class.phx-toast-show]="toast()"
+  [class.phx-toast-success]="toastOk()" [class.phx-toast-error]="!toastOk()">
+  <i class="bi" [class.bi-check-circle-fill]="toastOk()" [class.bi-x-circle-fill]="!toastOk()"></i>
+  {{ toast() }}
+</div>
+
+<!-- ── Shared Styles ─────────────────────────────────────────────────────── -->
+<style>
+@keyframes fadeSlideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes toastIn { 0% { opacity:0; transform:translateY(16px) scale(.95); } 70% { transform:translateY(-3px) scale(1.01); } 100% { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes resultIn { from { opacity:0; transform:scale(.96) translateY(6px); } to { opacity:1; transform:scale(1) translateY(0); } }
+
+:root { --phx-primary:#2563eb; --phx-radius:12px; }
+
+.phx-page { padding: 0; background: transparent; min-height: auto; }
+
+/* Header */
+.phx-header {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  margin-bottom:14px;
+  border:1px solid #dbe7f5;
+  border-radius:16px;
+  background:linear-gradient(130deg,#f7fbff 0%,#eef4ff 100%);
+  padding:18px 20px;
+}
+.phx-header-left { display:flex; align-items:center; gap:16px; }
+.phx-header-icon { width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg,#2563eb,#1d4ed8); display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; }
+.phx-title { font-size:22px; font-weight:800; color:#1e293b; margin:0; }
+
+/* Buttons */
+.phx-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:9px 18px; border-radius:10px; font-weight:600; font-size:13.5px;
+  border:none; cursor:pointer; position:relative; overflow:hidden;
+  transition:transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s ease, opacity .15s;
+}
+.phx-btn:not(:disabled):hover  { transform:translateY(-2px); }
+.phx-btn:not(:disabled):active { transform:translateY(0) scale(.97); }
+.phx-btn-sm { padding:6px 13px; font-size:12.5px; border-radius:8px; }
+.phx-btn-primary { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; box-shadow:0 4px 14px rgba(37,99,235,.3); }
+.phx-btn-primary:not(:disabled):hover { box-shadow:0 8px 20px rgba(37,99,235,.4); }
+.phx-btn-success { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; box-shadow:0 4px 12px rgba(22,163,74,.3); }
+.phx-btn-success:not(:disabled):hover { box-shadow:0 8px 18px rgba(22,163,74,.4); }
+.phx-btn-warning { background:#f59e0b; color:#fff; box-shadow:0 4px 12px rgba(245,158,11,.3); }
+.phx-btn-info    { background:#0891b2; color:#fff; }
+.phx-btn-danger  { background:#ef4444; color:#fff; }
+.phx-btn-ghost { background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0; box-shadow:none; }
+.phx-btn-ghost:not(:disabled):hover { background:#e2e8f0; box-shadow:none; }
+.phx-btn:disabled { opacity:.5; cursor:not-allowed; transform:none !important; }
+/* Spinner */
+.phx-spin { display:inline-block; width:13px; height:13px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; flex-shrink:0; }
+.phx-spin-dark { border-color:rgba(0,0,0,.2); border-top-color:#1e293b; }
+
+/* Cards */
+.phx-card { background:#fff; border-radius:16px; box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04); border:1px solid #f1f5f9; overflow:hidden; margin-bottom:20px; }
+.phx-card-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #f1f5f9; background:#fafbff; }
+.fw-700 { font-weight:700; }
+.fw-600 { font-weight:600; }
+
+/* Badges & pills */
+.phx-badge { padding:4px 12px; border-radius:999px; font-size:12px; font-weight:700; }
+.phx-badge-primary { background:#dbeafe; color:#1d4ed8; }
+.phx-pill { display:inline-block; padding:4px 11px; border-radius:999px; font-size:12px; font-weight:700; }
+.phx-pill-indigo { background:#dbeafe; color:#1d4ed8; }
+.phx-pill.bg-success { background:#dcfce7!important; color:#16a34a!important; }
+.phx-pill.bg-warning { background:#fef9c3!important; color:#854d0e!important; }
+.phx-pill.bg-danger { background:#fee2e2!important; color:#dc2626!important; }
+
+.phx-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+/* Table */
+.phx-table { width:100%; border-collapse:collapse; }
+.phx-table thead tr { background:#fafbff; }
+.phx-table th { padding:12px 16px; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#64748b; border-bottom:1px solid #f1f5f9; white-space:nowrap; }
+.phx-table td { padding:14px 16px; border-bottom:1px solid #f8fafc; font-size:13.5px; color:#334155; }
+.phx-table tbody tr:hover { background:#fafbff; }
+.phx-table tbody tr:last-child td { border-bottom:none; }
+.phx-row-danger { background:#fff5f5!important; }
+.phx-row-warning { background:#fffbeb!important; }
+
+/* Empty state */
+.phx-empty { text-align:center; padding:48px 20px; color:#94a3b8; }
+.phx-empty i { font-size:40px; display:block; margin-bottom:12px; opacity:.4; }
+.phx-empty p { margin:0; font-size:14px; }
+
+/* Loader */
+.phx-loader { display:flex; align-items:center; gap:12px; justify-content:center; padding:60px; color:#64748b; }
+
+/* Modal */
+.phx-overlay {
+  position:fixed; inset:0; z-index:1040;
+  background:rgba(15,23,42,0); backdrop-filter:blur(0px);
+  animation:overlayIn .25s ease forwards;
+}
+@keyframes overlayIn { to { background:rgba(15,23,42,.45); backdrop-filter:blur(3px); } }
+.phx-modal { position:fixed; inset:0; z-index:1050; display:flex; align-items:center; justify-content:center; pointer-events:none; opacity:0; transition:opacity .25s ease; }
+.phx-modal.phx-modal-open { pointer-events:auto; opacity:1; }
+.phx-modal-dialog {
+  background:#fff; border-radius:20px; width:100%; max-width:480px;
+  box-shadow:0 24px 80px rgba(0,0,0,.22); overflow:hidden;
+  transform:translateY(-16px) scale(.97);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.phx-modal-open .phx-modal-dialog { transform:translateY(0) scale(1); }
+.phx-modal-lg { max-width:780px; }
+.phx-modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px; }
+.phx-modal-body { padding:24px; max-height:65vh; overflow-y:auto; scroll-behavior:smooth; }
+.phx-modal-footer { display:flex; justify-content:flex-end; gap:10px; padding:16px 24px; border-top:1px solid #f1f5f9; background:#fafbff; }
+.phx-close-btn { background:rgba(255,255,255,.2); border:none; color:#fff; width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; transition:background .15s, transform .15s; }
+.phx-close-btn:hover { background:rgba(255,255,255,.35); transform:scale(1.1); }
+
+/* Form */
+.phx-field { margin-bottom:18px; }
+.phx-field label { display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:6px; }
+.phx-label-sm { display:block; font-size:12px; font-weight:600; color:#374151; margin-bottom:5px; }
+.phx-input { width:100%; padding:10px 13px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:14px; outline:none; transition:border-color .2s; background:#fff; }
+.phx-input:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.08); }
+.phx-input-sm { padding:8px 10px; font-size:13px; border-radius:8px; }
+.phx-input-error { border-color:#ef4444 !important; box-shadow:0 0 0 3px rgba(239,68,68,.1) !important; }
+.phx-field-error { margin-top:5px; font-size:12px; font-weight:600; color:#ef4444; display:flex; align-items:center; gap:4px; }
+.phx-hint-inline { font-size:11px; font-weight:400; color:#94a3b8; margin-left:4px; }
+.phx-reorder-banner { display:flex; align-items:center; gap:10px; padding:12px 18px; background:#fee2e2; border:1px solid #fecaca; border-radius:12px; margin-bottom:16px; cursor:pointer; color:#991b1b; font-size:13.5px; }
+.phx-reorder-banner:hover { background:#fecaca; }
+.phx-reorder-toggle { margin-left:auto; font-size:12px; font-weight:700; display:flex; align-items:center; gap:4px; }
+.phx-reorder-panel { background:#fff; border-radius:12px; border:1px solid #fecaca; margin-bottom:20px; overflow:hidden; }
+.phx-pill-danger { background:#fee2e2; color:#dc2626; }
+
+/* Section box */
+.phx-section-box { border-radius:12px; padding:18px; margin-bottom:4px; }
+.phx-section-success { background:#f0fdf4; border:1px solid #bbf7d0; }
+.phx-section-label { font-size:12.5px; font-weight:700; color:#15803d; margin-bottom:14px; display:flex; align-items:center; gap:6px; }
+
+/* Legend */
+.phx-legend { display:flex; align-items:center; gap:8px; font-size:12px; color:#64748b; }
+
+/* Table rows animate in */
+.phx-table tbody tr { animation:fadeSlideIn .25s ease both; }
+.phx-table td { transition:background .15s ease; }
+.phx-table tbody tr:hover td { background:#f5f7ff !important; }
+/* Toast */
+.phx-toast { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; align-items:center; gap:10px; padding:14px 20px; border-radius:14px; font-weight:600; font-size:14px; color:#fff; box-shadow:0 8px 30px rgba(0,0,0,.18); opacity:0; pointer-events:none; transform:translateY(16px) scale(.95); transition:opacity .2s ease, transform .2s ease; }
+.phx-toast.phx-toast-show { opacity:1; pointer-events:auto; transform:translateY(0) scale(1); animation:toastIn .4s cubic-bezier(.34,1.56,.64,1) forwards; }
+.phx-toast-success { background:linear-gradient(135deg,#16a34a,#15803d); }
+.phx-toast-error   { background:linear-gradient(135deg,#ef4444,#dc2626); }
+.phx-btn-alert { background:linear-gradient(135deg,#dc2626,#b91c1c); color:#fff; box-shadow:0 4px 14px rgba(220,38,38,.28); }
+.phx-btn-alert:not(:disabled):hover { box-shadow:0 8px 20px rgba(220,38,38,.4); transform:translateY(-2px); }
+.phx-btn-alert:disabled { opacity:.5; cursor:not-allowed; transform:none !important; }
+
+/* ── Extra animations ────────────────────────────────────────────────────── */
+@keyframes pageEnter   { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes headerSlide { from { opacity:0; transform:translateX(-18px); } to { opacity:1; transform:translateX(0); } }
+@keyframes statPop     { from { opacity:0; transform:translateY(16px) scale(.92); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes numPop      { from { opacity:0; transform:scale(.6); } to { opacity:1; transform:scale(1); } }
+@keyframes bannerIn    { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }
+@keyframes iconPulse   { 0%,100% { transform:scale(1); } 50% { transform:scale(1.18); } }
+@keyframes rowIn       { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+@keyframes cardPop     { from { opacity:0; transform:translateY(10px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+
+.phx-page   { animation:pageEnter .45s cubic-bezier(.22,1,.36,1) both; }
+.phx-header { animation:headerSlide .4s cubic-bezier(.22,1,.36,1) .05s both; }
+.phx-header-icon { transition:transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease; }
+.phx-header-icon:hover { transform:rotate(-6deg) scale(1.12); box-shadow:0 6px 20px rgba(37,99,235,.35); }
+
+/* Stat cards */
+.phx-stat-card { animation:statPop .45s cubic-bezier(.34,1.56,.64,1) both; }
+.col-6:nth-child(1) .phx-stat-card { animation-delay:.05s; }
+.col-6:nth-child(2) .phx-stat-card { animation-delay:.12s; }
+.col-6:nth-child(3) .phx-stat-card { animation-delay:.19s; }
+.col-6:nth-child(4) .phx-stat-card { animation-delay:.26s; }
+.phx-stat-value { animation:numPop .5s cubic-bezier(.34,1.56,.64,1) .3s both; }
+.phx-stat-card:hover .phx-stat-value { transform:scale(1.08); transition:transform .2s cubic-bezier(.34,1.56,.64,1); }
+
+/* Reorder banner */
+.phx-reorder-banner { animation:bannerIn .35s ease .2s both; }
+
+/* Modal / cards */
+.phx-card { animation:cardPop .4s cubic-bezier(.34,1.56,.64,1) .1s both; }
+.phx-card:hover { box-shadow:0 8px 30px rgba(0,0,0,.09) !important; transform:translateY(-2px); transition:transform .25s ease, box-shadow .25s ease; }
+
+/* Table rows stagger */
+.phx-table tbody tr { animation:rowIn .25s ease both; }
+.phx-table tbody tr:nth-child(1)  { animation-delay:.04s; }
+.phx-table tbody tr:nth-child(2)  { animation-delay:.08s; }
+.phx-table tbody tr:nth-child(3)  { animation-delay:.12s; }
+.phx-table tbody tr:nth-child(4)  { animation-delay:.16s; }
+.phx-table tbody tr:nth-child(5)  { animation-delay:.20s; }
+.phx-table tbody tr:nth-child(6)  { animation-delay:.24s; }
+.phx-table tbody tr:nth-child(7)  { animation-delay:.28s; }
+.phx-table tbody tr:nth-child(8)  { animation-delay:.32s; }
+.phx-table tbody tr:nth-child(n+9){ animation-delay:.36s; }
+
+/* Interaction micro-animations */
+.phx-pill { transition:transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s ease; }
+.phx-pill:hover { transform:scale(1.08); box-shadow:0 3px 10px rgba(0,0,0,.12); }
+.phx-btn { transition:transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease; }
+.phx-btn:not(:disabled):hover { transform:translateY(-3px) scale(1.02); }
+.phx-btn:not(:disabled):active { transform:translateY(0) scale(.98); }
+.phx-input:focus { transform:scale(1.005); transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+
+/* Sync with shared backoffice visual language (User/Clinical) */
+.phx-btn,
+.phx-btn-sm {
+  border-radius: 8px;
+  box-shadow: none !important;
+}
+
+.phx-btn-primary,
+.phx-btn-info {
+  background: #2563eb !important;
+  color: #fff !important;
+}
+
+.phx-btn-warning {
+  background: #f59e0b !important;
+  color: #fff !important;
+}
+
+.phx-btn-danger,
+.phx-btn-alert {
+  background: #dc2626 !important;
+  color: #fff !important;
+}
+
+.phx-btn-ghost {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+.phx-card,
+.phx-reorder-panel {
+  border: 1px solid #dbe7f5;
+  box-shadow: none;
+}
+
+.phx-card-header {
+  background: #f8fbff;
+  border-bottom-color: #e3edf9;
+}
+</style>

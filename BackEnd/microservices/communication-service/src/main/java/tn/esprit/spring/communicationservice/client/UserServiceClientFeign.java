@@ -13,27 +13,27 @@ import java.util.List;
  */
 @FeignClient(
     name = "user-service",
-    url = "${services.user.url:http://localhost:8086}",
+    url = "${internal.user-service.base-url:http://localhost:8090}",
     configuration = FeignClientConfiguration.class
 )
 public interface UserServiceClientFeign {
     
-    @GetMapping("/users/doctors")
+    @GetMapping("/api/users/doctors")
     List<UserSummary> getDoctors(
         @RequestHeader(value = "Authorization", required = false) String token
     );
     
-    @GetMapping("/api/users/doctors")
+    @GetMapping("/users/doctors")
     List<UserSummary> getDoctorsAlt(
         @RequestHeader(value = "Authorization", required = false) String token
     );
     
-    @GetMapping("/users/guardians")
+    @GetMapping("/api/users/guardians")
     List<UserSummary> getGuardians(
         @RequestHeader(value = "Authorization", required = false) String token
     );
     
-    @GetMapping("/api/users/guardians")
+    @GetMapping("/users/guardians")
     List<UserSummary> getGuardiansAlt(
         @RequestHeader(value = "Authorization", required = false) String token
     );

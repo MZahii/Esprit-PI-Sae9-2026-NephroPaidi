@@ -1,0 +1,32 @@
+<section class="guardian-schedule-shell">
+  <div class="container">
+    <div class="schedule-shell-card">
+      <div class="schedule-shell-head">
+        <div>
+          <span class="schedule-eyebrow">Guardian Schedule</span>
+          <h1>Appointments and calendar in one place</h1>
+          <p>Manage requests and review confirmed dates without leaving the same scheduling space.</p>
+        </div>
+      </div>
+
+      <nav class="schedule-tabs" aria-label="Schedule sections">
+        <a
+          class="schedule-tab"
+          routerLink="/frontoffice/schedule/appointments"
+          routerLinkActive="active"
+        >
+          Appointments
+        </a>
+        <a
+          class="schedule-tab"
+          routerLink="/frontoffice/schedule/calendar"
+          routerLinkActive="active"
+        >
+          Calendar
+        </a>
+      </nav>
+    </div>
+  </div>
+</section>
+
+<router-outlet></router-outlet>

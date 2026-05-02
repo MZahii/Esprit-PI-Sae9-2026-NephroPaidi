@@ -4,9 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import tn.esprit.spring.pharmacyservice.dto.DispenseRequestDTO;
 import tn.esprit.spring.pharmacyservice.dto.DispensationLogDTO;
+import tn.esprit.spring.pharmacyservice.dto.SmartDispenseRequestDTO;
+import tn.esprit.spring.pharmacyservice.dto.SmartDispenseResponseDTO;
 import tn.esprit.spring.pharmacyservice.dto.StockDTO;
 import tn.esprit.spring.pharmacyservice.dto.TransferStockRequestDTO;
 import tn.esprit.spring.pharmacyservice.dto.TransferStockResponseDTO;
+import tn.esprit.spring.pharmacyservice.repository.MedicationRepository;
 import tn.esprit.spring.pharmacyservice.entity.Batch;
 import tn.esprit.spring.pharmacyservice.entity.DispensationLog;
 import tn.esprit.spring.pharmacyservice.entity.Stock;
@@ -19,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -32,6 +37,7 @@ public class StockService {
     private final StockRepository stockRepository;
     private final BatchRepository batchRepository;
     private final DispensationLogRepository dispensationLogRepository;
+    private final MedicationRepository medicationRepository;
 
     // ─── Initialization ───────────────────────────────────────────────────────
 
@@ -56,7 +62,20 @@ public class StockService {
     }
 
     public List<StockDTO> getAllStock() {
-        return stockRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
+        return getAllStock(null);
+    }
+
+    /**
+     * @param sort "asc" → quantity low→high, "desc" → high→low, null → default
+     */
+    public List<StockDTO> getAllStock(String sort) {
+        List<StockDTO> list = stockRepository.findAll().stream()
+                .map(this::toDTO).collect(Collectors.toList());
+        if ("asc".equalsIgnoreCase(sort))
+            list.sort(Comparator.comparingInt(StockDTO::getQuantityAvailable));
+        else if ("desc".equalsIgnoreCase(sort))
+            list.sort(Comparator.comparingInt(StockDTO::getQuantityAvailable).reversed());
+        return list;
     }
 
     public List<StockDTO> getLowStock(int threshold) {
@@ -126,71 +145,112 @@ public class StockService {
         return toDTO(stockRepository.save(stock));
     }
 
+    // ─── Stock Transfer ───────────────────────────────────────────────────────
+
     /**
-     * Transfer stock between two batches of the same medication.
+     * Transfers stock from one batch to another.
+     * Validates source availability and target batch is not expired.
      */
     public TransferStockResponseDTO transferStock(TransferStockRequestDTO request) {
-        Long sourceBatchId = request.getSourceBatchId();
-        Long targetBatchId = request.getTargetBatchId();
-        int qty = request.getQuantity() != null ? request.getQuantity() : 0;
-        String reason = request.getReason() != null ? request.getReason().trim() : "stock transfer";
+        Long sourceId = request.getSourceBatchId();
+        Long targetId = request.getTargetBatchId();
+        int qty = request.getQuantity();
 
-        if (sourceBatchId == null || targetBatchId == null) {
-            throw new IllegalArgumentException("Source batch and target batch are required.");
-        }
-        if (sourceBatchId.equals(targetBatchId)) {
+        if (sourceId.equals(targetId)) {
             throw new IllegalArgumentException("Source and target batches must be different.");
         }
-        if (qty <= 0) {
-            throw new IllegalArgumentException("Transfer quantity must be greater than 0.");
-        }
 
-        Batch sourceBatch = batchRepository.findById(sourceBatchId)
-                .orElseThrow(() -> new NoSuchElementException("Source batch not found: " + sourceBatchId));
-        Batch targetBatch = batchRepository.findById(targetBatchId)
-                .orElseThrow(() -> new NoSuchElementException("Target batch not found: " + targetBatchId));
-
-        if (!sourceBatch.getMedication().getMedicationId().equals(targetBatch.getMedication().getMedicationId())) {
-            throw new IllegalStateException("Stock transfer is only allowed between batches of the same medication.");
-        }
-        if (sourceBatch.isExpired()) {
-            throw new IllegalStateException("Cannot transfer stock from an expired source batch.");
-        }
+        Batch targetBatch = batchRepository.findById(targetId)
+                .orElseThrow(() -> new NoSuchElementException("Target batch not found: " + targetId));
         if (targetBatch.isExpired()) {
-            throw new IllegalStateException("Cannot transfer stock into an expired target batch.");
+            throw new IllegalStateException("Cannot transfer stock to an expired batch: " + targetId);
         }
 
-        Stock sourceStock = findByBatchId(sourceBatchId);
-        if (!sourceStock.checkAvailability(qty)) {
-            throw new IllegalStateException(
-                    "Insufficient stock on source batch " + sourceBatchId + ". Requested: " + qty
-                            + ", Available: " + sourceStock.getQuantityAvailable());
+        Stock source = findByBatchId(sourceId);
+        if (!source.checkAvailability(qty)) {
+            throw new IllegalStateException("Insufficient stock in source batch " + sourceId
+                    + ". Requested: " + qty + ", Available: " + source.getQuantityAvailable());
         }
 
-        Stock targetStock = stockRepository.findByBatchId(targetBatchId)
-                .orElseGet(() -> stockRepository.save(
-                        Stock.builder()
-                                .batchId(targetBatchId)
-                                .quantityAvailable(0)
-                                .build()
-                ));
+        Stock target = findByBatchId(targetId);
 
-        sourceStock.updateStock(-qty);
-        targetStock.updateStock(qty);
+        source.updateStock(-qty);
+        target.updateStock(qty);
+        stockRepository.save(source);
+        stockRepository.save(target);
 
-        Stock savedSource = stockRepository.save(sourceStock);
-        Stock savedTarget = stockRepository.save(targetStock);
-
-        log.info("Transferred {} units from batch {} to batch {} (reason: {})",
-                qty, sourceBatchId, targetBatchId, reason);
+        String reason = request.getReason() != null ? request.getReason() : "stock transfer";
+        log.info("Transferred {} units from batch {} to batch {} (reason: {})", qty, sourceId, targetId, reason);
 
         return TransferStockResponseDTO.builder()
-                .sourceBatchId(sourceBatchId)
-                .targetBatchId(targetBatchId)
+                .sourceBatchId(sourceId)
+                .targetBatchId(targetId)
                 .quantityTransferred(qty)
-                .sourceQuantityAvailable(savedSource.getQuantityAvailable())
-                .targetQuantityAvailable(savedTarget.getQuantityAvailable())
+                .sourceQuantityAvailable(source.getQuantityAvailable())
+                .targetQuantityAvailable(target.getQuantityAvailable())
                 .reason(reason)
+                .build();
+    }
+
+    // ─── Smart FEFO Dispense ──────────────────────────────────────────────────
+
+    /**
+     * FEFO (First Expired First Out): automatically picks non-expired batches
+     * ordered by expiration date and dispenses across them until quantity is fulfilled.
+     */
+    public SmartDispenseResponseDTO smartDispense(SmartDispenseRequestDTO request) {
+        Long medicationId = request.getMedicationId();
+        int requested = request.getQuantity();
+
+        String medicationName = medicationRepository.findById(medicationId)
+                .orElseThrow(() -> new NoSuchElementException("Medication not found: " + medicationId))
+                .getName();
+
+        List<Batch> batches = batchRepository.findNonExpiredByMedicationOrderedByExpiry(medicationId, LocalDate.now());
+        if (batches.isEmpty()) {
+            throw new IllegalStateException("No valid (non-expired) batches available for medication: " + medicationId);
+        }
+
+        List<SmartDispenseResponseDTO.BatchDispenseLineDTO> lines = new ArrayList<>();
+        int remaining = requested;
+
+        for (Batch batch : batches) {
+            if (remaining <= 0) break;
+
+            Stock stock = stockRepository.findByBatchId(batch.getBatchId()).orElse(null);
+            if (stock == null || stock.getQuantityAvailable() <= 0) continue;
+
+            int toDispense = Math.min(remaining, stock.getQuantityAvailable());
+            stock.updateStock(-toDispense);
+            stockRepository.save(stock);
+
+            dispensationLogRepository.save(DispensationLog.builder()
+                    .batchId(batch.getBatchId())
+                    .quantity(toDispense)
+                    .dispensedAt(LocalDateTime.now())
+                    .build());
+
+            lines.add(SmartDispenseResponseDTO.BatchDispenseLineDTO.builder()
+                    .batchId(batch.getBatchId())
+                    .batchNumber(batch.getBatchNumber())
+                    .quantityDispensed(toDispense)
+                    .expirationDate(batch.getExpirationDate().toString())
+                    .build());
+
+            remaining -= toDispense;
+            log.info("Smart dispense: {} units from batch {} (exp: {})", toDispense, batch.getBatchId(), batch.getExpirationDate());
+        }
+
+        if (remaining > 0) {
+            throw new IllegalStateException("Insufficient total stock. Still missing " + remaining + " unit(s) for medication: " + medicationId);
+        }
+
+        return SmartDispenseResponseDTO.builder()
+                .medicationId(medicationId)
+                .medicationName(medicationName)
+                .requested(requested)
+                .totalDispensed(requested)
+                .lines(lines)
                 .build();
     }
 

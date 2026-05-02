@@ -7,7 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
 
-type StaffRole = 'DOCTOR' | 'NURSE' | 'SURGEON' | 'PHARMACIST' | 'RECEPTIONIST';
+type StaffRole = 'DOCTOR' | 'NURSE' | 'SURGEON' | 'PHARMACIST' | 'RECEPTIONIST' | 'LAB_AGENT';
 type Sex = 'MALE' | 'FEMALE' | '';
 interface UserRow {
   id: number;
@@ -40,6 +40,7 @@ export class CreateStaff {
     dateOfBirth: string;
     sex: Sex;
     role: StaffRole | '';
+    avatarUrl: string;
   } = {
     username: '',
     cin: '',
@@ -49,7 +50,8 @@ export class CreateStaff {
     phone: '',
     dateOfBirth: '',
     sex: '',
-    role: ''
+    role: '',
+    avatarUrl: ''
   };
 
   readonly roleOptions: StaffRole[] = [
@@ -57,7 +59,8 @@ export class CreateStaff {
     'NURSE',
     'SURGEON',
     'PHARMACIST',
-    'RECEPTIONIST'
+    'RECEPTIONIST',
+    'LAB_AGENT'
   ];
 
   constructor(
@@ -138,7 +141,7 @@ export class CreateStaff {
         this.http.get<UserRow[] | unknown>(`${environment.apiBaseUrl}/api/users`, { headers })
       );
       const users = Array.isArray(response) ? response : [];
-      const staffRoles: StaffRole[] = ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST'];
+      const staffRoles: StaffRole[] = ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST', 'LAB_AGENT'];
       this.existingStaffUsernames = new Set(
         users
           .filter((u) => staffRoles.includes(u.role as StaffRole))
@@ -176,7 +179,8 @@ export class CreateStaff {
       phone: this.formatPhoneForApi(phoneLocal),
       dateOfBirth: this.staffForm.dateOfBirth,
       sex: this.staffForm.sex,
-      role: this.staffForm.role
+      role: this.staffForm.role,
+      avatarUrl: this.staffForm.avatarUrl.trim() || null
     };
 
     this.loading = true;
@@ -201,7 +205,8 @@ export class CreateStaff {
         phone: '',
         dateOfBirth: '',
         sex: '',
-        role: ''
+        role: '',
+        avatarUrl: ''
       };
       this.cdr.detectChanges();
 

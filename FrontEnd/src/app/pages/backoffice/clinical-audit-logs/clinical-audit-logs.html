@@ -1,24 +1,35 @@
-<div class="page-header">
-  <div class="page-header-left d-flex align-items-center">
-    <div class="page-header-title">
-      <h5 class="m-b-10">Clinical Audit Logs</h5>
+<div class="module-page clinical-logs-page">
+  <header class="module-header card stretch stretch-full">
+    <div>
+      <p class="module-kicker">Observability</p>
+      <h2>Clinical Audit Logs</h2>
+      <p class="module-subtitle">Clinical trace view with cleaner event cards and export-ready structure.</p>
     </div>
-    <ul class="breadcrumb">
-      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
-      <li class="breadcrumb-item">Clinical Audit Logs</li>
-    </ul>
-  </div>
-</div>
+    <div class="module-header__crumbs">
+      <a routerLink="/backoffice/dashboard">Dashboard</a>
+      <span>/</span>
+      <span>Clinical Audit Logs</span>
+    </div>
+  </header>
 
-<div class="main-content">
-  <div class="card stretch stretch-full">
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <section class="card stretch stretch-full panel-card">
+    <div class="card-header panel-head">
       <h5 class="card-title mb-0">Clinical Service Trace</h5>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-light" type="button" (click)="printLogs()">Print Report</button>
+        <button class="btn btn-sm btn-primary" type="button" (click)="exportPdf()">Export PDF</button>
+      </div>
     </div>
 
     <div class="card-body">
       <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
       <div *ngIf="loading" class="text-muted py-3">Loading logs...</div>
+
+      <div class="kpi-grid mb-3" *ngIf="!loading">
+        <article class="kpi-card"><span>Total Events</span><strong>{{ filteredLogs.length }}</strong></article>
+        <article class="kpi-card"><span>Unique Actions</span><strong>{{ uniqueActionsCount }}</strong></article>
+        <article class="kpi-card"><span>Entity Types</span><strong>{{ uniqueEntityTypesCount }}</strong></article>
+      </div>
 
       <div class="filters mb-3" *ngIf="!loading">
         <input
@@ -26,41 +37,58 @@
           class="form-control"
           placeholder="Search entity, action, actor, details..."
           [(ngModel)]="search"
+          (ngModelChange)="onFiltersChanged()"
         />
-        <select class="form-control" [(ngModel)]="actionFilter">
+        <select class="form-control" [(ngModel)]="actionFilter" (ngModelChange)="onFiltersChanged()">
           <option *ngFor="let action of actionOptions" [value]="action">{{ action }}</option>
         </select>
       </div>
 
-      <div class="table-responsive" *ngIf="!loading">
-        <table class="table table-hover align-middle">
-          <thead>
-          <tr>
-            <th>Date</th>
-            <th>Entity</th>
-            <th>Entity ID</th>
-            <th>Action</th>
-            <th>Actor</th>
-            <th>Role</th>
-            <th>Details</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr *ngFor="let log of filteredLogs">
-            <td>{{ log.createdAt | date:'yyyy-MM-dd HH:mm:ss' }}</td>
-            <td>{{ log.entityType }}</td>
-            <td>{{ log.entityId }}</td>
-            <td>{{ log.action }}</td>
-            <td>{{ log.actorUsername || '-' }}</td>
-            <td>{{ log.actorRole || '-' }}</td>
-            <td class="text-break">{{ log.details || '-' }}</td>
-          </tr>
-          <tr *ngIf="filteredLogs.length === 0">
-            <td colspan="7" class="text-center text-muted py-4">No clinical audit logs found.</td>
-          </tr>
-          </tbody>
-        </table>
+      <div class="events-grid" *ngIf="!loading">
+        <article class="event-card" *ngFor="let log of paginatedLogs">
+          <header class="event-head">
+            <div class="event-time">{{ log.createdAt | date:'yyyy-MM-dd HH:mm:ss' }}</div>
+            <span class="event-action">{{ log.action }}</span>
+          </header>
+
+          <div class="event-meta">
+            <span><strong>Entity:</strong> {{ log.entityType }}</span>
+            <span><strong>ID:</strong> {{ log.entityId }}</span>
+            <span><strong>Actor:</strong> {{ log.actorUsername || '-' }}</span>
+            <span><strong>Role:</strong> {{ log.actorRole || '-' }}</span>
+          </div>
+
+          <div class="event-details">{{ log.details || 'No details provided.' }}</div>
+        </article>
+
+        <div class="empty-state" *ngIf="filteredLogs.length === 0">No clinical audit logs found.</div>
+      </div>
+
+      <div class="pagination-wrap mt-3" *ngIf="!loading && filteredLogs.length > 0">
+        <div class="d-flex align-items-center gap-2">
+          <label class="mb-0">Rows:</label>
+          <select class="form-control page-size" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChanged()">
+            <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+          </select>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+            Prev
+          </button>
+          <button
+            *ngFor="let p of pageNumbers"
+            class="btn btn-sm"
+            [ngClass]="p === currentPage ? 'btn-primary' : 'btn-light'"
+            type="button"
+            (click)="goToPage(p)"
+          >
+            {{ p }}
+          </button>
+          <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+            Next
+          </button>
+        </div>
       </div>
     </div>
-  </div>
+  </section>
 </div>

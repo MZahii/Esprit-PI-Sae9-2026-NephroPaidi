@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import tn.esprit.spring.pharmacyservice.dto.DispensationLogDTO;
 import tn.esprit.spring.pharmacyservice.dto.DispenseRequestDTO;
+import tn.esprit.spring.pharmacyservice.dto.SmartDispenseRequestDTO;
+import tn.esprit.spring.pharmacyservice.dto.SmartDispenseResponseDTO;
 import tn.esprit.spring.pharmacyservice.dto.StockDTO;
 import tn.esprit.spring.pharmacyservice.dto.TransferStockRequestDTO;
 import tn.esprit.spring.pharmacyservice.dto.TransferStockResponseDTO;
@@ -28,7 +30,7 @@ public class StockController {
     private final StockService stockService;
 
     @PostMapping("/batches/{batchId}/initialize")
-   //@PreAuthorize("hasAnyRole('PHARMACIST','PLATFORM_ADMIN')")
+    @PreAuthorize("hasAnyRole('PHARMACIST','ADMIN')")
     @Operation(summary = "Initialize stock for a new batch")
     public ResponseEntity<StockDTO> initialize(
             @PathVariable Long batchId,
@@ -38,19 +40,23 @@ public class StockController {
     }
 
     @GetMapping
-    @Operation(summary = "List all stock entries")
-    public ResponseEntity<List<StockDTO>> getAll() {
-        return ResponseEntity.ok(stockService.getAllStock());
+    @PreAuthorize("hasAnyRole('PHARMACIST','ADMIN','NURSE','GUARDIAN')")
+    @Operation(summary = "List all stock entries with optional sorting",
+               description = "Supports ?sort=asc (low→high quantity) or ?sort=desc (high→low)")
+    public ResponseEntity<List<StockDTO>> getAll(
+            @RequestParam(required = false) String sort) {
+        return ResponseEntity.ok(stockService.getAllStock(sort));
     }
 
     @GetMapping("/batches/{batchId}")
+    @PreAuthorize("hasAnyRole('PHARMACIST','ADMIN','NURSE')")
     @Operation(summary = "Get stock for a specific batch")
     public ResponseEntity<StockDTO> getByBatch(@PathVariable Long batchId) {
         return ResponseEntity.ok(stockService.getStockByBatch(batchId));
     }
 
     @GetMapping("/low")
-    //@PreAuthorize("hasAnyRole('PHARMACIST','PLATFORM_ADMIN')")
+    @PreAuthorize("hasAnyRole('PHARMACIST','ADMIN','NURSE')")
     @Operation(summary = "List low-stock entries below threshold")
     public ResponseEntity<List<StockDTO>> getLow(
             @RequestParam(defaultValue = "10") int threshold) {
@@ -58,20 +64,21 @@ public class StockController {
     }
 
     @GetMapping("/out-of-stock")
-    //@PreAuthorize("hasAnyRole('PHARMACIST','PLATFORM_ADMIN')")
+    @PreAuthorize("hasAnyRole('PHARMACIST','ADMIN','NURSE')")
     @Operation(summary = "List completely out-of-stock batches")
     public ResponseEntity<List<StockDTO>> getOutOfStock() {
         return ResponseEntity.ok(stockService.getOutOfStock());
     }
 
     @PostMapping("/dispense")
-    //@PreAuthorize("hasAnyRole('PHARMACIST','NURSE','PLATFORM_ADMIN')")
+    @PreAuthorize("hasAnyRole('PHARMACIST','NURSE','ADMIN')")
     @Operation(summary = "Dispense medication from a batch")
     public ResponseEntity<StockDTO> dispense(@RequestBody DispenseRequestDTO request) {
         return ResponseEntity.ok(stockService.dispense(request));
     }
 
     @GetMapping("/dispensations")
+    @PreAuthorize("hasAnyRole('PHARMACIST','ADMIN','NURSE')")
     @Operation(summary = "Dispensation history for a given date (defaults to today)")
     public ResponseEntity<List<DispensationLogDTO>> getDispensations(
             @RequestParam(required = false) String date) {
@@ -80,7 +87,7 @@ public class StockController {
     }
 
     @PatchMapping("/batches/{batchId}/adjust")
-    //@PreAuthorize("hasAnyRole('PHARMACIST','PLATFORM_ADMIN')")
+    @PreAuthorize("hasAnyRole('PHARMACIST','ADMIN')")
     @Operation(summary = "Manual stock adjustment (positive or negative delta)")
     public ResponseEntity<StockDTO> adjust(
             @PathVariable Long batchId,
@@ -91,9 +98,16 @@ public class StockController {
     }
 
     @PostMapping("/transfer")
-    @Operation(summary = "Transfer stock between two batches of the same medication")
-    public ResponseEntity<TransferStockResponseDTO> transfer(
-            @RequestBody TransferStockRequestDTO request) {
+    @PreAuthorize("hasAnyRole('PHARMACIST','ADMIN')")
+    @Operation(summary = "Transfer stock from one batch to another")
+    public ResponseEntity<TransferStockResponseDTO> transfer(@RequestBody TransferStockRequestDTO request) {
         return ResponseEntity.ok(stockService.transferStock(request));
+    }
+
+    @PostMapping("/smart-dispense")
+    @PreAuthorize("hasAnyRole('PHARMACIST','NURSE','ADMIN')")
+    @Operation(summary = "FEFO smart dispense: automatically picks batches expiring soonest first")
+    public ResponseEntity<SmartDispenseResponseDTO> smartDispense(@RequestBody SmartDispenseRequestDTO request) {
+        return ResponseEntity.ok(stockService.smartDispense(request));
     }
 }

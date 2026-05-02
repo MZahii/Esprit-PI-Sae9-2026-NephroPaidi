@@ -1,59 +1,61 @@
-# DuraluxAdmin
+# Frontend Test Guide
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.3.
+This frontend is an Angular 21 app. Keep this file focused on how to run and validate it before the jury.
 
-## Development server
+## Prerequisites
 
-To start a local development server, run:
+- Node.js 20+ and npm
+- Backend gateway running at `http://localhost:8083`
+- Frontend dependencies installed with `npm install`
 
-```bash
-ng serve
+## Start the app
+
+From this folder:
+
+```powershell
+npm install
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Open `http://localhost:4200`.
 
-## Code scaffolding
+## Run all frontend tests
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```powershell
+npm run test -- --watch=false
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+This runs the Angular spec files in `src/app/**/*.spec.ts`.
 
-```bash
-ng generate --help
+## Run one frontend test file
+
+Use this when you want to check one feature fast:
+
+```powershell
+npm run test -- --watch=false --include src/app/core/services/appointments-api.service.spec.ts
 ```
 
-## Building
+Replace the spec path with the file you want to verify.
 
-To build the project run:
+## Build check
 
-```bash
-ng build
+```powershell
+npm run build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Run the build after tests to catch template and TypeScript issues before the demo.
 
-## Running unit tests
+## What to test first for the jury
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+- Auth/session flows
+- API service specs for the most used screens
+- Route guards and interceptor behavior
+- Dashboard and booking/appointment screens
+- Any service that talks to the gateway
 
-```bash
-ng test
-```
+## Useful pattern for new specs
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- Use `HttpClientTestingModule` for service tests.
+- Mock the backend with `HttpTestingController`.
+- Keep tests focused on one behavior per spec.
+- Prefer a small number of meaningful tests over many trivial ones.

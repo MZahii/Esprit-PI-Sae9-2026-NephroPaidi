@@ -72,6 +72,25 @@ public class User {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
+    @Column(name = "preferred_language", nullable = false, length = 12)
+    @Builder.Default
+    private String preferredLanguage = "en";
+
+    @Column(name = "notifications_enabled", nullable = false)
+    @Builder.Default
+    private boolean notificationsEnabled = true;
+
+    @Column(name = "theme", nullable = false, length = 20)
+    @Builder.Default
+    private String theme = "light";
+
+    @Column(name = "must_change_password", nullable = false)
+    @Builder.Default
+    private boolean mustChangePassword = false;
+
     @PrePersist
     void onCreate() {
         LocalDateTime now = LocalDateTime.now();

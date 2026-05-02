@@ -39,6 +39,7 @@
     "@angular/build": "^21.0.3",
     "@angular/cli": "^21.0.3",
     "@angular/compiler-cli": "^21.0.0",
+    "@playwright/test": "^1.59.1",
     "@types/node": "^25.5.2",
     "jsdom": "^27.1.0",
     "typescript": "~5.9.2",

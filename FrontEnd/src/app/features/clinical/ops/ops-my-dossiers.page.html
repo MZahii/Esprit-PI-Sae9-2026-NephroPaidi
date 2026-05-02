@@ -1,0 +1,49 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Nurse Hospitalization Board</h5>
+    </div>
+
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Home</a></li>
+      <li class="breadcrumb-item">Operations</li>
+      <li class="breadcrumb-item">My Hospitalizations</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content my-dossiers">
+  <div class="card stretch stretch-full">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="card-title mb-0">Active Hospitalizations</h5>
+        <small class="text-muted">Hospitalizations with care tasks waiting for nursing execution.</small>
+      </div>
+      <button class="btn btn-light btn-sm" (click)="load()" [disabled]="loading">Refresh</button>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+      <div *ngIf="loading" class="text-muted">Loading active hospitalizations...</div>
+      <div *ngIf="!loading && hospitalizations.length === 0" class="text-muted">No active hospitalizations right now.</div>
+
+      <div class="row g-3" *ngIf="!loading && hospitalizations.length > 0">
+        <div class="col-xl-4 col-md-6" *ngFor="let item of hospitalizations">
+          <button class="dossier-card" (click)="openHospitalization(item)">
+            <div class="dossier-card-head">
+              <span class="dossier-id">{{ item.id }}</span>
+              <span class="badge bg-soft-warning text-warning">{{ item.status }}</span>
+            </div>
+            <div class="dossier-line"><strong>Patient:</strong> {{ item.patientId }}</div>
+            <div class="dossier-line"><strong>Doctor:</strong> {{ item.doctorUsername }}</div>
+            <div class="dossier-line"><strong>Reason:</strong> {{ item.reason }}</div>
+            <div class="dossier-line"><strong>Tasks:</strong> {{ item.totalTasks }} total • {{ item.pendingTasks }} pending</div>
+            <div class="dossier-line"><strong>Created:</strong> {{ item.createdAt | date:'short' }}</div>
+            <div class="open-link">Open hospitalization</div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

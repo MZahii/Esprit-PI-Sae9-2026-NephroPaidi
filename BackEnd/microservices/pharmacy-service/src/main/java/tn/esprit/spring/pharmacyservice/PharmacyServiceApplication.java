@@ -2,12 +2,12 @@ package tn.esprit.spring.pharmacyservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
-@EnableDiscoveryClient
-@EnableFeignClients(basePackages = "tn.esprit.spring.pharmacyservice.client")
+@EnableFeignClients
+@EnableAsync
 public class PharmacyServiceApplication {
 
 	public static void main(String[] args) {

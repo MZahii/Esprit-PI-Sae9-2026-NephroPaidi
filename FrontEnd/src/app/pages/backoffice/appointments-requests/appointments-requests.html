@@ -19,7 +19,8 @@
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
       <h5 class="card-title mb-0">Appointment Queue</h5>
       <div class="d-flex align-items-center gap-2">
-        <select class="form-control" [(ngModel)]="statusFilter" (change)="load(); onFiltersChange()">
+        <label class="visually-hidden" for="requestsStatusFilter">Status Filter</label>
+        <select id="requestsStatusFilter" name="requestsStatusFilter" class="form-control" [(ngModel)]="statusFilter" (change)="load(); onFiltersChange()">
           <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
         </select>
         <button class="btn btn-light-brand" type="button" (click)="load()">Refresh</button>
@@ -34,10 +35,12 @@
 
       <div class="row g-2 mb-3">
         <div class="col-md-6">
-          <input class="form-control" type="text" placeholder="Search by patient, status, or request reason" [(ngModel)]="search" (ngModelChange)="onFiltersChange()" />
+          <label class="visually-hidden" for="requestsSearch">Search Requests</label>
+          <input id="requestsSearch" name="requestsSearch" class="form-control" type="text" placeholder="Search by patient, status, or request reason" [(ngModel)]="search" (ngModelChange)="onFiltersChange()" />
         </div>
         <div class="col-md-3">
-          <input class="form-control" type="date" [(ngModel)]="dateFilter" (ngModelChange)="onFiltersChange()" />
+          <label class="visually-hidden" for="requestsDateFilter">Date Filter</label>
+          <input id="requestsDateFilter" name="requestsDateFilter" class="form-control" type="date" [(ngModel)]="dateFilter" (ngModelChange)="onFiltersChange()" />
         </div>
       </div>
 
@@ -133,27 +136,28 @@
 
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Scheduled Date</label>
-              <input type="date" class="form-control" [(ngModel)]="scheduledDate" [min]="minDateTimeLocal.slice(0,10)" />
+              <label class="form-label fw-semibold" for="approveScheduledDate">Scheduled Date</label>
+              <input id="approveScheduledDate" name="approveScheduledDate" type="date" class="form-control" [(ngModel)]="scheduledDate" [min]="minDateTimeLocal.slice(0,10)" />
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Scheduled Time</label>
-              <input type="time" class="form-control" [(ngModel)]="scheduledTime" />
+              <label class="form-label fw-semibold" for="approveScheduledTime">Scheduled Time</label>
+              <input id="approveScheduledTime" name="approveScheduledTime" type="time" class="form-control" [(ngModel)]="scheduledTime" />
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Assigned Doctor</label>
-              <select class="form-control" [(ngModel)]="assignedDoctor">
+              <label class="form-label fw-semibold" for="approveAssignedDoctor">Assigned Doctor</label>
+              <select id="approveAssignedDoctor" name="approveAssignedDoctor" class="form-control" [(ngModel)]="assignedDoctorId" [disabled]="doctorLoading">
                 <option value="">Select a doctor</option>
-                <option *ngFor="let doctor of doctorOptions" [value]="doctor">{{ doctor }}</option>
+                <option *ngFor="let doctor of doctorOptions" [value]="doctor.id">{{ doctor.label }}</option>
               </select>
+              <small class="text-muted d-block mt-1" *ngIf="doctorLoading">Loading doctors...</small>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Location / Room (optional)</label>
-              <input type="text" class="form-control" [(ngModel)]="location" placeholder="Room A-12" />
+              <label class="form-label fw-semibold" for="approveLocation">Location / Room (optional)</label>
+              <input id="approveLocation" name="approveLocation" type="text" class="form-control" [(ngModel)]="location" placeholder="Room A-12" />
             </div>
             <div class="col-12">
-              <label class="form-label fw-semibold">Receptionist Notes (optional)</label>
-              <textarea class="form-control" rows="3" maxlength="500" [(ngModel)]="approvalNotes"></textarea>
+              <label class="form-label fw-semibold" for="approveNotes">Receptionist Notes (optional)</label>
+              <textarea id="approveNotes" name="approveNotes" class="form-control" rows="3" maxlength="500" [(ngModel)]="approvalNotes"></textarea>
               <div class="d-flex justify-content-end"><small class="text-muted">{{ approvalNotesLength }} / 500</small></div>
             </div>
           </div>
@@ -185,14 +189,14 @@
             This action rejects the request and sends a notification to the guardian.
           </div>
 
-          <label class="form-label fw-semibold">Rejection Reason</label>
-          <select class="form-control" [(ngModel)]="rejectReason">
+          <label class="form-label fw-semibold" for="rejectReason">Rejection Reason</label>
+          <select id="rejectReason" name="rejectReason" class="form-control" [(ngModel)]="rejectReason">
             <option value="">Select a rejection reason</option>
             <option *ngFor="let reason of rejectReasons" [value]="reason">{{ reason }}</option>
           </select>
 
-          <label class="form-label fw-semibold mt-3">Additional Notes (required)</label>
-          <textarea class="form-control" rows="4" maxlength="500" [(ngModel)]="rejectNotes" placeholder="Explain clearly why the request is being rejected."></textarea>
+          <label class="form-label fw-semibold mt-3" for="rejectNotes">Additional Notes (required)</label>
+          <textarea id="rejectNotes" name="rejectNotes" class="form-control" rows="4" maxlength="500" [(ngModel)]="rejectNotes" placeholder="Explain clearly why the request is being rejected."></textarea>
           <div class="d-flex justify-content-between">
             <small class="text-danger" *ngIf="!rejectNotes.trim()">Notes are required.</small>
             <small class="text-muted ms-auto">{{ rejectNotesLength }} / 500</small>

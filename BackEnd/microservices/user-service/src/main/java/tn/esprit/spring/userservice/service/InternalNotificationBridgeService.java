@@ -39,7 +39,7 @@ public class InternalNotificationBridgeService {
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
             restTemplate.postForEntity(
-                    administrationServiceBaseUrl + "/observability/internal/notifications",
+                    administrationServiceBaseUrl + "/api/observability/internal/notifications",
                     entity,
                     Void.class
             );
@@ -48,4 +48,3 @@ public class InternalNotificationBridgeService {
         }
     }
 }
-

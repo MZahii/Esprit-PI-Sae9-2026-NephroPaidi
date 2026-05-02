@@ -1,9 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AppointmentsApiService, AppointmentRequestItem, AppointmentStatus, PatientDirectoryItem } from '../../../core/services/appointments-api.service';
-import { finalize } from 'rxjs';
+import { ClinicalApiService } from '../../../core/services/clinical-api.service';
+import { catchError, finalize, map, of, switchMap } from 'rxjs';
+
+interface DoctorOption {
+  id: string;
+  label: string;
+}
 
 @Component({
   selector: 'app-appointments-requests',
@@ -32,7 +38,8 @@ export class AppointmentsRequestsComponent implements OnInit {
   statusFilter: AppointmentStatus | 'ALL' = 'ALL';
   readonly statuses: Array<AppointmentStatus | 'ALL'> = ['ALL', 'REQUESTED', 'APPROVED', 'REJECTED', 'CANCELLED'];
   readonly rejectReasons = ['Doctor unavailable', 'Time slot full', 'Incomplete information', 'Other'];
-  readonly doctorOptions = ['Dr. Sarah Martin', 'Dr. Adam Ben Salem', 'Dr. Leila Trabelsi', 'Dr. Karim Gharbi'];
+  doctorOptions: DoctorOption[] = [];
+  doctorLoading = false;
 
   detailsModalOpen = false;
   approveModalOpen = false;
@@ -40,17 +47,22 @@ export class AppointmentsRequestsComponent implements OnInit {
   selectedId = '';
   scheduledDate = '';
   scheduledTime = '';
-  assignedDoctor = '';
+  assignedDoctorId = '';
   location = '';
   approvalNotes = '';
   rejectReason = '';
   rejectNotes = '';
   rejectConfirmed = false;
 
-  constructor(private appointmentsApi: AppointmentsApiService) {}
+  constructor(
+    private appointmentsApi: AppointmentsApiService,
+    private clinicalApi: ClinicalApiService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadPatientsDirectory();
+    this.loadDoctors();
     this.load();
   }
 
@@ -125,7 +137,11 @@ export class AppointmentsRequestsComponent implements OnInit {
   }
 
   get isApproveFormInvalid(): boolean {
-    return !this.scheduledDate || !this.scheduledTime || !this.assignedDoctor || this.isScheduledDateInvalid;
+    return !this.scheduledDate || !this.scheduledTime || !this.assignedDoctorId || this.isScheduledDateInvalid;
+  }
+
+  get assignedDoctorLabel(): string {
+    return this.doctorOptions.find(d => d.id === this.assignedDoctorId)?.label || '';
   }
 
   get rejectNotesLength(): number {
@@ -228,16 +244,18 @@ export class AppointmentsRequestsComponent implements OnInit {
         this.page = 1;
       },
       error: (err) => {
-        this.errorMessage = err?.error?.message || 'Unable to load appointment requests.';
+        this.items = [];
+        this.page = 1;
+        this.errorMessage = this.formatHttpError(err, 'Unable to load appointment requests.');
       }
     });
   }
 
   openApproveModal(id: string): void {
     this.selectedId = id;
-    this.scheduledDate = '';
-    this.scheduledTime = '';
-    this.assignedDoctor = '';
+    const req = this.items.find(item => item.id === id);
+    this.prefillScheduleFromRequest(req);
+    this.assignedDoctorId = '';
     this.location = '';
     this.approvalNotes = '';
     this.approveModalOpen = true;
@@ -280,7 +298,7 @@ export class AppointmentsRequestsComponent implements OnInit {
 
   private buildApprovalNotes(): string {
     const details = [
-      `Assigned Doctor: ${this.assignedDoctor}`,
+      `Assigned Doctor: ${this.assignedDoctorLabel || this.assignedDoctorId}`,
       this.location.trim() ? `Location/Room: ${this.location.trim()}` : null,
       this.approvalNotes.trim() ? `Receptionist Notes: ${this.approvalNotes.trim()}` : null
     ].filter(Boolean);
@@ -292,6 +310,12 @@ export class AppointmentsRequestsComponent implements OnInit {
     if (!this.selectedId || this.isApproveFormInvalid || this.actionLoading) return;
     this.actionLoading = true;
     this.successMessage = '';
+    const request = this.selectedRequest;
+    if (!request) {
+      this.actionLoading = false;
+      this.errorMessage = 'Selected request not found. Please refresh and retry.';
+      return;
+    }
 
     const scheduledDateTime = `${this.scheduledDate}T${this.scheduledTime}:00`;
 
@@ -299,20 +323,37 @@ export class AppointmentsRequestsComponent implements OnInit {
       scheduledDate: scheduledDateTime,
       receptionistNotes: this.buildApprovalNotes() || null
     }).pipe(
+      switchMap(() => this.clinicalApi.createAppointment({
+        patientId: request.patientId,
+        doctorId: this.assignedDoctorId,
+        scheduledAt: this.normalizeDateTime(scheduledDateTime),
+        durationMinutes: 30,
+        reason: request.reason || 'Approved appointment request'
+      }).pipe(
+        map(() => ({ appointmentCreated: true })),
+        catchError((createError) => of({ appointmentCreated: false, createError }))
+      )),
       finalize(() => {
         this.actionLoading = false;
+        this.cdr.detectChanges();
       })
     ).subscribe({
-      next: () => {
+      next: (result) => {
         this.actionLoading = false;
-        this.successMessage = 'Appointment request approved successfully.';
+        this.successMessage = result.appointmentCreated
+          ? 'Appointment request approved and clinical appointment created successfully.'
+          : 'Request approved, but clinical appointment creation failed. Please create it manually from Appointments Board.';
         this.closeApproveModal();
+        this.cdr.detectChanges();
         this.load();
-        this.showToast('Request approved and guardian notification sent.');
+        this.showToast(result.appointmentCreated
+          ? 'Request approved and appointment created.'
+          : 'Request approved, but appointment creation failed.');
       },
       error: (err) => {
         this.actionLoading = false;
-        this.errorMessage = err?.error?.message || 'Unable to approve this request right now. Please try again.';
+        this.errorMessage = this.formatHttpError(err, 'Unable to approve this request right now. Please try again.');
+        this.cdr.detectChanges();
       }
     });
   }
@@ -327,19 +368,83 @@ export class AppointmentsRequestsComponent implements OnInit {
     }).pipe(
       finalize(() => {
         this.actionLoading = false;
+        this.cdr.detectChanges();
       })
     ).subscribe({
       next: () => {
         this.actionLoading = false;
         this.successMessage = 'Appointment request rejected successfully.';
         this.closeRejectModal();
+        this.cdr.detectChanges();
         this.load();
         this.showToast('Request rejected and guardian notification sent.');
       },
       error: (err) => {
         this.actionLoading = false;
-        this.errorMessage = err?.error?.message || 'Unable to reject this request right now. Please verify the details and try again.';
+        this.errorMessage = this.formatHttpError(err, 'Unable to reject this request right now. Please verify the details and try again.');
+        this.cdr.detectChanges();
       }
     });
+  }
+
+  private formatHttpError(err: any, fallback: string): string {
+    const status = Number(err?.status);
+    const apiMessage = typeof err?.error?.message === 'string' ? err.error.message.trim() : '';
+
+    if (status === 503) {
+      return 'Appointment Requests service is currently unavailable (503). Please ensure communication-service is running, then retry.';
+    }
+    if (status === 404) {
+      return 'Appointment Requests endpoint was not found (404). Please verify API gateway routing and service registration.';
+    }
+
+    return apiMessage || fallback;
+  }
+
+  private loadDoctors(): void {
+    this.doctorLoading = true;
+    this.clinicalApi.listDoctors(100).pipe(
+      finalize(() => {
+        this.doctorLoading = false;
+      })
+    ).subscribe({
+      next: (users) => {
+        this.doctorOptions = (users ?? []).map((user: any) => ({
+          id: user.keycloakId,
+          label: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || user.keycloakId
+        })).filter((d: DoctorOption) => !!d.id);
+      },
+      error: () => {
+        this.doctorOptions = [];
+      }
+    });
+  }
+
+  private prefillScheduleFromRequest(request?: AppointmentRequestItem): void {
+    if (!request?.requestedDate) {
+      this.scheduledDate = '';
+      this.scheduledTime = '';
+      return;
+    }
+
+    const value = new Date(request.requestedDate);
+    if (Number.isNaN(value.getTime())) {
+      this.scheduledDate = '';
+      this.scheduledTime = '';
+      return;
+    }
+
+    const yyyy = value.getFullYear();
+    const mm = `${value.getMonth() + 1}`.padStart(2, '0');
+    const dd = `${value.getDate()}`.padStart(2, '0');
+    const hh = `${value.getHours()}`.padStart(2, '0');
+    const min = `${value.getMinutes()}`.padStart(2, '0');
+
+    this.scheduledDate = `${yyyy}-${mm}-${dd}`;
+    this.scheduledTime = `${hh}:${min}`;
+  }
+
+  private normalizeDateTime(value: string): string {
+    return value.length === 16 ? `${value}:00` : value;
   }
 }

@@ -56,29 +56,102 @@
         </div>
 
         <div class="col-lg-8">
-          <div class="detail-section">
-            <h6>Doctor Decision Summary</h6>
-            <p class="text-muted mb-0">
-              This section will contain the doctor’s decision summary once the consultation is completed.
-            </p>
+          <!-- Clinical Assessment -->
+          <div class="detail-section" *ngIf="hasDraftData && draft">
+            <h6>Clinical Assessment (SOAP)</h6>
+            <div class="soap-content">
+              <div *ngIf="draft.soap.subjective" class="soap-item">
+                <strong>Subjective:</strong>
+                <p>{{ draft.soap.subjective }}</p>
+              </div>
+              <div *ngIf="draft.soap.objective" class="soap-item">
+                <strong>Objective:</strong>
+                <p>{{ draft.soap.objective }}</p>
+              </div>
+              <div *ngIf="draft.soap.assessment" class="soap-item">
+                <strong>Assessment:</strong>
+                <p>{{ draft.soap.assessment }}</p>
+              </div>
+              <div *ngIf="draft.soap.plan" class="soap-item">
+                <strong>Plan:</strong>
+                <p>{{ draft.soap.plan }}</p>
+              </div>
+            </div>
           </div>
 
-          <div class="detail-section">
-            <h6>Clinical Notes</h6>
-            <p class="text-muted mb-0">No notes available yet.</p>
+          <!-- Diagnoses -->
+          <div class="detail-section" *ngIf="hasDiagnosis && draft">
+            <h6>Diagnoses</h6>
+            <ul class="diagnosis-list">
+              <li *ngFor="let diag of draft.diagnosisList">
+                <span class="diagnosis-label">{{ diag.label }}</span>
+                <span *ngIf="diag.code" class="diagnosis-code">({{ diag.code }})</span>
+                <span *ngIf="diag.severity" class="diagnosis-severity">{{ diag.severity }}</span>
+                <p *ngIf="diag.notes" class="diagnosis-notes">{{ diag.notes }}</p>
+              </li>
+            </ul>
           </div>
 
-          <div class="detail-section">
-            <h6>Plan & Follow-up</h6>
-            <p class="text-muted mb-0">Plan and follow-up actions will appear here.</p>
+          <!-- Treatment Plan & Follow-up -->
+          <div class="detail-section" *ngIf="hasTreatmentPlan && draft">
+            <h6>Treatment Plan & Follow-up</h6>
+            <div *ngIf="draft.treatmentPlan">
+              <strong>Treatment Plan:</strong>
+              <p>{{ draft.treatmentPlan }}</p>
+            </div>
+            <div *ngIf="draft.guardianInstructions">
+              <strong>Guardian Instructions:</strong>
+              <p>{{ draft.guardianInstructions }}</p>
+            </div>
+            <div *ngIf="draft.followUpDate">
+              <strong>Follow-up Scheduled:</strong>
+              <p>{{ draft.followUpDate | date:'medium' }}</p>
+            </div>
+          </div>
+
+          <!-- Metrics -->
+          <div class="detail-section" *ngIf="hasMetrics && draft && draft.metrics">
+            <h6>Clinical Metrics</h6>
+            <div class="metrics-grid">
+              <div *ngIf="Number.isFinite(draft.metrics.heightCm)" class="metric-item">
+                <span class="metric-label">Height:</span>
+                <span class="metric-value">{{ draft.metrics.heightCm }} cm</span>
+              </div>
+              <div *ngIf="Number.isFinite(draft.metrics.weightKg)" class="metric-item">
+                <span class="metric-label">Weight:</span>
+                <span class="metric-value">{{ draft.metrics.weightKg }} kg</span>
+              </div>
+              <div *ngIf="Number.isFinite(draft.metrics.ageYears)" class="metric-item">
+                <span class="metric-label">Age:</span>
+                <span class="metric-value">{{ draft.metrics.ageYears }} years</span>
+              </div>
+              <div *ngIf="Number.isFinite(draft.metrics.creatinineMgDl)" class="metric-item">
+                <span class="metric-label">Creatinine:</span>
+                <span class="metric-value">{{ draft.metrics.creatinineMgDl }} mg/dL</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty state -->
+          <div *ngIf="!hasDraftData && !hasDiagnosis && !hasTreatmentPlan && !hasMetrics" class="detail-section text-muted">
+            <p>No clinical data has been recorded for this consultation yet.</p>
           </div>
         </div>
       </div>
 
       <div class="mt-4 d-flex gap-2 flex-wrap">
-        <a class="btn btn-light" routerLink="/backoffice/consultations">Back to list</a>
-        <a class="btn btn-primary" [routerLink]="['/backoffice/consultations', consultationId, 'workspace']">
+        <button class="btn btn-light" (click)="goBack()">Back to list</button>
+        <a class="btn btn-primary" [routerLink]="['/backoffice/consultations', consultationId, 'workspace']" [queryParams]="{ returnUrl: returnUrl }">
           Open Workspace
+        </a>
+      </div>
+
+      <div class="d-flex gap-2 flex-wrap mt-3 pt-3 border-top">
+        <a class="btn btn-link btn-sm" routerLink="/backoffice/consultations">
+          <i class="feather-list"></i> All Consultations
+        </a>
+        <a class="btn btn-link btn-sm" routerLink="/backoffice/consultations/lab-requests">
+          <i class="feather-activity"></i> Lab Requests
         </a>
       </div>
     </div>

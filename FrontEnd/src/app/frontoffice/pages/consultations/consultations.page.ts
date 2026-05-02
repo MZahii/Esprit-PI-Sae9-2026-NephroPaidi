@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { ClinicalApiService } from '../../../core/services/clinical-api.service';
+import { AppointmentsApiService } from '../../../core/services/appointments-api.service';
 import { GuardianPatientsService } from '../../../features/administrative/api/guardian-patients.service';
 
 type ConsultationStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
@@ -26,6 +27,7 @@ export class ConsultationsPage implements OnInit {
 
   constructor(
     private api: ClinicalApiService,
+    private appointmentsApi: AppointmentsApiService,
     private guardianPatients: GuardianPatientsService
   ) {}
 
@@ -37,7 +39,7 @@ export class ConsultationsPage implements OnInit {
     this.loading = true;
     this.error = '';
 
-    this.guardianPatients.getGuardianPatientIds().pipe(
+    const clinicalConsultations$ = this.guardianPatients.getGuardianPatientIds().pipe(
       switchMap((patientIds: number[]) => {
         if (!patientIds.length) return of([]);
         const requests = patientIds.map((patientId: number) =>
@@ -52,6 +54,28 @@ export class ConsultationsPage implements OnInit {
         );
         return forkJoin(requests).pipe(map((sets: any[][]) => sets.flat()));
       }),
+      catchError(() => of([]))
+    );
+
+    const approvedRequests$ = this.appointmentsApi.getMyRequests().pipe(
+      map((items) => (items || [])
+        .filter((item) => item.status === 'APPROVED')
+        .map((item) => ({
+          id: `REQ-${item.id}`,
+          patientId: item.patientId,
+          dateTime: item.scheduledDate || item.requestedDate,
+          status: 'OPEN',
+          appointmentId: item.id,
+          source: 'REQUEST',
+          reason: item.reason
+        }))
+        .filter((item) => !!item.dateTime)
+      ),
+      catchError(() => of([]))
+    );
+
+    forkJoin([clinicalConsultations$, approvedRequests$]).pipe(
+      map(([clinicalItems, requestItems]) => this.mergeAndDedupeConsultations(clinicalItems as any[], requestItems as any[])),
       map((items: any[]) => this.dedupe(items)),
       catchError(() => {
         this.error = 'Failed to load consultations.';
@@ -100,5 +124,28 @@ export class ConsultationsPage implements OnInit {
       seen.add(key);
       return true;
     });
+  }
+
+  private mergeAndDedupeConsultations(clinicalItems: any[], requestItems: any[]): any[] {
+    const clinical = this.dedupe(clinicalItems || []);
+    const requests = this.dedupe(requestItems || []);
+
+    const clinicalTimeKeys = new Set(
+      clinical.map((item) => `${item?.patientId ?? ''}|${this.toMinuteKey(item?.dateTime)}`)
+    );
+
+    const filteredRequests = requests.filter((item) => {
+      const key = `${item?.patientId ?? ''}|${this.toMinuteKey(item?.dateTime)}`;
+      return !clinicalTimeKeys.has(key);
+    });
+
+    return [...clinical, ...filteredRequests].sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
+  }
+
+  private toMinuteKey(value: any): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 }

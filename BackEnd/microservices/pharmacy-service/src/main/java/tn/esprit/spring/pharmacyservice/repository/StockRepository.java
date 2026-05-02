@@ -19,4 +19,8 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
 
     @Query("SELECT s FROM Stock s WHERE s.quantityAvailable <= :threshold")
     List<Stock> findLowStock(int threshold);
+
+    @Query("SELECT COALESCE(SUM(s.quantityAvailable), 0) FROM Stock s WHERE s.batchId IN " +
+           "(SELECT b.batchId FROM Batch b WHERE b.medication.medicationId = :medicationId)")
+    Integer getTotalStockForMedication(Long medicationId);
 }

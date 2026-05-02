@@ -1,147 +1,120 @@
-# PiDev26Nephro
+# NephroPaidi Dockerized Stack
 
-Team setup guide for running the project locally (backend + frontend).
+This repository is now structured for full containerized startup with strict priority order:
+
+1. Eureka + Keycloak + Config Server (+ RabbitMQ)
+2. API Gateway
+3. Remaining microservices + FrontEnd
 
 ## 1. Prerequisites
 
-- Docker Desktop (running)
-- Java 17
-- Maven (or IntelliJ with Maven support)
-- Node.js 20+ and npm
-- Angular CLI (`npm i -g @angular/cli`) or use `npx ng`
-- IntelliJ IDEA
+- Docker Desktop installed and running
+- Recommended Docker Desktop resources for this stack:
+	- CPU: 4 to 6 vCPUs
+	- Memory: 8 GB minimum
+- Optional: copy `.env.example` to `.env` and adjust secrets/URLs
 
-## 2. Project Architecture
+## 2. Full stack files
 
-### Backend (`BackEnd/`)
+- Full orchestration: `docker-compose.full.yml`
+- Start script (Windows): `scripts/start-stack.ps1`
+- Start script (Linux/macOS): `scripts/start-stack.sh`
+- Stop scripts: `scripts/stop-stack.ps1` and `scripts/stop-stack.sh`
 
-- `eureka/`  
-  Service discovery (port `8761`).
-- `api-gateway/`  
-  Entry point for frontend and API routing (port `8083`).
-- `keycloak/`  
-  Realm import files for authentication.
-- `microservices/`  
-  Domain services:
-  - `user-service` (port `8090`) - users, auth-related APIs
-  - `ops-service` (port `8082`)
-  - `clinical-service` (port `8084`)
-  - `communication-service` (port `8085`)
-  - `core-ops-service` (port `8086`)
-  - `patient-service` (port `8087`)
-  - `pharmacy-service` (port `8088`)
-  - `procedure-service` (port `8089`)
-- `docker-compose.infra.yml`  
-  Infra containers (Keycloak DB, Keycloak, Eureka, API Gateway).
+## 3. Start the full stack (priority-aware)
 
-### Frontend (`FrontEnd/duralux-admin/`)
-
-Angular application (standalone components, SCSS, route guards).
-
-- `src/app/core/`  
-  Shared logic: auth services, Keycloak integration, guards.
-- `src/app/layouts/`  
-  Layout shells:
-  - `public-layout`
-  - `backoffice-layout`
-  - `frontoffice-layout`
-- `src/app/pages/`  
-  Feature pages grouped by area:
-  - `public/` (home, about, services, login, etc.)
-  - `backoffice/` (dashboard, create HR/staff, staff list)
-  - `frontoffice/` (guardian area)
-- `src/environments/environment.ts`  
-  Frontend API base URL (`http://localhost:8083`).
-
-## 3. How We Run the Project (Recommended Team Flow)
-
-Use this exact order.
-
-### Step 1: Start Docker Desktop
-
-Open Docker Desktop and make sure engine status is **Running**.
-
-### Step 2: Start backend infrastructure
-
-From project root:
+From repo root on Windows:
 
 ```powershell
-cd BackEnd
-# first time only: copy .env.example to .env and set shared Keycloak DB values
-# cp .env.example .env
-docker compose -f docker-compose.infra.yml up -d
+./scripts/start-stack.ps1
 ```
 
-This starts Keycloak, Eureka, and infra dependencies.
+From repo root on Linux/macOS:
 
-Important:
-- Keycloak now reads DB credentials from `BackEnd/.env`.
-- To share Keycloak users/realm data across team members, use the same shared Postgres/Neon values in `.env`.
-- The API Gateway container is now behind the `container-gateway` profile, so `docker compose -f docker-compose.infra.yml up -d` will not reserve port `8083`.
-- If you want local Keycloak DB only (not shared), run:
-
-```powershell
-docker compose --profile local-keycloak-db -f docker-compose.infra.yml up -d
+```bash
+bash ./scripts/start-stack.sh
 ```
 
-### Step 3: Run backend apps from IntelliJ
+These scripts:
 
-Open the project in IntelliJ and run:
+- enforce startup priority (infra -> gateway -> microservices/frontend)
+- reduce build/start concurrency with `COMPOSE_PARALLEL_LIMIT=2`
+- wait for core endpoints before moving to the next layer
 
-1. `ApiGatewayApplication`
-2. `UserServiceApplication`
+## 4. Stop everything
 
-Important:
-- The normal infra command no longer starts the gateway container, so `ApiGatewayApplication` can run on `8083` from IntelliJ without conflict.
-- If you explicitly start the gateway container profile, stop it before running `ApiGatewayApplication` in IntelliJ:
+Windows:
 
 ```powershell
-docker compose -f docker-compose.infra.yml --profile container-gateway down
+./scripts/stop-stack.ps1
 ```
 
-### Step 4: Start frontend
+Linux/macOS:
 
-From project root:
-
-```powershell
-cd FrontEnd/duralux-admin
-npm install
-ng serve
+```bash
+bash ./scripts/stop-stack.sh
 ```
 
-If Angular CLI is not global:
+## 5. Manual compose commands (if needed)
+
+Start everything directly:
 
 ```powershell
-npx ng serve
+docker compose -p nephropaidi -f docker-compose.full.yml up -d --build
 ```
 
-## 4. URLs to Open
-
-- Frontend: `http://localhost:4200`
-- API Gateway: `http://localhost:8083`
-- User Service Swagger: `http://localhost:8090/swagger-ui/index.html`
-- Eureka: `http://localhost:8761`
-- Keycloak: `http://localhost:8080`
-
-## 5. Quick Troubleshooting
-
-- Port already in use (`8083`, `8090`, `4200`): stop the app/container using that port, then restart.
-- Frontend cannot call backend: confirm `environment.ts` points to `http://localhost:8083`.
-- Gateway routes not working: verify Eureka is up and services are registered.
-- Auth issues: confirm Keycloak container is running and realm import succeeded.
-
-## 6. Daily Start/Stop Commands
-
-Start infra:
+Check status:
 
 ```powershell
-cd BackEnd
-docker compose -f docker-compose.infra.yml up -d
+docker compose -p nephropaidi -f docker-compose.full.yml ps
 ```
 
-Stop infra:
+Stop and cleanup:
 
 ```powershell
-cd BackEnd
-docker compose -f docker-compose.infra.yml down
+docker compose -p nephropaidi -f docker-compose.full.yml down --remove-orphans
+```
+
+## 6. CPU freeze mitigation (important)
+
+If your machine freezes during full builds, use these safeguards:
+
+- Start with the scripts instead of one-shot `up --build`.
+- Keep `COMPOSE_PARALLEL_LIMIT=2` (already set in scripts).
+- Use the service CPU/memory limits already defined in `docker-compose.full.yml`.
+- Avoid rebuilding all services repeatedly; rebuild only changed services:
+
+```powershell
+docker compose -p nephropaidi -f docker-compose.full.yml up -d --build api-gateway
+```
+
+- If needed, temporarily start only core services first:
+
+```powershell
+docker compose -p nephropaidi -f docker-compose.full.yml up -d --build eureka keycloak rabbitmq config-server
+```
+
+## 7. Service URLs
+
+- FrontEnd: http://localhost:4200
+- API Gateway: http://localhost:8083
+- Eureka: http://localhost:8761
+- Config Server: http://localhost:8888
+- Keycloak: http://localhost:8080
+- RabbitMQ Management: http://localhost:15672
+
+## 8. Testing after startup
+
+Frontend tests:
+
+```powershell
+cd FrontEnd
+npm run test -- --watch=false
+```
+
+Backend tests (example):
+
+```powershell
+cd BackEnd/microservices/communication-service
+./mvnw test
 ```

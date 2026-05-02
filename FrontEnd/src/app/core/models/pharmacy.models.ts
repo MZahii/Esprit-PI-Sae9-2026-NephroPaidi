@@ -3,6 +3,45 @@ export interface Medication {
   name: string;
   form: string;
   pediatricDosage: string;
+  minimumStock?: number | null;
+}
+
+export interface ReorderAlert {
+  medicationId: number;
+  name: string;
+  form: string;
+  minimumStock: number;
+  currentTotalStock: number;
+  deficit: number;
+}
+
+export interface SmartDispenseRequest {
+  medicationId: number;
+  quantity: number;
+}
+
+export interface SmartDispenseResponse {
+  medicationId: number;
+  medicationName: string;
+  requested: number;
+  totalDispensed: number;
+  lines: { batchId: number; batchNumber: string; quantityDispensed: number; expirationDate: string }[];
+}
+
+export interface TransferStockRequest {
+  sourceBatchId: number;
+  targetBatchId: number;
+  quantity: number;
+  reason: string;
+}
+
+export interface TransferStockResponse {
+  sourceBatchId: number;
+  targetBatchId: number;
+  quantityTransferred: number;
+  sourceQuantityAvailable: number;
+  targetQuantityAvailable: number;
+  reason: string;
 }
 
 export interface Batch {
@@ -28,26 +67,23 @@ export interface DispenseRequest {
   //prescriptionId: string;
 }
 
-export interface StockTransferRequest {
-  sourceBatchId: number;
-  targetBatchId: number;
-  quantity: number;
-  reason?: string;
-}
-
-export interface StockTransferResult {
-  sourceBatchId: number;
-  targetBatchId: number;
-  quantityTransferred: number;
-  sourceQuantityAvailable: number;
-  targetQuantityAvailable: number;
-  reason?: string;
-}
-
 export interface Supplier {
   supplierId?: number;
   name: string;
   contactInfo: string;
+  email?: string;
+  isActive?: boolean;
+}
+
+export interface SupplierStats {
+  supplierId: number;
+  supplierName: string;
+  totalOrders: number;
+  deliveredOrders: number;
+  pendingOrders: number;
+  cancelledOrders: number;
+  overdueOrders: number;
+  deliveryRate: number;
 }
 
 export interface DispensationLog {
@@ -64,4 +100,6 @@ export interface SupplyOrder {
   orderDate?: string;
   status?: 'PENDING' | 'DELIVERED' | 'CANCELLED';
   orderedQuantity: number;
+  expectedDeliveryDate?: string;
+  notes?: string;
 }

@@ -1,109 +1,241 @@
-<div class="nxl-content-page">
+<div class="phx-page">
 
-  <div class="nxl-head-breadcrumb d-flex align-items-center justify-content-between mb-4">
-    <div>
-      <h4 class="mb-0">Suppliers</h4>
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb mb-0">
-          <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
-          <li class="breadcrumb-item active">Suppliers</li>
-        </ol>
-      </nav>
+  <!-- ── Page Header ─────────────────────────────────────────────────────── -->
+  <div class="phx-header">
+    <div class="phx-header-left">
+      <div class="phx-header-icon" style="background:linear-gradient(135deg,#0891b2,#0e7490)">
+        <i class="bi bi-truck"></i>
+      </div>
+      <div>
+        <h4 class="phx-title">Suppliers</h4>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item active">Suppliers</li>
+          </ol>
+        </nav>
+      </div>
     </div>
-    <button class="btn btn-primary" (click)="openAdd()">
-      <i data-feather="plus" style="width:16px;height:16px" class="me-1"></i> Add Supplier
+    <button class="phx-btn phx-btn-primary" (click)="openAdd()">
+      <i class="bi bi-plus-lg"></i> Add Supplier
     </button>
   </div>
 
+  <!-- ── Two-column layout ───────────────────────────────────────────────── -->
   <div class="row g-4">
-    <!-- Suppliers list -->
-    <div class="col-md-4">
-      <div class="card h-100">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h6 class="mb-0">Suppliers</h6>
-          <span class="badge bg-soft-primary text-primary">{{ suppliers().length }}</span>
-        </div>
-        <div class="card-body p-0">
-          <div class="text-center py-4" *ngIf="loading()">
-            <div class="spinner-border spinner-border-sm text-primary"></div>
+
+    <!-- ── Supplier list ───────────────────────────────────────────────── -->
+    <div class="col-lg-4">
+      <div class="phx-card h-100">
+        <div class="phx-card-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-building" style="color:#0891b2"></i>
+            <span class="fw-700">Supplier List</span>
           </div>
-          <div class="list-group list-group-flush">
-            <button
-              class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
-              *ngFor="let s of suppliers()"
-              [class.active]="selectedSupplier?.supplierId === s.supplierId"
-              (click)="selectSupplier(s)">
-              <div class="overflow-hidden">
-                <div class="fw-semibold text-truncate">{{ s.name }}</div>
-                <div class="small text-muted text-truncate">{{ s.contactInfo }}</div>
-              </div>
-              <div class="d-flex gap-1 ms-2 flex-shrink-0" (click)="$event.stopPropagation()">
-                <button class="btn btn-xs btn-soft-primary" style="padding:3px 7px;font-size:12px" (click)="openEdit(s)">
-                  <i data-feather="edit-2" style="width:12px;height:12px"></i>
-                </button>
-                <button class="btn btn-xs btn-soft-danger" style="padding:3px 7px;font-size:12px" (click)="delete(s)">
-                  <i data-feather="trash-2" style="width:12px;height:12px"></i>
-                </button>
-              </div>
-            </button>
-            <div class="list-group-item text-center text-muted small py-4" *ngIf="suppliers().length === 0">
-              No suppliers yet
+          <span class="phx-badge phx-badge-cyan">{{ filteredSuppliers().length }}</span>
+        </div>
+
+        <!-- Search & filter bar -->
+        <div class="phx-list-controls">
+          <div class="phx-search-wrap">
+            <i class="bi bi-search phx-search-icon"></i>
+            <input class="phx-search-input"
+                   [ngModel]="searchQuery()"
+                   (ngModelChange)="searchQuery.set($event)"
+                   placeholder="Search suppliers…"/>
+          </div>
+          <div class="phx-filter-pills">
+            <button class="phx-pill-btn" [class.active]="statusFilter()==='ALL'" (click)="statusFilter.set('ALL')">All</button>
+            <button class="phx-pill-btn phx-pill-active-only" [class.active]="statusFilter()==='ACTIVE'" (click)="statusFilter.set('ACTIVE')">Active</button>
+            <button class="phx-pill-btn phx-pill-inactive-only" [class.active]="statusFilter()==='INACTIVE'" (click)="statusFilter.set('INACTIVE')">Inactive</button>
+          </div>
+        </div>
+
+        <div class="phx-loader py-4" *ngIf="loading()">
+          <div class="spinner-border spinner-border-sm text-primary"></div>
+        </div>
+
+        <div class="phx-supplier-list">
+          <div class="phx-supplier-item"
+            *ngFor="let s of filteredSuppliers()"
+            [class.phx-supplier-active]="selectedSupplier?.supplierId === s.supplierId"
+            [class.phx-supplier-inactive]="s.isActive === false"
+            (click)="selectSupplier(s)">
+
+            <div class="phx-supplier-avatar" [style.opacity]="s.isActive === false ? '0.5' : '1'">
+              {{ s.name.charAt(0).toUpperCase() }}
             </div>
+
+            <div class="phx-supplier-info">
+              <div class="d-flex align-items-center gap-2">
+                <span class="fw-700 text-truncate">{{ s.name }}</span>
+                <span class="phx-status-dot" [class.active]="s.isActive !== false" [class.inactive]="s.isActive === false"
+                  [title]="s.isActive !== false ? 'Active' : 'Inactive'"></span>
+              </div>
+              <div class="small text-muted text-truncate">{{ s.contactInfo || 'No contact info' }}</div>
+            </div>
+
+            <div class="phx-supplier-actions" (click)="$event.stopPropagation()">
+              <button class="phx-icon-btn"
+                [class.phx-icon-btn-success]="s.isActive === false"
+                [class.phx-icon-btn-muted]="s.isActive !== false"
+                [title]="s.isActive !== false ? 'Deactivate' : 'Activate'"
+                [disabled]="togglingId() === s.supplierId"
+                (click)="toggleStatus(s)">
+                <span *ngIf="togglingId() === s.supplierId" class="phx-spin-sm"></span>
+                <i *ngIf="togglingId() !== s.supplierId" class="bi"
+                  [class.bi-toggle-on]="s.isActive !== false"
+                  [class.bi-toggle-off]="s.isActive === false"></i>
+              </button>
+              <button class="phx-icon-btn phx-icon-btn-warning" title="Edit" (click)="openEdit(s)">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+              <button class="phx-icon-btn phx-icon-btn-danger" title="Delete" (click)="delete(s)">
+                <i class="bi bi-trash-fill"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="phx-empty" *ngIf="filteredSuppliers().length === 0 && !loading()">
+            <i class="bi bi-building-slash"></i>
+            <p>{{ searchQuery() ? 'No suppliers match your search' : 'No suppliers yet' }}</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Orders panel -->
-    <div class="col-md-8">
-      <div class="card h-100">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h6 class="mb-0">
-            {{ selectedSupplier ? 'Orders — ' + selectedSupplier.name : 'Select a supplier' }}
-          </h6>
-          <button class="btn btn-success btn-sm" *ngIf="selectedSupplier" (click)="openOrder()">
-            <i data-feather="shopping-cart" style="width:14px;height:14px" class="me-1"></i> Place Order
-          </button>
-        </div>
-        <div class="card-body p-0">
-          <div class="text-center text-muted py-5" *ngIf="!selectedSupplier">
-            <i data-feather="arrow-left-circle" style="width:40px;height:40px;opacity:.2" class="d-block mx-auto mb-3"></i>
-            <p class="small">Click on a supplier to view their orders</p>
+    <!-- ── Right panel ──────────────────────────────────────────────────── -->
+    <div class="col-lg-8">
+
+      <!-- Empty state -->
+      <div class="phx-card phx-empty py-5" *ngIf="!selectedSupplier">
+        <i class="bi bi-arrow-left-circle" style="font-size:52px;opacity:.12"></i>
+        <p>Select a supplier to view orders & performance</p>
+      </div>
+
+      <div *ngIf="selectedSupplier">
+
+        <!-- ── Stats cards ─────────────────────────────────────────────── -->
+        <div class="phx-stats-grid mb-4" *ngIf="supplierStats">
+          <div class="phx-stat-card phx-stat-blue">
+            <div class="phx-stat-icon"><i class="bi bi-cart3"></i></div>
+            <div>
+              <div class="phx-stat-val">{{ supplierStats.totalOrders }}</div>
+              <div class="phx-stat-lbl">Total Orders</div>
+            </div>
           </div>
-          <div class="table-responsive" *ngIf="selectedSupplier">
-            <table class="table table-sm table-hover align-middle mb-0">
-              <thead class="table-light">
+          <div class="phx-stat-card phx-stat-green">
+            <div class="phx-stat-icon"><i class="bi bi-check-circle-fill"></i></div>
+            <div>
+              <div class="phx-stat-val">{{ supplierStats.deliveredOrders }}</div>
+              <div class="phx-stat-lbl">Delivered</div>
+            </div>
+          </div>
+          <div class="phx-stat-card phx-stat-amber">
+            <div class="phx-stat-icon"><i class="bi bi-hourglass-split"></i></div>
+            <div>
+              <div class="phx-stat-val">{{ supplierStats.pendingOrders }}</div>
+              <div class="phx-stat-lbl">Pending</div>
+            </div>
+          </div>
+          <div class="phx-stat-card" [class.phx-stat-red]="supplierStats.overdueOrders > 0" [class.phx-stat-neutral]="supplierStats.overdueOrders === 0">
+            <div class="phx-stat-icon"><i class="bi bi-alarm-fill"></i></div>
+            <div>
+              <div class="phx-stat-val">{{ supplierStats.overdueOrders }}</div>
+              <div class="phx-stat-lbl">Overdue</div>
+            </div>
+          </div>
+          <div class="phx-stat-card phx-stat-purple">
+            <div class="phx-stat-icon"><i class="bi bi-graph-up-arrow"></i></div>
+            <div>
+              <div class="phx-stat-val">{{ supplierStats.deliveryRate }}%</div>
+              <div class="phx-stat-lbl">Delivery Rate</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overdue banner -->
+        <div class="phx-overdue-banner" *ngIf="overdueCount() > 0">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <strong>{{ overdueCount() }} order{{ overdueCount() > 1 ? 's are' : ' is' }} overdue</strong>
+          — expected delivery date has passed. Contact the supplier to follow up.
+        </div>
+
+        <!-- ── Orders panel ────────────────────────────────────────────── -->
+        <div class="phx-card">
+          <div class="phx-card-header">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-cart3" style="color:#0891b2"></i>
+              <span class="fw-700">Orders — {{ selectedSupplier.name }}</span>
+              <span class="phx-badge phx-badge-cyan" *ngIf="pendingCount() > 0">{{ pendingCount() }} pending</span>
+            </div>
+            <button class="phx-btn phx-btn-sm phx-btn-success"
+              [disabled]="selectedSupplier.isActive === false"
+              [title]="selectedSupplier.isActive === false ? 'Supplier is inactive' : ''"
+              (click)="openOrder()">
+              <i class="bi bi-plus-lg"></i> Place Order
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="phx-table">
+              <thead>
                 <tr>
-                  <th class="ps-3">#</th>
-                  <th>Medication ID</th>
+                  <th>#</th>
+                  <th>Medication</th>
                   <th>Qty</th>
-                  <th>Date</th>
+                  <th>Order Date</th>
+                  <th>Expected</th>
                   <th>Status</th>
-                  <th class="pe-3">Actions</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let o of orders()">
-                  <td class="ps-3 text-muted small">{{ o.orderId }}</td>
-                  <td class="font-monospace small fw-semibold">{{ o.medicationId }}</td>
-                  <td>{{ o.orderedQuantity }}</td>
-                  <td class="small text-muted">{{ o.orderDate | date:'dd/MM/yy' }}</td>
-                  <td>
-                    <span class="badge" [ngClass]="statusBadge(o.status!)">{{ o.status }}</span>
+                <tr *ngFor="let o of orders()" [class.phx-row-overdue]="isOverdue(o)">
+                  <td class="text-muted small">
+                    <button class="phx-link-btn" (click)="openDetail(o)" title="View details">
+                      #{{ o.orderId }}
+                    </button>
                   </td>
-                  <td class="pe-3">
-                    <div class="d-flex gap-1" *ngIf="o.status === 'PENDING'">
-                      <button class="btn btn-soft-success" style="font-size:11px;padding:3px 9px" (click)="deliver(o.orderId!)">
-                        <i data-feather="check" style="width:12px;height:12px" class="me-1"></i>Deliver
+                  <td class="fw-700">{{ medicationMap()[o.medicationId] || '#' + o.medicationId }}</td>
+                  <td class="fw-600">{{ o.orderedQuantity }}</td>
+                  <td class="small text-muted">{{ o.orderDate | date:'dd/MM/yyyy' }}</td>
+                  <td>
+                    <span *ngIf="o.expectedDeliveryDate" class="phx-date-chip"
+                      [class.overdue]="isOverdue(o)">
+                      <i class="bi" [class.bi-alarm-fill]="isOverdue(o)" [class.bi-calendar-check]="!isOverdue(o)"></i>
+                      {{ o.expectedDeliveryDate | date:'dd/MM/yyyy' }}
+                      <span *ngIf="isOverdue(o)" class="ms-1" style="font-weight:700">OVERDUE</span>
+                    </span>
+                    <span *ngIf="!o.expectedDeliveryDate" class="text-muted small">—</span>
+                  </td>
+                  <td>
+                    <span class="phx-pill"
+                      [class.phx-pill-success]="o.status==='DELIVERED'"
+                      [class.phx-pill-danger]="o.status==='CANCELLED'"
+                      [class.phx-pill-warning]="o.status==='PENDING'">
+                      {{ o.status }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="d-flex gap-1 align-items-center" *ngIf="o.status==='PENDING'">
+                      <button class="phx-btn phx-btn-sm phx-btn-success" (click)="deliver(o.orderId!)">
+                        <i class="bi bi-check-lg"></i> Deliver
                       </button>
-                      <button class="btn btn-soft-danger" style="font-size:11px;padding:3px 9px" (click)="cancel(o.orderId!)">
-                        <i data-feather="x" style="width:12px;height:12px" class="me-1"></i>Cancel
+                      <button class="phx-btn phx-btn-sm phx-btn-danger" (click)="cancel(o.orderId!)">
+                        <i class="bi bi-x-lg"></i> Cancel
                       </button>
                     </div>
+                    <span *ngIf="o.notes" class="phx-notes-dot" title="{{ o.notes }}">
+                      <i class="bi bi-sticky-fill"></i>
+                    </span>
                   </td>
                 </tr>
                 <tr *ngIf="orders().length === 0">
-                  <td colspan="6" class="text-center text-muted py-4 small">No orders for this supplier</td>
+                  <td colspan="7" class="phx-empty">
+                    <i class="bi bi-inbox"></i>
+                    <p>No orders for this supplier</p>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -114,72 +246,419 @@
   </div>
 </div>
 
-<!-- Supplier Modal -->
-<div class="modal fade" [class.show]="showSupplierModal" [style.display]="showSupplierModal ? 'block' : 'none'">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">{{ editMode ? 'Edit' : 'Add' }} Supplier</h5>
-        <button class="btn-close" (click)="showSupplierModal=false"></button>
+<!-- ── Supplier Modal ────────────────────────────────────────────────────── -->
+<div class="phx-overlay" *ngIf="showSupplierModal" (click)="showSupplierModal=false"></div>
+<div class="phx-modal" [class.phx-modal-open]="showSupplierModal">
+  <div class="phx-modal-dialog">
+    <div class="phx-modal-header" style="background:linear-gradient(135deg,#0891b2,#0e7490)">
+      <div class="d-flex align-items-center gap-2 text-white">
+        <i class="bi bi-building fs-5"></i>
+        <h5 class="mb-0">{{ editMode ? 'Edit' : 'Add' }} Supplier</h5>
       </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
-          <input class="form-control" [(ngModel)]="currentSupplier.name" placeholder="Supplier name"/>
+      <button class="phx-close-btn" (click)="showSupplierModal=false"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="phx-modal-body">
+      <div class="phx-field">
+        <label>Name <span class="text-danger">*</span></label>
+        <input class="phx-input" [ngModel]="currentSupplier.name"
+               (ngModelChange)="onSupplierNameChange($event)"
+               placeholder="e.g. PharmaCo International"
+               [class.phx-input-error]="supplierNameError()"/>
+        <div class="phx-field-error" *ngIf="supplierNameError()">
+          <i class="bi bi-exclamation-circle-fill"></i> {{ supplierNameError() }}
         </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Contact Info</label>
-          <textarea class="form-control" rows="2" [(ngModel)]="currentSupplier.contactInfo"
-            placeholder="Email, phone, address..."></textarea>
-        </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-light" (click)="showSupplierModal=false">Cancel</button>
-        <button class="btn btn-primary" (click)="save()" [disabled]="!currentSupplier.name">Save</button>
+      <div class="phx-field">
+        <label>Contact Info</label>
+        <textarea class="phx-input" rows="3" [(ngModel)]="currentSupplier.contactInfo"
+          placeholder="Phone, address, website…"></textarea>
       </div>
+    </div>
+    <div class="phx-modal-footer">
+      <button class="phx-btn phx-btn-ghost" (click)="showSupplierModal=false">Cancel</button>
+      <button class="phx-btn phx-btn-primary" (click)="save()"
+        [disabled]="!currentSupplier.name || !!supplierNameError() || saving()">
+        <span *ngIf="saving()" class="phx-spin me-1"></span>
+        <i *ngIf="!saving()" class="bi bi-check-lg"></i>
+        {{ saving() ? 'Saving…' : 'Save' }}
+      </button>
     </div>
   </div>
 </div>
-<div class="modal-backdrop fade show" *ngIf="showSupplierModal" (click)="showSupplierModal=false"></div>
 
-<!-- Order Modal -->
-<div class="modal fade" [class.show]="showOrderModal" [style.display]="showOrderModal ? 'block' : 'none'">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i data-feather="shopping-cart" style="width:16px;height:16px" class="me-2"></i>
-          Place Order — {{ selectedSupplier?.name }}
-        </h5>
-        <button class="btn-close" (click)="showOrderModal=false"></button>
+<!-- ── Place Order Modal ─────────────────────────────────────────────────── -->
+<div class="phx-overlay" *ngIf="showOrderModal" (click)="showOrderModal=false"></div>
+<div class="phx-modal" [class.phx-modal-open]="showOrderModal">
+  <div class="phx-modal-dialog">
+    <div class="phx-modal-header" style="background:linear-gradient(135deg,#16a34a,#15803d)">
+      <div class="d-flex align-items-center gap-2 text-white">
+        <i class="bi bi-cart-plus fs-5"></i>
+        <h5 class="mb-0">Place Order — {{ selectedSupplier?.name }}</h5>
       </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Medication ID <span class="text-danger">*</span></label>
-          <input type="number" class="form-control" [(ngModel)]="newOrder.medicationId" placeholder="e.g. 1"/>
+      <button class="phx-close-btn" (click)="showOrderModal=false"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="phx-modal-body">
+      <div class="phx-field">
+        <label>Medication <span class="text-danger">*</span></label>
+        <select class="phx-input" [(ngModel)]="newOrder.medicationId">
+          <option [ngValue]="undefined" disabled>Select a medication…</option>
+          <option *ngFor="let m of medications()" [ngValue]="m.medicationId">
+            {{ m.name }} — {{ m.form | titlecase }}
+          </option>
+        </select>
+      </div>
+      <div class="phx-field">
+        <label>Quantity <span class="text-danger">*</span></label>
+        <input type="number" class="phx-input" [ngModel]="newOrder.orderedQuantity"
+               (ngModelChange)="onOrderQtyChange($event)" min="1"
+               [class.phx-input-error]="orderQtyError()"/>
+        <div class="phx-field-error" *ngIf="orderQtyError()">
+          <i class="bi bi-exclamation-circle-fill"></i> {{ orderQtyError() }}
         </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Quantity <span class="text-danger">*</span></label>
-          <input type="number" class="form-control" [(ngModel)]="newOrder.orderedQuantity" min="1"/>
+      </div>
+      <div class="phx-field">
+        <label>Expected Delivery Date</label>
+        <input type="date" class="phx-input" [ngModel]="newOrder.expectedDeliveryDate"
+               (ngModelChange)="onOrderDateChange($event)"
+               [class.phx-input-error]="orderDateError()"/>
+        <div class="phx-field-error" *ngIf="orderDateError()">
+          <i class="bi bi-exclamation-circle-fill"></i> {{ orderDateError() }}
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-light" (click)="showOrderModal=false">Cancel</button>
-        <button class="btn btn-success" (click)="placeOrder()"
-          [disabled]="!newOrder.medicationId || !newOrder.orderedQuantity">Place Order</button>
+      <div class="phx-field">
+        <label>Notes <span class="text-muted small">(optional)</span></label>
+        <textarea class="phx-input" rows="2" [(ngModel)]="newOrder.notes"
+          placeholder="Priority, special instructions…"></textarea>
       </div>
+    </div>
+    <div class="phx-modal-footer">
+      <button class="phx-btn phx-btn-ghost" (click)="showOrderModal=false">Cancel</button>
+      <button class="phx-btn phx-btn-success" (click)="placeOrder()"
+        [disabled]="!newOrder.medicationId || !newOrder.orderedQuantity || !!orderQtyError() || !!orderDateError() || placingOrder()">
+        <span *ngIf="placingOrder()" class="phx-spin me-1"></span>
+        <i *ngIf="!placingOrder()" class="bi bi-cart-check"></i>
+        {{ placingOrder() ? 'Placing…' : 'Place Order' }}
+      </button>
     </div>
   </div>
 </div>
-<div class="modal-backdrop fade show" *ngIf="showOrderModal" (click)="showOrderModal=false"></div>
 
-<!-- Toast -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999" *ngIf="toast()">
-  <div class="toast show align-items-center text-white border-0"
-    [class.bg-success]="toastOk()" [class.bg-danger]="!toastOk()">
-    <div class="d-flex">
-      <div class="toast-body fw-semibold">{{ toast() }}</div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" (click)="toast.set('')"></button>
+<!-- ── Order Detail Modal ────────────────────────────────────────────────── -->
+<div class="phx-overlay" *ngIf="showOrderDetail" (click)="showOrderDetail=false"></div>
+<div class="phx-modal" [class.phx-modal-open]="showOrderDetail">
+  <div class="phx-modal-dialog" *ngIf="detailOrder">
+    <div class="phx-modal-header" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)">
+      <div class="d-flex align-items-center gap-2 text-white">
+        <i class="bi bi-receipt fs-5"></i>
+        <h5 class="mb-0">Order #{{ detailOrder.orderId }}</h5>
+      </div>
+      <button class="phx-close-btn" (click)="showOrderDetail=false"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="phx-modal-body">
+      <div class="phx-detail-grid">
+        <div class="phx-detail-row">
+          <span class="phx-detail-label">Medication</span>
+          <span class="phx-detail-val fw-700">{{ medicationMap()[detailOrder.medicationId] || '#' + detailOrder.medicationId }}</span>
+        </div>
+        <div class="phx-detail-row">
+          <span class="phx-detail-label">Quantity Ordered</span>
+          <span class="phx-detail-val">{{ detailOrder.orderedQuantity }} units</span>
+        </div>
+        <div class="phx-detail-row">
+          <span class="phx-detail-label">Order Date</span>
+          <span class="phx-detail-val">{{ detailOrder.orderDate | date:'dd MMMM yyyy' }}</span>
+        </div>
+        <div class="phx-detail-row">
+          <span class="phx-detail-label">Expected Delivery</span>
+          <span class="phx-detail-val" [class.phx-text-danger]="isOverdue(detailOrder)">
+            {{ detailOrder.expectedDeliveryDate ? (detailOrder.expectedDeliveryDate | date:'dd MMMM yyyy') : '—' }}
+            <span *ngIf="isOverdue(detailOrder)" class="phx-pill phx-pill-danger ms-1" style="font-size:11px">OVERDUE</span>
+          </span>
+        </div>
+        <div class="phx-detail-row">
+          <span class="phx-detail-label">Status</span>
+          <span class="phx-pill"
+            [class.phx-pill-success]="detailOrder.status==='DELIVERED'"
+            [class.phx-pill-danger]="detailOrder.status==='CANCELLED'"
+            [class.phx-pill-warning]="detailOrder.status==='PENDING'">
+            {{ detailOrder.status }}
+          </span>
+        </div>
+        <div class="phx-detail-row" *ngIf="detailOrder.notes">
+          <span class="phx-detail-label">Notes</span>
+          <span class="phx-detail-val phx-notes-text">{{ detailOrder.notes }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="phx-modal-footer">
+      <button class="phx-btn phx-btn-ghost" (click)="showOrderDetail=false">Close</button>
+      <button class="phx-btn phx-btn-success" *ngIf="detailOrder.status==='PENDING'"
+        (click)="deliver(detailOrder.orderId!); showOrderDetail=false">
+        <i class="bi bi-check-lg"></i> Mark Delivered
+      </button>
     </div>
   </div>
 </div>
+
+<!-- ── Toast ────────────────────────────────────────────────────────────── -->
+<div class="phx-toast" [class.phx-toast-show]="toast()"
+  [class.phx-toast-success]="toastOk()" [class.phx-toast-error]="!toastOk()">
+  <i class="bi" [class.bi-check-circle-fill]="toastOk()" [class.bi-x-circle-fill]="!toastOk()"></i>
+  {{ toast() }}
+</div>
+
+<style>
+@keyframes fadeSlideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes toastIn { 0% { opacity:0; transform:translateY(16px) scale(.95); } 70% { transform:translateY(-3px) scale(1.01); } 100% { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes overlayIn { to { background:rgba(15,23,42,.45); backdrop-filter:blur(3px); } }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.5; } }
+
+:root { --phx-primary:#2563eb; }
+.phx-page { padding:0; background:transparent; min-height:auto; }
+.phx-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:12px; border:1px solid #dbe7f5; border-radius:16px; background:linear-gradient(130deg,#f7fbff 0%,#eef4ff 100%); padding:18px 20px; }
+.phx-header-left { display:flex; align-items:center; gap:16px; }
+.phx-header-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; }
+.phx-title { font-size:22px; font-weight:800; color:#1e293b; margin:0; }
+
+/* Buttons */
+.phx-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:9px 18px; border-radius:10px; font-weight:600; font-size:13.5px;
+  border:none; cursor:pointer;
+  transition:transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s ease;
+}
+.phx-btn:not(:disabled):hover  { transform:translateY(-2px); }
+.phx-btn:not(:disabled):active { transform:translateY(0) scale(.97); }
+.phx-btn-sm { padding:6px 12px; font-size:12.5px; border-radius:8px; }
+.phx-btn-primary { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; box-shadow:0 4px 14px rgba(37,99,235,.3); }
+.phx-btn-primary:not(:disabled):hover { box-shadow:0 8px 20px rgba(37,99,235,.4); }
+.phx-btn-success { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; box-shadow:0 4px 12px rgba(22,163,74,.3); }
+.phx-btn-success:not(:disabled):hover { box-shadow:0 8px 18px rgba(22,163,74,.4); }
+.phx-btn-danger  { background:#ef4444; color:#fff; }
+.phx-btn-ghost   { background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0; box-shadow:none; }
+.phx-btn-ghost:not(:disabled):hover { background:#e2e8f0; }
+.phx-btn:disabled { opacity:.5; cursor:not-allowed; transform:none !important; }
+.phx-link-btn { background:none; border:none; cursor:pointer; color:#4f46e5; font-weight:600; padding:0; font-size:inherit; text-decoration:underline dotted; }
+.phx-link-btn:hover { color:#7c3aed; }
+
+/* Spinner */
+.phx-spin     { display:inline-block; width:13px; height:13px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; flex-shrink:0; }
+.phx-spin-sm  { display:inline-block; width:11px; height:11px; border:2px solid rgba(0,0,0,.15); border-top-color:#555; border-radius:50%; animation:spin .6s linear infinite; }
+
+/* Cards */
+.phx-card { background:#fff; border-radius:16px; box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04); border:1px solid #f1f5f9; overflow:hidden; }
+.phx-card-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #f1f5f9; background:#fafbff; }
+.fw-700 { font-weight:700; } .fw-600 { font-weight:600; }
+
+/* Badges & pills */
+.phx-badge { padding:4px 12px; border-radius:999px; font-size:12px; font-weight:700; }
+.phx-badge-cyan { background:#cffafe; color:#0e7490; }
+.phx-pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+.phx-pill-success { background:#dcfce7; color:#16a34a; }
+.phx-pill-danger  { background:#fee2e2; color:#dc2626; }
+.phx-pill-warning { background:#fef9c3; color:#854d0e; }
+
+/* Search & filter controls */
+.phx-list-controls { padding:12px 16px; border-bottom:1px solid #f1f5f9; display:flex; flex-direction:column; gap:8px; }
+.phx-search-wrap { position:relative; }
+.phx-search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:13px; }
+.phx-search-input { width:100%; padding:8px 12px 8px 32px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; transition:border-color .2s; }
+.phx-search-input:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.08); }
+.phx-filter-pills { display:flex; gap:6px; }
+.phx-pill-btn { padding:4px 12px; border-radius:20px; border:1.5px solid #e2e8f0; background:#fff; font-size:12px; font-weight:600; cursor:pointer; color:#64748b; transition:all .15s; }
+.phx-pill-btn.active { background:#2563eb; color:#fff; border-color:#2563eb; }
+.phx-pill-active-only.active  { background:#16a34a; border-color:#16a34a; }
+.phx-pill-inactive-only.active{ background:#94a3b8; border-color:#94a3b8; }
+
+/* Supplier list */
+.phx-supplier-list { overflow-y:auto; max-height:540px; }
+.phx-supplier-item { display:flex; align-items:center; gap:12px; padding:13px 16px; cursor:pointer; border-bottom:1px solid #f8fafc; transition:background .15s ease, transform .12s ease; }
+.phx-supplier-item:hover { background:#f8fafc; transform:translateX(3px); }
+.phx-supplier-active { background:#dbeafe!important; border-left:3px solid #2563eb; }
+.phx-supplier-inactive { opacity:.7; }
+.phx-supplier-avatar { width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; flex-shrink:0; }
+.phx-supplier-info { flex:1; min-width:0; }
+.phx-supplier-actions { display:flex; gap:5px; flex-shrink:0; }
+.phx-status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.phx-status-dot.active   { background:#22c55e; box-shadow:0 0 0 2px rgba(34,197,94,.25); }
+.phx-status-dot.inactive { background:#94a3b8; }
+
+/* Icon buttons */
+.phx-icon-btn { width:30px; height:30px; border-radius:8px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; transition:all .2s; }
+.phx-icon-btn-warning { background:#fef3c7; color:#d97706; }
+.phx-icon-btn-warning:hover { background:#fde68a; }
+.phx-icon-btn-danger  { background:#fee2e2; color:#ef4444; }
+.phx-icon-btn-danger:hover  { background:#fecaca; }
+.phx-icon-btn-success { background:#dcfce7; color:#16a34a; }
+.phx-icon-btn-success:hover { background:#bbf7d0; }
+.phx-icon-btn-muted   { background:#f1f5f9; color:#64748b; }
+.phx-icon-btn-muted:hover { background:#e2e8f0; }
+.phx-icon-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+/* Stats grid */
+.phx-stats-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
+@media (max-width:900px) { .phx-stats-grid { grid-template-columns:repeat(3,1fr); } }
+@media (max-width:600px) { .phx-stats-grid { grid-template-columns:repeat(2,1fr); } }
+.phx-stat-card { background:#fff; border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:12px; box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04); border:1px solid #f1f5f9; animation:fadeSlideIn .3s ease both; }
+.phx-stat-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+.phx-stat-val { font-size:22px; font-weight:800; color:#1e293b; line-height:1.1; }
+.phx-stat-lbl { font-size:11px; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; }
+.phx-stat-blue   .phx-stat-icon { background:#dbeafe; color:#2563eb; }
+.phx-stat-green  .phx-stat-icon { background:#dcfce7; color:#16a34a; }
+.phx-stat-amber  .phx-stat-icon { background:#fef3c7; color:#d97706; }
+.phx-stat-red    .phx-stat-icon { background:#fee2e2; color:#dc2626; }
+.phx-stat-red    .phx-stat-val  { color:#dc2626; }
+.phx-stat-neutral .phx-stat-icon { background:#f1f5f9; color:#94a3b8; }
+.phx-stat-purple .phx-stat-icon { background:#ede9fe; color:#7c3aed; }
+
+/* Overdue banner */
+.phx-overdue-banner { background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:12px 16px; margin-bottom:14px; display:flex; align-items:center; gap:10px; font-size:13.5px; color:#991b1b; animation:fadeSlideIn .3s ease; }
+.phx-overdue-banner i { font-size:18px; color:#dc2626; flex-shrink:0; }
+
+/* Table */
+.phx-table { width:100%; border-collapse:collapse; }
+.phx-table thead tr { background:#fafbff; }
+.phx-table th { padding:12px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#64748b; border-bottom:1px solid #f1f5f9; }
+.phx-table td { padding:12px 14px; border-bottom:1px solid #f8fafc; font-size:13.5px; color:#334155; }
+.phx-table tbody tr { animation:fadeSlideIn .2s ease both; transition:background .15s; }
+.phx-table tbody tr:hover td { background:#f5f7ff; }
+.phx-table tbody tr:last-child td { border-bottom:none; }
+.phx-row-overdue { background:#fff7f7!important; }
+.phx-row-overdue:hover td { background:#fee2e2!important; }
+
+/* Date chips */
+.phx-date-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px; font-size:12px; font-weight:600; background:#f1f5f9; color:#475569; }
+.phx-date-chip.overdue { background:#fee2e2; color:#dc2626; animation:pulse 2s infinite; }
+.phx-notes-dot { display:inline-flex; align-items:center; padding:3px 7px; border-radius:6px; background:#fef3c7; color:#b45309; font-size:12px; cursor:help; }
+.phx-text-danger { color:#dc2626; }
+
+/* Empty */
+.phx-empty { text-align:center; padding:40px 20px; color:#94a3b8; }
+.phx-empty i { font-size:36px; display:block; margin-bottom:10px; opacity:.3; }
+.phx-empty p { margin:0; font-size:14px; }
+.phx-loader { display:flex; align-items:center; justify-content:center; gap:10px; color:#64748b; }
+
+/* Modal */
+.phx-overlay { position:fixed; inset:0; z-index:1040; background:rgba(15,23,42,0); backdrop-filter:blur(0px); animation:overlayIn .25s ease forwards; }
+.phx-modal { position:fixed; inset:0; z-index:1050; display:flex; align-items:center; justify-content:center; pointer-events:none; opacity:0; transition:opacity .25s ease; }
+.phx-modal.phx-modal-open { pointer-events:auto; opacity:1; }
+.phx-modal-dialog { background:#fff; border-radius:20px; width:100%; max-width:480px; box-shadow:0 24px 80px rgba(0,0,0,.22); overflow:hidden; transform:translateY(-16px) scale(.97); transition:transform .3s cubic-bezier(.34,1.56,.64,1); }
+.phx-modal-open .phx-modal-dialog { transform:translateY(0) scale(1); }
+.phx-modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px; }
+.phx-modal-body { padding:24px; max-height:65vh; overflow-y:auto; }
+.phx-modal-footer { display:flex; justify-content:flex-end; gap:10px; padding:16px 24px; border-top:1px solid #f1f5f9; background:#fafbff; }
+.phx-close-btn { background:rgba(255,255,255,.2); border:none; color:#fff; width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s, transform .15s; }
+.phx-close-btn:hover { background:rgba(255,255,255,.35); transform:scale(1.1); }
+
+/* Form fields */
+.phx-field { margin-bottom:18px; }
+.phx-field label { display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:6px; }
+.phx-input { width:100%; padding:10px 13px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:14px; outline:none; transition:border-color .2s; }
+.phx-input:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.08); }
+.phx-input-error { border-color:#ef4444 !important; box-shadow:0 0 0 3px rgba(239,68,68,.1) !important; }
+.phx-field-error { margin-top:5px; font-size:12px; font-weight:600; color:#ef4444; display:flex; align-items:center; gap:4px; }
+
+/* Order detail */
+.phx-detail-grid { display:flex; flex-direction:column; gap:0; }
+.phx-detail-row { display:flex; align-items:baseline; justify-content:space-between; padding:11px 0; border-bottom:1px solid #f1f5f9; gap:16px; }
+.phx-detail-row:last-child { border-bottom:none; }
+.phx-detail-label { font-size:12px; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:.4px; flex-shrink:0; }
+.phx-detail-val { font-size:14px; color:#1e293b; text-align:right; }
+.phx-notes-text { font-style:italic; color:#475569; white-space:pre-wrap; }
+
+/* Toast */
+.phx-toast { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; align-items:center; gap:10px; padding:14px 20px; border-radius:14px; font-weight:600; font-size:14px; color:#fff; box-shadow:0 8px 30px rgba(0,0,0,.18); opacity:0; pointer-events:none; transform:translateY(16px) scale(.95); transition:opacity .2s ease, transform .2s ease; }
+.phx-toast.phx-toast-show { opacity:1; pointer-events:auto; transform:translateY(0) scale(1); animation:toastIn .4s cubic-bezier(.34,1.56,.64,1) forwards; }
+.phx-toast-success { background:linear-gradient(135deg,#16a34a,#15803d); }
+.phx-toast-error   { background:linear-gradient(135deg,#ef4444,#dc2626); }
+
+/* ── Extra animations ────────────────────────────────────────────────────── */
+@keyframes pageEnter   { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes headerSlide { from { opacity:0; transform:translateX(-18px); } to { opacity:1; transform:translateX(0); } }
+@keyframes statPop     { from { opacity:0; transform:translateY(16px) scale(.92); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes numPop      { from { opacity:0; transform:scale(.6); } to { opacity:1; transform:scale(1); } }
+@keyframes rowIn       { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+@keyframes cardPop     { from { opacity:0; transform:translateY(10px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes activeDot   { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.6; transform:scale(1.4); } }
+
+.phx-page   { animation:pageEnter .45s cubic-bezier(.22,1,.36,1) both; }
+.phx-header { animation:headerSlide .4s cubic-bezier(.22,1,.36,1) .05s both; }
+.phx-header-icon { transition:transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease; }
+.phx-header-icon:hover { transform:rotate(-6deg) scale(1.12); box-shadow:0 6px 20px rgba(8,145,178,.35); }
+
+/* Stat cards */
+.phx-stat-card { animation:statPop .45s cubic-bezier(.34,1.56,.64,1) both; }
+.col-6:nth-child(1) .phx-stat-card { animation-delay:.05s; }
+.col-6:nth-child(2) .phx-stat-card { animation-delay:.12s; }
+.col-6:nth-child(3) .phx-stat-card { animation-delay:.19s; }
+.col-6:nth-child(4) .phx-stat-card { animation-delay:.26s; }
+.phx-stat-value { animation:numPop .5s cubic-bezier(.34,1.56,.64,1) .3s both; }
+.phx-stat-card:hover .phx-stat-value { transform:scale(1.08); transition:transform .2s cubic-bezier(.34,1.56,.64,1); }
+
+/* Cards */
+.phx-card { animation:cardPop .4s cubic-bezier(.34,1.56,.64,1) .1s both; }
+.phx-card:hover { box-shadow:0 8px 30px rgba(0,0,0,.09) !important; transform:translateY(-2px); transition:transform .25s ease, box-shadow .25s ease; }
+
+/* Active status dot pulse */
+.phx-dot { animation:activeDot 2.4s ease-in-out infinite; }
+
+/* Table rows stagger */
+.phx-table tbody tr { animation:rowIn .25s ease both; }
+.phx-table tbody tr:nth-child(1)  { animation-delay:.04s; }
+.phx-table tbody tr:nth-child(2)  { animation-delay:.08s; }
+.phx-table tbody tr:nth-child(3)  { animation-delay:.12s; }
+.phx-table tbody tr:nth-child(4)  { animation-delay:.16s; }
+.phx-table tbody tr:nth-child(5)  { animation-delay:.20s; }
+.phx-table tbody tr:nth-child(6)  { animation-delay:.24s; }
+.phx-table tbody tr:nth-child(7)  { animation-delay:.28s; }
+.phx-table tbody tr:nth-child(8)  { animation-delay:.32s; }
+.phx-table tbody tr:nth-child(n+9){ animation-delay:.36s; }
+
+/* Interaction micro-animations */
+.phx-pill { transition:transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s ease; }
+.phx-pill:hover { transform:scale(1.08); box-shadow:0 3px 10px rgba(0,0,0,.12); }
+.phx-btn { transition:transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease; }
+.phx-btn:not(:disabled):hover { transform:translateY(-3px) scale(1.02); }
+.phx-btn:not(:disabled):active { transform:translateY(0) scale(.98); }
+.phx-input:focus { transform:scale(1.005); transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+
+/* Sync with shared backoffice visual language (User/Clinical) */
+.phx-btn,
+.phx-btn-sm {
+  border-radius: 8px;
+  box-shadow: none !important;
+}
+
+.phx-btn-primary,
+.phx-btn-teal {
+  background: #2563eb !important;
+  color: #fff !important;
+}
+
+.phx-btn-warning {
+  background: #f59e0b !important;
+  color: #fff !important;
+}
+
+.phx-btn-danger {
+  background: #dc2626 !important;
+  color: #fff !important;
+}
+
+.phx-btn-ghost {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+.phx-card {
+  border: 1px solid #dbe7f5;
+  box-shadow: none;
+}
+
+.phx-card-header {
+  background: #f8fbff;
+  border-bottom-color: #e3edf9;
+}
+</style>

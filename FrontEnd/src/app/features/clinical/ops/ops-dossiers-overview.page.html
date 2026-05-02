@@ -1,0 +1,60 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Hospitalization Overview</h5>
+    </div>
+
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Home</a></li>
+      <li class="breadcrumb-item">Operations</li>
+      <li class="breadcrumb-item">Hospitalization Overview</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content ops-overview">
+  <div class="card stretch stretch-full">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h5 class="card-title mb-0">Active Hospitalizations</h5>
+        <small class="text-muted">All cases currently waiting on nursing task execution.</small>
+      </div>
+      <button class="btn btn-primary btn-sm" (click)="load()">Refresh</button>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+      <div *ngIf="loading" class="text-muted">Loading hospitalizations...</div>
+      <div *ngIf="!loading && hospitalizations.length === 0" class="text-muted">No active hospitalization found.</div>
+
+      <div class="table-responsive" *ngIf="!loading && hospitalizations.length > 0">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Patient</th>
+              <th>Doctor</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Tasks</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of hospitalizations">
+              <td class="text-break">{{ item.id }}</td>
+              <td>{{ item.patientId }}</td>
+              <td>{{ item.doctorUsername }}</td>
+              <td>{{ item.reason }}</td>
+              <td><span class="badge bg-soft-warning text-warning">{{ item.status }}</span></td>
+              <td>{{ item.completedTasks }}/{{ item.totalTasks }} done</td>
+              <td>{{ item.createdAt | date:'short' }}</td>
+              <td><button class="btn btn-outline-primary btn-sm" (click)="openHospitalization(item)">Open</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

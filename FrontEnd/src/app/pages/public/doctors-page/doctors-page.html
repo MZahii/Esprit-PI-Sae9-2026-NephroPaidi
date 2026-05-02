@@ -11,105 +11,49 @@
 
   <div class="title-wrapper">
     <h1>Our Pediatric Kidney Care Team</h1>
-    <p>Meet our specialized pediatric nephrology experts dedicated to monitoring, diagnosing, and treating kidney diseases in children using advanced digital health tools.</p>
+    <p>Meet the real doctors registered in the platform. Their profile photos come from the staff directory when available, with a local fallback image for empty profiles.</p>
   </div>
+</div>
+
+<div class="container mb-4" *ngIf="!loading">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span class="badge bg-soft-primary text-primary">{{ doctors.length }} active doctors</span>
+    <span class="text-muted">Profiles stay in sync with the staff database.</span>
+  </div>
+</div>
+
+<div class="container mb-4" *ngIf="loading">
+  <div class="alert alert-info mb-0">Loading doctors from the database...</div>
+</div>
+
+<div class="container mb-4" *ngIf="errorMessage">
+  <div class="alert alert-warning mb-0">{{ errorMessage }}</div>
 </div>
 
 <section id="doctors" class="doctors section">
   <div class="container" data-aos="fade-up" data-aos-delay="100">
-    <div class="row gy-4">
-      <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
-        <div class="doctor-card">
-          <div class="doctor-image"><img src="assets/frontoffice/img/health/staff-3.webp" alt="Dr. Jennifer Martinez" class="img-fluid"></div>
-          <div class="doctor-content">
-            <h4 class="doctor-name">Dr. Jennifer Martinez</h4>
-            <span class="doctor-specialty">Senior Pediatric Nephrologist</span>
-            <p class="doctor-bio">Specialist in chronic kidney disease in children, dialysis management, and long-term pediatric nephrology care. Leads treatment strategies and clinical monitoring programs.</p>
-            <div class="doctor-experience"><span class="experience-badge">15+ Years Experience</span></div>
-          </div>
-        </div>
-      </div>
+    <div *ngIf="!loading && doctors.length === 0 && !errorMessage" class="text-center text-muted py-5">
+      No active doctors are available at the moment.
+    </div>
 
-      <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+    <div class="row gy-4" *ngIf="doctors.length > 0">
+      <div class="col-xl-3 col-lg-4 col-md-6" *ngFor="let doctor of doctors; let index = index" [attr.data-aos]="'fade-up'" [attr.data-aos-delay]="100 + ((index % 4) * 100)">
         <div class="doctor-card">
-          <div class="doctor-image"><img src="assets/frontoffice/img/health/staff-7.webp" alt="Dr. Michael Chen" class="img-fluid"></div>
-          <div class="doctor-content">
-            <h4 class="doctor-name">Dr. Michael Chen</h4>
-            <span class="doctor-specialty">Pediatric Nephrology Consultant</span>
-            <p class="doctor-bio">Focuses on early diagnosis of nephrotic syndrome and kidney infections in children. Works closely with families for personalized treatment plans.</p>
-            <div class="doctor-experience"><span class="experience-badge">12+ Years Experience</span></div>
+          <div class="doctor-image">
+            <img
+              [src]="doctor.avatarUrl || defaultDoctorImage"
+              [alt]="fullName(doctor)"
+              class="img-fluid"
+              (error)="handleImageError($event)"
+            >
           </div>
-        </div>
-      </div>
-
-      <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
-        <div class="doctor-card">
-          <div class="doctor-image"><img src="assets/frontoffice/img/health/staff-11.webp" alt="Dr. Sarah Williams" class="img-fluid"></div>
           <div class="doctor-content">
-            <h4 class="doctor-name">Dr. Sarah Williams</h4>
-            <span class="doctor-specialty">Pediatrician – Kidney Care Support</span>
-            <p class="doctor-bio">Monitors children's growth, development, and general health while supporting kidney disease treatment and recovery programs.</p>
-            <div class="doctor-experience"><span class="experience-badge">18+ Years Experience</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="400">
-        <div class="doctor-card">
-          <div class="doctor-image"><img src="assets/frontoffice/img/health/staff-14.webp" alt="Dr. Robert Anderson" class="img-fluid"></div>
-          <div class="doctor-content">
-            <h4 class="doctor-name">Dr. Robert Anderson</h4>
-            <span class="doctor-specialty">Clinical Nutrition Specialist</span>
-            <p class="doctor-bio">Designs kidney-friendly nutrition plans to help children manage sodium, protein, and hydration levels safely.</p>
-            <div class="doctor-experience"><span class="experience-badge">20+ Years Experience</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
-        <div class="doctor-card">
-          <div class="doctor-image"><img src="assets/frontoffice/img/health/staff-5.webp" alt="Dr. Lisa Thompson" class="img-fluid"></div>
-          <div class="doctor-content">
-            <h4 class="doctor-name">Dr. Lisa Thompson</h4>
-            <span class="doctor-specialty">Pediatric Radiologist</span>
-            <p class="doctor-bio">Interprets ultrasound and imaging results to detect kidney abnormalities early and guide treatment decisions.</p>
-            <div class="doctor-experience"><span class="experience-badge">14+ Years Experience</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
-        <div class="doctor-card">
-          <div class="doctor-image"><img src="assets/frontoffice/img/health/staff-9.webp" alt="Dr. David Rodriguez" class="img-fluid"></div>
-          <div class="doctor-content">
-            <h4 class="doctor-name">Dr. David Rodriguez</h4>
-            <span class="doctor-specialty">Laboratory Diagnostics Specialist</span>
-            <p class="doctor-bio">Analyzes blood and urine test results to monitor kidney function and detect complications.</p>
-            <div class="doctor-experience"><span class="experience-badge">16+ Years Experience</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
-        <div class="doctor-card">
-          <div class="doctor-image"><img src="assets/frontoffice/img/health/staff-2.webp" alt="Dr. Amanda Clark" class="img-fluid"></div>
-          <div class="doctor-content">
-            <h4 class="doctor-name">Dr. Amanda Clark</h4>
-            <span class="doctor-specialty">Pediatric Psychologist</span>
-            <p class="doctor-bio">Supports children and families coping with chronic kidney disease and long-term treatments.</p>
-            <div class="doctor-experience"><span class="experience-badge">22+ Years Experience</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="400">
-        <div class="doctor-card">
-          <div class="doctor-image"><img src="assets/frontoffice/img/health/staff-12.webp" alt="Dr. James Wilson" class="img-fluid"></div>
-          <div class="doctor-content">
-            <h4 class="doctor-name">Dr. James Wilson</h4>
-            <span class="doctor-specialty">Pediatric Urologic Surgeon</span>
-            <p class="doctor-bio">Specialized in surgical treatment of congenital kidney and urinary tract disorders in children, including kidney transplants and corrective procedures.</p>
-            <div class="doctor-experience"><span class="experience-badge">19+ Years Experience</span></div>
+            <h4 class="doctor-name">{{ fullName(doctor) }}</h4>
+            <span class="doctor-specialty">{{ doctorTitle(doctor) }}</span>
+            <p class="doctor-bio">{{ doctorSummary(doctor) }}</p>
+            <div class="doctor-experience">
+              <span class="experience-badge">{{ doctor.role || 'DOCTOR' }}</span>
+            </div>
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ package tn.esprit.spring.pharmacyservice.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -35,6 +36,11 @@ public class GlobalExceptionHandler {
             IllegalStateException ex, WebRequest request) {
         log.error("IllegalStateException: {}", ex.getMessage(), ex);
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public void handleAccessDenied(AccessDeniedException ex) throws AccessDeniedException {
+        throw ex; // Let Spring Security's filter chain return 403
     }
 
     @ExceptionHandler(Exception.class)

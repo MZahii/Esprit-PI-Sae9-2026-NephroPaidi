@@ -12,4 +12,5 @@ public class MedicationDTO {
     private String name;
     private String form;
     private String pediatricDosage;
+    private Integer minimumStock;
 }

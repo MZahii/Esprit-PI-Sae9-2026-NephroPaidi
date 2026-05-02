@@ -14,12 +14,12 @@ import java.util.List;
  */
 @FeignClient(
     name = "administration-service",
-    url = "${services.administration.url:http://localhost:8087}",
+    url = "${internal.administration-service.base-url:http://localhost:8087}",
     configuration = FeignClientConfiguration.class
 )
 public interface AdministrationServiceClientFeign {
     
-    @GetMapping("/patients/guardian/{guardianUserId}")
+    @GetMapping("/api/patients/guardian/{guardianUserId}")
     List<AdministrationPatientProfile> getPatientsByGuardianId(
         @PathVariable Long guardianUserId,
         @RequestHeader(value = "Authorization", required = false) String token

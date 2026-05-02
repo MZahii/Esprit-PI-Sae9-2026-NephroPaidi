@@ -25,6 +25,9 @@ public class Medication {
 
     private String pediatricDosage;
 
+    /** Minimum stock threshold — triggers a reorder alert when total stock falls below this value. */
+    private Integer minimumStock;
+
     @OneToMany(mappedBy = "medication", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Batch> batches;
 

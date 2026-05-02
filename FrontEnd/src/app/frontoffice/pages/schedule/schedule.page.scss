@@ -1,0 +1,86 @@
+.guardian-schedule-shell {
+  padding: 118px 0 20px;
+}
+
+.schedule-shell-card {
+  background:
+    linear-gradient(135deg, rgba(32, 74, 135, 0.08), rgba(36, 166, 154, 0.08)),
+    #ffffff;
+  border: 1px solid rgba(32, 74, 135, 0.1);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+  padding: 24px;
+}
+
+.schedule-shell-head h1 {
+  margin: 8px 0 10px;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #16345f;
+}
+
+.schedule-shell-head p {
+  margin: 0;
+  color: #5b6b85;
+  max-width: 720px;
+}
+
+.schedule-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1f7a8c;
+}
+
+.schedule-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.schedule-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 148px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 122, 140, 0.16);
+  background: rgba(255, 255, 255, 0.78);
+  color: #16345f;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.schedule-tab:hover,
+.schedule-tab.active {
+  background: linear-gradient(135deg, #1f7a8c, #245f99);
+  border-color: transparent;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 767.98px) {
+  .guardian-schedule-shell {
+    padding-top: 104px;
+  }
+
+  .schedule-shell-card {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .schedule-shell-head h1 {
+    font-size: 1.55rem;
+  }
+
+  .schedule-tab {
+    flex: 1 1 100%;
+  }
+}

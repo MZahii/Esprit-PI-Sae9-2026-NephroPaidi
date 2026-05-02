@@ -1,4 +1,4 @@
-<!-- SIDEBAR -->
+﻿<!-- SIDEBAR -->
 <nav class="nxl-navigation">
   <div class="navbar-wrapper">
     <div class="m-header">
@@ -197,13 +197,17 @@
               </div>
             </a>
 
-            <button type="button" class="user-menu-item disabled-item">
+            <a
+              class="user-menu-item"
+              routerLink="/backoffice/account-settings"
+              (click)="userMenuOpen = false"
+            >
               <i class="feather-settings"></i>
               <div>
                 <span>Account Settings</span>
-                <small>Coming soon</small>
+                <small>Manage your profile, security, and preferences</small>
               </div>
-            </button>
+            </a>
 
             <button type="button" class="user-menu-item logout-item" (click)="onLogout()">
               <i class="feather-log-out"></i>

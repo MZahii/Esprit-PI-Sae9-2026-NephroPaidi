@@ -36,4 +36,6 @@ public class UpdateStaffProfileRequest {
 
     @NotNull(message = "Role is required")
     private Role role;
+
+    private String avatarUrl;
 }

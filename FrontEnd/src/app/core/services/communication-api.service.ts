@@ -1,6 +1,8 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+import { AuthStorageService } from '../auth/auth-storage.service';
 import { environment } from '../../../environments/environment';
 
 export type MessageType = 'ADMINISTRATIVE' | 'MEDICAL' | 'LAB_RESULT' | 'APPOINTMENT' | 'QUESTION' | 'COMPLAINT' | 'OTHER';
@@ -121,7 +123,15 @@ export interface InboxFilters {
 export class CommunicationApiService {
   private readonly baseUrl = `${environment.apiBaseUrl}/api/communication`;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authStorage: AuthStorageService
+  ) {}
+
+  private authHeaders(): { headers?: Record<string, string> } {
+    const token = this.authStorage.getAccessToken();
+    return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  }
 
   createMessage(payload: CreateMessagePayload): Observable<{ id: string; status: MessageStatus; queue: MessageQueue; createdAt: string }> {
     return this.http.post<{ id: string; status: MessageStatus; queue: MessageQueue; createdAt: string }>(
@@ -131,7 +141,10 @@ export class CommunicationApiService {
   }
 
   getMyPatients(): Observable<GuardianPatientItem[]> {
-    return this.http.get<GuardianPatientItem[]>(`${this.baseUrl}/patients/my`);
+    return this.http.get<GuardianPatientItem[]>(
+      `${this.baseUrl}/patients/my`,
+      this.authHeaders()
+    ).pipe(catchError(() => of([])));
   }
 
   getMyMessages(): Observable<FollowUpMessage[]> {
@@ -203,7 +216,7 @@ export class CommunicationApiService {
   }
 
   getDoctorsDirectory(): Observable<StaffDirectoryItem[]> {
-    return this.http.get<StaffDirectoryItem[]>(`${this.baseUrl}/backoffice/doctors`);
+    return this.http.get<StaffDirectoryItem[]>(`${this.baseUrl}/api/users/public/doctors`);
   }
 
   listTemplates(messageType?: MessageType): Observable<QuickReplyTemplate[]> {

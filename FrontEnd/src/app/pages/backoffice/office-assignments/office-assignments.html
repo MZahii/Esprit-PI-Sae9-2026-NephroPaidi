@@ -1,0 +1,102 @@
+<div class="module-page assignments-page">
+  <header class="module-header card stretch stretch-full">
+    <div>
+      <p class="module-kicker">Administration</p>
+      <h2>Office Assignments</h2>
+      <p class="module-subtitle">Manage Admin and HR office placement with fast lookup and controlled reassignment.</p>
+    </div>
+    <div class="module-header__crumbs">
+      <a routerLink="/backoffice/dashboard">Dashboard</a>
+      <span>/</span>
+      <span>Office Assignments</span>
+    </div>
+  </header>
+
+  <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="alert alert-success mb-3">{{ successMessage }}</div>
+
+  <section class="kpi-grid" *ngIf="!loading">
+    <article class="kpi-card"><span>Total Assignments</span><strong>{{ totalAssignments }}</strong></article>
+    <article class="kpi-card"><span>Admin Assignments</span><strong>{{ assignments.ADMIN.length }}</strong></article>
+    <article class="kpi-card"><span>HR Assignments</span><strong>{{ assignments.HR.length }}</strong></article>
+  </section>
+
+  <section class="card stretch stretch-full tab-panel">
+    <div class="card-body tab-row">
+      <button type="button" class="tab-btn" [class.active]="activeTab==='ADMIN'" (click)="setTab('ADMIN')">Admin Offices</button>
+      <button type="button" class="tab-btn" [class.active]="activeTab==='HR'" (click)="setTab('HR')">HR Offices</button>
+    </div>
+  </section>
+
+  <section class="card stretch stretch-full creation-panel" *ngIf="!loading">
+    <div class="card-header"><h6 class="mb-0">Create Assignment ({{ activeTab }})</h6></div>
+    <div class="card-body create-grid">
+      <label class="field-wrap">
+        <span class="field-label">Workspace</span>
+        <select class="form-control" [(ngModel)]="createForm[activeTab].workspaceId">
+          <option [ngValue]="null" disabled>Select workspace</option>
+          <option *ngFor="let ws of tabWorkspaceOptions" [ngValue]="ws.workspaceId" [disabled]="!canCreateInWorkspace(activeTab, ws)">{{ workspaceLabel(ws) }}</option>
+        </select>
+      </label>
+
+      <label class="field-wrap">
+        <span class="field-label">User</span>
+        <select class="form-control" [(ngModel)]="createForm[activeTab].userId">
+          <option [ngValue]="null" disabled>Select user</option>
+          <option *ngFor="let user of tabAvailableUsers" [ngValue]="user.id">
+            {{ user.firstName }} {{ user.lastName }} ({{ user.email }})
+          </option>
+        </select>
+      </label>
+
+      <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createAssignment(activeTab)">Assign</button>
+    </div>
+  </section>
+
+  <section class="workspace-grid" *ngIf="!loading">
+    <article class="workspace-card" *ngFor="let group of tabWorkspaceGroups">
+      <header class="workspace-head">
+        <div>
+          <div class="workspace-title">{{ group.floorLabel }} / {{ group.workspaceName }}</div>
+          <div class="workspace-meta">{{ group.workspaceCode }} • {{ group.workspaceType.replaceAll('_', ' ') }}</div>
+        </div>
+        <span class="count-pill">{{ group.assigned.length }} assigned</span>
+      </header>
+
+      <div *ngIf="group.assigned.length === 0" class="empty-inline">No users assigned.</div>
+
+      <div class="assigned-stack" *ngIf="group.assigned.length > 0">
+        <div class="assigned-row" *ngFor="let assignment of group.assigned">
+          <div class="assigned-main">
+            <div class="assigned-name">{{ userLabel(assignment.userId) }}</div>
+            <div class="assigned-meta">{{ userEmail(assignment.userId) }}</div>
+          </div>
+
+          <div class="assigned-actions">
+            <button
+              type="button"
+              class="btn btn-outline-warning btn-sm"
+              (click)="moveState[assignment.id]?.enabled ? cancelMove(assignment.id) : startMove(assignment.id)"
+            >
+              {{ moveState[assignment.id]?.enabled ? 'Cancel' : 'Move' }}
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm" (click)="deleteAssignment(assignment)">Delete</button>
+          </div>
+
+          <div class="move-inline" *ngIf="moveState[assignment.id]?.enabled">
+            <select class="form-control form-control-sm" [(ngModel)]="moveState[assignment.id].targetWorkspaceId">
+              <option [ngValue]="null" disabled>Select target workspace</option>
+              <option
+                *ngFor="let ws of moveOptionsFor(assignment)"
+                [ngValue]="ws.workspaceId"
+              >
+                {{ workspaceLabel(ws) }}
+              </option>
+            </select>
+            <button class="btn btn-warning btn-sm" type="button" [disabled]="saving" (click)="confirmMove(assignment)">Confirm Move</button>
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>

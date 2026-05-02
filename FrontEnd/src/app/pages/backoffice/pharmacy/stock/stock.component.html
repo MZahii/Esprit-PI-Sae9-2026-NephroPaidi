@@ -1,423 +1,869 @@
-<div class="nxl-content-page">
+<div class="phx-page">
 
-  <div class="nxl-head-breadcrumb d-flex align-items-center justify-content-between mb-4">
-    <div>
-      <h4 class="mb-0">Stock Management</h4>
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb mb-0">
-          <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
-          <li class="breadcrumb-item active">Stock</li>
-        </ol>
-      </nav>
+  <!-- ── Page Header ─────────────────────────────────────────────────────── -->
+  <div class="phx-header">
+    <div class="phx-header-left">
+      <div class="phx-header-icon" style="background:linear-gradient(135deg,#0369a1,#0284c7)">
+        <i class="bi bi-archive-fill"></i>
+      </div>
+      <div>
+        <h4 class="phx-title">Stock Management</h4>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item active">Stock</li>
+          </ol>
+        </nav>
+      </div>
     </div>
     <div class="d-flex gap-2">
-      <a routerLink="/backoffice/pharmacy/dispensations"
-         class="btn btn-soft-info btn-sm d-flex align-items-center gap-1">
-        <i data-feather="list" style="width:14px;height:14px"></i> Dispensation History
+      <a routerLink="/backoffice/pharmacy/dispensations" class="phx-btn phx-btn-ghost phx-btn-sm">
+        <i class="bi bi-clock-history"></i> Dispensation History
       </a>
-      <button class="btn btn-soft-secondary btn-sm" (click)="showInit=true; initBatchId=0; initQty=0">
-        <i data-feather="download" style="width:14px;height:14px" class="me-1"></i> Initialize
+      <button class="phx-btn phx-btn-sm phx-btn-teal" (click)="openSmartDispense()">
+        <i class="bi bi-magic"></i> Smart Dispense
+      </button>
+      <button class="phx-btn phx-btn-sm phx-btn-indigo" (click)="openTransfer()">
+        <i class="bi bi-arrow-left-right"></i> Transfer
+      </button>
+      <button class="phx-btn phx-btn-primary phx-btn-sm" (click)="openInit()">
+        <i class="bi bi-plus-circle"></i> Initialize Stock
       </button>
     </div>
   </div>
 
-  <!-- Stat cards -->
+  <!-- ── Stat Cards ──────────────────────────────────────────────────────── -->
   <div class="row g-3 mb-4">
-    <div class="col-md-3">
-      <div class="card border-0 bg-soft-primary cursor-pointer" (click)="activeTab.set('all')">
-        <div class="card-body d-flex align-items-center gap-3">
-          <div class="avatar avatar-lg bg-primary text-white rounded">
-            <i data-feather="archive" style="width:22px;height:22px"></i>
-          </div>
-          <div>
-            <div class="fs-4 fw-bold text-primary">{{ stocks().length }}</div>
-            <div class="small text-muted">Total stock entries</div>
-          </div>
+    <div class="col-6 col-xl-3">
+      <div class="phx-stat-card phx-stat-blue" (click)="activeTab.set('all')"
+        [class.phx-stat-active]="activeTab()==='all'">
+        <div class="phx-stat-icon"><i class="bi bi-archive"></i></div>
+        <div class="phx-stat-body">
+          <div class="phx-stat-value">{{ stocks().length }}</div>
+          <div class="phx-stat-label">Total Entries</div>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card border-0 bg-soft-warning cursor-pointer" (click)="activeTab.set('low')">
-        <div class="card-body d-flex align-items-center gap-3">
-          <div class="avatar avatar-lg bg-warning text-white rounded">
-            <i data-feather="alert-triangle" style="width:22px;height:22px"></i>
-          </div>
-          <div>
-            <div class="fs-4 fw-bold text-warning">{{ lowStock().length }}</div>
-            <div class="small text-muted">Low stock (≤10 units)</div>
-          </div>
+    <div class="col-6 col-xl-3">
+      <div class="phx-stat-card phx-stat-amber" (click)="activeTab.set('low')"
+        [class.phx-stat-active]="activeTab()==='low'">
+        <div class="phx-stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
+        <div class="phx-stat-body">
+          <div class="phx-stat-value">{{ lowStock().length }}</div>
+          <div class="phx-stat-label">Low Stock</div>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card border-0 bg-soft-danger cursor-pointer" (click)="activeTab.set('out')">
-        <div class="card-body d-flex align-items-center gap-3">
-          <div class="avatar avatar-lg bg-danger text-white rounded">
-            <i data-feather="x-circle" style="width:22px;height:22px"></i>
-          </div>
-          <div>
-            <div class="fs-4 fw-bold text-danger">{{ outOfStock().length }}</div>
-            <div class="small text-muted">Out of stock</div>
-          </div>
+    <div class="col-6 col-xl-3">
+      <div class="phx-stat-card phx-stat-red" (click)="activeTab.set('out')"
+        [class.phx-stat-active]="activeTab()==='out'">
+        <div class="phx-stat-icon"><i class="bi bi-x-circle"></i></div>
+        <div class="phx-stat-body">
+          <div class="phx-stat-value">{{ outOfStock().length }}</div>
+          <div class="phx-stat-label">Out of Stock</div>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card border-0 bg-soft-secondary cursor-pointer" (click)="activeTab.set('expired')">
-        <div class="card-body d-flex align-items-center gap-3">
-          <div class="avatar avatar-lg bg-secondary text-white rounded">
-            <i data-feather="clock" style="width:22px;height:22px"></i>
-          </div>
-          <div>
-            <div class="fs-4 fw-bold text-secondary">{{ expiredBatches().length }}</div>
-            <div class="small text-muted">Expired batches</div>
-          </div>
+    <div class="col-6 col-xl-3">
+      <div class="phx-stat-card phx-stat-slate" (click)="activeTab.set('expired')"
+        [class.phx-stat-active]="activeTab()==='expired'">
+        <div class="phx-stat-icon"><i class="bi bi-calendar-x"></i></div>
+        <div class="phx-stat-body">
+          <div class="phx-stat-value">{{ expiredBatches().length }}</div>
+          <div class="phx-stat-label">Expired Batches</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Alerte lots expirés -->
-  <div class="alert alert-secondary d-flex align-items-center justify-content-between mb-3"
-       *ngIf="expiredBatches().length > 0 && activeTab() !== 'expired'" role="alert">
-    <div class="d-flex align-items-center gap-2">
-      <i data-feather="clock" style="width:18px;height:18px;flex-shrink:0"></i>
-      <div>
-        <strong>{{ expiredBatches().length }} expired batch(es)</strong> detected — consider removing them from inventory.
-        <button class="btn btn-link btn-sm text-secondary p-0 ms-2 fw-semibold"
-          (click)="activeTab.set('expired')">View history</button>
+  <!-- ── Alerts ──────────────────────────────────────────────────────────── -->
+  <div class="phx-alert phx-alert-danger mb-3"
+    *ngIf="outOfStock().length > 0 && !alertOutDismissed">
+    <i class="bi bi-x-octagon-fill"></i>
+    <span><strong>{{ outOfStock().length }} medication(s) out of stock</strong> — immediate restocking required.</span>
+    <button class="phx-alert-close" (click)="alertOutDismissed=true"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="phx-alert phx-alert-warning mb-3"
+    *ngIf="lowStock().length > 0 && !alertLowDismissed">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <span><strong>{{ lowStock().length }} medication(s) running low</strong> — at or below 10 units.</span>
+    <button class="phx-alert-close" (click)="alertLowDismissed=true"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <!-- ── Tabs ────────────────────────────────────────────────────────────── -->
+  <div class="phx-tabs mb-3">
+    <button class="phx-tab" [class.phx-tab-active]="activeTab()==='all'" (click)="activeTab.set('all')">
+      All <span class="phx-tab-count">{{ stocks().length }}</span>
+    </button>
+    <button class="phx-tab" [class.phx-tab-active]="activeTab()==='low'" (click)="activeTab.set('low')">
+      Low Stock <span class="phx-tab-count phx-tab-count-warning">{{ lowStock().length }}</span>
+    </button>
+    <button class="phx-tab" [class.phx-tab-active]="activeTab()==='out'" (click)="activeTab.set('out')">
+      Out of Stock <span class="phx-tab-count phx-tab-count-danger">{{ outOfStock().length }}</span>
+    </button>
+    <button class="phx-tab" [class.phx-tab-active]="activeTab()==='expired'" (click)="activeTab.set('expired')">
+      <i class="bi bi-calendar-x me-1"></i>Expired
+      <span class="phx-tab-count phx-tab-count-slate">{{ expiredBatches().length }}</span>
+    </button>
+  </div>
+
+  <!-- ── Expired Batches Table ───────────────────────────────────────────── -->
+  <div class="phx-card" *ngIf="activeTab()==='expired'">
+    <div class="phx-card-header">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-calendar-x" style="color:#64748b"></i>
+        <span class="fw-700">Expired Batches</span>
       </div>
+    </div>
+    <div class="table-responsive">
+      <table class="phx-table">
+        <thead>
+          <tr>
+            <th>Batch ID</th>
+            <th>Medication</th>
+            <th>Batch Number</th>
+            <th>Manufacture Date</th>
+            <th>Expiration Date</th>
+            <th>Quantity</th>
+            <th class="text-center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let b of expiredBatches()" class="phx-row-danger">
+            <td class="text-muted small">{{ b.batchId }}</td>
+            <td class="fw-700">{{ batchMedicationMap[b.batchId!] || '—' }}</td>
+            <td class="font-monospace small">{{ b.batchNumber }}</td>
+            <td class="small text-muted">{{ b.manufactureDate | date:'dd/MM/yyyy' }}</td>
+            <td><span class="fw-700 text-danger">{{ b.expirationDate | date:'dd/MM/yyyy' }}</span></td>
+            <td class="fw-600">{{ b.quantity }}</td>
+            <td class="text-center">
+              <span class="phx-pill phx-pill-danger"><i class="bi bi-x-circle-fill me-1"></i>Expired</span>
+            </td>
+          </tr>
+          <tr *ngIf="expiredBatches().length === 0">
+            <td colspan="7" class="phx-empty">
+              <i class="bi bi-check-circle" style="color:#16a34a"></i>
+              <p>No expired batches — great job!</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- Alertes visuelles -->
-  <div class="alert alert-danger d-flex align-items-center justify-content-between mb-3"
-       *ngIf="outOfStock().length > 0 && !alertOutDismissed" role="alert">
-    <div class="d-flex align-items-center gap-2">
-      <i data-feather="x-octagon" style="width:18px;height:18px;flex-shrink:0"></i>
-      <div>
-        <strong>{{ outOfStock().length }} medication(s) out of stock</strong> —
-        immediate restocking required.
-        <button class="btn btn-link btn-sm text-danger p-0 ms-2 fw-semibold"
-          (click)="activeTab.set('out')">View list</button>
-      </div>
-    </div>
-    <button type="button" class="btn-close" (click)="alertOutDismissed=true" aria-label="Close"></button>
-  </div>
-
-  <div class="alert alert-warning d-flex align-items-center justify-content-between mb-3"
-       *ngIf="lowStock().length > 0 && !alertLowDismissed" role="alert">
-    <div class="d-flex align-items-center gap-2">
-      <i data-feather="alert-triangle" style="width:18px;height:18px;flex-shrink:0"></i>
-      <div>
-        <strong>{{ lowStock().length }} medication(s) running low</strong> —
-        stock is at or below 10 units.
-        <button class="btn btn-link btn-sm text-warning p-0 ms-2 fw-semibold"
-          (click)="activeTab.set('low')">View list</button>
-      </div>
-    </div>
-    <button type="button" class="btn-close" (click)="alertLowDismissed=true" aria-label="Close"></button>
-  </div>
-
-  <!-- Tabs -->
-  <ul class="nav nav-tabs mb-3">
-    <li class="nav-item">
-      <button class="nav-link" [class.active]="activeTab()==='all'" (click)="activeTab.set('all')">
-        All <span class="badge bg-soft-primary text-primary ms-1">{{ stocks().length }}</span>
-      </button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link" [class.active]="activeTab()==='low'" (click)="activeTab.set('low')">
-        Low Stock <span class="badge bg-soft-warning text-warning ms-1">{{ lowStock().length }}</span>
-      </button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link" [class.active]="activeTab()==='out'" (click)="activeTab.set('out')">
-        Out of Stock <span class="badge bg-soft-danger text-danger ms-1">{{ outOfStock().length }}</span>
-      </button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link" [class.active]="activeTab()==='expired'" (click)="activeTab.set('expired')">
-        <i data-feather="clock" style="width:13px;height:13px" class="me-1"></i>Expired History
-        <span class="badge bg-soft-secondary text-secondary ms-1">{{ expiredBatches().length }}</span>
-      </button>
-    </li>
-  </ul>
-
-  <!-- Expired Batches Table -->
-  <div class="card" *ngIf="activeTab() === 'expired'">
-    <div class="card-header bg-soft-secondary d-flex align-items-center gap-2">
-      <i data-feather="clock" style="width:16px;height:16px"></i>
-      <span class="fw-semibold">Expired Batches History</span>
-    </div>
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th class="ps-3">Batch ID</th>
-              <th>Medication</th>
-              <th>Batch Number</th>
-              <th>Manufacture Date</th>
-              <th>Expiration Date</th>
-              <th>Quantity</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let b of expiredBatches()" class="table-secondary">
-              <td class="ps-3 text-muted small">{{ b.batchId }}</td>
-              <td class="fw-semibold">{{ batchMedicationMap[b.batchId!] || '—' }}</td>
-              <td class="font-monospace">{{ b.batchNumber }}</td>
-              <td class="small text-muted">{{ b.manufactureDate | date:'dd/MM/yyyy' }}</td>
-              <td>
-                <span class="text-danger fw-semibold">{{ b.expirationDate | date:'dd/MM/yyyy' }}</span>
-              </td>
-              <td>{{ b.quantity }}</td>
-              <td>
-                <span class="badge bg-secondary">
-                  <i data-feather="alert-octagon" style="width:11px;height:11px" class="me-1"></i>Expired
-                </span>
-              </td>
-            </tr>
-            <tr *ngIf="expiredBatches().length === 0">
-              <td colspan="7" class="text-center py-5 text-muted">
-                <i data-feather="check-circle" style="width:32px;height:32px;opacity:.3" class="d-block mx-auto mb-2"></i>
-                No expired batches found
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- Stock Table -->
-  <div class="card" *ngIf="activeTab() !== 'expired'">
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th class="ps-3">Stock ID</th>
-              <th>Medication</th>
-              <th>Quantity Available</th>
-              <th>Level</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let s of currentList"
-                [class.table-danger]="stockLevel(s)==='out'"
-                [class.table-warning]="stockLevel(s)==='low'">
-              <td class="ps-3 text-muted small">{{ s.stockId }}</td>
-              <td class="fw-semibold">{{ batchMedicationMap[s.batchId] || s.batchId }}</td>
-              <td>
-                <div class="d-flex align-items-center gap-2">
-                  <div class="progress flex-grow-1" style="height:6px;max-width:150px">
-                    <div class="progress-bar"
-                      [class.bg-success]="stockLevel(s)==='ok'"
-                      [class.bg-warning]="stockLevel(s)==='low'"
-                      [class.bg-danger]="stockLevel(s)==='out'"
-                         [style.width.%]="100"
-                    >
-                      <!--                      [style.width.%]="Math.min((s.quantityAvailable / 200) * 100, 100)"-->
-
-                    </div>
+  <!-- ── Stock Table ─────────────────────────────────────────────────────── -->
+  <div class="phx-card" *ngIf="activeTab()!=='expired'">
+    <div class="table-responsive">
+      <table class="phx-table">
+        <thead>
+          <tr>
+            <th>Stock ID</th>
+            <th>Medication</th>
+            <th>Quantity Available</th>
+            <th>Level</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of currentList"
+            [class.phx-row-danger]="stockLevel(s)==='out'"
+            [class.phx-row-warning]="stockLevel(s)==='low'">
+            <td class="text-muted small">{{ s.stockId }}</td>
+            <td class="fw-700">{{ batchMedicationMap[s.batchId] || ('Batch #' + s.batchId) }}</td>
+            <td>
+              <div class="phx-qty-row">
+                <div class="phx-qty-bar-wrap">
+                  <div class="phx-qty-bar"
+                    [class.phx-bar-ok]="stockLevel(s)==='ok'"
+                    [class.phx-bar-low]="stockLevel(s)==='low'"
+                    [class.phx-bar-out]="stockLevel(s)==='out'"
+                    [style.width.%]="stockLevel(s)==='out' ? 4 : stockLevel(s)==='low' ? 25 : 80">
                   </div>
-                  <span class="fw-semibold">{{ s.quantityAvailable }}</span>
                 </div>
-              </td>
-              <td>
-                <span class="badge"
-                  [class.bg-soft-success]="stockLevel(s)==='ok'" [class.text-success]="stockLevel(s)==='ok'"
-                  [class.bg-soft-warning]="stockLevel(s)==='low'" [class.text-warning]="stockLevel(s)==='low'"
-                  [class.bg-soft-danger]="stockLevel(s)==='out'" [class.text-danger]="stockLevel(s)==='out'">
-                  {{ stockLevel(s) === 'ok' ? 'OK' : stockLevel(s) === 'low' ? 'Low' : 'Out of Stock' }}
-                </span>
-              </td>
-              <td>
-                <div class="d-flex gap-1">
-                  <button class="btn btn-soft-warning btn-sm"
-                    (click)="showAdjust=true; adjustBatchId=s.batchId; adjustDelta=0; adjustReason=''">
-                    <i data-feather="sliders" style="width:13px;height:13px"></i> Adjust
-                  </button>
-                  <button class="btn btn-soft-info btn-sm"
-                    (click)="openTransfer(s)">
-                    <i data-feather="repeat" style="width:13px;height:13px"></i> Transfer
-                  </button>
-                  <button class="btn btn-primary btn-sm"
-                    (click)="showDispense=true; dispenseForm={batchId: s.batchId}">
-                    <i data-feather="send" style="width:13px;height:13px"></i> Dispense
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr *ngIf="currentList.length === 0">
-              <td colspan="5" class="text-center py-5 text-muted">
-                <i data-feather="inbox" style="width:32px;height:32px;opacity:.3" class="d-block mx-auto mb-2"></i>
-                No entries in this category
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                <span class="fw-700">{{ s.quantityAvailable }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="phx-pill"
+                [class.phx-pill-success]="stockLevel(s)==='ok'"
+                [class.phx-pill-warning]="stockLevel(s)==='low'"
+                [class.phx-pill-danger]="stockLevel(s)==='out'">
+                {{ stockLevel(s)==='ok' ? 'OK' : stockLevel(s)==='low' ? 'Low' : 'Out of Stock' }}
+              </span>
+            </td>
+            <td>
+              <div class="d-flex gap-2 flex-wrap">
+                <button class="phx-btn phx-btn-sm phx-btn-ghost"
+                  (click)="showAdjust=true; adjustBatchId=s.batchId; adjustDelta=0; adjustReason=''">
+                  <i class="bi bi-sliders"></i> Adjust
+                </button>
+                <button class="phx-btn phx-btn-sm phx-btn-indigo"
+                  (click)="openTransfer(s.batchId)">
+                  <i class="bi bi-arrow-left-right"></i> Transfer
+                </button>
+                <button class="phx-btn phx-btn-sm phx-btn-primary"
+                  (click)="showDispense=true; dispenseForm={batchId: s.batchId, quantity: 1}; dispenseError.set('')">
+                  <i class="bi bi-send"></i> Dispense
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="currentList.length === 0">
+            <td colspan="5" class="phx-empty">
+              <i class="bi bi-inbox"></i>
+              <p>No entries in this category</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
 
-<!-- ─── Dispense Modal ─────────────────────────────────────────────────── -->
-<div class="modal fade" [class.show]="showDispense" [style.display]="showDispense ? 'block' : 'none'">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title text-primary">
-          <i data-feather="send" style="width:16px;height:16px" class="me-2"></i>Dispense Medication
-        </h5>
-        <button class="btn-close" (click)="showDispense=false"></button>
+<!-- ── Dispense Modal ─────────────────────────────────────────────────────── -->
+<div class="phx-overlay" *ngIf="showDispense" (click)="showDispense=false"></div>
+<div class="phx-modal" [class.phx-modal-open]="showDispense">
+  <div class="phx-modal-dialog">
+    <div class="phx-modal-header" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)">
+      <div class="d-flex align-items-center gap-2 text-white">
+        <i class="bi bi-send-fill fs-5"></i>
+        <h5 class="mb-0">Dispense Medication</h5>
       </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Batch ID <span class="text-danger">*</span></label>
-          <input type="number" class="form-control" [(ngModel)]="dispenseForm.batchId" placeholder="e.g. 1"/>
+      <button class="phx-close-btn" (click)="showDispense=false"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="phx-modal-body">
+      <!-- Show selected medication info if coming from table row -->
+      <div class="phx-info-box mb-3" *ngIf="dispenseForm.batchId && batchMedicationMap[dispenseForm.batchId]">
+        <i class="bi bi-capsule-pill text-primary"></i>
+        <div>
+          <div class="fw-700">{{ batchMedicationMap[dispenseForm.batchId] }}</div>
+          <div class="small text-muted font-monospace" *ngIf="batchNumberMap[dispenseForm.batchId]">{{ batchNumberMap[dispenseForm.batchId] }}</div>
         </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Quantity <span class="text-danger">*</span></label>
-          <input type="number" class="form-control" [(ngModel)]="dispenseForm.quantity" min="1"/>
+      </div>
+      <div class="phx-field">
+        <label>Batch <span class="text-danger">*</span></label>
+        <select class="phx-input" [(ngModel)]="dispenseForm.batchId" (ngModelChange)="dispenseError.set('')">
+          <option [ngValue]="undefined" disabled>Select a batch…</option>
+          <option *ngFor="let s of stocks()" [ngValue]="s.batchId" [disabled]="s.quantityAvailable === 0">
+            {{ stockLabel(s) }}
+          </option>
+        </select>
+      </div>
+      <div class="phx-field">
+        <label>Quantity <span class="text-danger">*</span></label>
+        <input type="number" class="phx-input" [(ngModel)]="dispenseForm.quantity" min="1"
+               (ngModelChange)="dispenseError.set('')"
+               [class.phx-input-error]="dispenseError()"/>
+        <div class="phx-field-error" *ngIf="dispenseError()">
+          <i class="bi bi-exclamation-circle-fill"></i> {{ dispenseError() }}
         </div>
-<!--        <div class="mb-3">-->
-<!--          <label class="form-label fw-semibold">Patient ID</label>-->
-<!--          <input class="form-control" [(ngModel)]="dispenseForm.patientId" placeholder="P001"/>-->
-<!--        </div>-->
-<!--        <div class="mb-3">-->
-<!--          <label class="form-label fw-semibold">Prescription ID</label>-->
-<!--          <input class="form-control" [(ngModel)]="dispenseForm.prescriptionId" placeholder="RX001"/>-->
-<!--        </div>-->
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-light" (click)="showDispense=false">Cancel</button>
-        <button class="btn btn-primary" (click)="dispense()"
-          [disabled]="!dispenseForm.batchId || !dispenseForm.quantity">Confirm Dispense</button>
-      </div>
+    </div>
+    <div class="phx-modal-footer">
+      <button class="phx-btn phx-btn-ghost" (click)="showDispense=false">Cancel</button>
+      <button class="phx-btn phx-btn-primary" (click)="dispense()"
+        [disabled]="!dispenseForm.batchId || !dispenseForm.quantity || dispensing()">
+        <span *ngIf="dispensing()" class="phx-spin me-1"></span>
+        <i *ngIf="!dispensing()" class="bi bi-send"></i>
+        {{ dispensing() ? 'Dispensing…' : 'Confirm Dispense' }}
+      </button>
     </div>
   </div>
 </div>
-<div class="modal-backdrop fade show" *ngIf="showDispense" (click)="showDispense=false"></div>
 
-<!-- ─── Init Modal ────────────────────────────────────────────────────── -->
-<div class="modal fade" [class.show]="showInit" [style.display]="showInit ? 'block' : 'none'">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Initialize Stock for Batch</h5>
-        <button class="btn-close" (click)="showInit=false"></button>
+<!-- ── Initialize Modal ───────────────────────────────────────────────────── -->
+<div class="phx-overlay" *ngIf="showInit" (click)="showInit=false"></div>
+<div class="phx-modal" [class.phx-modal-open]="showInit">
+  <div class="phx-modal-dialog">
+    <div class="phx-modal-header" style="background:linear-gradient(135deg,#0369a1,#0284c7)">
+      <div class="d-flex align-items-center gap-2 text-white">
+        <i class="bi bi-plus-circle-fill fs-5"></i>
+        <h5 class="mb-0">Initialize Stock for Batch</h5>
       </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Batch ID</label>
-          <input type="number" class="form-control" [(ngModel)]="initBatchId"/>
+      <button class="phx-close-btn" (click)="showInit=false"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="phx-modal-body">
+      <div class="phx-field">
+        <label>1. Select Medication <span class="text-danger">*</span></label>
+        <select class="phx-input" [(ngModel)]="initSelectedMedId" (ngModelChange)="onInitMedChange()">
+          <option [ngValue]="null" disabled>Choose a medication...</option>
+          <option *ngFor="let m of initMedications()" [ngValue]="m.medicationId">
+            {{ m.name }} — {{ m.form | titlecase }}
+          </option>
+        </select>
+      </div>
+      <div class="phx-field">
+        <label>2. Select Batch <span class="text-danger">*</span></label>
+        <div class="phx-loader" *ngIf="initBatchesLoading()">
+          <div class="spinner-border spinner-border-sm text-primary"></div> Loading...
         </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Initial Quantity</label>
-          <input type="number" class="form-control" [(ngModel)]="initQty" min="1"/>
+        <select class="phx-input" *ngIf="!initBatchesLoading()"
+          [(ngModel)]="initSelectedBatch" [disabled]="!initSelectedMedId">
+          <option [ngValue]="null" disabled>
+            {{ initSelectedMedId ? (initBatches().length===0 ? 'No batches available' : 'Choose a batch...') : 'Select medication first' }}
+          </option>
+          <option *ngFor="let b of initBatches()" [ngValue]="b">
+            {{ b.batchNumber }} — Qty: {{ b.quantity }} — Exp: {{ b.expirationDate | date:'dd/MM/yyyy' }}{{ b.expired ? ' ⚠' : '' }}
+          </option>
+        </select>
+      </div>
+      <div class="phx-info-box" *ngIf="initSelectedBatch">
+        <i class="bi bi-info-circle-fill text-primary"></i>
+        <span><strong>{{ initSelectedBatch.batchNumber }}</strong> — Expires {{ initSelectedBatch.expirationDate | date:'dd MMM yyyy' }} — Batch Qty: {{ initSelectedBatch.quantity }}</span>
+      </div>
+      <div class="phx-field mt-3">
+        <label>3. Initial Quantity <span class="text-danger">*</span></label>
+        <input type="number" class="phx-input" [(ngModel)]="initQty" min="1"
+          [max]="initSelectedBatch?.quantity ?? null" [disabled]="!initSelectedBatch"
+          (ngModelChange)="initError.set('')"
+          [class.phx-input-error]="initError()"/>
+        <div class="phx-hint" *ngIf="initSelectedBatch && !initError()">Max: {{ initSelectedBatch.quantity }}</div>
+        <div class="phx-field-error" *ngIf="initError()">
+          <i class="bi bi-exclamation-circle-fill"></i> {{ initError() }}
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-light" (click)="showInit=false">Cancel</button>
-        <button class="btn btn-primary" (click)="initStock()" [disabled]="!initBatchId || !initQty">Initialize</button>
-      </div>
+    </div>
+    <div class="phx-modal-footer">
+      <button class="phx-btn phx-btn-ghost" (click)="showInit=false">Cancel</button>
+      <button class="phx-btn phx-btn-primary" (click)="initStock()"
+        [disabled]="!initSelectedBatch || !initQty || initQty < 1 || initializingStock()">
+        <span *ngIf="initializingStock()" class="phx-spin me-1"></span>
+        <i *ngIf="!initializingStock()" class="bi bi-check-lg"></i>
+        {{ initializingStock() ? 'Initializing…' : 'Initialize' }}
+      </button>
     </div>
   </div>
 </div>
-<div class="modal-backdrop fade show" *ngIf="showInit" (click)="showInit=false"></div>
 
-<!-- ─── Adjust Modal ──────────────────────────────────────────────────── -->
-<div class="modal fade" [class.show]="showAdjust" [style.display]="showAdjust ? 'block' : 'none'">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Manual Stock Adjustment</h5>
-        <button class="btn-close" (click)="showAdjust=false"></button>
+<!-- ── Adjust Modal ────────────────────────────────────────────────────────── -->
+<div class="phx-overlay" *ngIf="showAdjust" (click)="showAdjust=false"></div>
+<div class="phx-modal" [class.phx-modal-open]="showAdjust">
+  <div class="phx-modal-dialog">
+    <div class="phx-modal-header" style="background:linear-gradient(135deg,#d97706,#b45309)">
+      <div class="d-flex align-items-center gap-2 text-white">
+        <i class="bi bi-sliders fs-5"></i>
+        <h5 class="mb-0">Manual Stock Adjustment</h5>
       </div>
-      <div class="modal-body">
-        <div class="alert alert-soft-warning small">
-          Use positive delta to add stock, negative to remove.
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Batch ID</label>
-          <input type="number" class="form-control" [(ngModel)]="adjustBatchId"/>
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Delta</label>
-          <input type="number" class="form-control" [(ngModel)]="adjustDelta" placeholder="+50 or -10"/>
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Reason</label>
-          <input class="form-control" [(ngModel)]="adjustReason" placeholder="e.g. inventory correction"/>
+      <button class="phx-close-btn" (click)="showAdjust=false"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="phx-modal-body">
+      <div class="phx-info-box phx-info-warning mb-3">
+        <i class="bi bi-info-circle-fill"></i>
+        <span>Use a <strong>positive</strong> delta to add stock, <strong>negative</strong> to remove.</span>
+      </div>
+      <div class="phx-field">
+        <label>Batch ID</label>
+        <input type="number" class="phx-input" [(ngModel)]="adjustBatchId"/>
+      </div>
+      <div class="phx-field">
+        <label>Delta <span class="text-danger">*</span></label>
+        <input type="number" class="phx-input" [(ngModel)]="adjustDelta" placeholder="+50 or -10"
+               (ngModelChange)="adjustError.set('')"
+               [class.phx-input-error]="adjustError() && adjustDelta===0"/>
+      </div>
+      <div class="phx-field">
+        <label>Reason <span class="text-danger">*</span></label>
+        <input class="phx-input" [(ngModel)]="adjustReason" placeholder="e.g. inventory correction"
+               (ngModelChange)="adjustError.set('')"
+               [class.phx-input-error]="adjustError() && !!adjustReason.trim()===false"/>
+        <div class="phx-field-error" *ngIf="adjustError()">
+          <i class="bi bi-exclamation-circle-fill"></i> {{ adjustError() }}
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-light" (click)="showAdjust=false">Cancel</button>
-        <button class="btn btn-warning" (click)="adjust()" [disabled]="!adjustBatchId || adjustDelta===0">Apply</button>
-      </div>
+    </div>
+    <div class="phx-modal-footer">
+      <button class="phx-btn phx-btn-ghost" (click)="showAdjust=false">Cancel</button>
+      <button class="phx-btn phx-btn-warning" (click)="adjust()"
+        [disabled]="!adjustBatchId || adjustDelta===0 || adjusting()">
+        <span *ngIf="adjusting()" class="phx-spin me-1"></span>
+        <i *ngIf="!adjusting()" class="bi bi-check-lg"></i>
+        {{ adjusting() ? 'Applying…' : 'Apply' }}
+      </button>
     </div>
   </div>
 </div>
-<div class="modal-backdrop fade show" *ngIf="showAdjust" (click)="showAdjust=false"></div>
 
-<!-- Stock Transfer Modal -->
-<div class="modal fade" [class.show]="showTransfer" [style.display]="showTransfer ? 'block' : 'none'">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i data-feather="repeat" style="width:16px;height:16px" class="me-2"></i>Transfer Stock
-        </h5>
-        <button class="btn-close" (click)="showTransfer=false"></button>
+<!-- ── Smart Dispense Modal ────────────────────────────────────────────────── -->
+<div class="phx-overlay" *ngIf="showSmartDispense" (click)="showSmartDispense=false; smartDispenseResult=null"></div>
+<div class="phx-modal" [class.phx-modal-open]="showSmartDispense">
+  <div class="phx-modal-dialog">
+    <div class="phx-modal-header" style="background:linear-gradient(135deg,#0d9488,#0f766e)">
+      <div class="d-flex align-items-center gap-2 text-white">
+        <i class="bi bi-magic fs-5"></i>
+        <div>
+          <h5 class="mb-0">Smart Dispense (FEFO)</h5>
+          <div style="font-size:11px;opacity:.8">Automatically picks batches expiring soonest first</div>
+        </div>
       </div>
-      <div class="modal-body">
-        <div class="alert alert-soft-info small">
-          Transfer is limited to two batches of the same medication.
+      <button class="phx-close-btn" (click)="showSmartDispense=false; smartDispenseResult=null"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="phx-modal-body">
+
+      <!-- Result panel -->
+      <div class="phx-smart-result" *ngIf="smartDispenseResult">
+        <div class="phx-smart-result-header">
+          <i class="bi bi-check-circle-fill text-success me-1"></i>
+          Dispensed <strong>{{ smartDispenseResult.totalDispensed }}</strong> units of <strong>{{ smartDispenseResult.medicationName }}</strong>
         </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Source Batch</label>
-          <input class="form-control" [value]="transferSourceLabel + ' | Batch #' + (transferForm.sourceBatchId || '-')" disabled />
+        <div class="phx-smart-lines">
+          <div class="phx-smart-line" *ngFor="let l of smartDispenseResult.lines">
+            <span class="font-monospace small">Batch {{ l.batchNumber }}</span>
+            <span class="phx-pill phx-pill-success ms-auto">{{ l.quantityDispensed }} units</span>
+            <span class="small text-muted ms-2">exp {{ l.expirationDate }}</span>
+          </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Target Batch</label>
-          <select class="form-control" [(ngModel)]="transferForm.targetBatchId">
-            <option [ngValue]="undefined">Select a target batch</option>
-            <option *ngFor="let option of transferOptions" [ngValue]="option.batchId">{{ option.label }}</option>
+        <button class="phx-btn phx-btn-ghost phx-btn-sm mt-3 w-100" (click)="smartDispenseResult=null">
+          <i class="bi bi-plus-lg"></i> New Dispense
+        </button>
+      </div>
+
+      <!-- Form -->
+      <div *ngIf="!smartDispenseResult">
+        <div class="phx-info-box mb-3">
+          <i class="bi bi-info-circle-fill text-primary"></i>
+          <span>Select a medication and quantity. The system will automatically dispense from the batch expiring soonest.</span>
+        </div>
+        <div class="phx-field-error mb-3" *ngIf="smartDispenseError()">
+          <i class="bi bi-exclamation-circle-fill"></i> {{ smartDispenseError() }}
+        </div>
+        <div class="phx-field">
+          <label>Medication <span class="text-danger">*</span></label>
+          <select class="phx-input" [(ngModel)]="smartDispenseForm.medicationId" (ngModelChange)="smartDispenseError.set('')">
+            <option [ngValue]="undefined" disabled>Select a medication...</option>
+            <option *ngFor="let m of smartMedications()" [ngValue]="m.medicationId">
+              {{ m.name }} — {{ m.form | titlecase }}
+            </option>
           </select>
-          <small class="text-muted" *ngIf="transferOptions.length === 0">
-            No compatible target batch found for this medication.
-          </small>
         </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Quantity</label>
-          <input type="number" class="form-control" [(ngModel)]="transferForm.quantity" min="1" />
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Reason</label>
-          <input class="form-control" [(ngModel)]="transferForm.reason" placeholder="e.g. rebalancing stock before expiry" />
+        <div class="phx-field">
+          <label>Quantity <span class="text-danger">*</span></label>
+          <input type="number" class="phx-input" [(ngModel)]="smartDispenseForm.quantity" min="1"
+                 (ngModelChange)="smartDispenseError.set('')"/>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-light" (click)="showTransfer=false">Cancel</button>
-        <button class="btn btn-info" (click)="transfer()" [disabled]="!canSubmitTransfer">Transfer</button>
-      </div>
+    </div>
+    <div class="phx-modal-footer" *ngIf="!smartDispenseResult">
+      <button class="phx-btn phx-btn-ghost" (click)="showSmartDispense=false">Cancel</button>
+      <button class="phx-btn phx-btn-teal" (click)="submitSmartDispense()"
+        [disabled]="!smartDispenseForm.medicationId || !smartDispenseForm.quantity || smartDispensing()">
+        <span *ngIf="smartDispensing()" class="phx-spin me-1"></span>
+        <i *ngIf="!smartDispensing()" class="bi bi-magic"></i>
+        {{ smartDispensing() ? 'Dispensing…' : 'Dispense' }}
+      </button>
     </div>
   </div>
 </div>
-<div class="modal-backdrop fade show" *ngIf="showTransfer" (click)="showTransfer=false"></div>
 
-<!-- Toast -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999" *ngIf="toast()">
-  <div class="toast show align-items-center text-white border-0"
-    [class.bg-success]="toastOk()" [class.bg-danger]="!toastOk()">
-    <div class="d-flex">
-      <div class="toast-body fw-semibold">{{ toast() }}</div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" (click)="toast.set('')"></button>
+<!-- ── Transfer Modal ──────────────────────────────────────────────────────── -->
+<div class="phx-overlay" *ngIf="showTransfer" (click)="showTransfer=false; transferResult=null"></div>
+<div class="phx-modal" [class.phx-modal-open]="showTransfer">
+  <div class="phx-modal-dialog">
+    <div class="phx-modal-header" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)">
+      <div class="d-flex align-items-center gap-2 text-white">
+        <i class="bi bi-arrow-left-right fs-5"></i>
+        <div>
+          <h5 class="mb-0">Stock Transfer</h5>
+          <div style="font-size:11px;opacity:.8">Move units between batches</div>
+        </div>
+      </div>
+      <button class="phx-close-btn" (click)="showTransfer=false; transferResult=null"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="phx-modal-body">
+
+      <!-- Result -->
+      <div class="phx-smart-result" *ngIf="transferResult">
+        <div class="phx-smart-result-header">
+          <i class="bi bi-check-circle-fill text-success me-1"></i>
+          Transferred <strong>{{ transferResult.quantityTransferred }}</strong> units successfully
+        </div>
+        <div class="phx-transfer-summary">
+          <div class="phx-transfer-side">
+            <div class="small fw-700">{{ batchMedicationMap[transferResult.sourceBatchId] || ('Batch #' + transferResult.sourceBatchId) }}</div>
+            <div class="small text-muted font-monospace">{{ batchNumberMap[transferResult.sourceBatchId] }}</div>
+            <div class="fw-700 text-danger mt-1">{{ transferResult.sourceQuantityAvailable }} remaining</div>
+          </div>
+          <i class="bi bi-arrow-right fs-4 text-muted"></i>
+          <div class="phx-transfer-side">
+            <div class="small fw-700">{{ batchMedicationMap[transferResult.targetBatchId] || ('Batch #' + transferResult.targetBatchId) }}</div>
+            <div class="small text-muted font-monospace">{{ batchNumberMap[transferResult.targetBatchId] }}</div>
+            <div class="fw-700 text-success mt-1">{{ transferResult.targetQuantityAvailable }} available</div>
+          </div>
+        </div>
+        <button class="phx-btn phx-btn-ghost phx-btn-sm mt-3 w-100" (click)="transferResult=null">
+          <i class="bi bi-plus-lg"></i> New Transfer
+        </button>
+      </div>
+
+      <!-- Form -->
+      <div *ngIf="!transferResult">
+        <div class="phx-field-error mb-3" *ngIf="transferError()">
+          <i class="bi bi-exclamation-circle-fill"></i> {{ transferError() }}
+        </div>
+
+        <!-- Source -->
+        <div class="phx-field">
+          <label>From (Source) <span class="text-danger">*</span></label>
+          <select class="phx-input" [(ngModel)]="transferForm.sourceBatchId"
+                  (ngModelChange)="transferError.set(''); transferForm.quantity=1">
+            <option [ngValue]="undefined" disabled>Select source batch…</option>
+            <option *ngFor="let s of stocks()" [ngValue]="s.batchId"
+                    [disabled]="s.batchId === transferForm.targetBatchId || s.quantityAvailable === 0">
+              {{ stockLabel(s) }}
+            </option>
+          </select>
+          <div class="phx-hint" *ngIf="transferForm.sourceBatchId && sourceAvailableQty > 0">
+            <i class="bi bi-box-seam me-1"></i>{{ sourceAvailableQty }} units available to transfer
+          </div>
+        </div>
+
+        <!-- Target -->
+        <div class="phx-field">
+          <label>To (Target) <span class="text-danger">*</span></label>
+          <select class="phx-input" [(ngModel)]="transferForm.targetBatchId"
+                  (ngModelChange)="transferError.set('')">
+            <option [ngValue]="undefined" disabled>Select target batch…</option>
+            <option *ngFor="let s of stocks()" [ngValue]="s.batchId"
+                    [disabled]="s.batchId === transferForm.sourceBatchId">
+              {{ stockLabel(s) }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Quantity -->
+        <div class="phx-field">
+          <label>Quantity to Transfer <span class="text-danger">*</span></label>
+          <input type="number" class="phx-input" [(ngModel)]="transferForm.quantity"
+                 min="1" [max]="sourceAvailableQty || null"
+                 (ngModelChange)="transferError.set('')"
+                 [disabled]="!transferForm.sourceBatchId"/>
+          <div class="phx-hint" *ngIf="transferForm.sourceBatchId">Max: {{ sourceAvailableQty }}</div>
+        </div>
+
+        <!-- Reason -->
+        <div class="phx-field">
+          <label>Reason <span class="text-danger">*</span></label>
+          <input class="phx-input" [(ngModel)]="transferForm.reason"
+                 placeholder="e.g. batch consolidation" (ngModelChange)="transferError.set('')"/>
+        </div>
+      </div>
+    </div>
+    <div class="phx-modal-footer" *ngIf="!transferResult">
+      <button class="phx-btn phx-btn-ghost" (click)="showTransfer=false">Cancel</button>
+      <button class="phx-btn phx-btn-primary" (click)="submitTransfer()"
+        [disabled]="!transferForm.sourceBatchId || !transferForm.targetBatchId || !transferForm.quantity || !transferForm.reason?.trim() || transferring()">
+        <span *ngIf="transferring()" class="phx-spin me-1"></span>
+        <i *ngIf="!transferring()" class="bi bi-arrow-left-right"></i>
+        {{ transferring() ? 'Transferring…' : 'Transfer' }}
+      </button>
     </div>
   </div>
 </div>
+
+<!-- ── Toast ────────────────────────────────────────────────────────────── -->
+<div class="phx-toast" [class.phx-toast-show]="toast()"
+  [class.phx-toast-success]="toastOk()" [class.phx-toast-error]="!toastOk()">
+  <i class="bi" [class.bi-check-circle-fill]="toastOk()" [class.bi-x-circle-fill]="!toastOk()"></i>
+  {{ toast() }}
+</div>
+
+<style>
+/* ── Keyframes ───────────────────────────────────────────────────────────── */
+@keyframes fadeSlideIn {
+  from { opacity:0; transform:translateY(6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes toastIn {
+  0%   { opacity:0; transform:translateY(16px) scale(.95); }
+  70%  { transform:translateY(-3px) scale(1.01); }
+  100% { opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes toastOut {
+  to { opacity:0; transform:translateY(12px) scale(.95); }
+}
+@keyframes resultIn {
+  from { opacity:0; transform:scale(.96) translateY(6px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+
+/* ── Layout ───────────────────────────────────────────────────────────────── */
+.phx-page { padding:0; background:transparent; min-height:auto; }
+.phx-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; border:1px solid #dbe7f5; border-radius:16px; background:linear-gradient(130deg,#f7fbff 0%,#eef4ff 100%); padding:18px 20px; }
+.phx-header-left { display:flex; align-items:center; gap:16px; }
+.phx-header-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; }
+.phx-title { font-size:22px; font-weight:800; color:#1e293b; margin:0; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.phx-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:9px 18px; border-radius:10px; font-weight:600; font-size:13.5px;
+  border:none; cursor:pointer;
+  transition:transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s ease, opacity .15s ease;
+  position:relative; overflow:hidden;
+}
+.phx-btn:not(:disabled):hover  { transform:translateY(-2px); }
+.phx-btn:not(:disabled):active { transform:translateY(0) scale(.97); }
+.phx-btn-sm { padding:6px 13px; font-size:12.5px; border-radius:8px; }
+.phx-btn-primary { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; box-shadow:0 4px 14px rgba(37,99,235,.3); }
+.phx-btn-primary:not(:disabled):hover { box-shadow:0 8px 20px rgba(37,99,235,.4); }
+.phx-btn-warning { background:linear-gradient(135deg,#d97706,#b45309); color:#fff; box-shadow:0 4px 12px rgba(217,119,6,.3); }
+.phx-btn-warning:not(:disabled):hover { box-shadow:0 8px 18px rgba(217,119,6,.4); }
+.phx-btn-teal    { background:linear-gradient(135deg,#0d9488,#0f766e); color:#fff; box-shadow:0 4px 12px rgba(13,148,136,.3); }
+.phx-btn-teal:not(:disabled):hover { box-shadow:0 8px 18px rgba(13,148,136,.4); }
+.phx-btn-indigo  { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; box-shadow:0 4px 12px rgba(37,99,235,.25); }
+.phx-btn-ghost { background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0; box-shadow:none; }
+.phx-btn-ghost:not(:disabled):hover { background:#e2e8f0; box-shadow:none; }
+.phx-btn:disabled { opacity:.5; cursor:not-allowed; transform:none !important; }
+
+/* ── Spinner (inline button loader) ─────────────────────────────────────── */
+.phx-spin {
+  display:inline-block; width:13px; height:13px;
+  border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:spin .6s linear infinite;
+  flex-shrink:0;
+}
+
+/* ── Stat cards ─────────────────────────────────────────────────────────── */
+.phx-stat-card {
+  background:#fff; border-radius:16px; padding:20px;
+  display:flex; align-items:center; gap:16px; cursor:pointer;
+  border:2px solid transparent;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease, border-color .2s ease;
+  box-shadow:0 1px 3px rgba(0,0,0,.06);
+}
+.phx-stat-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,.1); }
+.phx-stat-active { border-color:currentColor; box-shadow:0 4px 16px rgba(0,0,0,.1); }
+.phx-stat-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; transition:transform .2s; }
+.phx-stat-card:hover .phx-stat-icon { transform:scale(1.1) rotate(-3deg); }
+.phx-stat-value { font-size:26px; font-weight:800; line-height:1; }
+.phx-stat-label { font-size:12px; color:#64748b; font-weight:600; margin-top:2px; }
+.phx-stat-blue  .phx-stat-icon { background:#dbeafe; color:#2563eb; } .phx-stat-blue  .phx-stat-value { color:#2563eb; }
+.phx-stat-amber .phx-stat-icon { background:#fef3c7; color:#d97706; } .phx-stat-amber .phx-stat-value { color:#d97706; }
+.phx-stat-red   .phx-stat-icon { background:#fee2e2; color:#ef4444; } .phx-stat-red   .phx-stat-value { color:#ef4444; }
+.phx-stat-slate .phx-stat-icon { background:#f1f5f9; color:#64748b; } .phx-stat-slate .phx-stat-value { color:#64748b; }
+
+/* ── Alerts ─────────────────────────────────────────────────────────────── */
+.phx-alert { display:flex; align-items:center; gap:12px; padding:13px 18px; border-radius:12px; font-size:13.5px; animation:fadeSlideIn .3s ease; }
+.phx-alert-danger  { background:#fff5f5; border:1px solid #fecaca; color:#991b1b; }
+.phx-alert-warning { background:#fffbeb; border:1px solid #fde68a; color:#854d0e; }
+.phx-alert-close { background:none; border:none; cursor:pointer; margin-left:auto; opacity:.6; font-size:13px; color:inherit; transition:opacity .15s; }
+.phx-alert-close:hover { opacity:1; }
+
+/* ── Tabs ───────────────────────────────────────────────────────────────── */
+.phx-tabs { display:flex; gap:4px; background:#f1f5f9; border-radius:12px; padding:4px; }
+.phx-tab { flex:1; padding:9px 12px; border:none; border-radius:9px; background:none; font-size:13px; font-weight:600; color:#64748b; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all .2s cubic-bezier(.4,0,.2,1); }
+.phx-tab:hover:not(.phx-tab-active) { background:rgba(255,255,255,.6); color:#475569; }
+.phx-tab-active { background:#fff; color:#1e293b; box-shadow:0 1px 4px rgba(0,0,0,.1); }
+.phx-tab-count { padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#e2e8f0; color:#475569; transition:all .2s; }
+.phx-tab-count-warning { background:#fef9c3; color:#854d0e; }
+.phx-tab-count-danger  { background:#fee2e2; color:#dc2626; }
+.phx-tab-count-slate   { background:#f1f5f9; color:#64748b; }
+
+/* ── Cards ──────────────────────────────────────────────────────────────── */
+.phx-card { background:#fff; border-radius:16px; box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04); border:1px solid #f1f5f9; overflow:hidden; margin-bottom:20px; }
+.phx-card-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #f1f5f9; background:#fafbff; }
+.fw-700 { font-weight:700; } .fw-600 { font-weight:600; }
+
+/* ── Pills ──────────────────────────────────────────────────────────────── */
+.phx-pill         { display:inline-block; padding:4px 11px; border-radius:999px; font-size:12px; font-weight:700; }
+.phx-pill-success { background:#dcfce7; color:#16a34a; }
+.phx-pill-warning { background:#fef9c3; color:#854d0e; }
+.phx-pill-danger  { background:#fee2e2; color:#dc2626; }
+
+/* ── Quantity bar ───────────────────────────────────────────────────────── */
+.phx-qty-row { display:flex; align-items:center; gap:10px; }
+.phx-qty-bar-wrap { flex:1; height:6px; background:#f1f5f9; border-radius:999px; max-width:120px; overflow:hidden; }
+.phx-qty-bar { height:100%; border-radius:999px; transition:width .5s cubic-bezier(.4,0,.2,1); }
+.phx-bar-ok  { background:#22c55e; }
+.phx-bar-low { background:#f59e0b; }
+.phx-bar-out { background:#ef4444; }
+
+/* ── Table ──────────────────────────────────────────────────────────────── */
+.phx-table { width:100%; border-collapse:collapse; }
+.phx-table thead tr { background:#fafbff; }
+.phx-table th { padding:12px 16px; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#64748b; border-bottom:1px solid #f1f5f9; }
+.phx-table td { padding:13px 16px; border-bottom:1px solid #f8fafc; font-size:13.5px; color:#334155; transition:background .15s ease; }
+.phx-table tbody tr { animation:fadeSlideIn .25s ease both; }
+.phx-table tbody tr:hover td { background:#f5f7ff !important; }
+.phx-table tbody tr:last-child td { border-bottom:none; }
+.phx-row-danger  { background:#fff5f5 !important; }
+.phx-row-warning { background:#fffbeb !important; }
+.phx-empty { text-align:center; padding:48px 20px; color:#94a3b8; }
+.phx-empty i { font-size:36px; display:block; margin-bottom:10px; }
+.phx-empty p { margin:0; font-size:14px; }
+.phx-loader { display:flex; align-items:center; gap:10px; color:#64748b; font-size:13px; }
+
+/* ── Overlay ────────────────────────────────────────────────────────────── */
+.phx-overlay {
+  position:fixed; inset:0; z-index:1040;
+  background:rgba(15,23,42,0);
+  backdrop-filter:blur(0px);
+  animation:overlayIn .25s ease forwards;
+}
+@keyframes overlayIn {
+  to { background:rgba(15,23,42,.45); backdrop-filter:blur(3px); }
+}
+
+/* ── Modal ──────────────────────────────────────────────────────────────── */
+.phx-modal {
+  position:fixed; inset:0; z-index:1050;
+  display:flex; align-items:center; justify-content:center;
+  pointer-events:none; opacity:0;
+  transition:opacity .25s ease;
+}
+.phx-modal.phx-modal-open { pointer-events:auto; opacity:1; }
+.phx-modal-dialog {
+  background:#fff; border-radius:20px; width:100%; max-width:460px;
+  box-shadow:0 24px 80px rgba(0,0,0,.22);
+  overflow:hidden;
+  transform:translateY(-16px) scale(.97);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.phx-modal-open .phx-modal-dialog { transform:translateY(0) scale(1); }
+.phx-modal-lg { max-width:780px; }
+.phx-modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px; }
+.phx-modal-body { padding:24px; max-height:65vh; overflow-y:auto; scroll-behavior:smooth; }
+.phx-modal-footer { display:flex; justify-content:flex-end; gap:10px; padding:16px 24px; border-top:1px solid #f1f5f9; background:#fafbff; }
+.phx-close-btn {
+  background:rgba(255,255,255,.2); border:none; color:#fff;
+  width:32px; height:32px; border-radius:8px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:background .15s, transform .15s;
+}
+.phx-close-btn:hover { background:rgba(255,255,255,.35); transform:scale(1.1); }
+
+/* ── Form ───────────────────────────────────────────────────────────────── */
+.phx-field { margin-bottom:16px; }
+.phx-field label { display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:6px; }
+.phx-input {
+  width:100%; padding:10px 13px; border:1.5px solid #e2e8f0; border-radius:10px;
+  font-size:14px; outline:none; background:#fff;
+  transition:border-color .2s ease, box-shadow .2s ease, transform .1s ease;
+}
+.phx-input:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+.phx-input:disabled { background:#f8fafc; cursor:not-allowed; }
+.phx-input-error { border-color:#ef4444 !important; box-shadow:0 0 0 3px rgba(239,68,68,.1) !important; }
+.phx-field-error { margin-top:5px; font-size:12px; font-weight:600; color:#ef4444; display:flex; align-items:center; gap:4px; animation:fadeSlideIn .2s ease; }
+.phx-hint { font-size:12px; color:#64748b; margin-top:5px; }
+.phx-info-box { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border-radius:10px; background:#eff6ff; border:1px solid #bfdbfe; font-size:13px; color:#1e40af; }
+.phx-info-warning { background:#fffbeb; border-color:#fde68a; color:#854d0e; }
+
+/* ── Smart / Transfer result ────────────────────────────────────────────── */
+.phx-smart-result { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:16px; animation:resultIn .35s cubic-bezier(.34,1.56,.64,1); }
+.phx-smart-result-header { font-size:14px; margin-bottom:12px; }
+.phx-smart-lines { display:flex; flex-direction:column; gap:8px; }
+.phx-smart-line { display:flex; align-items:center; background:#fff; border-radius:8px; padding:8px 12px; border:1px solid #e2e8f0; transition:box-shadow .15s; }
+.phx-smart-line:hover { box-shadow:0 2px 8px rgba(0,0,0,.07); }
+.phx-transfer-summary { display:flex; align-items:center; justify-content:center; gap:20px; padding:16px; background:#f8fafc; border-radius:10px; margin-top:12px; }
+.phx-transfer-side { text-align:center; }
+
+/* ── Toast ──────────────────────────────────────────────────────────────── */
+.phx-toast {
+  position:fixed; bottom:24px; right:24px; z-index:9999;
+  display:flex; align-items:center; gap:10px;
+  padding:14px 20px; border-radius:14px;
+  font-weight:600; font-size:14px; color:#fff;
+  box-shadow:0 8px 30px rgba(0,0,0,.18);
+  opacity:0; pointer-events:none;
+  transform:translateY(16px) scale(.95);
+  transition:opacity .2s ease, transform .2s ease;
+}
+.phx-toast.phx-toast-show {
+  opacity:1; pointer-events:auto;
+  transform:translateY(0) scale(1);
+  animation:toastIn .4s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+.phx-toast-success { background:linear-gradient(135deg,#16a34a,#15803d); }
+.phx-toast-error   { background:linear-gradient(135deg,#ef4444,#dc2626); }
+
+/* ── Extra animations ────────────────────────────────────────────────────── */
+@keyframes pageEnter   { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes headerSlide { from { opacity:0; transform:translateX(-18px); } to { opacity:1; transform:translateX(0); } }
+@keyframes statPop     { from { opacity:0; transform:translateY(16px) scale(.92); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes numPop      { from { opacity:0; transform:scale(.6); } to { opacity:1; transform:scale(1); } }
+@keyframes bannerIn    { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }
+@keyframes barGrow     { from { width:0; } }
+@keyframes iconPulse   { 0%,100% { transform:scale(1); } 50% { transform:scale(1.18); } }
+@keyframes tabSlide    { from { opacity:0; transform:translateX(8px); } to { opacity:1; transform:translateX(0); } }
+@keyframes rowIn       { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+
+.phx-page  { animation:pageEnter .45s cubic-bezier(.22,1,.36,1) both; }
+.phx-header { animation:headerSlide .4s cubic-bezier(.22,1,.36,1) .05s both; }
+.phx-header-icon { transition:transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease; }
+.phx-header-icon:hover { transform:rotate(-6deg) scale(1.12); box-shadow:0 6px 20px rgba(3,105,161,.35); }
+
+.phx-stat-card { animation:statPop .45s cubic-bezier(.34,1.56,.64,1) both; }
+.col-6:nth-child(1) .phx-stat-card { animation-delay:.05s; }
+.col-6:nth-child(2) .phx-stat-card { animation-delay:.12s; }
+.col-6:nth-child(3) .phx-stat-card { animation-delay:.19s; }
+.col-6:nth-child(4) .phx-stat-card { animation-delay:.26s; }
+.phx-stat-value { animation:numPop .5s cubic-bezier(.34,1.56,.64,1) .3s both; }
+.phx-stat-card:hover .phx-stat-value { transform:scale(1.08); transition:transform .2s cubic-bezier(.34,1.56,.64,1); }
+
+.phx-alert       { animation:bannerIn .35s ease both; }
+.phx-qty-bar     { animation:barGrow .7s cubic-bezier(.4,0,.2,1) .4s both; }
+
+.phx-tab-active  { animation:tabSlide .2s ease both; }
+.phx-card        { animation:fadeSlideIn .4s ease .1s both; }
+.phx-card:hover  { box-shadow:0 8px 30px rgba(0,0,0,.09) !important; transform:translateY(-2px); transition:transform .25s ease, box-shadow .25s ease; }
+
+.phx-table tbody tr:nth-child(1)  { animation-delay:.04s; }
+.phx-table tbody tr:nth-child(2)  { animation-delay:.08s; }
+.phx-table tbody tr:nth-child(3)  { animation-delay:.12s; }
+.phx-table tbody tr:nth-child(4)  { animation-delay:.16s; }
+.phx-table tbody tr:nth-child(5)  { animation-delay:.20s; }
+.phx-table tbody tr:nth-child(6)  { animation-delay:.24s; }
+.phx-table tbody tr:nth-child(7)  { animation-delay:.28s; }
+.phx-table tbody tr:nth-child(8)  { animation-delay:.32s; }
+.phx-table tbody tr:nth-child(n+9){ animation-delay:.36s; }
+
+.phx-pill { transition:transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s ease; }
+.phx-pill:hover { transform:scale(1.08); }
+
+.phx-btn { transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease, opacity .15s ease; }
+.phx-btn:not(:disabled):hover { transform:translateY(-3px) scale(1.02); }
+
+.phx-input:focus { transform:scale(1.005); }
+
+/* Sync with shared backoffice visual language (User/Clinical) */
+.phx-btn,
+.phx-btn-sm {
+  border-radius: 8px;
+  box-shadow: none !important;
+}
+
+.phx-btn-primary,
+.phx-btn-indigo,
+.phx-btn-teal {
+  background: #2563eb !important;
+  color: #fff !important;
+}
+
+.phx-btn-warning {
+  background: #f59e0b !important;
+  color: #fff !important;
+}
+
+.phx-btn-danger {
+  background: #dc2626 !important;
+  color: #fff !important;
+}
+
+.phx-btn-ghost {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+.phx-card {
+  border: 1px solid #dbe7f5;
+  box-shadow: none;
+}
+
+.phx-card-header {
+  background: #f8fbff;
+  border-bottom-color: #e3edf9;
+}
+</style>

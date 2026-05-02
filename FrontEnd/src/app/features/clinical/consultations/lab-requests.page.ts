@@ -37,6 +37,8 @@ export class LabRequestsPage implements OnInit {
 
   rows: ConsultationLabRow[] = [];
   selectedConsultationId = '';
+  readonly pageSize = 8;
+  page = 1;
 
   filters = {
     patientQuery: '',
@@ -70,6 +72,33 @@ export class LabRequestsPage implements OnInit {
       const matchesSearch = !term || this.rowTokens(row).some((value) => value.includes(term));
       return matchesState && matchesUrgency && matchesSearch;
     });
+  }
+
+  get pagedFilteredRows(): ConsultationLabRow[] {
+    const safePage = Math.min(this.page, this.totalPages);
+    if (safePage !== this.page) {
+      this.page = safePage;
+    }
+    const start = (this.page - 1) * this.pageSize;
+    return this.filteredRows.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredRows.length / this.pageSize));
+  }
+
+  get fromItem(): number {
+    if (!this.filteredRows.length) return 0;
+    return (this.page - 1) * this.pageSize + 1;
+  }
+
+  get toItem(): number {
+    if (!this.filteredRows.length) return 0;
+    return Math.min(this.page * this.pageSize, this.filteredRows.length);
+  }
+
+  get pageNumbers(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
   }
 
   get selectedRow(): ConsultationLabRow | null {
@@ -107,6 +136,7 @@ export class LabRequestsPage implements OnInit {
         const items = consultations ?? [];
         if (items.length === 0) {
           this.rows = [];
+          this.page = 1;
           this.selectedConsultationId = '';
           this.editorRequests = [];
           this.loading = false;
@@ -136,6 +166,7 @@ export class LabRequestsPage implements OnInit {
           },
           error: () => {
             this.rows = [];
+            this.page = 1;
             this.loading = false;
             this.error = 'Failed to load lab requests.';
           }
@@ -143,6 +174,7 @@ export class LabRequestsPage implements OnInit {
       },
       error: () => {
         this.rows = [];
+        this.page = 1;
         this.loading = false;
         this.error = 'Failed to load consultations for lab requests.';
       }
@@ -150,6 +182,7 @@ export class LabRequestsPage implements OnInit {
   }
 
   applyFilters(): void {
+    this.page = 1;
     this.loadRows();
   }
 
@@ -161,6 +194,7 @@ export class LabRequestsPage implements OnInit {
       urgency: 'ALL',
       requestSearch: ''
     };
+    this.page = 1;
     this.loadRows();
   }
 
@@ -169,6 +203,24 @@ export class LabRequestsPage implements OnInit {
     this.editorRequests = row.labRequests.map((item) => ({ ...item }));
     this.successMessage = '';
     this.error = '';
+
+    const index = this.filteredRows.findIndex((item) => item.consultation?.id === row.consultation?.id);
+    if (index >= 0) {
+      this.page = Math.floor(index / this.pageSize) + 1;
+    }
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages) return;
+    this.page = page;
+  }
+
+  previousPage(): void {
+    this.goToPage(this.page - 1);
+  }
+
+  nextPage(): void {
+    this.goToPage(this.page + 1);
   }
 
   addRequest(): void {
@@ -258,6 +310,10 @@ export class LabRequestsPage implements OnInit {
     const visible = this.filteredRows;
     const alreadySelected = visible.find((row) => row.consultation?.id === this.selectedConsultationId);
     if (alreadySelected) {
+      const selectedIndex = visible.findIndex((row) => row.consultation?.id === this.selectedConsultationId);
+      if (selectedIndex >= 0) {
+        this.page = Math.floor(selectedIndex / this.pageSize) + 1;
+      }
       this.editorRequests = alreadySelected.labRequests.map((item) => ({ ...item }));
       return;
     }
@@ -270,6 +326,8 @@ export class LabRequestsPage implements OnInit {
     }
 
     this.selectedConsultationId = String(fallback.consultation?.id ?? '');
+    const fallbackIndex = visible.findIndex((row) => row.consultation?.id === fallback.consultation?.id);
+    this.page = fallbackIndex >= 0 ? Math.floor(fallbackIndex / this.pageSize) + 1 : 1;
     this.editorRequests = fallback.labRequests.map((item) => ({ ...item }));
   }
 

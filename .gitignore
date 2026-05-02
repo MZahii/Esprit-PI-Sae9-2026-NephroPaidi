@@ -17,3 +17,7 @@ node_modules/
 *.iml
 dist/
 .DS_Store
+.vscode/
+.idea/
+BackEnd/.idea/
+target/

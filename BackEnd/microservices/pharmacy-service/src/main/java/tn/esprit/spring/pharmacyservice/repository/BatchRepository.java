@@ -18,4 +18,9 @@ public interface BatchRepository extends JpaRepository<Batch, Long> {
 
     @Query("SELECT b FROM Batch b WHERE b.expirationDate BETWEEN :today AND :threshold")
     List<Batch> findBatchesExpiringBefore(LocalDate today, LocalDate threshold);
+
+    /** FEFO: non-expired batches for a medication, ordered by expiration date ascending. */
+    @Query("SELECT b FROM Batch b WHERE b.medication.medicationId = :medicationId " +
+           "AND b.expirationDate >= :today ORDER BY b.expirationDate ASC")
+    List<Batch> findNonExpiredByMedicationOrderedByExpiry(Long medicationId, LocalDate today);
 }

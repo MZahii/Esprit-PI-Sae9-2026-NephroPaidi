@@ -25,6 +25,7 @@ public class UserResponse {
     private Role role;
     private AccountStatus accountStatus;
     private boolean enabled;
+    private String avatarUrl;
 
     public static UserResponse from(User user) {
         return UserResponse.builder()
@@ -41,6 +42,7 @@ public class UserResponse {
                 .role(user.getRole())
                 .accountStatus(user.getAccountStatus())
                 .enabled(user.isEnabled())
+                .avatarUrl(user.getAvatarUrl())
                 .build();
     }
 }

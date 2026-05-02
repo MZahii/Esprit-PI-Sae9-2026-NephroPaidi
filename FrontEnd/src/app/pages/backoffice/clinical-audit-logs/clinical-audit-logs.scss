@@ -1,11 +1,203 @@
-.filters {
+.module-page {
   display: grid;
-  grid-template-columns: 1fr 220px;
-  gap: 12px;
+  gap: 14px;
 }
 
-@media (max-width: 768px) {
+.module-header {
+  border: 1px solid #dbe7f5;
+  border-radius: 16px;
+  background: linear-gradient(130deg, #f7fbff 0%, #eef4ff 100%);
+  padding: 18px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+
+  h2 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .module-kicker {
+    margin: 0 0 4px;
+    color: #1d4ed8;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .module-subtitle {
+    margin: 6px 0 0;
+    color: #64748b;
+  }
+
+  .module-header__crumbs {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+  }
+}
+
+.clinical-logs-page {
+  .panel-card {
+    border: 1px solid #dbe7f5;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .panel-head {
+    background: #f8fbff;
+    border-bottom: 1px solid #e3edf9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .kpi-card {
+    border: 1px solid #d9e4f2;
+    border-radius: 12px;
+    background: #f8fbff;
+    padding: 10px;
+    display: grid;
+    gap: 4px;
+
+    span {
+      font-size: 11px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    strong {
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 800;
+      color: #1e3a8a;
+    }
+  }
+
   .filters {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 12px;
+  }
+
+  .events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 10px;
+  }
+
+  .event-card {
+    border: 1px solid #dbe7f5;
+    border-radius: 12px;
+    background: #fff;
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .event-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .event-time {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .event-action {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #e8f0ff;
+    color: #1e40af;
+  }
+
+  .event-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 10px;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  .event-details {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    padding: 8px;
+    font-size: 12px;
+    color: #475569;
+    min-height: 56px;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    color: #64748b;
+    text-align: center;
+    padding: 18px;
+  }
+
+  .pagination-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .page-size {
+    width: 90px;
+  }
+
+  @media print {
+    .module-header,
+    .filters,
+    .btn,
+    .pagination-wrap {
+      display: none !important;
+    }
+  }
+
+  @media (max-width: 920px) {
+    .module-header {
+      flex-direction: column;
+    }
+
+    .kpi-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .filters {
+      grid-template-columns: 1fr;
+    }
+
+    .event-meta {
+      grid-template-columns: 1fr;
+    }
   }
 }

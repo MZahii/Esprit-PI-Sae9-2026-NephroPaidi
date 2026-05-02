@@ -128,6 +128,34 @@
     </div>
 
     <ng-container *ngIf="!loadingStats && isAdmin">
+      <div class="col-12">
+        <div class="card stretch stretch-full analytics-summary-card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Clinic Resources Supervision</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Total Floors</span><strong>{{ clinicStructure?.totalFloors ?? 0 }}</strong></div></div>
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Total Workspaces</span><strong>{{ clinicStructure?.totalWorkspaces ?? 0 }}</strong></div></div>
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Workspace Types</span><strong>{{ clinicWorkspaceTypesCount }}</strong></div></div>
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Placed Equipment</span><strong>{{ totalPlacedEquipment }}</strong></div></div>
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Total Equipment</span><strong>{{ equipmentSummary?.total ?? 0 }}</strong></div></div>
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Available Equipment</span><strong>{{ equipmentSummary?.available ?? 0 }}</strong></div></div>
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Under Maintenance</span><strong>{{ equipmentSummary?.underMaintenance ?? 0 }}</strong></div></div>
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Out Of Service</span><strong>{{ equipmentSummary?.outOfService ?? 0 }}</strong></div></div>
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Admin Office Assignments</span><strong>{{ assignmentCounts['ADMIN'] }}</strong></div></div>
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>HR Office Assignments</span><strong>{{ assignmentCounts['HR'] }}</strong></div></div>
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Doctor Placements</span><strong>{{ assignmentCounts['DOCTOR'] }}</strong></div></div>
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Lab Agent Placements</span><strong>{{ assignmentCounts['LAB_AGENT'] }}</strong></div></div>
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Pharmacist Placements</span><strong>{{ assignmentCounts['PHARMACIST'] }}</strong></div></div>
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Receptionist Placements</span><strong>{{ assignmentCounts['RECEPTIONIST'] }}</strong></div></div>
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Empty Eligible Workspaces</span><strong>{{ emptyEligibleWorkspaces }}</strong></div></div>
+              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Floors With Placements</span><strong>{{ floorsWithEquipmentPlacements }}</strong></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="col-xxl-3 col-md-6">
         <div class="card stretch stretch-full metric-card metric-gradient">
           <div class="metric-label">Total Accounts</div>

@@ -16,7 +16,11 @@
       <div class="card stretch stretch-full">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
           <h5 class="card-title mb-0">{{ contractListTitle }}</h5>
-          <a *ngIf="isHr || (isAdmin && contractScope === 'HR')" class="btn btn-primary" routerLink="/backoffice/contracts/create">Create Contract</a>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-light btn-sm" type="button" (click)="printContracts()">Print Report</button>
+            <button class="btn btn-primary btn-sm" type="button" (click)="exportContractsPdf()">Export PDF</button>
+            <a *ngIf="isHr || (isAdmin && contractScope === 'HR')" class="btn btn-primary" routerLink="/backoffice/contracts/create">Create Contract</a>
+          </div>
         </div>
 
         <div class="card-body">
@@ -72,6 +76,7 @@
               <option *ngIf="!isAdmin" value="SURGEON">SURGEON</option>
               <option *ngIf="!isAdmin" value="PHARMACIST">PHARMACIST</option>
               <option *ngIf="!isAdmin" value="RECEPTIONIST">RECEPTIONIST</option>
+              <option *ngIf="!isAdmin" value="LAB_AGENT">LAB_AGENT</option>
             </select>
 
             <select class="form-control" [(ngModel)]="statusFilter" (ngModelChange)="onFiltersChanged()">

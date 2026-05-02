@@ -1,0 +1,234 @@
+<!-- Hero -->
+<section class="pharm-hero section">
+  <!-- floating background orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="container">
+    <div class="pharm-hero-box">
+      <div class="row align-items-center gy-4">
+        <div class="col-lg-7">
+          <span class="guardian-badge hero-enter" style="animation-delay:0ms">
+            <i class="bi bi-capsule-pill"></i>
+            Pharmacy
+          </span>
+          <h1 class="hero-enter" style="animation-delay:80ms">Medications Available</h1>
+          <p class="hero-text hero-enter" style="animation-delay:160ms">
+            Browse the list of medications managed by the NephrosPaidi pharmacy.
+            Each card shows the medication type, pediatric dosage, and current availability.
+          </p>
+
+          <!-- stats row -->
+          <div class="hero-stats hero-enter" style="animation-delay:240ms" *ngIf="!loading()">
+            <div class="hero-stat">
+              <span class="stat-num">{{ medications().length }}</span>
+              <span class="stat-lbl">Medications</span>
+            </div>
+            <div class="hero-stat-div"></div>
+            <div class="hero-stat">
+              <span class="stat-num stat-green">{{ totalAvailable }}</span>
+              <span class="stat-lbl">In Stock</span>
+            </div>
+            <div class="hero-stat-div"></div>
+            <div class="hero-stat">
+              <span class="stat-num stat-red">{{ medications().length - totalAvailable }}</span>
+              <span class="stat-lbl">Unavailable</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-5 d-none d-lg-flex justify-content-center">
+          <div class="pharm-hero-icon hero-enter" style="animation-delay:120ms">
+            <i class="bi bi-hospital-fill"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Filter Bar -->
+<section class="pharm-filter-bar section">
+  <div class="container">
+
+    <!-- Row 1: search + form + sort -->
+    <div class="filter-row">
+      <div class="search-wrap">
+        <i class="bi bi-search"></i>
+        <input
+          type="text"
+          class="filter-input"
+          placeholder="Search by name or form..."
+          [(ngModel)]="searchQuery"/>
+        <button *ngIf="searchQuery" class="search-clear" (click)="searchQuery=''">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+
+      <div class="form-select-wrap">
+        <select class="filter-select" [(ngModel)]="selectedForm">
+          <option value="">All forms</option>
+          <option *ngFor="let f of uniqueForms" [value]="f">{{ f | titlecase }}</option>
+        </select>
+      </div>
+
+      <div class="form-select-wrap">
+        <select class="filter-select" [(ngModel)]="sortBy">
+          <option value="">Default order</option>
+          <option value="az">Name A → Z</option>
+          <option value="za">Name Z → A</option>
+        </select>
+      </div>
+
+      <div class="filter-count">
+        <span class="count-badge">{{ filtered.length }} medication(s)</span>
+      </div>
+    </div>
+
+    <!-- Row 2: availability pills -->
+    <div class="avail-pills">
+      <button class="avail-pill" [class.active]="selectedAvailability==='all'"
+              (click)="selectedAvailability='all'">
+        <i class="bi bi-grid-3x3-gap-fill"></i> All
+      </button>
+      <button class="avail-pill avail-pill--in" [class.active]="selectedAvailability==='available'"
+              (click)="selectedAvailability='available'">
+        <i class="bi bi-check-circle-fill"></i> In Stock
+      </button>
+      <button class="avail-pill avail-pill--out" [class.active]="selectedAvailability==='unavailable'"
+              (click)="selectedAvailability='unavailable'">
+        <i class="bi bi-x-circle-fill"></i> Unavailable
+      </button>
+
+      <button *ngIf="hasActiveFilters" class="clear-filters-btn" (click)="clearFilters()">
+        <i class="bi bi-funnel-fill"></i> Clear all filters
+      </button>
+    </div>
+
+  </div>
+</section>
+
+<!-- Medications Grid -->
+<section class="pharm-list section">
+  <div class="container">
+
+    <!-- Skeleton loader -->
+    <div class="row gy-4" *ngIf="loading()">
+      <div class="col-md-6 col-xl-4" *ngFor="let i of [1,2,3,4,5,6]">
+        <div class="skel-card">
+          <div class="skel-top">
+            <div class="skel-icon skel-shine"></div>
+            <div class="skel-badge skel-shine"></div>
+          </div>
+          <div class="skel-line skel-shine" style="width:70%"></div>
+          <div class="skel-line skel-shine" style="width:45%"></div>
+          <div class="skel-line skel-shine" style="width:90%; height:10px; margin-top:auto"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="pharm-empty" *ngIf="!loading() && filtered.length === 0">
+      <i class="bi bi-inbox"></i>
+      <p>No medications found matching your filters.</p>
+      <button class="btn guardian-btn-outline" (click)="clearFilters()">
+        Clear filters
+      </button>
+    </div>
+
+    <!-- Cards -->
+    <div class="row gy-4" *ngIf="!loading() && filtered.length > 0">
+      <div class="col-md-6 col-xl-4"
+           *ngFor="let med of filtered; let i = index"
+           [style.animation-delay]="(i * 60) + 'ms'"
+           class="card-animate">
+        <div class="med-card" [class.med-unavailable]="!isAvailable(med.medicationId!)">
+
+          <div class="med-card-top">
+            <div class="med-icon">
+              <i class="bi" [ngClass]="formIcon(med.form)"></i>
+            </div>
+            <span class="avail-badge"
+              [class.avail-yes]="isAvailable(med.medicationId!)"
+              [class.avail-no]="!isAvailable(med.medicationId!)"
+              [class.avail-pulse]="isAvailable(med.medicationId!)">
+              <i class="bi me-1"
+                [class.bi-check-circle-fill]="isAvailable(med.medicationId!)"
+                [class.bi-x-circle-fill]="!isAvailable(med.medicationId!)"></i>
+              {{ isAvailable(med.medicationId!) ? 'Available' : 'Unavailable' }}
+            </span>
+          </div>
+
+          <h3 class="med-name">{{ med.name }}</h3>
+
+          <div class="med-tags">
+            <span class="med-tag form-tag">
+              <i class="bi bi-capsule me-1"></i>{{ med.form | titlecase }}
+            </span>
+            <span class="med-tag dose-tag" *ngIf="med.pediatricDosage">
+              <i class="bi bi-heart-pulse me-1"></i>{{ med.pediatricDosage }}
+            </span>
+          </div>
+
+          <div class="med-footer">
+            <span class="med-note" *ngIf="!isAvailable(med.medicationId!)">
+              <i class="bi bi-info-circle me-1"></i>
+              Contact the pharmacy for more information.
+            </span>
+            <span class="med-note ok" *ngIf="isAvailable(med.medicationId!)">
+              <i class="bi bi-check2-circle me-1"></i>
+              Currently in stock at the pharmacy.
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Info section -->
+<section class="pharm-info section light-background">
+  <div class="container">
+    <div class="row gy-4">
+      <div class="col-lg-6 reveal">
+        <div class="info-box">
+          <div class="info-head">
+            <i class="bi bi-info-circle-fill"></i>
+            <h3>About our Pharmacy</h3>
+          </div>
+          <ul class="info-list">
+            <li><i class="bi bi-check-circle-fill"></i>All medications are managed by certified pharmacists</li>
+            <li><i class="bi bi-check-circle-fill"></i>Pediatric dosages are reviewed by medical staff</li>
+            <li><i class="bi bi-check-circle-fill"></i>Stock is updated in real-time</li>
+            <li><i class="bi bi-check-circle-fill"></i>Contact us for any prescription queries</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-lg-6 reveal" style="transition-delay:120ms">
+        <div class="info-box support-box">
+          <div class="info-head">
+            <i class="bi bi-telephone-fill"></i>
+            <h3>Pharmacy Contact</h3>
+          </div>
+          <p class="support-text">
+            For questions about medications, prescriptions, or availability,
+            please reach out to our pharmacy team directly.
+          </p>
+          <div class="support-items">
+            <div class="support-item">
+              <span>Pharmacy Line</span>
+              <strong>+216 99-911-347</strong>
+            </div>
+            <div class="support-item">
+              <span>Email</span>
+              <strong>NephrosPaidi&#64;esprit.tn</strong>
+            </div>
+          </div>
+          <div class="support-actions mt-3">
+            <a routerLink="/contact" class="btn guardian-btn-primary">Contact Us</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

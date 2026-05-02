@@ -11,4 +11,6 @@ public class SupplyOrderDTO {
     private LocalDate orderDate;
     private String status;
     private Integer orderedQuantity;
+    private LocalDate expectedDeliveryDate;
+    private String notes;
 }
