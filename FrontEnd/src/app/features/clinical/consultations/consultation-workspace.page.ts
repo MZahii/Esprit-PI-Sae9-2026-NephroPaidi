@@ -12,7 +12,7 @@ import {
   PrescriptionItem
 } from './consultation-workspace.service';
 import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 type WorkspaceTab = 'notes' | 'diagnosis' | 'plan' | 'labs' | 'prescriptions' | 'adherence';
 
@@ -236,14 +236,22 @@ export class ConsultationWorkspacePage implements OnInit {
     }
   };
 
-  followUpForm = {
-    scheduledAt: '',
-    durationMinutes: 30,
-    reason: ''
-  };
-  followUpError = '';
-  followUpSuccess = '';
-  minFollowUpDate = '';
+  /** Unlocks Adherence tab after doctor chooses Hospitalize Patient */
+  adherenceUnlocked = false;
+
+  /** Doctor → receptionist follow-up (clinical-service) */
+  doctorFollowUpEnabled = false;
+  followUpOffsetAmount = 5;
+  followUpOffsetUnit: 'DAYS' | 'WEEKS' | 'MONTHS' = 'DAYS';
+  followUpRequestMessage = '';
+  followUpRequestSubmitting = false;
+  doctorFollowUpRequestSent = false;
+
+  labSubmitting = false;
+
+  showHospitalizeModal = false;
+
+  medicationSuggestions: Record<number, any[]> = {};
 
   constructor(
     private route: ActivatedRoute,
@@ -260,7 +268,6 @@ export class ConsultationWorkspacePage implements OnInit {
     }
     this.consultationId = id;
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || null;
-    this.minFollowUpDate = this.toLocalDateTimeMin(new Date());
     this.loadConsultation();
     this.loadDraft();
   }
@@ -274,6 +281,9 @@ export class ConsultationWorkspacePage implements OnInit {
   }
 
   setTab(tab: WorkspaceTab): void {
+    if (tab === 'adherence' && !this.adherenceUnlocked) {
+      return;
+    }
     this.activeTab = tab;
   }
 
@@ -306,13 +316,131 @@ export class ConsultationWorkspacePage implements OnInit {
   }
 
   loadDraft(): void {
-    this.workspace.getDraft(this.consultationId).subscribe((draft) => {
-      this.draft = draft;
-      this.lastSavedSnapshot = this.buildDraftSnapshot();
-      if (draft.followUpDate && !this.followUpForm.scheduledAt) {
-        this.followUpForm.scheduledAt = draft.followUpDate;
+    this.workspace
+      .getDraft(this.consultationId)
+      .pipe(
+        switchMap((local) =>
+          this.api.getConsultationOutcome(this.consultationId).pipe(
+            map((outcome) => this.workspace.mergeServerOutcome(local, outcome)),
+            catchError(() => of(local))
+          )
+        ),
+        switchMap((draft) =>
+          this.api.getConsultationMetrics(this.consultationId).pipe(
+            map((m) => this.workspace.mergeServerMetrics(draft, m)),
+            catchError(() => of(draft))
+          )
+        )
+      )
+      .subscribe((draft) => {
+        this.draft = draft;
+        this.lastSavedSnapshot = this.buildDraftSnapshot();
+      });
+  }
+
+  get followUpPreviewDate(): string {
+    if (!this.consultation?.dateTime) return '';
+    const anchor = new Date(this.consultation.dateTime);
+    const d = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate());
+    const n = Math.max(1, Number(this.followUpOffsetAmount) || 1);
+    if (this.followUpOffsetUnit === 'DAYS') {
+      d.setDate(d.getDate() + n);
+    } else if (this.followUpOffsetUnit === 'WEEKS') {
+      d.setDate(d.getDate() + n * 7);
+    } else {
+      d.setMonth(d.getMonth() + n);
+    }
+    return d.toLocaleDateString();
+  }
+
+  submitDoctorFollowUpRequest(): void {
+    if (!this.consultationId) return;
+    this.followUpRequestMessage = '';
+    this.followUpRequestSubmitting = true;
+    this.api
+      .createDoctorFollowUpRequest(this.consultationId, {
+        offsetAmount: Math.max(1, Number(this.followUpOffsetAmount) || 1),
+        offsetUnit: this.followUpOffsetUnit,
+        notes: this.draft.treatmentPlan?.trim() ? `Plan context: ${this.draft.treatmentPlan.trim().slice(0, 200)}` : undefined
+      })
+      .subscribe({
+        next: () => {
+          this.followUpRequestSubmitting = false;
+          this.followUpRequestMessage = 'Follow-up request sent to receptionist queue.';
+          this.doctorFollowUpRequestSent = true;
+        },
+        error: () => {
+          this.followUpRequestSubmitting = false;
+          this.followUpRequestMessage = 'Could not send follow-up request.';
+        }
+      });
+  }
+
+  sendLabsToBackend(): void {
+    if (!this.consultationId) return;
+    this.labSubmitting = true;
+    this.infoMessage = '';
+    this.workspace.submitLabRequests(this.consultationId, this.draft).subscribe({
+      next: (ok) => {
+        this.labSubmitting = false;
+        this.infoMessage = ok ? 'Lab requests saved to clinical record.' : 'Failed to save lab requests.';
+      },
+      error: () => {
+        this.labSubmitting = false;
+        this.infoMessage = 'Failed to save lab requests.';
       }
     });
+  }
+
+  openHospitalizeModal(): void {
+    this.adherenceUnlocked = true;
+    this.prefillCarePlanFromPrescriptions();
+    this.activeTab = 'adherence';
+    this.showHospitalizeModal = true;
+  }
+
+  closeHospitalizeModal(): void {
+    this.showHospitalizeModal = false;
+  }
+
+  prefillCarePlanFromPrescriptions(): void {
+    const lines = (this.draft.prescriptions || []).filter((p) => (p.medication || '').trim().length > 0);
+    if (lines.length === 0) return;
+    const existing = new Set((this.draft.carePlanDoses || []).map((d) => (d.medication || '').toLowerCase()));
+    const toAdd: CarePlanDoseItem[] = [];
+    for (const p of lines) {
+      const name = (p.medication || '').trim();
+      if (existing.has(name.toLowerCase())) continue;
+      toAdd.push({ medication: name, scheduleTime: '08:00', taken: false });
+    }
+    this.draft.carePlanDoses = [...(this.draft.carePlanDoses || []), ...toAdd];
+  }
+
+  onMedicationSearch(index: number, event: Event): void {
+    const q = ((event.target as HTMLInputElement)?.value ?? '').trim();
+    if (q.length < 2) {
+      this.medicationSuggestions[index] = [];
+      return;
+    }
+    this.api.searchMedications(q, 15).subscribe({
+      next: (list) => {
+        this.medicationSuggestions[index] = list || [];
+      },
+      error: () => {
+        this.medicationSuggestions[index] = [];
+      }
+    });
+  }
+
+  pickMedication(index: number, med: any): void {
+    const row = this.draft.prescriptions[index];
+    if (!row || !med) return;
+    row.medication = med.name ?? '';
+    row.medicationId = med.medicationId ?? med.id;
+    if (med.pediatricDosage && !(row.dosage || '').trim()) {
+      row.dosage = med.pediatricDosage;
+    }
+    this.medicationSuggestions[index] = [];
   }
 
   saveDraft(): void {
@@ -339,7 +467,7 @@ export class ConsultationWorkspacePage implements OnInit {
   completeConsultation(): void {
     if (!this.consultationId) return;
     if (!this.canComplete) {
-      this.infoMessage = 'Completeness score must be at least 70 to mark completed.';
+      this.infoMessage = 'Required: Fill SOAP notes, add a diagnosis, and enter treatment plan to complete.';
       return;
     }
     this.saving = true;
@@ -369,47 +497,6 @@ export class ConsultationWorkspacePage implements OnInit {
       error: () => {
         this.saving = false;
         this.infoMessage = 'Unable to complete consultation.';
-      }
-    });
-  }
-
-  scheduleFollowUp(): void {
-    this.followUpError = '';
-    this.followUpSuccess = '';
-
-    if (!this.consultation?.patientId || !this.consultation?.doctorId) {
-      this.followUpError = 'Missing patient or doctor for follow-up.';
-      return;
-    }
-
-    if (!this.followUpForm.scheduledAt) {
-      this.followUpError = 'Follow-up date/time is required.';
-      return;
-    }
-
-    if (this.isPastDatetime(this.followUpForm.scheduledAt)) {
-      this.followUpError = 'Follow-up date must be in the future.';
-      return;
-    }
-
-    const duration = Number(this.followUpForm.durationMinutes || 30);
-    if (!Number.isFinite(duration) || duration < 10 || duration > 180) {
-      this.followUpError = 'Duration must be between 10 and 180 minutes.';
-      return;
-    }
-
-    this.api.createAppointment({
-      patientId: this.consultation.patientId,
-      doctorId: this.consultation.doctorId,
-      scheduledAt: this.normalizeDateTime(this.followUpForm.scheduledAt),
-      durationMinutes: duration,
-      reason: this.followUpForm.reason || 'Follow-up visit'
-    }).subscribe({
-      next: () => {
-        this.followUpSuccess = 'Follow-up appointment scheduled.';
-      },
-      error: () => {
-        this.followUpError = 'Unable to schedule follow-up appointment.';
       }
     });
   }
@@ -634,8 +721,106 @@ export class ConsultationWorkspacePage implements OnInit {
     return alerts;
   }
 
+  /**
+   * REQUIRED fields (60 points) — must have to complete:
+   * - SOAP notes (any part filled): 20
+   * - Diagnosis (at least one): 20
+   * - Treatment Plan: 20
+   *
+   * OPTIONAL fields (40 points) — nice to have:
+   * - Guardian Instructions: 10
+   * - Prescriptions (if applicable): 10
+   * - Lab Requests (if applicable): 10
+   * - Follow-up Request: 10
+   *
+   * Rule: Can complete when REQUIRED ≥ 60 (i.e., all three required fields filled).
+   * Completeness percentage shows quality beyond minimum.
+   */
   get completenessScore(): number {
-    let score = 0;
+    let requiredScore = 0;
+    let optionalScore = 0;
+
+    // REQUIRED: SOAP (any part filled)
+    const soapFilled = [
+      this.draft.soap.subjective,
+      this.draft.soap.objective,
+      this.draft.soap.assessment,
+      this.draft.soap.plan
+    ].some(value => (value || '').trim().length > 0);
+    if (soapFilled) requiredScore += 20;
+
+    // REQUIRED: Diagnosis (at least one)
+    const diagnosisFilled = (this.draft.diagnosisList || []).some(item =>
+      (item.label || '').trim().length > 0 || (item.code || '').trim().length > 0
+    );
+    if (diagnosisFilled) requiredScore += 20;
+
+    // REQUIRED: Treatment Plan
+    if ((this.draft.treatmentPlan || '').trim().length > 0) requiredScore += 20;
+
+    // OPTIONAL: Guardian Instructions
+    if ((this.draft.guardianInstructions || '').trim().length > 0) optionalScore += 10;
+
+    // OPTIONAL: Prescriptions (only count if provided — not all patients need meds)
+    const prescriptionsFilled = (this.draft.prescriptions || []).some(item =>
+      (item.medication || '').trim().length > 0
+    );
+    if (prescriptionsFilled) optionalScore += 10;
+
+    // OPTIONAL: Lab Requests (only count if provided — not all patients need labs)
+    const labsFilled = (this.draft.labRequests || []).some(item =>
+      (item.test || '').trim().length > 0
+    );
+    if (labsFilled) optionalScore += 10;
+
+    // OPTIONAL: Follow-up Request
+    if ((this.draft.followUpDate || '').trim().length > 0 || this.doctorFollowUpRequestSent) optionalScore += 10;
+
+    return requiredScore + optionalScore;
+  }
+
+  /** Minimum required score to mark consultation as complete */
+  get minimumRequiredScore(): number {
+    let required = 0;
+    const soapFilled = [
+      this.draft.soap.subjective,
+      this.draft.soap.objective,
+      this.draft.soap.assessment,
+      this.draft.soap.plan
+    ].some(value => (value || '').trim().length > 0);
+    if (soapFilled) required += 20;
+
+    const diagnosisFilled = (this.draft.diagnosisList || []).some(item =>
+      (item.label || '').trim().length > 0 || (item.code || '').trim().length > 0
+    );
+    if (diagnosisFilled) required += 20;
+
+    if ((this.draft.treatmentPlan || '').trim().length > 0) required += 20;
+
+    return required;
+  }
+
+  get completenessLabel(): string {
+    const score = this.completenessScore;
+    if (score >= 90) return 'Complete & Excellent';
+    if (score >= 80) return 'Complete & Good';
+    if (score >= 70) return 'Complete';
+    if (score >= 60) return 'Clinically Ready';
+    if (score >= 50) return 'Mostly Ready';
+    return 'Incomplete';
+  }
+
+  get completenessClass(): string {
+    const score = this.completenessScore;
+    if (score >= 90) return 'bg-soft-success text-success';
+    if (score >= 70) return 'bg-soft-success text-success';
+    if (score >= 60) return 'bg-soft-info text-info';
+    if (score >= 50) return 'bg-soft-warning text-warning';
+    return 'bg-soft-danger text-danger';
+  }
+
+  /** Can complete if all REQUIRED fields are filled (SOAP, Diagnosis, Treatment Plan) */
+  get canComplete(): boolean {
     const soapFilled = [
       this.draft.soap.subjective,
       this.draft.soap.objective,
@@ -643,41 +828,13 @@ export class ConsultationWorkspacePage implements OnInit {
       this.draft.soap.plan
     ].some(value => (value || '').trim().length > 0);
 
-    if (soapFilled) score += 20;
-
     const diagnosisFilled = (this.draft.diagnosisList || []).some(item =>
       (item.label || '').trim().length > 0 || (item.code || '').trim().length > 0
     );
-    if (diagnosisFilled) score += 20;
 
-    if ((this.draft.treatmentPlan || '').trim().length > 0) score += 20;
+    const treatmentPlanFilled = (this.draft.treatmentPlan || '').trim().length > 0;
 
-    const prescriptionsFilled = (this.draft.prescriptions || []).some(item =>
-      (item.medication || '').trim().length > 0
-    );
-    if (prescriptionsFilled) score += 20;
-
-    if ((this.draft.guardianInstructions || '').trim().length > 0) score += 10;
-
-    if ((this.draft.followUpDate || '').trim().length > 0) score += 10;
-
-    return score;
-  }
-
-  get completenessLabel(): string {
-    if (this.completenessScore >= 70) return 'Excellent';
-    if (this.completenessScore >= 50) return 'Acceptable';
-    return 'Incomplete';
-  }
-
-  get completenessClass(): string {
-    if (this.completenessScore >= 70) return 'bg-soft-success text-success';
-    if (this.completenessScore >= 50) return 'bg-soft-warning text-warning';
-    return 'bg-soft-danger text-danger';
-  }
-
-  get canComplete(): boolean {
-    return this.completenessScore >= 70;
+    return soapFilled && diagnosisFilled && treatmentPlanFilled;
   }
 
   get hospitalizationQueryParams(): Record<string, string> {
@@ -937,23 +1094,6 @@ export class ConsultationWorkspacePage implements OnInit {
     } catch {
       return 'Invalid date';
     }
-  }
-
-  private isPastDatetime(value: string): boolean {
-    if (!value) return false;
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return false;
-    return date.getTime() < Date.now();
-  }
-
-  private toLocalDateTimeMin(date: Date): string {
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-  }
-
-  private normalizeDateTime(value: string): string {
-    if (!value) return value;
-    return value.length === 16 ? `${value}:00` : value;
   }
 
   goBack(): void {

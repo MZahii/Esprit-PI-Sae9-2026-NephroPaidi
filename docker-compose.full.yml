@@ -65,11 +65,17 @@ services:
     container_name: nephro-config-server
     restart: unless-stopped
     environment:
-      EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
     ports:
       - "8888:8888"
     depends_on:
       - eureka
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8888/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
     cpus: "0.80"
     mem_limit: "768m"
     networks:
@@ -86,7 +92,7 @@ services:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
-      EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: api-gateway
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
       KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
@@ -101,9 +107,12 @@ services:
     ports:
       - "8083:8083"
     depends_on:
-      - config-server
-      - eureka
-      - keycloak
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      keycloak:
+        condition: service_started
     cpus: "0.60"
     mem_limit: "640m"
     networks:
@@ -127,7 +136,7 @@ services:
       LOGGING_LEVEL_ROOT: INFO
       LOGGING_LEVEL_SPRING_WEB: DEBUG
       EUREKA_URL: http://eureka:8761/eureka
-      EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: user-service
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
       KEYCLOAK_SERVER_URL: http://keycloak:8080
@@ -165,7 +174,7 @@ services:
     environment:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
-      EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: administration-service
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
       USER_SERVICE_BASE_URL: http://user-service:8090
@@ -191,7 +200,7 @@ services:
     environment:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
-      EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: communication-service
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
       USER_SERVICE_BASE_URL: http://user-service:8090
@@ -217,9 +226,17 @@ services:
     container_name: nephro-clinical-service
     restart: unless-stopped
     environment:
+      SPRING_PROFILES_ACTIVE: local
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
-      EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://ep-cool-breeze-agqhhjlc-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-neondb_owner}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-npg_Zb1Kda5LPlin}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_OUT_OF_ORDER: "true"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: clinical-service
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
       SERVICES_ADMINISTRATION_BASE: http://administration-service:8087
@@ -229,6 +246,8 @@ services:
       PHARMACY_SERVICE_URL: http://pharmacy-service:8088
       COMMUNICATION_SERVICE_URL: http://communication-service:8085
       ENVIRONMENT: docker
+      LOGGING_LEVEL_ROOT: INFO
+      LOGGING_LEVEL_TN_ESPRIT: DEBUG
     ports:
       - "8084:8084"
     depends_on:
@@ -238,6 +257,12 @@ services:
       - user-service
       - administration-service
       - communication-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
     cpus: "0.70"
     mem_limit: "768m"
     networks:
@@ -251,7 +276,7 @@ services:
     environment:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
-      EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: ops-service
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
       ENVIRONMENT: docker
@@ -293,11 +318,15 @@ services:
     environment:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
-      EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://ep-cool-breeze-agqhhjlc.c-2.eu-central-1.aws.neon.tech/nephros_pharmacy_db?sslmode=require&channel_binding=require}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-neondb_owner}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-npg_Zb1Kda5LPlin}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: pharmacy-service
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
       USER_SERVICE_BASE_URL: http://user-service:8090
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-my-super-secret-internal-key}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       ENVIRONMENT: docker
     ports:
@@ -320,7 +349,7 @@ services:
     environment:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
-      EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: procedure-service
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
       RESEND_ENABLED: ${RESEND_ENABLED:-false}

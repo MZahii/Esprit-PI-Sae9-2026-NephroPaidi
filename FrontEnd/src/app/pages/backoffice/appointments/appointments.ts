@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ClinicalApiService } from '../../../core/services/clinical-api.service';
+import { AuthStorageService } from '../../../core/auth/auth-storage.service';
 import { forkJoin, of, Subject, throwError } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, map, switchMap, takeUntil } from 'rxjs/operators';
 
@@ -102,7 +103,15 @@ export class Appointments implements OnInit, OnDestroy {
   calendarDays: Array<{ date: Date | null; inMonth: boolean; isToday: boolean; count: number }> = [];
   selectedDate = new Date();
 
-  constructor(private api: ClinicalApiService) {}
+  constructor(
+    private api: ClinicalApiService,
+    private auth: AuthStorageService
+  ) {}
+
+  /** Receptionists schedule only; they must not start consultations or change/cancel appointment times here. */
+  get isReceptionist(): boolean {
+    return this.auth.hasAnyRole(['RECEPTIONIST']);
+  }
 
   ngOnInit(): void {
     this.initPatientSearch();
@@ -186,6 +195,9 @@ export class Appointments implements OnInit, OnDestroy {
   }
 
   openEditModal(item: any): void {
+    if (this.isReceptionist) {
+      return;
+    }
     this.editForm = {
       id: item.id,
       patientId: Number(item.patientId),
@@ -212,6 +224,9 @@ export class Appointments implements OnInit, OnDestroy {
   }
 
   openCancelModal(item: any): void {
+    if (this.isReceptionist) {
+      return;
+    }
     this.cancelForm = { id: item.id, reason: '' };
     this.showCancelModal = true;
   }
@@ -243,6 +258,9 @@ export class Appointments implements OnInit, OnDestroy {
   }
 
   submitEdit(): void {
+    if (this.isReceptionist) {
+      return;
+    }
     if (!this.editForm.id) return;
     this.api.updateAppointment(this.editForm.id, {
       patientId: this.editForm.patientId || undefined,
@@ -263,6 +281,9 @@ export class Appointments implements OnInit, OnDestroy {
   }
 
   submitCancel(): void {
+    if (this.isReceptionist) {
+      return;
+    }
     if (!this.cancelForm.id) return;
     this.api.cancelAppointment(this.cancelForm.id, this.cancelForm.reason || undefined).subscribe({
       next: () => {
@@ -276,6 +297,9 @@ export class Appointments implements OnInit, OnDestroy {
   }
 
   startConsultation(appointmentId: string): void {
+    if (this.isReceptionist) {
+      return;
+    }
     this.startingAppointmentId = appointmentId;
 
     this.api.startConsultation(appointmentId).subscribe({

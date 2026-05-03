@@ -35,40 +35,40 @@ public class ConsultationMetrics {
     @Column(name = "patient_id", nullable = false)
     private Long patientId;
 
-    @Column(name = "height_cm")
+    @Column(name = "height_cm", columnDefinition = "NUMERIC")
     private Double heightCm;
 
-    @Column(name = "creatinine_mg_dl")
+    @Column(name = "creatinine_mg_dl", columnDefinition = "NUMERIC")
     private Double creatinineMgDl;
 
-    @Column(name = "creatinine_umol")
+    @Column(name = "creatinine_umol", columnDefinition = "NUMERIC")
     private Double creatinineUmol;
 
     @Column(name = "serum_creatinine_unit")
     private String serumCreatinineUnit;  // "MG_DL" or "MICROMOL_L"
 
-    @Column(name = "weight_kg")
+    @Column(name = "weight_kg", columnDefinition = "NUMERIC")
     private Double weightKg;
 
     @Column(name = "age_years")
     private Integer ageYears;
 
-    @Column(name = "egfr")
+    @Column(name = "egfr", columnDefinition = "NUMERIC")
     private Double egfr;
 
-    @Column(name = "ckdepi_egfr")
+    @Column(name = "ckdepi_egfr", columnDefinition = "NUMERIC")
     private Double ckdEpiEgfr;
 
     @Column(name = "egfr_formula_used")
     private String egfrFormulaUsed;  // "CKD_EPI_2021" or "COCKCROFT_GAULT"
 
-    @Column(name = "previous_egfr")
+    @Column(name = "previous_egfr", columnDefinition = "NUMERIC")
     private Double previousEgfr;
 
-    @Column(name = "egfr_change")
+    @Column(name = "egfr_change", columnDefinition = "NUMERIC")
     private Double egfrChange;
 
-    @Column(name = "egfr_change_percent")
+    @Column(name = "egfr_change_percent", columnDefinition = "NUMERIC")
     private Double egfrChangePercent;
 
     @Column(name = "egfr_trend")

@@ -7,6 +7,9 @@
 -- 1. Update consultation_metrics table with new columns
 -- ============================================================================
 
+ALTER TABLE consultation_metrics ADD COLUMN IF NOT EXISTS ckdepi_egfr DECIMAL(10, 2);
+COMMENT ON COLUMN consultation_metrics.ckdepi_egfr IS 'eGFR calculated using CKD-EPI 2021 formula (mL/min/1.73m²)';
+
 ALTER TABLE consultation_metrics ADD COLUMN IF NOT EXISTS creatinine_umol DECIMAL(10, 2);
 COMMENT ON COLUMN consultation_metrics.creatinine_umol IS 'Serum creatinine in SI units (µmol/L) - European standard';
 
@@ -46,7 +49,7 @@ COMMENT ON COLUMN consultation_metrics.serum_creatinine_lab_id IS 'Reference to 
 
 CREATE TABLE IF NOT EXISTS lab_result (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    lab_request_id UUID NOT NULL,
+    lab_request_id UUID,
     patient_id BIGINT NOT NULL,
     test_name VARCHAR(255) NOT NULL,
     test_code VARCHAR(50),
@@ -59,13 +62,22 @@ CREATE TABLE IF NOT EXISTS lab_result (
     lab_timestamp TIMESTAMP NOT NULL,
     received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_lab_result_request FOREIGN KEY (lab_request_id) 
-        REFERENCES lab_request(id) ON DELETE CASCADE,
-    CONSTRAINT fk_lab_result_patient FOREIGN KEY (patient_id) 
-        REFERENCES patient_profile(id) ON DELETE CASCADE
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add foreign keys only if referenced tables exist
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'lab_request') THEN
+        ALTER TABLE lab_result ADD CONSTRAINT fk_lab_result_request 
+            FOREIGN KEY (lab_request_id) REFERENCES lab_request(id) ON DELETE CASCADE;
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'patient_profile') THEN
+        ALTER TABLE lab_result ADD CONSTRAINT fk_lab_result_patient 
+            FOREIGN KEY (patient_id) REFERENCES patient_profile(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_lab_result_request ON lab_result(lab_request_id);
 CREATE INDEX IF NOT EXISTS idx_lab_result_patient ON lab_result(patient_id);
@@ -104,13 +116,22 @@ CREATE TABLE IF NOT EXISTS egfr_calculation_audit (
     -- Audit trail
     calculated_by_service VARCHAR(100),
     calculation_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    triggered_by_event VARCHAR(100),
-    
-    CONSTRAINT fk_audit_metrics FOREIGN KEY (consultation_metrics_id) 
-        REFERENCES consultation_metrics(id) ON DELETE SET NULL,
-    CONSTRAINT fk_audit_patient FOREIGN KEY (patient_id) 
-        REFERENCES patient_profile(id) ON DELETE CASCADE
+    triggered_by_event VARCHAR(100)
 );
+
+-- Add foreign keys conditionally
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'consultation_metrics') THEN
+        ALTER TABLE egfr_calculation_audit ADD CONSTRAINT fk_audit_metrics 
+            FOREIGN KEY (consultation_metrics_id) REFERENCES consultation_metrics(id) ON DELETE SET NULL;
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'patient_profile') THEN
+        ALTER TABLE egfr_calculation_audit ADD CONSTRAINT fk_audit_patient 
+            FOREIGN KEY (patient_id) REFERENCES patient_profile(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_egfr_audit_patient ON egfr_calculation_audit(patient_id);
 CREATE INDEX IF NOT EXISTS idx_egfr_audit_metrics ON egfr_calculation_audit(consultation_metrics_id);

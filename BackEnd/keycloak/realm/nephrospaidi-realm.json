@@ -54,6 +54,38 @@
           "temporary": false
         }
       ]
+    },
+    {
+      "username": "dr-test",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "Doctor",
+      "email": "dr.test@nephrospaidi.local",
+      "realmRoles": ["DOCTOR"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Doctor123!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "receptionist-test",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "Receptionist",
+      "email": "receptionist.test@nephrospaidi.local",
+      "realmRoles": ["RECEPTIONIST"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Reception123!",
+          "temporary": false
+        }
+      ]
     }
   ]
 }

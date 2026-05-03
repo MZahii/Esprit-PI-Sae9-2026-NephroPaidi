@@ -61,7 +61,10 @@ function parseJwtPayload(token: string): JwtPayload | null {
 
 function normalizeRole(role: unknown): string | null {
   if (role == null) return null;
-  const normalized = String(role).trim().toUpperCase();
+  let normalized = String(role).trim().toUpperCase();
+  if (normalized.startsWith('ROLE_')) {
+    normalized = normalized.slice(5);
+  }
   return normalized || null;
 }
 

@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://ep-cool-breeze-agqhhjlc.c-2.eu-central-1.aws.neon.tech/nephros_pharmacy_db?sslmode=require&channel_binding=require
-    username: neondb_owner
-    password: npg_Zb1Kda5LPlin
+    url: ${SPRING_DATASOURCE_URL:}
+    username: ${SPRING_DATASOURCE_USERNAME:}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -38,10 +38,10 @@ management:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka}
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka}}
 
 internal:
-  api-key: ${INTERNAL_API_KEY:my-super-secret-internal-key}
+  api-key: ${INTERNAL_API_KEY:}
 
 user-service:
   base-url: ${USER_SERVICE_BASE_URL:http://localhost:8090}

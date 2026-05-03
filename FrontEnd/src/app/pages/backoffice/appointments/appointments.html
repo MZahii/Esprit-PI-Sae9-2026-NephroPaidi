@@ -148,7 +148,7 @@
                         {{ getAppointmentCountdown(item) }}
                       </div>
                     </div>
-                    <div class="day-actions">
+                    <div class="day-actions" *ngIf="!isReceptionist">
                       <button 
                         type="button" 
                         class="btn btn-sm btn-success"

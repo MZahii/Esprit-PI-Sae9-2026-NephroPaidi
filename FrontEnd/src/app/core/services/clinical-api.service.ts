@@ -296,7 +296,7 @@ export class ClinicalApiService {
   getConsultation(id: string): Observable<any> {
     return this.http.get<any>(
       `${this.base}/api/clinical/consultations/${id}`,
-      { headers: this.authHeaders() }
+      { headers: this.doctorHeaders() }
     );
   }
 
@@ -352,6 +352,62 @@ export class ClinicalApiService {
       `${this.base}/api/clinical/consultations/${id}/metrics`,
       payload,
       { headers: this.doctorHeaders() }
+    );
+  }
+
+  getConsultationMetrics(id: string): Observable<ConsultationMetricsRequest> {
+    return this.http.get<ConsultationMetricsRequest>(
+      `${this.base}/api/clinical/consultations/${id}/metrics`,
+      { headers: this.doctorHeaders() }
+    );
+  }
+
+  /** Pharmacy catalog via gateway → pharmacy-service */
+  searchMedications(namePrefix: string, limit = 20): Observable<any[]> {
+    const term = (namePrefix ?? '').trim();
+    let params = new HttpParams().set('sort', 'az');
+    if (term.length > 0) {
+      params = params.set('name', term);
+    }
+    return this.http.get<any[]>(`${this.base}/api/medications`, {
+      headers: this.authHeaders(),
+      params
+    }).pipe(
+      map((list) => (Array.isArray(list) ? list.slice(0, limit) : []))
+    );
+  }
+
+  listPendingDoctorFollowUpRequests(): Observable<any[]> {
+    return this.http.get<any[]>(
+      `${this.base}/api/clinical/follow-up-requests`,
+      { headers: this.authHeaders() }
+    );
+  }
+
+  createDoctorFollowUpRequest(
+    consultationId: string,
+    body: { offsetAmount: number; offsetUnit: 'DAYS' | 'WEEKS' | 'MONTHS'; notes?: string }
+  ): Observable<any> {
+    return this.http.post<any>(
+      `${this.base}/api/clinical/consultations/${consultationId}/follow-up-requests`,
+      body,
+      { headers: this.doctorHeaders() }
+    );
+  }
+
+  confirmDoctorFollowUpRequest(
+    id: string,
+    body: {
+      scheduledAt: string;
+      doctorId?: string;
+      durationMinutes?: number;
+      reason?: string;
+    }
+  ): Observable<any> {
+    return this.http.post<any>(
+      `${this.base}/api/clinical/follow-up-requests/${id}/confirm`,
+      body,
+      { headers: this.authHeaders() }
     );
   }
 

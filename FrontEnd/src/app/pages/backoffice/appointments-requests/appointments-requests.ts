@@ -11,6 +11,22 @@ interface DoctorOption {
   label: string;
 }
 
+/** Pending doctor-initiated follow-up row from clinical-service */
+export interface DoctorFollowUpRow {
+  id: string;
+  consultationId: string;
+  patientId: number;
+  doctorId: string;
+  anchorDate?: string;
+  offsetAmount?: number;
+  offsetUnit?: string;
+  computedReturnDate?: string;
+  status: string;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 @Component({
   selector: 'app-appointments-requests',
   standalone: true,
@@ -18,7 +34,7 @@ interface DoctorOption {
   templateUrl: './appointments-requests.html',
   styleUrl: './appointments-requests.scss'
 })
-export class AppointmentsRequestsComponent implements OnInit {
+export class AppointmentsRequestsComponent implements OnInit, OnDestroy {
   loading = true;
   actionLoading = false;
   errorMessage = '';
@@ -54,6 +70,21 @@ export class AppointmentsRequestsComponent implements OnInit {
   rejectNotes = '';
   rejectConfirmed = false;
 
+  /** Doctor → receptionist follow-up queue */
+  doctorFollowUps: DoctorFollowUpRow[] = [];
+  doctorFollowUpLoading = false;
+  doctorFollowUpError = '';
+  doctorFollowModalOpen = false;
+  selectedDoctorFollow: DoctorFollowUpRow | null = null;
+  doctorFollowScheduledAt = '';
+  doctorFollowDoctorId = '';
+  doctorFollowDuration = 30;
+  doctorFollowReason = '';
+  doctorFollowSubmitting = false;
+  doctorFollowToast = '';
+  doctorFollowToastIsError = false;
+  private doctorFollowToastTimer?: ReturnType<typeof setTimeout>;
+
   constructor(
     private appointmentsApi: AppointmentsApiService,
     private clinicalApi: ClinicalApiService,
@@ -64,12 +95,128 @@ export class AppointmentsRequestsComponent implements OnInit {
     this.loadPatientsDirectory();
     this.loadDoctors();
     this.load();
+    this.loadDoctorFollowUps();
   }
 
   ngOnDestroy(): void {
     if (this.toastTimer) {
       clearTimeout(this.toastTimer);
     }
+    if (this.doctorFollowToastTimer) {
+      clearTimeout(this.doctorFollowToastTimer);
+    }
+  }
+
+  loadDoctorFollowUps(): void {
+    this.doctorFollowUpLoading = true;
+    this.doctorFollowUpError = '';
+    this.clinicalApi.listPendingDoctorFollowUpRequests().pipe(
+      finalize(() => {
+        this.doctorFollowUpLoading = false;
+        this.cdr.markForCheck();
+      })
+    ).subscribe({
+      next: (list) => {
+        this.doctorFollowUps = Array.isArray(list) ? (list as DoctorFollowUpRow[]) : [];
+      },
+      error: (err) => {
+        this.doctorFollowUps = [];
+        this.doctorFollowUpError = this.formatHttpError(err, 'Unable to load doctor follow-up requests.');
+      }
+    });
+  }
+
+  openDoctorFollowConfirm(row: DoctorFollowUpRow): void {
+    this.selectedDoctorFollow = row;
+    this.doctorFollowDoctorId = row.doctorId || '';
+    const cr = row.computedReturnDate;
+    if (cr) {
+      const day = String(cr).split('T')[0];
+      this.doctorFollowScheduledAt = `${day}T09:00`;
+    } else {
+      this.doctorFollowScheduledAt = '';
+    }
+    this.doctorFollowDuration = 30;
+    this.doctorFollowReason =
+      (row.notes && row.notes.trim()) ||
+      `Doctor follow-up (consultation ${row.consultationId})`;
+    this.doctorFollowModalOpen = true;
+  }
+
+  closeDoctorFollowModal(): void {
+    this.doctorFollowModalOpen = false;
+    this.selectedDoctorFollow = null;
+  }
+
+  get isDoctorFollowConfirmInvalid(): boolean {
+    if (!this.doctorFollowScheduledAt || this.doctorFollowScheduledAt.length < 16) return true;
+    const t = new Date(this.doctorFollowScheduledAt).getTime();
+    if (Number.isNaN(t) || t <= Date.now()) return true;
+    if (!this.doctorFollowDoctorId) return true;
+    return false;
+  }
+
+  submitDoctorFollowConfirm(): void {
+    const sel = this.selectedDoctorFollow;
+    if (!sel?.id || this.isDoctorFollowConfirmInvalid || this.doctorFollowSubmitting) return;
+
+    this.doctorFollowSubmitting = true;
+    const scheduledAt = this.normalizeConfirmDateTime(this.doctorFollowScheduledAt);
+
+    this.clinicalApi.confirmDoctorFollowUpRequest(sel.id, {
+      scheduledAt,
+      doctorId: this.doctorFollowDoctorId,
+      durationMinutes: this.doctorFollowDuration,
+      reason: this.doctorFollowReason.trim() || undefined
+    }).pipe(
+      finalize(() => {
+        this.doctorFollowSubmitting = false;
+        this.cdr.markForCheck();
+      })
+    ).subscribe({
+      next: () => {
+        this.closeDoctorFollowModal();
+        this.showDoctorFollowToast('Follow-up booked and request closed.', false);
+        this.loadDoctorFollowUps();
+      },
+      error: (err) => {
+        this.showDoctorFollowToast(this.formatHttpError(err, 'Could not confirm follow-up.'), true);
+      }
+    });
+  }
+
+  doctorLabel(doctorId: string | undefined | null): string {
+    if (!doctorId) return '—';
+    return this.doctorOptions.find(d => d.id === doctorId)?.label || String(doctorId);
+  }
+
+  formatOffset(row: DoctorFollowUpRow): string {
+    if (row.offsetAmount == null || !row.offsetUnit) return '—';
+    const u = row.offsetUnit.toLowerCase();
+    const n = row.offsetAmount;
+    return `${n} ${n === 1 ? u.slice(0, -1) : u}`;
+  }
+
+  private showDoctorFollowToast(message: string, isError: boolean): void {
+    this.doctorFollowToast = message;
+    this.doctorFollowToastIsError = isError;
+    if (this.doctorFollowToastTimer) {
+      clearTimeout(this.doctorFollowToastTimer);
+    }
+    this.doctorFollowToastTimer = setTimeout(() => {
+      this.doctorFollowToast = '';
+      this.doctorFollowToastIsError = false;
+      this.cdr.markForCheck();
+    }, 3200);
+  }
+
+  /** Maps datetime-local value to backend LocalDateTime string */
+  private normalizeConfirmDateTime(value: string): string {
+    const v = (value || '').trim();
+    if (v.length >= 16) {
+      return v.length === 16 ? `${v}:00` : v;
+    }
+    return v;
   }
 
   private loadPatientsDirectory(): void {

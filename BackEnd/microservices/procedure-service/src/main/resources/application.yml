@@ -2,7 +2,7 @@ spring:
   application:
     name: procedure-service
   config:
-    import: optional:configserver:http://localhost:8888
+    import: optional:configserver:http://config-server:8888
   security:
     oauth2:
       resourceserver:
@@ -12,6 +12,13 @@ spring:
     outOfOrder: true
     validateOnMigrate: false
     repairOnMigrate: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://eureka:8761/eureka}
+  instance:
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:procedure-service}
 
 # Resilience4j Circuit Breaker
 resilience4j:
