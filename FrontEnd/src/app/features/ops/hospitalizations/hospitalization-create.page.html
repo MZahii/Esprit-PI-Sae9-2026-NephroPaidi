@@ -44,6 +44,11 @@
           <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
           <div *ngIf="success" class="alert alert-success">{{ success }}</div>
 
+          <div class="alert alert-light border mb-3">
+            <strong>Doctor handoff:</strong> define why the patient must be hospitalized and what the nursing team should do or watch.
+            The nurse will decide how observations are recorded in practice, so you do not need to define value types or units here.
+          </div>
+
           <div class="mb-3">
             <label class="form-label">Reason for hospitalization</label>
             <textarea
@@ -57,6 +62,20 @@
           <div class="d-flex align-items-center justify-content-between mb-3">
             <h6 class="mb-0">Care Task List</h6>
             <button type="button" class="btn btn-light btn-sm" (click)="addTask()">Add task</button>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Quick task templates</label>
+            <div class="d-flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="btn btn-outline-primary btn-sm"
+                *ngFor="let template of taskTemplates"
+                (click)="addTaskFromTemplate(template)"
+              >
+                {{ template.label }}
+              </button>
+            </div>
           </div>
 
           <div *ngIf="tasks.length === 0" class="text-muted">No task added yet.</div>
@@ -81,15 +100,10 @@
                 <label class="form-label">Instructions</label>
                 <input class="form-control" [(ngModel)]="task.instructions" placeholder="What should the nurse do or look for?" />
               </div>
-              <div class="col-md-3">
-                <label class="form-label">Value type</label>
-                <select class="form-select" [(ngModel)]="task.measurementKind">
-                  <option *ngFor="let option of measurementKindOptions" [ngValue]="option">{{ option }}</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">Unit</label>
-                <input class="form-control" [(ngModel)]="task.expectedUnit" placeholder="kg, °C..." />
+              <div class="col-md-5">
+                <div class="alert alert-light border mb-0 py-2 small">
+                  The nurse team will capture the concrete values and units during execution when needed.
+                </div>
               </div>
             </div>
           </div>

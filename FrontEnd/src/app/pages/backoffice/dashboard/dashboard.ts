@@ -159,6 +159,10 @@ export class Dashboard implements AfterViewInit, OnInit {
     return this.role === 'RECEPTIONIST';
   }
 
+  get isLabAgent(): boolean {
+    return this.role === 'LAB_AGENT';
+  }
+
   get displayName(): string {
     if (this.user?.firstName && this.user?.lastName) {
       return `${this.user.firstName} ${this.user.lastName}`;
@@ -178,6 +182,7 @@ export class Dashboard implements AfterViewInit, OnInit {
     if (this.isAdmin) return 'Global administration and platform supervision';
     if (this.isHr) return 'Human resources and operational management';
     if (this.isReceptionist) return 'Reception and patient onboarding operations';
+    if (this.isLabAgent) return 'Process incoming lab orders, upload results, and trigger clinical AI analysis';
     return 'Connected backoffice user';
   }
 

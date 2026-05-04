@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthStorageService } from '../../../core/auth/auth-storage.service';
 import { environment } from '../../../../environments/environment';
+import { RouterLink } from '@angular/router';
+import { Subscription, interval } from 'rxjs';
 
 interface LabRequest {
   id: string;
@@ -24,11 +26,11 @@ interface LabRequest {
 @Component({
   selector: 'app-lab-inbox',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './lab-inbox.html',
   styleUrl: './lab-inbox.scss'
 })
-export class LabInboxComponent implements OnInit {
+export class LabInboxComponent implements OnInit, OnDestroy {
   loading = true;
   errorMessage = '';
   successMessage = '';
@@ -43,6 +45,7 @@ export class LabInboxComponent implements OnInit {
   selectedRequest: LabRequest | null = null;
   selectedFile: File | null = null;
   uploadingId = '';
+  private refreshSub?: Subscription;
 
   constructor(
     private http: HttpClient,
@@ -51,6 +54,15 @@ export class LabInboxComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadLabRequests();
+    this.refreshSub = interval(15000).subscribe(() => {
+      if (!this.showUploadModal && !this.uploadingId) {
+        this.loadLabRequests();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
   }
 
   loadLabRequests(): void {

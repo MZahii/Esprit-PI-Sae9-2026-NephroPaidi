@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ClinicalApiService } from '../../../core/services/clinical-api.service';
@@ -11,7 +11,7 @@ import {
   LabRequestItem,
   PrescriptionItem
 } from './consultation-workspace.service';
-import { forkJoin, of } from 'rxjs';
+import { Subscription, forkJoin, interval, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 
 type WorkspaceTab = 'notes' | 'diagnosis' | 'plan' | 'labs' | 'prescriptions' | 'adherence';
@@ -190,7 +190,7 @@ const DBP_P95_BY_AGE: Record<number, number> = {
   templateUrl: './consultation-workspace.page.html',
   styleUrl: './consultation-workspace.page.scss'
 })
-export class ConsultationWorkspacePage implements OnInit {
+export class ConsultationWorkspacePage implements OnInit, OnDestroy {
   consultationId = '';
   consultation: any | null = null;
   history: any[] = [];
@@ -252,6 +252,7 @@ export class ConsultationWorkspacePage implements OnInit {
   showHospitalizeModal = false;
 
   medicationSuggestions: Record<number, any[]> = {};
+  private refreshSub?: Subscription;
 
   constructor(
     private route: ActivatedRoute,
@@ -270,6 +271,14 @@ export class ConsultationWorkspacePage implements OnInit {
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || null;
     this.loadConsultation();
     this.loadDraft();
+    this.refreshSub = interval(15000).subscribe(() => {
+      this.loadConsultation();
+      this.loadDraft();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
   }
 
   @HostListener('window:beforeunload', ['$event'])
@@ -334,6 +343,7 @@ export class ConsultationWorkspacePage implements OnInit {
       )
       .subscribe((draft) => {
         this.draft = draft;
+        this.adherenceUnlocked = (draft.carePlanDoses?.length ?? 0) > 0;
         this.lastSavedSnapshot = this.buildDraftSnapshot();
       });
   }
@@ -351,6 +361,32 @@ export class ConsultationWorkspacePage implements OnInit {
       d.setMonth(d.getMonth() + n);
     }
     return d.toLocaleDateString();
+  }
+
+  private queueDoctorFollowUpIfNeeded() {
+    if (!this.consultationId || !this.doctorFollowUpEnabled || this.doctorFollowUpRequestSent) {
+      return of(false);
+    }
+
+    return this.api
+      .createDoctorFollowUpRequest(this.consultationId, {
+        offsetAmount: Math.max(1, Number(this.followUpOffsetAmount) || 1),
+        offsetUnit: this.followUpOffsetUnit,
+        notes: this.draft.treatmentPlan?.trim()
+          ? `Plan context: ${this.draft.treatmentPlan.trim().slice(0, 200)}`
+          : undefined
+      })
+      .pipe(
+        map(() => {
+          this.doctorFollowUpRequestSent = true;
+          this.followUpRequestMessage = 'Follow-up request queued for the receptionist.';
+          return true;
+        }),
+        catchError(() => {
+          this.followUpRequestMessage = 'Consultation saved, but the follow-up request could not be queued yet.';
+          return of(false);
+        })
+      );
   }
 
   submitDoctorFollowUpRequest(): void {
@@ -452,15 +488,28 @@ export class ConsultationWorkspacePage implements OnInit {
     if (!this.consultationId) return;
     this.saving = true;
     this.infoMessage = '';
-    this.workspace.saveDraft(this.consultationId, this.draft).subscribe({
-      next: (saved) => {
+    this.workspace.saveDraft(this.consultationId, this.draft).pipe(
+      switchMap((saved) => {
+        if (!saved) {
+          return of({ saved, followUpQueued: false });
+        }
+        return this.queueDoctorFollowUpIfNeeded().pipe(
+          map((followUpQueued) => ({ saved, followUpQueued }))
+        );
+      })
+    ).subscribe({
+      next: ({ saved, followUpQueued }) => {
         this.saving = false;
         if (saved) {
           this.lastSavedSnapshot = this.buildDraftSnapshot();
         }
-        this.infoMessage = saved
-          ? 'Draft saved to backend.'
-          : 'Backend save failed. A local backup was kept.';
+        if (!saved) {
+          this.infoMessage = 'Backend save failed. A local backup was kept.';
+          return;
+        }
+        this.infoMessage = followUpQueued
+          ? 'Draft saved and follow-up request sent to the receptionist queue.'
+          : 'Draft saved to backend.';
       },
       error: () => {
         this.saving = false;
@@ -477,8 +526,17 @@ export class ConsultationWorkspacePage implements OnInit {
     }
     this.saving = true;
     this.infoMessage = '';
-    this.workspace.completeConsultation(this.consultationId, this.draft).subscribe({
-      next: (saved) => {
+    this.workspace.completeConsultation(this.consultationId, this.draft).pipe(
+      switchMap((saved) => {
+        if (!saved) {
+          return of({ saved, followUpQueued: false });
+        }
+        return this.queueDoctorFollowUpIfNeeded().pipe(
+          map((followUpQueued) => ({ saved, followUpQueued }))
+        );
+      })
+    ).subscribe({
+      next: ({ saved, followUpQueued }) => {
         if (!saved) {
           this.saving = false;
           this.infoMessage = 'Cannot complete consultation because backend save failed. Please retry.';
@@ -490,7 +548,9 @@ export class ConsultationWorkspacePage implements OnInit {
             this.saving = false;
             this.completed = true;
             this.lastSavedSnapshot = this.buildDraftSnapshot();
-            this.infoMessage = 'Consultation marked as completed.';
+            this.infoMessage = followUpQueued
+              ? 'Consultation marked as completed and follow-up request sent to the receptionist queue.'
+              : 'Consultation marked as completed.';
             this.loadConsultation();
           },
           error: () => {

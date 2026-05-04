@@ -51,11 +51,13 @@ import { DoctorComponent } from './pages/backoffice/doctor/doctor.component';
 import { ConsultationsListPage } from './features/clinical/consultations/consultations-list.page';
 import { ConsultationDetailsPage as ClinicalConsultationDetailsPage } from './features/clinical/consultations/consultation-details.page';
 import { ConsultationWorkspacePage } from './features/clinical/consultations/consultation-workspace.page';
+import { LabRequestsPage } from './features/clinical/consultations/lab-requests.page';
 import { ReceptionistAppointmentsPage } from './features/clinical/appointments/receptionist-appointments.page';
 import { DoctorTodayAppointmentsPage } from './features/clinical/appointments/doctor-today-appointments.page';
 import { HospitalizationCreatePage } from './features/ops/hospitalizations/hospitalization-create.page';
 import { HospitalizationReviewPage } from './features/ops/hospitalizations/hospitalization-review.page';
 import { NurseHospitalizationsPage } from './features/ops/hospitalizations/nurse-hospitalizations.page';
+import { LabInboxComponent } from './pages/backoffice/lab-inbox/lab-inbox';
 import { CalendarPage } from './frontoffice/pages/calendar/calendar.page';
 import { ConsultationsPage as GuardianConsultationsPage } from './frontoffice/pages/consultations/consultations.page';
 import { ConsultationDetailsPage as GuardianConsultationDetailsPage } from './frontoffice/pages/consultation-details/consultation-details.page';
@@ -215,6 +217,12 @@ export const routes: Routes = [
         data: { roles: ['RECEPTIONIST'] }
       },
       {
+        path: 'lab-inbox',
+        component: LabInboxComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['LAB_AGENT', 'DOCTOR'] }
+      },
+      {
         path: 'appointments-clinical',
         pathMatch: 'full',
         redirectTo: 'appointments'
@@ -244,6 +252,12 @@ export const routes: Routes = [
       {
         path: 'consultations',
         component: ConsultationsListPage,
+        canActivate: [roleGuard],
+        data: { roles: ['DOCTOR'] }
+      },
+      {
+        path: 'consultations/lab-requests',
+        component: LabRequestsPage,
         canActivate: [roleGuard],
         data: { roles: ['DOCTOR'] }
       },

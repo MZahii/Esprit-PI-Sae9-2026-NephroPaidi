@@ -18,151 +18,144 @@
 
 <div class="main-content consultation-workspace">
   <div class="row g-4">
-    <div class="col-xxl-3 col-lg-4">
-      <div class="card stretch stretch-full">
-        <div class="card-header">
-          <h5 class="card-title">Patient Info</h5>
-        </div>
-        <div class="card-body">
-          <div class="info-line">
-            <span>Patient</span>
-            <strong>{{ getPatientLabel(consultation?.patientId) }}</strong>
+    <div class="col-xxl-4 col-lg-5">
+      <div class="consultation-side-grid">
+        <div class="card stretch stretch-full side-card side-card-featured">
+          <div class="card-header">
+            <h5 class="card-title">Patient Snapshot</h5>
           </div>
-          <div class="info-line">
-            <span>Consultation ID</span>
-            <strong>{{ consultationId }}</strong>
-          </div>
-          <div class="info-line" *ngIf="consultation?.dateTime">
-            <span>Scheduled</span>
-            <strong>{{ consultation?.dateTime | date:'medium' }}</strong>
-          </div>
-          <div class="info-line" *ngIf="consultation?.status">
-            <span>Status</span>
-            <span class="badge" [ngClass]="statusBadge(consultation?.status)">{{ consultation?.status }}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="card stretch stretch-full mt-4">
-        <div class="card-header">
-          <h5 class="card-title">Renal Metrics</h5>
-        </div>
-        <div class="card-body">
-          <div class="metric-row">
-            <span>eGFR ({{ egfrFormulaLabel }})</span>
-            <strong>{{ egfrValue !== null ? (egfrValue + ' mL/min/1.73m2') : '-' }}</strong>
-          </div>
-          <div class="metric-row">
-            <span>CKD Stage</span>
-            <strong>{{ ckdStage }}</strong>
-          </div>
-          <div class="metric-row" *ngIf="previousEgfr !== null">
-            <span>Previous eGFR</span>
-            <strong>{{ previousEgfr }} mL/min/1.73m2</strong>
-          </div>
-          <div class="metric-row">
-            <span>Trajectory</span>
-            <strong>{{ egfrTrajectoryLabel }}</strong>
-          </div>
-          <div class="metric-row" *ngIf="latestEgfrDeltaPct !== null">
-            <span>Last Delta</span>
-            <strong [class.text-danger]="latestEgfrDeltaPct < 0" [class.text-success]="latestEgfrDeltaPct > 0">
-              {{ latestEgfrDeltaPct }}%
-            </strong>
-          </div>
-          <div class="metric-row">
-            <span>Height Percentile</span>
-            <strong>{{ heightPercentileLabel }}</strong>
-          </div>
-          <div class="metric-row">
-            <span>Weight Percentile</span>
-            <strong>{{ weightPercentileLabel }}</strong>
-          </div>
-          <div class="metric-row">
-            <span>BP Percentile</span>
-            <strong>{{ bloodPressurePercentileLabel }}</strong>
-          </div>
-
-          <div class="trend-list mt-3" *ngIf="egfrTrendPoints.length > 0">
-            <div class="trend-title">eGFR Trend (last {{ egfrTrendPoints.length }} visits)</div>
-            <div class="trend-item" *ngFor="let point of egfrTrendPoints">
-              <span>{{ point.dateTime | date:'shortDate' }}</span>
-              <strong>{{ point.egfr !== null ? point.egfr : 'N/A' }}</strong>
+          <div class="card-body">
+            <div class="snapshot-patient-name">{{ getPatientLabel(consultation?.patientId) }}</div>
+            <div class="snapshot-meta">Consultation #{{ consultationId }}</div>
+            <div class="snapshot-meta" *ngIf="consultation?.dateTime">{{ consultation?.dateTime | date:'medium' }}</div>
+            <div class="snapshot-badges mt-3">
+              <span class="badge" [ngClass]="statusBadge(consultation?.status)">{{ consultation?.status || 'OPEN' }}</span>
+              <span class="badge" [ngClass]="completenessClass">{{ completenessScore }}/100</span>
+              <span class="badge bg-soft-warning text-warning" *ngIf="hasUnsavedChanges">Unsaved</span>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="card stretch stretch-full mt-4">
-        <div class="card-header">
-          <h5 class="card-title">Quality Score</h5>
-        </div>
-        <div class="card-body">
-          <div class="score-row">
-            <span>Score</span>
-            <strong>{{ completenessScore }}/100</strong>
+        <div class="card stretch stretch-full side-card">
+          <div class="card-header">
+            <h5 class="card-title">Quality Score</h5>
           </div>
-          <div class="score-row">
-            <span>Adherence</span>
-            <strong>{{ carePlanAdherenceRate }}%</strong>
-          </div>
-          <div class="mt-2">
-            <span class="badge" [ngClass]="completenessClass">{{ completenessLabel }}</span>
-          </div>
-          <div class="alert-list" *ngIf="alerts.length; else noAlerts">
-            <div class="alert-item" *ngFor="let item of alerts">{{ item }}</div>
-          </div>
-          <ng-template #noAlerts>
-            <div class="text-muted mt-2">No alerts triggered.</div>
-          </ng-template>
-        </div>
-      </div>
-
-      <div class="card stretch stretch-full mt-4">
-        <div class="card-header">
-          <h5 class="card-title">AI Clinical Assistant</h5>
-        </div>
-        <div class="card-body">
-          <div class="metric-row">
-            <span>Recommendation</span>
-            <strong>{{ aiRecommendationLabel }}</strong>
-          </div>
-          <div class="metric-row">
-            <span>Confidence</span>
-            <strong>{{ aiConfidencePercent }}</strong>
-          </div>
-          <div class="metric-row">
-            <span>Source File</span>
-            <strong>{{ draft.metrics.aiSourceFileName || '-' }}</strong>
-          </div>
-          <div class="metric-row">
-            <span>Doctor Review</span>
-            <strong>{{ draft.metrics.aiRequiresReview ? 'Required' : 'Not flagged' }}</strong>
-          </div>
-          <div class="alert alert-light border mt-3 mb-0 small">
-            {{ draft.metrics.aiSummary || 'Upload a lab result from the lab inbox to generate an AI recommendation here.' }}
-          </div>
-        </div>
-      </div>
-
-      <div class="card stretch stretch-full mt-4">
-        <div class="card-header">
-          <h5 class="card-title">History</h5>
-        </div>
-        <div class="card-body">
-          <div *ngIf="patientHistory.length === 0" class="text-muted">No prior consultations.</div>
-          <div class="history-item" *ngFor="let item of patientHistory | slice:0:5">
-            <div>
-              <div class="fw-semibold">{{ item.id }}</div>
-              <div class="text-muted small">{{ item.dateTime | date:'short' }}</div>
+          <div class="card-body">
+            <div class="score-row">
+              <span>Score</span>
+              <strong>{{ completenessScore }}/100</strong>
             </div>
-            <a class="btn btn-light btn-sm" [routerLink]="['/backoffice/consultations', item.id, 'workspace']">Open</a>
+            <div class="score-row">
+              <span>Adherence</span>
+              <strong>{{ carePlanAdherenceRate }}%</strong>
+            </div>
+            <div class="mt-2">
+              <span class="badge" [ngClass]="completenessClass">{{ completenessLabel }}</span>
+            </div>
+            <div class="alert-list" *ngIf="alerts.length; else noAlerts">
+              <div class="alert-item" *ngFor="let item of alerts">{{ item }}</div>
+            </div>
+            <ng-template #noAlerts>
+              <div class="text-muted mt-2">No alerts triggered.</div>
+            </ng-template>
+          </div>
+        </div>
+
+        <div class="card stretch stretch-full side-card">
+          <div class="card-header">
+            <h5 class="card-title">Renal Metrics</h5>
+          </div>
+          <div class="card-body">
+            <div class="metric-row">
+              <span>eGFR ({{ egfrFormulaLabel }})</span>
+              <strong>{{ egfrValue !== null ? (egfrValue + ' mL/min/1.73m2') : '-' }}</strong>
+            </div>
+            <div class="metric-row">
+              <span>CKD Stage</span>
+              <strong>{{ ckdStage }}</strong>
+            </div>
+            <div class="metric-row" *ngIf="previousEgfr !== null">
+              <span>Previous eGFR</span>
+              <strong>{{ previousEgfr }} mL/min/1.73m2</strong>
+            </div>
+            <div class="metric-row">
+              <span>Trajectory</span>
+              <strong>{{ egfrTrajectoryLabel }}</strong>
+            </div>
+            <div class="metric-row" *ngIf="latestEgfrDeltaPct !== null">
+              <span>Last Delta</span>
+              <strong [class.text-danger]="latestEgfrDeltaPct < 0" [class.text-success]="latestEgfrDeltaPct > 0">
+                {{ latestEgfrDeltaPct }}%
+              </strong>
+            </div>
+            <div class="metric-row">
+              <span>Height Percentile</span>
+              <strong>{{ heightPercentileLabel }}</strong>
+            </div>
+            <div class="metric-row">
+              <span>Weight Percentile</span>
+              <strong>{{ weightPercentileLabel }}</strong>
+            </div>
+            <div class="metric-row">
+              <span>BP Percentile</span>
+              <strong>{{ bloodPressurePercentileLabel }}</strong>
+            </div>
+            <div class="trend-list mt-3" *ngIf="egfrTrendPoints.length > 0">
+              <div class="trend-title">eGFR Trend (last {{ egfrTrendPoints.length }} visits)</div>
+              <div class="trend-item" *ngFor="let point of egfrTrendPoints">
+                <span>{{ point.dateTime | date:'shortDate' }}</span>
+                <strong>{{ point.egfr !== null ? point.egfr : 'N/A' }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card stretch stretch-full side-card">
+          <div class="card-header">
+            <h5 class="card-title">AI Clinical Assistant</h5>
+          </div>
+          <div class="card-body">
+            <div class="metric-row">
+              <span>Recommendation</span>
+              <strong>{{ aiRecommendationLabel }}</strong>
+            </div>
+            <div class="metric-row">
+              <span>Confidence</span>
+              <strong>{{ aiConfidencePercent }}</strong>
+            </div>
+            <div class="metric-row">
+              <span>Source File</span>
+              <strong>{{ draft.metrics.aiSourceFileName || '-' }}</strong>
+            </div>
+            <div class="metric-row">
+              <span>Doctor Review</span>
+              <strong>{{ draft.metrics.aiRequiresReview ? 'Required' : 'Not flagged' }}</strong>
+            </div>
+            <div class="alert alert-light border mt-3 mb-0 small">
+              {{ draft.metrics.aiSummary || 'Upload a lab result from the lab inbox to generate an AI recommendation here.' }}
+            </div>
+          </div>
+        </div>
+
+        <div class="card stretch stretch-full side-card">
+          <div class="card-header">
+            <h5 class="card-title">History</h5>
+          </div>
+          <div class="card-body">
+            <div *ngIf="patientHistory.length === 0" class="text-muted">No prior consultations.</div>
+            <div class="history-item" *ngFor="let item of patientHistory | slice:0:5">
+              <div>
+                <div class="fw-semibold">{{ item.id }}</div>
+                <div class="text-muted small">{{ item.dateTime | date:'short' }}</div>
+              </div>
+              <a class="btn btn-light btn-sm" [routerLink]="['/backoffice/consultations', item.id, 'workspace']">Open</a>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="col-xxl-9 col-lg-8">
+    <div class="col-xxl-8 col-lg-7">
       <div class="card stretch stretch-full">
         <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
           <div>
@@ -189,6 +182,30 @@
 
         <div class="card-body" *ngIf="!loading && !error">
           <div *ngIf="infoMessage" class="alert alert-info">{{ infoMessage }}</div>
+
+          <div class="workflow-command-center">
+            <div class="workflow-command-copy">
+              <span class="workflow-eyebrow">Clinical workflow actions</span>
+              <h6 class="mb-1">Trigger the next operational step without waiting for consultation closure</h6>
+              <p class="text-muted small mb-0">
+                Lab orders should reach the lab immediately, follow-up should queue the receptionist request, and hospitalization should launch the nurse handoff workflow as soon as you decide.
+              </p>
+            </div>
+            <div class="workflow-command-actions">
+              <button type="button" class="workflow-action workflow-action-lab" (click)="setTab('labs')">
+                <span class="workflow-action-title">Lab Request</span>
+                <span class="workflow-action-subtitle">Open orders and send to lab inbox now</span>
+              </button>
+              <button type="button" class="workflow-action workflow-action-followup" (click)="setTab('plan')">
+                <span class="workflow-action-title">ReSchedule</span>
+                <span class="workflow-action-subtitle">Set follow-up timing for receptionist queue</span>
+              </button>
+              <button type="button" class="workflow-action workflow-action-hospitalize" (click)="openHospitalizeModal()">
+                <span class="workflow-action-title">Hospitalization</span>
+                <span class="workflow-action-subtitle">Start nurse handoff and inpatient workflow</span>
+              </button>
+            </div>
+          </div>
 
           <ul class="nav nav-tabs consultation-tabs">
             <li class="nav-item">
@@ -374,11 +391,11 @@
                 <div class="col-12">
                   <div class="card border-info mb-0">
                     <div class="card-header bg-light">
-                      <h6 class="card-title mb-0">📅 Schedule Return Visit</h6>
+                      <h6 class="card-title mb-0">Follow-up Return Request</h6>
                     </div>
                     <div class="card-body">
                       <p class="text-muted small mb-3">
-                        Check this box to request a follow-up appointment. The receptionist will schedule it based on your suggested return date.
+                        Check the box, choose the delay, and the receptionist request will be created automatically when you save the draft or complete the consultation.
                       </p>
                       <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" id="fuEnable" [(ngModel)]="doctorFollowUpEnabled" />
@@ -399,47 +416,39 @@
                         </div>
                         <div class="col-md-8">
                           <div class="alert alert-info mb-0 py-2">
-                            <small class="d-block text-muted">📌 Suggested return date:</small>
+                            <small class="d-block text-muted">Suggested return date:</small>
                             <strong class="text-dark">{{ followUpPreviewDate || 'Select days/weeks/months above' }}</strong>
                           </div>
-                          <button
-                            type="button"
-                            class="btn btn-info btn-sm mt-2 w-100"
-                            (click)="submitDoctorFollowUpRequest()"
-                            [disabled]="followUpRequestSubmitting || !doctorFollowUpEnabled"
-                          >
-                            <span *ngIf="!followUpRequestSubmitting">📤 Send to Receptionist Queue</span>
-                            <span *ngIf="followUpRequestSubmitting">
-                              <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                              Sending...
-                            </span>
-                          </button>
-                          <div class="alert alert-success mt-2 py-2 mb-0 small" *ngIf="followUpRequestMessage">
-                            ✓ {{ followUpRequestMessage }}
+                          <div class="alert alert-success mt-2 py-2 mb-0 small" *ngIf="doctorFollowUpRequestSent">
+                            ✓ {{ followUpRequestMessage || 'The receptionist follow-up request has been queued.' }}
+                          </div>
+                          <div class="alert alert-light border mt-2 py-2 mb-0 small" *ngIf="doctorFollowUpEnabled && !doctorFollowUpRequestSent">
+                            This request will appear in the receptionist queue automatically after Save Draft or Mark Completed.
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              
-
-              <div class="followup-card mt-3">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                  <h6 class="mb-0">Hospitalization Workflow</h6>
-                  <span class="badge bg-soft-warning text-warning">Ops Service</span>
-                </div>
-                <div class="text-muted small">
-                  If the patient needs hospitalization after this consultation, create the nurse task list here without changing the consultation logic.
-                </div>
-                <div class="mt-3">
-                  <a
-                    class="btn btn-outline-primary btn-sm"
-                    [routerLink]="['/backoffice/consultations', consultationId, 'hospitalization', 'new']"
-                    [queryParams]="hospitalizationQueryParams"
-                  >
-                    Create Hospitalization Workflow
-                  </a>
+                <div class="col-12">
+                  <div class="followup-card mt-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                      <h6 class="mb-0">Hospitalization Workflow</h6>
+                      <span class="badge bg-soft-warning text-warning">Ops Service</span>
+                    </div>
+                    <div class="text-muted small">
+                      If the patient must be admitted, open the hospitalization workflow to hand off nursing instructions and monitoring priorities.
+                    </div>
+                    <div class="mt-3">
+                      <a
+                        class="btn btn-outline-primary btn-sm"
+                        [routerLink]="['/backoffice/consultations', consultationId, 'hospitalization', 'new']"
+                        [queryParams]="hospitalizationQueryParams"
+                      >
+                        Create Hospitalization Workflow
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -450,12 +459,14 @@
                 <div class="d-flex gap-2">
                   <button class="btn btn-light btn-sm" type="button" (click)="addLabRequest()">Add</button>
                   <button class="btn btn-primary btn-sm" type="button" (click)="sendLabsToBackend()" [disabled]="labSubmitting">
-                    {{ labSubmitting ? 'Saving…' : 'Send lab orders' }}
+                    {{ labSubmitting ? 'Sending…' : 'Send lab orders' }}
                   </button>
                 </div>
               </div>
-              <p class="text-muted small">Labs are saved only when you click <strong>Send lab orders</strong>, not with Save Draft.</p>
-              <div *ngIf="draft.labRequests.length === 0" class="text-muted">No lab requests added.</div>
+              <p class="text-muted small">Lab orders are optional and are sent directly to the lab workflow only when you click <strong>Send lab orders</strong>. They are not part of Save Draft and they are not required to complete a consultation.</p>
+              <div *ngIf="draft.labRequests.length === 0" class="alert alert-light border text-muted">
+                No lab request has been added yet. Add the needed tests here, then click <strong>Send lab orders</strong> so they appear in the LAB_AGENT inbox.
+              </div>
               <div class="lab-item" *ngFor="let item of draft.labRequests; let i = index">
                 <div class="row g-2 align-items-end">
                   <div class="col-md-5">
@@ -489,7 +500,9 @@
                 </div>
                 <button class="btn btn-primary btn-sm" (click)="addPrescription()">+ Add Prescription</button>
               </div>
-              <div *ngIf="draft.prescriptions.length === 0" class="text-muted">No prescriptions added.</div>
+              <div *ngIf="draft.prescriptions.length === 0" class="alert alert-light border text-muted">
+                No prescription line has been added yet. Start with <strong>Add Prescription</strong>, then search medications from the pharmacy catalog.
+              </div>
               <div class="prescription-item" *ngFor="let item of draft.prescriptions; let i = index">
                 <div class="row g-2 align-items-end">
                   <div class="col-md-3 position-relative">
@@ -548,9 +561,10 @@
 
             <div class="tab-pane" [class.active]="activeTab === 'adherence'" *ngIf="adherenceUnlocked">
               <div class="d-flex align-items-center justify-content-between mb-2">
-                <h6 class="mb-0">Care Plan Adherence</h6>
+                <h6 class="mb-0">Hospitalization Care Plan Adherence</h6>
                 <button class="btn btn-light btn-sm" (click)="addCarePlanDose()">Add Dose Slot</button>
               </div>
+              <p class="text-muted small">This section is unlocked only when the doctor chooses <strong>Hospitalize Patient</strong>. Medication slots are prefilled from current prescriptions and can still be edited.</p>
 
               <div class="adherence-summary mb-3">
                 <span>Adherence Rate: <strong>{{ carePlanAdherenceRate }}%</strong></span>
@@ -591,9 +605,6 @@
             <button class="btn btn-light" (click)="goBack()">Back</button>
             <button class="btn btn-light" (click)="saveDraft()" [disabled]="saving">Save Draft</button>
             <button class="btn btn-success" (click)="completeConsultation()" [disabled]="saving || completed || !canComplete">Mark Completed</button>
-            <button type="button" class="btn btn-outline-primary" (click)="openHospitalizeModal()">
-              Hospitalize Patient
-            </button>
             <button class="btn btn-outline-primary" disabled>Generate Summary</button>
             <span class="text-muted small" *ngIf="!canComplete" style="margin-left: auto;">
               <strong>Required:</strong> Fill SOAP notes, Diagnosis, and Treatment Plan to enable completion.

@@ -242,7 +242,11 @@ services:
       EUREKA_INSTANCE_HOSTNAME: clinical-service
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
       SERVICES_ADMINISTRATION_BASE: http://administration-service:8087
+      SERVICES_ADMINISTRATION_BASE_URL: http://administration-service:8087
       SERVICES_USER_BASE: http://user-service:8090
+      SERVICES_USER_BASE_URL: http://user-service:8090
+      SERVICES_PHARMACY_URL: http://pharmacy-service:8088
+      SERVICES_COMMUNICATION_URL: http://communication-service:8085
       USER_SERVICE_URL: http://user-service:8090
       ADMIN_SERVICE_URL: http://administration-service:8087
       PHARMACY_SERVICE_URL: http://pharmacy-service:8088

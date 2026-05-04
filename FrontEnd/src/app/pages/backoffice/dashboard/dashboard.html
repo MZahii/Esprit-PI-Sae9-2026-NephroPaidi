@@ -39,6 +39,44 @@
       <div class="text-muted">Loading live statistics...</div>
     </div>
 
+    <ng-container *ngIf="!loadingStats && isLabAgent">
+      <div class="col-lg-8">
+        <div class="card stretch stretch-full chart-card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Lab Workflow</h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-3">
+              Open the lab inbox to receive doctor orders, upload PDF or image results, and trigger the AI analysis that feeds back into the consultation workspace.
+            </p>
+            <div class="d-flex gap-2 flex-wrap">
+              <a routerLink="/backoffice/lab-inbox" class="btn btn-primary">Open Lab Inbox</a>
+              <a routerLink="/backoffice/account-settings" class="btn btn-light">Account Settings</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card stretch stretch-full analytics-summary-card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Daily Focus</h5>
+          </div>
+          <div class="card-body">
+            <div class="analytics-pill mb-3">
+              <span>Priority</span>
+              <strong>Upload pending results quickly</strong>
+            </div>
+            <ul class="mb-0 text-muted small">
+              <li>Open requests from the lab inbox.</li>
+              <li>Upload the verified result file.</li>
+              <li>Check AI summary and doctor-review flags.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
     <div class="col-12" *ngIf="!loadingStats && (isAdmin || isHr || isReceptionist)">
       <div class="card stretch stretch-full chart-card">
         <div class="card-header">
