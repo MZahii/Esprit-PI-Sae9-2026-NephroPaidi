@@ -10,11 +10,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.CreateHospitalizationRequest;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.CreateHospitalizationTaskRequest;
+import tn.esprit.spring.opsservice.hospitalization.api.dto.AssignHospitalizationLocationRequest;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.HospitalizationCaseResponse;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.HospitalizationSummaryResponse;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.HospitalizationTaskResponse;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.HospitalizationTaskUpdateRequest;
 import tn.esprit.spring.opsservice.hospitalization.application.HospitalizationService;
+import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationTaskExecutionAction;
 import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationMeasurementKind;
 import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationStatus;
 import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationTaskStatus;
@@ -58,6 +60,8 @@ class HospitalizationControllerWebMvcTest {
                 "doctor-sub",
                 "dr.amine",
                 "Need observation",
+                null,
+                null,
                 HospitalizationStatus.REQUESTED,
                 LocalDateTime.now(),
                 LocalDateTime.now(),
@@ -108,6 +112,7 @@ class HospitalizationControllerWebMvcTest {
                 null,
                 null,
                 null,
+                null,
                 List.of()
         );
         when(hospitalizationService.addTask(eq(hospitalizationId), any(CreateHospitalizationTaskRequest.class))).thenReturn(response);
@@ -131,6 +136,37 @@ class HospitalizationControllerWebMvcTest {
     }
 
     @Test
+    void assignLocationShouldDelegateToService() throws Exception {
+        UUID hospitalizationId = UUID.randomUUID();
+        HospitalizationCaseResponse response = new HospitalizationCaseResponse(
+                hospitalizationId,
+                11L,
+                UUID.randomUUID(),
+                "doctor-sub",
+                "dr.amine",
+                "Need observation",
+                "A-101",
+                "Bed-4",
+                HospitalizationStatus.REQUESTED,
+                LocalDateTime.now(),
+                LocalDateTime.now(),
+                List.of()
+        );
+        when(hospitalizationService.assignLocation(eq(hospitalizationId), any(AssignHospitalizationLocationRequest.class))).thenReturn(response);
+
+        AssignHospitalizationLocationRequest request = new AssignHospitalizationLocationRequest("A-101", "Bed-4");
+
+        mockMvc.perform(put("/api/hospitalizations/{hospitalizationId}/location", hospitalizationId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.roomNumber").value("A-101"))
+                .andExpect(jsonPath("$.bedNumber").value("Bed-4"));
+
+        verify(hospitalizationService).assignLocation(eq(hospitalizationId), any(AssignHospitalizationLocationRequest.class));
+    }
+
+    @Test
     void nurseActiveEndpointShouldReturnSummaryList() throws Exception {
         when(hospitalizationService.getActiveHospitalizationsForNurse()).thenReturn(List.of(
                 new HospitalizationSummaryResponse(
@@ -139,6 +175,8 @@ class HospitalizationControllerWebMvcTest {
                         UUID.randomUUID(),
                         "dr.sara",
                         "Monitoring",
+                        "B-12",
+                        "Bed-1",
                         HospitalizationStatus.ACTIVE,
                         3,
                         2,
@@ -174,6 +212,7 @@ class HospitalizationControllerWebMvcTest {
                 "mmHg",
                 "nurse-1",
                 "nurse.amina",
+                "Amina Nurse",
                 LocalDateTime.now(),
                 List.of()
         );

@@ -100,6 +100,17 @@ export class CommunicationInboxComponent implements OnInit {
     return this.items.filter((item) => item.priority === 'HIGH').length;
   }
 
+  get escalatedCount(): number {
+    return this.items.filter((item) => item.status === 'ESCALATED').length;
+  }
+
+  get escalatedAssignedToMeCount(): number {
+    if (!this.currentUserKeycloakId) {
+      return 0;
+    }
+    return this.items.filter((item) => item.status === 'ESCALATED' && item.assignedToUserKeycloakId === this.currentUserKeycloakId).length;
+  }
+
   get hasSelection(): boolean {
     return this.selectedMessageIds.length > 0;
   }
@@ -223,12 +234,18 @@ export class CommunicationInboxComponent implements OnInit {
       return item.priority === 'HIGH';
     }
     if (this.activeTab === 'MY_QUEUE') {
-      return !!this.currentUserKeycloakId && item.assignedToUserKeycloakId === this.currentUserKeycloakId;
+      return !item.assignedToUserKeycloakId
+        || (!!this.currentUserKeycloakId && item.assignedToUserKeycloakId === this.currentUserKeycloakId);
     }
     return true;
   }
 
   private sortMessages(a: FollowUpMessage, b: FollowUpMessage): number {
+    if (a.status !== b.status) {
+      if (a.status === 'ESCALATED') return -1;
+      if (b.status === 'ESCALATED') return 1;
+    }
+
     if (a.priority !== b.priority) {
       if (a.priority === 'HIGH') return -1;
       if (b.priority === 'HIGH') return 1;
@@ -252,6 +269,19 @@ export class CommunicationInboxComponent implements OnInit {
 
   private isClosed(status: MessageStatus): boolean {
     return status === 'CLOSED';
+  }
+
+  getEscalationLabel(item: FollowUpMessage): string {
+    if (item.status !== 'ESCALATED') {
+      return '';
+    }
+    if (item.assignedToUserKeycloakId && item.assignedToUserKeycloakId === this.currentUserKeycloakId) {
+      return 'Escalated to you';
+    }
+    if (item.assignedToUserKeycloakId) {
+      return 'Escalated';
+    }
+    return 'Needs doctor review';
   }
 
   selectTab(tab: InboxTab): void {

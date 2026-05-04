@@ -59,6 +59,7 @@
               <thead>
                 <tr>
                   <th>Name</th>
+                  <th>Role</th>
                   <th>Type</th>
                   <th>Usage</th>
                   <th>Preview</th>
@@ -68,6 +69,7 @@
               <tbody>
                 <tr *ngFor="let template of templates">
                   <td>{{ template.name }}</td>
+                  <td>{{ template.staffRole }}</td>
                   <td>{{ template.messageType }}</td>
                   <td>{{ template.usageCount }}</td>
                   <td>{{ template.templateText.length > 80 ? (template.templateText | slice:0:80) + '...' : template.templateText }}</td>
@@ -81,7 +83,7 @@
                   </td>
                 </tr>
                 <tr *ngIf="templates.length === 0">
-                  <td colspan="5" class="text-center text-muted py-4">No quick-reply templates available.</td>
+                  <td colspan="6" class="text-center text-muted py-4">No quick-reply templates available.</td>
                 </tr>
               </tbody>
             </table>

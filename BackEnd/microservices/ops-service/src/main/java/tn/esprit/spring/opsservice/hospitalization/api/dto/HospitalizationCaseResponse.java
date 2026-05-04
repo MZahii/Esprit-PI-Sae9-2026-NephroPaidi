@@ -13,6 +13,8 @@ public record HospitalizationCaseResponse(
         String doctorKeycloakId,
         String doctorUsername,
         String reason,
+        String roomNumber,
+        String bedNumber,
         HospitalizationStatus status,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,

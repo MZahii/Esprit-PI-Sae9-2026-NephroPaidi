@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import tn.esprit.spring.opsservice.hospitalization.api.dto.AssignHospitalizationLocationRequest;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.CreateHospitalizationRequest;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.CreateHospitalizationTaskRequest;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.HospitalizationCaseResponse;
@@ -16,6 +17,7 @@ import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationCase;
 import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationMeasurementKind;
 import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationStatus;
 import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationTask;
+import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationTaskExecutionAction;
 import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationTaskExecution;
 import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationTaskStatus;
 import tn.esprit.spring.opsservice.hospitalization.repository.HospitalizationCaseRepository;
@@ -56,6 +58,14 @@ public class HospitalizationServiceImpl implements HospitalizationService {
             hospitalizationCase.getTasks().add(toTaskEntity(hospitalizationCase, taskRequest, fallbackOrder++));
         }
 
+        return toCaseResponse(hospitalizationCaseRepository.save(hospitalizationCase));
+    }
+
+    @Override
+    public HospitalizationCaseResponse assignLocation(UUID hospitalizationId, AssignHospitalizationLocationRequest request) {
+        HospitalizationCase hospitalizationCase = getExistingHospitalization(hospitalizationId);
+        hospitalizationCase.setRoomNumber(normalizeRequiredValue(request.roomNumber(), "roomNumber"));
+        hospitalizationCase.setBedNumber(normalizeRequiredValue(request.bedNumber(), "bedNumber"));
         return toCaseResponse(hospitalizationCaseRepository.save(hospitalizationCase));
     }
 
@@ -111,17 +121,21 @@ public class HospitalizationServiceImpl implements HospitalizationService {
         validateMeasurement(task, request);
 
         CurrentUserService.AuthenticatedUser nurse = currentUserService.getCurrentUser();
+        HospitalizationTaskExecutionAction actionPerformed = resolveExecutionAction(request.status());
+        String resolvedUnit = request.unit() != null ? request.unit() : task.getExpectedUnit();
 
         HospitalizationTaskExecution execution = HospitalizationTaskExecution.builder()
                 .hospitalizationCase(hospitalizationCase)
                 .task(task)
+                .actionPerformed(actionPerformed)
                 .status(request.status())
                 .nurseKeycloakId(nurse.getUserId())
                 .nurseUsername(nurse.getUsername())
+                .nurseDisplayName(nurse.getDisplayName())
                 .note(request.note())
                 .numericValue(request.numericValue())
                 .textValue(request.textValue())
-                .unit(request.unit() != null ? request.unit() : task.getExpectedUnit())
+                .unit(resolvedUnit)
                 .build();
         hospitalizationTaskExecutionRepository.save(execution);
 
@@ -129,9 +143,10 @@ public class HospitalizationServiceImpl implements HospitalizationService {
         task.setLatestNote(request.note());
         task.setLatestNumericValue(request.numericValue());
         task.setLatestTextValue(request.textValue());
-        task.setLatestUnit(request.unit() != null ? request.unit() : task.getExpectedUnit());
+        task.setLatestUnit(resolvedUnit);
         task.setLastUpdatedByNurseId(nurse.getUserId());
         task.setLastUpdatedByNurseUsername(nurse.getUsername());
+        task.setLastUpdatedByNurseDisplayName(nurse.getDisplayName());
         task.setLastUpdatedAt(LocalDateTime.now());
         task.getExecutions().add(execution);
 
@@ -172,6 +187,23 @@ public class HospitalizationServiceImpl implements HospitalizationService {
         }
     }
 
+    private HospitalizationTaskExecutionAction resolveExecutionAction(HospitalizationTaskStatus status) {
+        if (status == HospitalizationTaskStatus.DONE) {
+            return HospitalizationTaskExecutionAction.COMPLETED;
+        }
+        if (status == HospitalizationTaskStatus.NOT_DONE) {
+            return HospitalizationTaskExecutionAction.MARKED_NOT_DONE;
+        }
+        return HospitalizationTaskExecutionAction.UPDATED;
+    }
+
+    private String normalizeRequiredValue(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " is required");
+        }
+        return value.trim();
+    }
+
     private HospitalizationSummaryResponse toSummaryResponse(HospitalizationCase hospitalizationCase) {
         int totalTasks = hospitalizationCase.getTasks().size();
         int completedTasks = (int) hospitalizationCase.getTasks().stream()
@@ -185,6 +217,8 @@ public class HospitalizationServiceImpl implements HospitalizationService {
                 hospitalizationCase.getConsultationId(),
                 hospitalizationCase.getDoctorUsername(),
                 hospitalizationCase.getReason(),
+                hospitalizationCase.getRoomNumber(),
+                hospitalizationCase.getBedNumber(),
                 hospitalizationCase.getStatus(),
                 totalTasks,
                 completedTasks,
@@ -208,6 +242,8 @@ public class HospitalizationServiceImpl implements HospitalizationService {
                 hospitalizationCase.getDoctorKeycloakId(),
                 hospitalizationCase.getDoctorUsername(),
                 hospitalizationCase.getReason(),
+                hospitalizationCase.getRoomNumber(),
+                hospitalizationCase.getBedNumber(),
                 hospitalizationCase.getStatus(),
                 hospitalizationCase.getCreatedAt(),
                 hospitalizationCase.getUpdatedAt(),
@@ -219,9 +255,11 @@ public class HospitalizationServiceImpl implements HospitalizationService {
         List<HospitalizationTaskExecutionResponse> executions = task.getExecutions().stream()
                 .map(execution -> new HospitalizationTaskExecutionResponse(
                         execution.getId(),
+                        execution.getActionPerformed(),
                         execution.getStatus(),
                         execution.getNurseKeycloakId(),
                         execution.getNurseUsername(),
+                        execution.getNurseDisplayName(),
                         execution.getNote(),
                         execution.getNumericValue(),
                         execution.getTextValue(),
@@ -245,6 +283,7 @@ public class HospitalizationServiceImpl implements HospitalizationService {
                 task.getLatestUnit(),
                 task.getLastUpdatedByNurseId(),
                 task.getLastUpdatedByNurseUsername(),
+                task.getLastUpdatedByNurseDisplayName(),
                 task.getLastUpdatedAt(),
                 executions
         );

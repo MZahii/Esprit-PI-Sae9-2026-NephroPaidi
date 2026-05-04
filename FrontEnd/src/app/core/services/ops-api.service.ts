@@ -18,6 +18,7 @@ import {
   PatientDossierSummaryResponse,
   SignDossierEntryRequest,
   ContributorRole,
+  AssignHospitalizationLocationRequest,
   HospitalizationCaseResponse,
   HospitalizationSummaryResponse,
   HospitalizationTaskRequest,
@@ -256,6 +257,19 @@ export class OpsApiService {
     payload: HospitalizationTaskUpdateRequest
   ): Observable<HospitalizationTaskResponse> {
     return this.updateHospitalizationTask(taskId, payload);
+  }
+
+  assignHospitalizationLocation(
+    hospitalizationId: string,
+    payload: AssignHospitalizationLocationRequest
+  ): Observable<HospitalizationCaseResponse> {
+    return this.withRequestTimeout(
+      this.http.put<HospitalizationCaseResponse>(
+        `${this.hospitalizationBaseUrl}/hospitalizations/${hospitalizationId}/location`,
+        payload,
+        { headers: this.userContextHeaders() }
+      )
+    );
   }
 
   private userContextHeaders(): HttpHeaders {

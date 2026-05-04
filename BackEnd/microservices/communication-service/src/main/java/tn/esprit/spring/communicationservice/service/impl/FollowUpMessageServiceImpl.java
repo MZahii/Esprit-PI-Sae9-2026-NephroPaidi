@@ -13,6 +13,7 @@ import tn.esprit.spring.communicationservice.domain.enums.MessageAuditAction;
 import tn.esprit.spring.communicationservice.domain.enums.MessageQueue;
 import tn.esprit.spring.communicationservice.domain.enums.MessageStatus;
 import tn.esprit.spring.communicationservice.domain.enums.MessageType;
+import tn.esprit.spring.communicationservice.domain.enums.PriorityLevel;
 import tn.esprit.spring.communicationservice.domain.enums.SenderRole;
 import tn.esprit.spring.communicationservice.domain.enums.StaffRole;
 import tn.esprit.spring.communicationservice.dto.request.BulkMessageAction;
@@ -70,7 +71,7 @@ public class FollowUpMessageServiceImpl implements FollowUpMessageService {
         entity.setSubject(trimOrNull(request.getSubject()));
         entity.setMessageText(request.getMessageText().trim());
         entity.setStatus(MessageStatus.PENDING);
-        entity.setQueue(routeQueue(request.getMessageType()));
+        entity.setQueue(routeQueue(request.getMessageType(), request.getPriority()));
         entity.setCreatedAt(now);
         entity.setLastUpdatedAt(now);
 
@@ -108,6 +109,7 @@ public class FollowUpMessageServiceImpl implements FollowUpMessageService {
         String sub = currentUserService.getCurrentUserSub();
         FollowUpMessage message = getMessageOrThrow(id);
         assertCanAccessAsStaff(message, staffRole, sub);
+        assertOpen(message, "take");
 
         if (message.getAssignedToUserKeycloakId() == null) {
             message.setAssignedToUserKeycloakId(sub);
@@ -130,6 +132,7 @@ public class FollowUpMessageServiceImpl implements FollowUpMessageService {
         String sub = currentUserService.getCurrentUserSub();
         FollowUpMessage message = getMessageOrThrow(id);
         assertCanAccessAsStaff(message, staffRole, sub);
+        assertOpen(message, "unassign");
 
         if (message.getAssignedToUserKeycloakId() == null) {
             throw new ConflictException("Message is not assigned");
@@ -154,6 +157,7 @@ public class FollowUpMessageServiceImpl implements FollowUpMessageService {
         String sub = currentUserService.getCurrentUserSub();
         FollowUpMessage message = getMessageOrThrow(id);
         assertCanAccessAsStaff(message, staffRole, sub);
+        assertOpen(message, "mark read");
 
         if (message.getReadAt() == null) {
             message.setReadAt(Instant.now());
@@ -175,6 +179,7 @@ public class FollowUpMessageServiceImpl implements FollowUpMessageService {
     public FollowUpMessageResponse reply(UUID id, ReplyMessageRequest request) {
         FollowUpMessage message = getMessageOrThrow(id);
         assertCanAccess(message);
+        assertOpen(message, "reply to");
 
         SenderRole senderRole = currentUserService.getSenderRoleOrThrow();
         String senderSub = currentUserService.getCurrentUserSub();
@@ -205,20 +210,30 @@ public class FollowUpMessageServiceImpl implements FollowUpMessageService {
         String sub = currentUserService.getCurrentUserSub();
         FollowUpMessage message = getMessageOrThrow(id);
         assertCanAccessAsStaff(message, StaffRole.NURSE, sub);
+        assertOpen(message, "escalate");
 
-        if (message.getAssignedDoctorKeycloakId() == null) {
-            String doctorId = trimOrNull(request.getDoctorKeycloakId());
-            if (doctorId == null) {
-                throw new BadRequestException("doctorKeycloakId is required when no doctor is assigned");
-            }
-            message.setAssignedDoctorKeycloakId(doctorId);
+        String doctorId = trimOrNull(request.getDoctorKeycloakId());
+        if (doctorId == null) {
+            throw new BadRequestException("doctorKeycloakId is required");
         }
 
+        String reason = trimOrNull(request.getReason());
+        if (reason == null) {
+            throw new BadRequestException("Escalation reason is required");
+        }
+        if (reason.length() > 500) {
+            throw new BadRequestException("Escalation reason must not exceed 500 characters");
+        }
+
+        message.setAssignedDoctorKeycloakId(doctorId);
         message.setQueue(MessageQueue.DOCTOR);
+        message.setAssignedToRole(StaffRole.DOCTOR);
+        message.setAssignedToUserKeycloakId(doctorId);
         message.setStatus(MessageStatus.ESCALATED);
         message.setLastUpdatedAt(Instant.now());
         followUpMessageRepository.save(message);
-        addAudit(message.getId(), MessageAuditAction.ESCALATED, "Escalated to doctor queue");
+        addAudit(message.getId(), MessageAuditAction.ESCALATED,
+                "Escalated to doctor=" + doctorId + "; reason=" + reason);
 
         return toMessageResponse(message);
     }
@@ -228,6 +243,10 @@ public class FollowUpMessageServiceImpl implements FollowUpMessageService {
     public FollowUpMessageResponse close(UUID id) {
         FollowUpMessage message = getMessageOrThrow(id);
         String sub = currentUserService.getCurrentUserSub();
+
+        if (message.getStatus() == MessageStatus.CLOSED) {
+            throw new ConflictException("Message is already closed");
+        }
 
         if (currentUserService.isGuardian()) {
             if (!message.getGuardianKeycloakId().equals(sub)) {
@@ -348,11 +367,17 @@ public class FollowUpMessageServiceImpl implements FollowUpMessageService {
                 .build();
     }
 
-    private MessageQueue routeQueue(MessageType type) {
-        if (type == MessageType.ADMINISTRATIVE
-                || type == MessageType.APPOINTMENT
-                || type == MessageType.QUESTION
-                || type == MessageType.COMPLAINT) {
+    private MessageQueue routeQueue(MessageType type, PriorityLevel priority) {
+        if (type == MessageType.ADMINISTRATIVE || type == MessageType.APPOINTMENT) {
+            return MessageQueue.RECEPTIONIST;
+        }
+        if (type == MessageType.MEDICAL || type == MessageType.LAB_RESULT || type == MessageType.OTHER) {
+            return MessageQueue.NURSE;
+        }
+        if ((type == MessageType.QUESTION || type == MessageType.COMPLAINT) && priority == PriorityLevel.HIGH) {
+            return MessageQueue.NURSE;
+        }
+        if (type == MessageType.QUESTION || type == MessageType.COMPLAINT) {
             return MessageQueue.RECEPTIONIST;
         }
         return MessageQueue.NURSE;
@@ -388,6 +413,12 @@ public class FollowUpMessageServiceImpl implements FollowUpMessageService {
         boolean assignedToCurrent = sub.equals(message.getAssignedToUserKeycloakId());
         if (!queueMatches && !assignedToCurrent) {
             throw new AccessDeniedException("Staff access denied for this message");
+        }
+    }
+
+    private void assertOpen(FollowUpMessage message, String action) {
+        if (message.getStatus() == MessageStatus.CLOSED) {
+            throw new ConflictException("Cannot " + action + " a closed message");
         }
     }
 

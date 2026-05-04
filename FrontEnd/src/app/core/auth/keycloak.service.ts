@@ -15,7 +15,7 @@ type JwtPayload = {
   resource_access?: Record<string, { roles?: unknown }>;
 };
 
-const APP_ROLE_PRIORITY = [
+export const APP_ROLE_PRIORITY = [
   'ADMIN',
   'HR',
   'DOCTOR',
@@ -26,6 +26,10 @@ const APP_ROLE_PRIORITY = [
   'LAB_AGENT',
   'GUARDIAN'
 ] as const;
+
+export const STAFF_BACKOFFICE_ROLES = APP_ROLE_PRIORITY.filter((role) => role !== 'GUARDIAN');
+
+const APP_ROLE_SET = new Set<string>(APP_ROLE_PRIORITY);
 
 function readFromStorage(key: string): string | null {
   return localStorage.getItem(key) ?? sessionStorage.getItem(key);
@@ -65,6 +69,14 @@ function normalizeRole(role: unknown): string | null {
   return normalized || null;
 }
 
+function getStoredRole(): string | null {
+  return normalizeRole(readFromStorage(ROLE_KEY));
+}
+
+function isAppRole(role: string): boolean {
+  return APP_ROLE_SET.has(role);
+}
+
 export function extractRolesFromToken(token: string | null | undefined): string[] {
   if (!token) return [];
 
@@ -93,15 +105,19 @@ export function extractRolesFromToken(token: string | null | undefined): string[
   return Array.from(roles);
 }
 
+export function extractAppRolesFromToken(token: string | null | undefined): string[] {
+  return extractRolesFromToken(token).filter((role) => isAppRole(role));
+}
+
 export function getPrimaryRoleFromToken(token: string | null | undefined): string | null {
-  const roles = extractRolesFromToken(token);
+  const roles = extractAppRolesFromToken(token);
   for (const role of APP_ROLE_PRIORITY) {
     if (roles.includes(role)) {
       return role;
     }
   }
 
-  return roles[0] ?? null;
+  return null;
 }
 
 function clearSession(): void {
@@ -148,24 +164,23 @@ export function isAuthenticated(): boolean {
 
 export function getUserRoles(): string[] {
   const token = readFromStorage(ACCESS_TOKEN_KEY);
-  const rolesFromToken = extractRolesFromToken(token);
+  const rolesFromToken = extractAppRolesFromToken(token);
+  const storedRole = getStoredRole();
   if (rolesFromToken.length > 0) {
     return rolesFromToken;
   }
 
-  const role = readFromStorage(ROLE_KEY);
-  return role ? [role] : [];
+  return storedRole ? [storedRole] : [];
 }
 
-export function hasAnyRole(expectedRoles: string[]): boolean {
+export function hasAnyRole(expectedRoles: readonly string[]): boolean {
   const roles = getUserRoles();
   return expectedRoles.some(role => roles.includes(role));
 }
 
 export function getLandingRouteByRole(): string {
   const roles = getUserRoles();
-  const backofficeRoles = APP_ROLE_PRIORITY.filter((role) => role !== 'GUARDIAN');
-  if (roles.some((role) => backofficeRoles.includes(role as typeof backofficeRoles[number]))) {
+  if (roles.some((role) => STAFF_BACKOFFICE_ROLES.includes(role as typeof STAFF_BACKOFFICE_ROLES[number]))) {
     return '/backoffice/dashboard';
   }
 

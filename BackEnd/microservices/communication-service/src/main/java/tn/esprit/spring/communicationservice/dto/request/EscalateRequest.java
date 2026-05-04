@@ -7,4 +7,5 @@ import lombok.Setter;
 @Setter
 public class EscalateRequest {
     private String doctorKeycloakId;
+    private String reason;
 }

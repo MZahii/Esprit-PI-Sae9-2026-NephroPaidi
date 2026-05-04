@@ -11,7 +11,21 @@
   </div>
 </div>
 
+<div class="main-content" *ngIf="loading">
+  <div class="card stretch stretch-full">
+    <div class="card-body text-muted">Loading conversation details...</div>
+  </div>
+</div>
+
 <div class="main-content" *ngIf="!loading">
+  <div class="card stretch stretch-full mb-3" *ngIf="!message">
+    <div class="card-body">
+      <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
+      <div *ngIf="!errorMessage" class="text-muted mb-3">Conversation details are not available.</div>
+      <a class="btn btn-light-brand" routerLink="/backoffice/communication/inbox">Back to Inbox</a>
+    </div>
+  </div>
+
   <div class="row g-3" *ngIf="message as msg">
     <div class="col-lg-8">
       <div class="card stretch stretch-full mb-3">
@@ -35,7 +49,7 @@
             <button class="btn btn-sm btn-light-brand" type="button" (click)="unassign()" [disabled]="actionLoading || !canUnassign">Unassign</button>
             <button class="btn btn-sm btn-light-brand" type="button" (click)="markRead()" [disabled]="actionLoading">Mark Read</button>
             <button class="btn btn-sm btn-light-brand" type="button" (click)="openCloseConfirm()" [disabled]="actionLoading || !canClose">Close Conversation</button>
-            <button class="btn btn-sm btn-warning" type="button" *ngIf="isNurse" (click)="openEscalationModal()" [disabled]="actionLoading">Escalate to Doctor</button>
+            <button class="btn btn-sm btn-warning" type="button" *ngIf="canEscalate" (click)="openEscalationModal()" [disabled]="actionLoading">Escalate to Doctor</button>
           </div>
 
           <div class="reply-item mb-3">
@@ -119,6 +133,7 @@
           <p class="mb-2"><strong>Patient ID:</strong> {{ msg.patientId }}</p>
           <p class="mb-2"><strong>Guardian ID:</strong> {{ msg.guardianKeycloakId }}</p>
           <p class="mb-3"><strong>Assigned Staff ID:</strong> {{ msg.assignedToUserKeycloakId || 'Unassigned' }}</p>
+          <p class="mb-3"><strong>Assigned Doctor:</strong> {{ msg.assignedDoctorKeycloakId || 'Not escalated' }}</p>
 
           <a class="btn btn-light-brand w-100" [routerLink]="['/backoffice/patients']">Open Patient Record</a>
         </div>

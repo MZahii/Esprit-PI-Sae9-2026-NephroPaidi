@@ -2,7 +2,11 @@ package tn.esprit.spring.communicationservice.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import tn.esprit.spring.communicationservice.integration.dto.StaffSearchRequest;
+import tn.esprit.spring.communicationservice.integration.dto.StaffSearchResponse;
 import tn.esprit.spring.communicationservice.integration.dto.UserSummary;
 
 import java.util.List;
@@ -32,9 +36,15 @@ public interface UserServiceClientFeign {
     List<UserSummary> getGuardians(
         @RequestHeader(value = "Authorization", required = false) String token
     );
-    
+
     @GetMapping("/users/guardians")
     List<UserSummary> getGuardiansAlt(
         @RequestHeader(value = "Authorization", required = false) String token
+    );
+
+    @PostMapping("/api/users/staff/search")
+    StaffSearchResponse searchStaff(
+        @RequestHeader(value = "Authorization", required = false) String token,
+        @RequestBody StaffSearchRequest request
     );
 }

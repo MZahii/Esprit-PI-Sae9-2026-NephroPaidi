@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tn.esprit.spring.communicationservice.domain.entity.QuickReplyTemplate;
 import tn.esprit.spring.communicationservice.domain.enums.MessageType;
+import tn.esprit.spring.communicationservice.domain.enums.StaffRole;
 import tn.esprit.spring.communicationservice.dto.request.CreateQuickReplyTemplateRequest;
 import tn.esprit.spring.communicationservice.dto.request.UpdateQuickReplyTemplateRequest;
 import tn.esprit.spring.communicationservice.dto.response.QuickReplyTemplateResponse;
@@ -29,20 +30,21 @@ public class QuickReplyTemplateServiceImpl implements QuickReplyTemplateService 
     @Override
     @Transactional(readOnly = true)
     public List<QuickReplyTemplateResponse> list(MessageType messageType) {
-        currentUserService.getStaffRoleOrThrow();
+        StaffRole staffRole = currentUserService.getStaffRoleOrThrow();
         List<QuickReplyTemplate> templates = messageType == null
-                ? repository.findAllByOrderByNameAsc()
-                : repository.findByMessageTypeOrderByNameAsc(messageType);
+                ? repository.findByStaffRoleOrderByNameAsc(staffRole)
+                : repository.findByStaffRoleAndMessageTypeOrderByNameAsc(staffRole, messageType);
         return templates.stream().map(this::toResponse).toList();
     }
 
     @Override
     public QuickReplyTemplateResponse create(CreateQuickReplyTemplateRequest request) {
-        currentUserService.getStaffRoleOrThrow();
+        StaffRole staffRole = currentUserService.getStaffRoleOrThrow();
         Instant now = Instant.now();
         QuickReplyTemplate template = new QuickReplyTemplate();
         template.setName(request.getName().trim());
         template.setMessageType(request.getMessageType());
+        template.setStaffRole(staffRole);
         template.setTemplateText(request.getTemplateText().trim());
         template.setUsageCount(0);
         template.setCreatedAt(now);
@@ -52,11 +54,11 @@ public class QuickReplyTemplateServiceImpl implements QuickReplyTemplateService 
 
     @Override
     public QuickReplyTemplateResponse update(UUID id, UpdateQuickReplyTemplateRequest request) {
-        currentUserService.getStaffRoleOrThrow();
-        QuickReplyTemplate template = repository.findById(id)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Template not found"));
+        StaffRole staffRole = currentUserService.getStaffRoleOrThrow();
+        QuickReplyTemplate template = loadTemplateForCurrentRole(id, staffRole);
         template.setName(request.getName().trim());
         template.setMessageType(request.getMessageType());
+        template.setStaffRole(staffRole);
         template.setTemplateText(request.getTemplateText().trim());
         template.setUpdatedAt(Instant.now());
         return toResponse(repository.save(template));
@@ -64,21 +66,27 @@ public class QuickReplyTemplateServiceImpl implements QuickReplyTemplateService 
 
     @Override
     public void delete(UUID id) {
-        currentUserService.getStaffRoleOrThrow();
-        if (!repository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Template not found");
-        }
-        repository.deleteById(id);
+        StaffRole staffRole = currentUserService.getStaffRoleOrThrow();
+        QuickReplyTemplate template = loadTemplateForCurrentRole(id, staffRole);
+        repository.delete(template);
     }
 
     @Override
     public QuickReplyTemplateResponse incrementUsage(UUID id) {
-        currentUserService.getStaffRoleOrThrow();
-        QuickReplyTemplate template = repository.findById(id)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Template not found"));
+        StaffRole staffRole = currentUserService.getStaffRoleOrThrow();
+        QuickReplyTemplate template = loadTemplateForCurrentRole(id, staffRole);
         template.setUsageCount(template.getUsageCount() + 1);
         template.setUpdatedAt(Instant.now());
         return toResponse(repository.save(template));
+    }
+
+    private QuickReplyTemplate loadTemplateForCurrentRole(UUID id, StaffRole staffRole) {
+        QuickReplyTemplate template = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Template not found"));
+        if (template.getStaffRole() != staffRole) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Template not found");
+        }
+        return template;
     }
 
     private QuickReplyTemplateResponse toResponse(QuickReplyTemplate template) {
@@ -86,6 +94,7 @@ public class QuickReplyTemplateServiceImpl implements QuickReplyTemplateService 
                 .id(template.getId())
                 .name(template.getName())
                 .messageType(template.getMessageType())
+                .staffRole(template.getStaffRole())
                 .templateText(template.getTemplateText())
                 .usageCount(template.getUsageCount())
                 .createdAt(template.getCreatedAt())

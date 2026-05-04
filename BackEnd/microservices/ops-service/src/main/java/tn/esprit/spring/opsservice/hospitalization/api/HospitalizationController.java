@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import tn.esprit.spring.opsservice.hospitalization.api.dto.AssignHospitalizationLocationRequest;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.CreateHospitalizationRequest;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.CreateHospitalizationTaskRequest;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.HospitalizationCaseResponse;
@@ -34,6 +35,15 @@ public class HospitalizationController {
         return hospitalizationService.createHospitalization(request);
     }
 
+    @PutMapping("/hospitalizations/{hospitalizationId}/location")
+    @PreAuthorize("hasRole('RECEPTIONIST')")
+    public HospitalizationCaseResponse assignLocation(
+            @PathVariable UUID hospitalizationId,
+            @Valid @RequestBody AssignHospitalizationLocationRequest request
+    ) {
+        return hospitalizationService.assignLocation(hospitalizationId, request);
+    }
+
     @PostMapping("/hospitalizations/{hospitalizationId}/tasks")
     @PreAuthorize("hasRole('DOCTOR')")
     public HospitalizationTaskResponse addTask(
@@ -44,7 +54,7 @@ public class HospitalizationController {
     }
 
     @GetMapping("/hospitalizations/{hospitalizationId}")
-    @PreAuthorize("hasAnyRole('DOCTOR','NURSE')")
+    @PreAuthorize("hasAnyRole('DOCTOR','NURSE','RECEPTIONIST')")
     public HospitalizationCaseResponse getHospitalization(@PathVariable UUID hospitalizationId) {
         return hospitalizationService.getHospitalization(hospitalizationId);
     }

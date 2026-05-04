@@ -8,11 +8,15 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import tn.esprit.spring.communicationservice.client.UserServiceClientFeign;
+import tn.esprit.spring.communicationservice.integration.dto.StaffSearchRequest;
+import tn.esprit.spring.communicationservice.integration.dto.StaffSearchResponse;
 import tn.esprit.spring.communicationservice.integration.dto.UserSummary;
+import tn.esprit.spring.communicationservice.staffmessaging.domain.InternalStaffRole;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -49,6 +53,36 @@ public class UserDirectoryClient {
             }
             throw ex;
         }
+    }
+
+    public List<UserSummary> searchStaffUsers(String query, List<InternalStaffRole> roles, int limit) {
+        StaffSearchRequest request = new StaffSearchRequest();
+        request.setQuery(query);
+        request.setRoles(roles.stream().map(Enum::name).toList());
+        request.setEnabled(Boolean.TRUE);
+        request.setPage(0);
+        request.setSize(limit);
+        request.setSortBy("firstName");
+        request.setSortDir("asc");
+
+        String token = currentAuthorizationHeader();
+        StaffSearchResponse response = userServiceClientFeign.searchStaff(token, request);
+        return response == null || response.getItems() == null ? List.of() : response.getItems();
+    }
+
+    public UserSummary resolveStaffUser(String userId, Set<InternalStaffRole> allowedRoles) {
+        if (userId == null || userId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Target staff user is required");
+        }
+
+        List<UserSummary> candidates = searchStaffUsers(null, List.copyOf(allowedRoles), 200);
+        return candidates.stream()
+                .filter(Objects::nonNull)
+                .filter(UserSummary::isEnabled)
+                .filter(user -> allowedRoles.contains(InternalStaffRole.fromValue(user.getRole())))
+                .filter(user -> equalsIgnoreCaseSafe(user.getKeycloakId(), userId))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Staff user not found: " + userId));
     }
 
     private List<UserSummary> tryLoadGuardians(String token) {

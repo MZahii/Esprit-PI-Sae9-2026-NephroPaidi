@@ -144,6 +144,21 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     return this.role === 'PHARMACIST';
   }
 
+  get isLabAgent(): boolean {
+    return this.role === 'LAB_AGENT';
+  }
+
+  get canUseInternalStaffMessaging(): boolean {
+    return this.isAdmin
+      || this.isHr
+      || this.isDoctor
+      || this.isNurse
+      || this.isReceptionist
+      || this.isPharmacist
+      || this.isLabAgent
+      || this.isSurgeon;
+  }
+
   get canViewMyContract(): boolean {
     return !this.isAdmin;
   }
@@ -417,6 +432,16 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
             implemented: true
           }
         ]
+      });
+    }
+
+    if (this.canUseInternalStaffMessaging) {
+      items.push({
+        key: 'internalStaffMessaging',
+        label: 'Internal Staff Messaging',
+        icon: 'feather-message-circle',
+        route: '/backoffice/internal-staff-messaging',
+        exact: true
       });
     }
 

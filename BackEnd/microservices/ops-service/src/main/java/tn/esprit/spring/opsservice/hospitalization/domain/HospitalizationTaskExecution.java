@@ -46,11 +46,18 @@ public class HospitalizationTaskExecution {
     @Column(nullable = false, length = 20)
     private HospitalizationTaskStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "action_performed", nullable = false, length = 40)
+    private HospitalizationTaskExecutionAction actionPerformed;
+
     @Column(name = "nurse_keycloak_id", nullable = false, length = 128)
     private String nurseKeycloakId;
 
     @Column(name = "nurse_username", nullable = false, length = 120)
     private String nurseUsername;
+
+    @Column(name = "nurse_display_name", length = 160)
+    private String nurseDisplayName;
 
     @Column(length = 2000)
     private String note;
