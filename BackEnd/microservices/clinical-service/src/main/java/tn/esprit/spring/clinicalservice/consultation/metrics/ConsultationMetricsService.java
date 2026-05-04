@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import tn.esprit.spring.clinicalservice.ai.dto.AiLabAnalysisResponse;
 import tn.esprit.spring.clinicalservice.consultation.dto.ConsultationMetricsRequest;
 import tn.esprit.spring.clinicalservice.consultation.dto.ConsultationMetricsResponse;
 import tn.esprit.spring.clinicalservice.consultation.entity.Consultation;
@@ -35,6 +36,7 @@ public class ConsultationMetricsService {
     private final ConsultationMetricsRepository metricsRepository;
     private final ConsultationRepository consultationRepository;
     private final CKDEPICalculationService ckdEpiCalculator;
+    private final PediatricEgfrCalculationService pediatricEgfrCalculator;
     private final CKDStageResolver stageResolver;
     private final TrendAnalysisService trendAnalyzer;
     private final LabUnitConversionService unitConverter;
@@ -57,9 +59,12 @@ public class ConsultationMetricsService {
             metrics.setHeightCm(request.getHeightCm());
             metrics.setWeightKg(request.getWeightKg());
             metrics.setAgeYears(request.getAgeYears());
+            metrics.setPatientSex(request.getSex());
 
             // ============================================================
-            // CKD-EPI European Formula Calculation
+            // Pediatric-first eGFR calculation
+            // - Schwartz for pediatric patients (<18)
+            // - CKD-EPI 2021 for adult patients
             // ============================================================
 
             // Step 1: Convert serum creatinine to SI units (µmol/L)
@@ -68,6 +73,7 @@ public class ConsultationMetricsService {
                 // Auto-detect and convert to SI units
                 creatinineMicromolPerL = unitConverter.convertToMicromolPerL(request.getCreatinineMgDl(), null);
                 metrics.setCreatinineMgDl(request.getCreatinineMgDl());
+                metrics.setCreatinineUmol(creatinineMicromolPerL);
                 metrics.setSerumCreatinineUnit("MICROMOL_L");
                 log.debug("Converted creatinine to SI units: {} µmol/L", creatinineMicromolPerL);
             }
@@ -76,24 +82,39 @@ public class ConsultationMetricsService {
             Double egfr = null;
             String qualityIndicator = "LOW_QUALITY";
 
-            if (creatinineMicromolPerL != null && 
-                metrics.getAgeYears() != null && metrics.getAgeYears() > 0 &&
-                request.getSex() != null) {
+            boolean hasEnoughPatientContext = creatinineMicromolPerL != null
+                    && metrics.getAgeYears() != null
+                    && metrics.getAgeYears() > 0
+                    && (metrics.getAgeYears() < 18 || request.getSex() != null);
+
+            if (hasEnoughPatientContext) {
 
                 // Check serum creatinine quality
                 CKDEPICalculationService.QualityFlag scrQuality = 
                         ckdEpiCalculator.checkSerumCreatinineQuality(creatinineMicromolPerL);
-                
-                // Calculate eGFR with CKD-EPI formula
-                egfr = ckdEpiCalculator.calculateEgfr(
-                        creatinineMicromolPerL,
-                        metrics.getAgeYears(),
-                        request.getSex()
-                );
+
+                boolean pediatricCase = metrics.getAgeYears() < 18;
+                String formulaUsed = pediatricCase ? "SCHWARTZ_BEDSIDE" : "CKD_EPI_2021";
+
+                if (pediatricCase) {
+                    egfr = pediatricEgfrCalculator.calculateEgfr(
+                            metrics.getHeightCm(),
+                            metrics.getCreatinineMgDl(),
+                            metrics.getAgeYears()
+                    );
+                    metrics.setCkdEpiEgfr(null);
+                } else {
+                    egfr = ckdEpiCalculator.calculateEgfr(
+                            creatinineMicromolPerL,
+                            metrics.getAgeYears(),
+                            request.getSex()
+                    );
+                    metrics.setCkdEpiEgfr(egfr);
+                }
 
                 if (egfr != null) {
                     metrics.setEgfr(egfr);
-                    metrics.setEgfrFormulaUsed("CKD_EPI_2021");
+                    metrics.setEgfrFormulaUsed(formulaUsed);
 
                     // Determine CKD stage using CKDStageResolver
                     CKDStageResolver.CKDStage ckdStageResolver = stageResolver.resolveCKDStage(egfr);
@@ -101,7 +122,7 @@ public class ConsultationMetricsService {
                     CkdStage ckdStageEntity = convertToCkdStageEnum(ckdStageResolver);
                     metrics.setCkdStage(ckdStageEntity);
 
-                    log.info("CKD-EPI calculated: eGFR={} mL/min/1.73m², Stage={}", egfr, ckdStageEntity);
+                    log.info("{} calculated: eGFR={} mL/min/1.73m², Stage={}", formulaUsed, egfr, ckdStageEntity);
                 }
 
                 // Step 3: Analyze trend vs previous eGFR
@@ -127,6 +148,8 @@ public class ConsultationMetricsService {
                         creatinineMicromolPerL != null,
                         metrics.getAgeYears() != null,
                         request.getSex() != null,
+                        metrics.getHeightCm() != null,
+                        pediatricCase,
                         previous != null && previous.getEgfr() != null,
                         scrQuality
                 );
@@ -138,7 +161,7 @@ public class ConsultationMetricsService {
 
                 metrics.setAlertLowEgfr(lowEgfr);
                 metrics.setAlertRapidDecline(rapidDecline);
-                metrics.setAlertMessage(buildAlertMessage(lowEgfr, rapidDecline, egfr, trendData));
+                metrics.setAlertMessage(buildAlertMessage(lowEgfr, rapidDecline, egfr, trendData, metrics.getEgfrFormulaUsed()));
                 metrics.setEgfrLastUpdatedAt(LocalDateTime.now());
             }
 
@@ -159,6 +182,61 @@ public class ConsultationMetricsService {
         return toResponse(metrics);
     }
 
+    public ConsultationMetrics applyAiLabAnalysis(UUID consultationId, Long patientId, String sourceFileName,
+                                                  AiLabAnalysisResponse aiResponse) {
+        ConsultationMetrics metrics = metricsRepository.findByConsultationId(consultationId)
+                .orElseGet(() -> ConsultationMetrics.builder()
+                        .consultationId(consultationId)
+                        .patientId(patientId)
+                        .build());
+
+        metrics.setPatientId(patientId);
+        if (aiResponse.getExtractedCreatinineMgDl() != null) {
+            metrics.setCreatinineMgDl(aiResponse.getExtractedCreatinineMgDl());
+        }
+        if (aiResponse.getExtractedCreatinineUmolL() != null) {
+            metrics.setCreatinineUmol(aiResponse.getExtractedCreatinineUmolL());
+            metrics.setSerumCreatinineUnit("MICROMOL_L");
+        }
+
+        metrics.setAiRecommendation(aiResponse.getRecommendation());
+        metrics.setAiConfidence(aiResponse.getConfidence());
+        metrics.setAiSummary(aiResponse.getSummary());
+        metrics.setAiRequiresReview(Boolean.TRUE.equals(aiResponse.getRequiresDoctorReview()));
+        metrics.setAiSourceFileName(sourceFileName);
+        metrics.setAiUpdatedAt(LocalDateTime.now());
+
+        if (metrics.getAgeYears() != null && metrics.getCreatinineMgDl() != null) {
+            boolean pediatricCase = metrics.getAgeYears() < 18;
+            Double egfr = pediatricCase
+                    ? pediatricEgfrCalculator.calculateEgfr(metrics.getHeightCm(), metrics.getCreatinineMgDl(), metrics.getAgeYears())
+                    : ckdEpiCalculator.calculateEgfr(metrics.getCreatinineMgDl(), metrics.getAgeYears(), metrics.getPatientSex(), true);
+
+            if (egfr != null) {
+                metrics.setEgfr(egfr);
+                metrics.setEgfrFormulaUsed(pediatricCase ? "SCHWARTZ_BEDSIDE" : "CKD_EPI_2021");
+                if (!pediatricCase) {
+                    metrics.setCkdEpiEgfr(egfr);
+                }
+                metrics.setCkdStage(convertToCkdStageEnum(stageResolver.resolveCKDStage(egfr)));
+                metrics.setEgfrQualityIndicator(pediatricCase
+                        ? (metrics.getHeightCm() != null ? "HIGH_QUALITY" : "MEDIUM_QUALITY")
+                        : "MEDIUM_QUALITY");
+                metrics.setAlertLowEgfr(egfr < 60.0);
+                metrics.setEgfrLastUpdatedAt(LocalDateTime.now());
+                metrics.setAlertMessage(buildAlertMessage(
+                        egfr < 60.0,
+                        false,
+                        egfr,
+                        null,
+                        metrics.getEgfrFormulaUsed()
+                ));
+            }
+        }
+
+        return metricsRepository.save(metrics);
+    }
+
     private Consultation requireConsultation(UUID consultationId, UUID doctorId) {
         Consultation consultation = consultationRepository.findById(consultationId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Consultation not found"));
@@ -172,18 +250,12 @@ public class ConsultationMetricsService {
         return consultation;
     }
 
-    private Double calculateEgfr(Double heightCm, Double creatinineMgDl) {
-        // Legacy Cockcroft-Gault approximation (kept for backward compatibility)
-        if (heightCm == null || creatinineMgDl == null || creatinineMgDl <= 0) {
-            return null;
-        }
-        double value = 0.413 * heightCm / creatinineMgDl;
-        return Math.round(value * 10.0) / 10.0;
-    }
-
     private String buildAlertMessage(boolean lowEgfr, boolean rapidDecline, Double egfr,
-                                     TrendAnalysisService.TrendData trendData) {
+                                     TrendAnalysisService.TrendData trendData, String formulaUsed) {
         StringBuilder msg = new StringBuilder();
+        if (formulaUsed != null) {
+            msg.append("Formula: ").append(formulaUsed.replace('_', ' ')).append(". ");
+        }
 
         if (lowEgfr && egfr != null) {
             msg.append("⚠️ Low eGFR (").append(String.format("%.1f", egfr))
@@ -207,13 +279,16 @@ public class ConsultationMetricsService {
             boolean hasCreatinine,
             boolean hasAge,
             boolean hasSex,
+            boolean hasHeight,
+            boolean pediatricCase,
             boolean hasPrevious,
             CKDEPICalculationService.QualityFlag scrQuality) {
 
         int score = 0;
         if (hasCreatinine) score += 25;
         if (hasAge) score += 25;
-        if (hasSex) score += 25;
+        if (hasSex) score += pediatricCase ? 10 : 25;
+        if (hasHeight) score += pediatricCase ? 15 : 0;
         if (hasPrevious) score += 15;
         if (scrQuality == CKDEPICalculationService.QualityFlag.NORMAL) score += 10;
 
@@ -246,6 +321,7 @@ public class ConsultationMetricsService {
                 .heightCm(metrics.getHeightCm())
                 .weightKg(metrics.getWeightKg())
                 .ageYears(metrics.getAgeYears())
+                .sex(metrics.getPatientSex())
                 
                 // Serum creatinine (both units)
                 .creatinineMgDl(metrics.getCreatinineMgDl())
@@ -270,6 +346,14 @@ public class ConsultationMetricsService {
                 .alertLowEgfr(metrics.getAlertLowEgfr())
                 .alertRapidDecline(metrics.getAlertRapidDecline())
                 .alertMessage(metrics.getAlertMessage())
+
+                // AI recommendation summary
+                .aiRecommendation(metrics.getAiRecommendation())
+                .aiConfidence(metrics.getAiConfidence())
+                .aiSummary(metrics.getAiSummary())
+                .aiRequiresReview(metrics.getAiRequiresReview())
+                .aiSourceFileName(metrics.getAiSourceFileName())
+                .aiUpdatedAt(metrics.getAiUpdatedAt())
                 
                 // Timestamps
                 .createdAt(metrics.getCreatedAt())

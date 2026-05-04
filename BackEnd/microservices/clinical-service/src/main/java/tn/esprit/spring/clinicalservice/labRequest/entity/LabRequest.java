@@ -27,6 +27,9 @@ public class LabRequest {
     @Column(name = "patient_id", nullable = false)
     private Long patientId;
 
+    @Column(name = "consultation_id", columnDefinition = "uuid")
+    private UUID consultationId;
+
     @Column(name = "test_type", nullable = false, length = 500)
     private String testType;
 

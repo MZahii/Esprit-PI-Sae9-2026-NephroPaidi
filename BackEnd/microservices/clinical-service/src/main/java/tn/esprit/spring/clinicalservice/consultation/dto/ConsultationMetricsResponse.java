@@ -28,6 +28,7 @@ public class ConsultationMetricsResponse {
     private Double heightCm;
     private Double weightKg;
     private Integer ageYears;
+    private String sex;
     
     // Serum creatinine (both units)
     private Double creatinineMgDl;
@@ -52,6 +53,14 @@ public class ConsultationMetricsResponse {
     private Boolean alertLowEgfr;
     private Boolean alertRapidDecline;
     private String alertMessage;
+
+    // AI recommendation support
+    private String aiRecommendation;
+    private Double aiConfidence;
+    private String aiSummary;
+    private Boolean aiRequiresReview;
+    private String aiSourceFileName;
+    private LocalDateTime aiUpdatedAt;
     
     // Timestamps
     private LocalDateTime createdAt;

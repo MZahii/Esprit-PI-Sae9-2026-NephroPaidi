@@ -53,6 +53,9 @@ public class ConsultationMetrics {
     @Column(name = "age_years")
     private Integer ageYears;
 
+    @Column(name = "patient_sex", length = 10)
+    private String patientSex;
+
     @Column(name = "egfr", columnDefinition = "NUMERIC")
     private Double egfr;
 
@@ -92,6 +95,24 @@ public class ConsultationMetrics {
 
     @Column(name = "alert_message", columnDefinition = "text")
     private String alertMessage;
+
+    @Column(name = "ai_recommendation", length = 50)
+    private String aiRecommendation;
+
+    @Column(name = "ai_confidence", columnDefinition = "NUMERIC")
+    private Double aiConfidence;
+
+    @Column(name = "ai_summary", columnDefinition = "TEXT")
+    private String aiSummary;
+
+    @Column(name = "ai_requires_review")
+    private Boolean aiRequiresReview;
+
+    @Column(name = "ai_source_file_name", length = 255)
+    private String aiSourceFileName;
+
+    @Column(name = "ai_updated_at")
+    private LocalDateTime aiUpdatedAt;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

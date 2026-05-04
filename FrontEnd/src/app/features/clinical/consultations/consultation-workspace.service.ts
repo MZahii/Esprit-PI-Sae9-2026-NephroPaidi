@@ -18,6 +18,7 @@ export interface DiagnosisItem {
 }
 
 export interface LabRequestItem {
+  backendRequestId?: string;
   test: string;
   urgency: 'Routine' | 'Urgent' | 'STAT';
   note?: string;
@@ -58,6 +59,12 @@ export interface ConsultationMetrics {
   alertLowEgfr?: boolean;
   alertRapidDecline?: boolean;
   alertMessage?: string;
+  aiRecommendation?: string;
+  aiConfidence?: number;
+  aiSummary?: string;
+  aiRequiresReview?: boolean;
+  aiSourceFileName?: string;
+  aiUpdatedAt?: string;
 }
 
 export interface CarePlanDoseItem {
@@ -230,20 +237,58 @@ export class ConsultationWorkspaceService {
   }
 
   /** Send lab request lines to clinical outcome (explicit action, not part of Save Draft). */
-  submitLabRequests(consultationId: string, draft: ConsultationWorkspaceDraft): Observable<boolean> {
+  submitLabRequests(consultationId: string, patientId: number, draft: ConsultationWorkspaceDraft): Observable<boolean> {
     const payload = { ...draft, updatedAt: new Date().toISOString() };
-    return this.api
-      .updateConsultationLabRequests(consultationId, this.serializeLabRequests(draft.labRequests))
-      .pipe(
-        map(() => {
-          this.saveLocalCopy(consultationId, payload);
-          return true;
-        }),
-        catchError(() => {
-          this.saveLocalCopy(consultationId, payload);
-          return of(false);
-        })
+    const normalized = (draft.labRequests ?? [])
+      .map((item) => ({
+        backendRequestId: item.backendRequestId,
+        test: (item?.test ?? '').trim(),
+        urgency: item?.urgency ?? 'Routine',
+        note: (item?.note ?? '').trim()
+      }))
+      .filter((item) => item.test.length > 0);
+
+    const createRequests = normalized
+      .filter((item) => !item.backendRequestId)
+      .map((item) =>
+        this.api.createLabRequest({
+          patientId,
+          consultationId,
+          testType: item.test,
+          urgency: item.urgency.toUpperCase(),
+          notes: item.note
+        }).pipe(
+          map((response) => ({ ...item, backendRequestId: response?.id })),
+          catchError(() => of(item))
+        )
       );
+
+    return forkJoin({
+      outcome: this.api.updateConsultationLabRequests(consultationId, this.serializeLabRequests(normalized)).pipe(
+        map(() => true),
+        catchError(() => of(false))
+      ),
+      created: createRequests.length ? forkJoin(createRequests) : of([])
+    }).pipe(
+      map(({ outcome, created }) => {
+        if (created.length) {
+          const createdByTest = new Map(created.map((item) => [`${item.test}|${item.note}|${item.urgency}`, item.backendRequestId]));
+          draft.labRequests = normalized.map((item) => ({
+            ...item,
+            backendRequestId: item.backendRequestId ?? createdByTest.get(`${item.test}|${item.note}|${item.urgency}`)
+          }));
+        } else {
+          draft.labRequests = normalized;
+        }
+        payload.labRequests = draft.labRequests;
+        this.saveLocalCopy(consultationId, payload);
+        return outcome;
+      }),
+      catchError(() => {
+        this.saveLocalCopy(consultationId, payload);
+        return of(false);
+      })
+    );
   }
 
   completeConsultation(consultationId: string, draft: ConsultationWorkspaceDraft): Observable<boolean> {
@@ -287,11 +332,12 @@ export class ConsultationWorkspaceService {
   serializeLabRequests(items: LabRequestItem[]): string {
     return JSON.stringify(
       (items ?? [])
-        .map((item) => ({
-          test: (item?.test ?? '').trim(),
-          urgency: item?.urgency ?? 'Routine',
-          note: (item?.note ?? '').trim()
-        }))
+          .map((item) => ({
+            backendRequestId: item.backendRequestId,
+            test: (item?.test ?? '').trim(),
+            urgency: item?.urgency ?? 'Routine',
+            note: (item?.note ?? '').trim()
+          }))
         .filter((item) => item.test.length > 0)
     );
   }

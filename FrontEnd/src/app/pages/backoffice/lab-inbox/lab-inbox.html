@@ -59,6 +59,7 @@
             <th>Test Type</th>
             <th>Urgency</th>
             <th>Status</th>
+            <th>AI Status</th>
             <th>Requested</th>
             <th>Action</th>
           </tr>
@@ -76,6 +77,10 @@
               <span [class]="'badge ' + getStatusBadgeClass(req.status)">
                 {{ req.status }}
               </span>
+            </td>
+            <td>
+              <div class="small fw-semibold">{{ req.latestAiRecommendation || 'Pending analysis' }}</div>
+              <div class="text-muted small" *ngIf="req.latestAiSummary">{{ req.latestAiSummary }}</div>
             </td>
             <td>{{ req.createdAt | date: 'short' }}</td>
             <td>
@@ -114,23 +119,14 @@
         </div>
 
         <div class="mb-3">
-          <label class="form-label">File Path</label>
+          <label class="form-label">Lab Result File</label>
           <input
-            type="text"
+            type="file"
             class="form-control"
-            [(ngModel)]="filePath"
-            placeholder="/path/to/result/file"
+            accept=".pdf,.txt,.png,.jpg,.jpeg"
+            (change)="onFileSelected($event)"
           />
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">File Name</label>
-          <input
-            type="text"
-            class="form-control"
-            [(ngModel)]="fileName"
-            placeholder="lab_result_2026_04_29.pdf"
-          />
+          <small class="text-muted">PDF and text files are supported best in this build. Images trigger manual review if OCR is unavailable.</small>
         </div>
       </div>
       <div class="modal-footer">

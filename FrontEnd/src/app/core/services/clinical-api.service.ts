@@ -41,6 +41,20 @@ export interface ConsultationMetricsRequest {
   alertLowEgfr?: boolean;  // Low eGFR alert
   alertRapidDecline?: boolean;  // Rapid decline alert
   alertMessage?: string;  // Clinical alert message
+  aiRecommendation?: string;
+  aiConfidence?: number;
+  aiSummary?: string;
+  aiRequiresReview?: boolean;
+  aiSourceFileName?: string;
+  aiUpdatedAt?: string;
+}
+
+export interface ClinicalLabRequestPayload {
+  patientId: number;
+  consultationId?: string;
+  testType: string;
+  urgency: string;
+  notes?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -311,6 +325,14 @@ export class ClinicalApiService {
     return this.http.post<any>(
       `${this.base}/api/clinical/consultations/${id}/lab-requests`,
       { content },
+      { headers: this.doctorHeaders() }
+    );
+  }
+
+  createLabRequest(payload: ClinicalLabRequestPayload): Observable<any> {
+    return this.http.post<any>(
+      `${this.base}/api/clinical/lab-requests`,
+      payload,
       { headers: this.doctorHeaders() }
     );
   }

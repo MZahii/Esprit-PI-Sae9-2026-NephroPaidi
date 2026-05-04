@@ -19,7 +19,7 @@ import java.util.UUID;
  * Orchestrates processing of lab results:
  * 1. Validates lab data
  * 2. Converts units to SI standard (µmol/L)
- * 3. Calculates eGFR using CKD-EPI formula
+ * 3. Calculates kidney function support values
  * 4. Assigns CKD stage
  * 5. Analyzes trend vs previous results
  * 6. Updates consultation metrics
@@ -84,10 +84,16 @@ public class LabResultProcessingService {
             }
 
             // Validate patient demographics
-            if (event.getPatientAge() == null || event.getPatientAge() < 18 ||
+            if (event.getPatientAge() == null ||
                 event.getPatientSex() == null || event.getTestValue() == null) {
                 log.warn("Lab result missing required demographics: age={}, sex={}, value={}",
                         event.getPatientAge(), event.getPatientSex(), event.getTestValue());
+                return;
+            }
+
+            if (event.getPatientAge() < 18) {
+                log.info("Pediatric lab result detected for consultation {}. Detailed calculation should use stored height and bedside Schwartz in consultation metrics.",
+                        event.getConsultationId());
                 return;
             }
 
@@ -264,7 +270,7 @@ public class LabResultProcessingService {
             throw new IllegalArgumentException("Serum creatinine must be positive");
         }
         if (age < 18 || age > 120) {
-            throw new IllegalArgumentException("Age must be between 18 and 120 years");
+            throw new IllegalArgumentException("Adult event-processing path expects age between 18 and 120 years");
         }
         if (!("M".equalsIgnoreCase(sex) || "F".equalsIgnoreCase(sex))) {
             throw new IllegalArgumentException("Sex must be 'M' or 'F'");

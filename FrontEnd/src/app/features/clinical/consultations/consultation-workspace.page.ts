@@ -378,12 +378,17 @@ export class ConsultationWorkspacePage implements OnInit {
 
   sendLabsToBackend(): void {
     if (!this.consultationId) return;
+    const patientId = Number(this.consultation?.patientId);
+    if (!Number.isFinite(patientId) || patientId <= 0) {
+      this.infoMessage = 'Cannot create lab requests because the patient record is missing.';
+      return;
+    }
     this.labSubmitting = true;
     this.infoMessage = '';
-    this.workspace.submitLabRequests(this.consultationId, this.draft).subscribe({
+    this.workspace.submitLabRequests(this.consultationId, patientId, this.draft).subscribe({
       next: (ok) => {
         this.labSubmitting = false;
-        this.infoMessage = ok ? 'Lab requests saved to clinical record.' : 'Failed to save lab requests.';
+        this.infoMessage = ok ? 'Lab requests saved and sent to the lab inbox.' : 'Failed to save lab requests.';
       },
       error: () => {
         this.labSubmitting = false;
@@ -658,10 +663,16 @@ export class ConsultationWorkspacePage implements OnInit {
   }
 
   get egfrValue(): number | null {
+    if (typeof this.draft.metrics.egfr === 'number' && Number.isFinite(this.draft.metrics.egfr)) {
+      return this.draft.metrics.egfr;
+    }
     return this.calculateEgfr(this.draft.metrics.heightCm, this.draft.metrics.creatinineMgDl);
   }
 
   get ckdStage(): string {
+    if (this.draft.metrics.ckdStage) {
+      return this.getCkdStageName(this.draft.metrics.ckdStage);
+    }
     const egfr = this.egfrValue;
     if (egfr === null) return 'N/A';
     if (egfr >= 90) return 'G1 (>=90)';
@@ -700,6 +711,27 @@ export class ConsultationWorkspacePage implements OnInit {
     }
 
     return alerts;
+  }
+
+  get aiRecommendationLabel(): string {
+    const value = (this.draft.metrics.aiRecommendation || '').trim();
+    if (!value) return 'No AI analysis yet';
+    return value.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+  }
+
+  get aiConfidencePercent(): string {
+    const confidence = Number(this.draft.metrics.aiConfidence);
+    if (!Number.isFinite(confidence)) return '-';
+    return `${Math.round(confidence * 100)}%`;
+  }
+
+  get egfrFormulaLabel(): string {
+    const formula = this.draft.metrics.egfrFormulaUsed;
+    if (!formula) {
+      const age = Number(this.draft.metrics.ageYears);
+      return Number.isFinite(age) && age < 18 ? 'Schwartz' : 'CKD-EPI';
+    }
+    return formula.replace(/_/g, ' ');
   }
 
   get doseAlerts(): string[] {
@@ -985,8 +1017,7 @@ export class ConsultationWorkspacePage implements OnInit {
   }
 
   private calculateEgfr(heightCm?: number, creatinineMgDl?: number): number | null {
-    // LEGACY METHOD - eGFR is now calculated by backend using CKD-EPI formula
-    // This method kept for backward compatibility with local estimation only
+    // Local fallback only. The backend remains the source of truth.
     const height = Number(heightCm);
     const creatinine = Number(creatinineMgDl);
     if (!Number.isFinite(height) || height <= 0) return null;
@@ -1008,21 +1039,27 @@ export class ConsultationWorkspacePage implements OnInit {
     switch (stage.toUpperCase()) {
       case 'STAGE_NORMAL':
       case 'NORMAL':
+      case 'G1':
         return 'text-success';  // Green
       case 'STAGE_1':
       case 'STAGE1':
+      case 'G2':
         return 'text-success';  // Green
       case 'STAGE_2':
       case 'STAGE2':
+      case 'G3A':
         return 'text-warning';  // Yellow
       case 'STAGE_3':
       case 'STAGE3':
+      case 'G3B':
         return 'text-danger';   // Red
       case 'STAGE_4':
       case 'STAGE4':
+      case 'G4':
         return 'text-danger';   // Dark red
       case 'STAGE_5':
       case 'STAGE5':
+      case 'G5':
         return 'text-danger';   // Dark red
       default:
         return 'text-secondary';
@@ -1034,6 +1071,13 @@ export class ConsultationWorkspacePage implements OnInit {
    */
   getCkdStageName(stage?: string): string {
     if (!stage) return 'Unknown';
+    const normalized = stage.toUpperCase();
+    if (normalized === 'G1') return 'G1 (Normal to High)';
+    if (normalized === 'G2') return 'G2 (Mildly Decreased)';
+    if (normalized === 'G3A') return 'G3a (Mild to Moderate)';
+    if (normalized === 'G3B') return 'G3b (Moderate to Severe)';
+    if (normalized === 'G4') return 'G4 (Severely Decreased)';
+    if (normalized === 'G5') return 'G5 (Kidney Failure)';
     return stage.replace(/_/g, ' ').toLowerCase()
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))

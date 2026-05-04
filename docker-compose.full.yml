@@ -1,6 +1,7 @@
 services:
   keycloak:
-    image: quay.io/keycloak/keycloak:24.0
+    platform: linux/amd64
+    image: quay.io/keycloak/keycloak:23.0
     container_name: nephro-keycloak
     command: ["start-dev", "--import-realm"]
     restart: unless-stopped
@@ -23,7 +24,8 @@ services:
       - nephro-net
 
   rabbitmq:
-    image: rabbitmq:3.12-management
+    platform: linux/amd64
+    image: rabbitmq:3.13-management-alpine
     container_name: nephro-rabbitmq
     restart: unless-stopped
     environment:
@@ -245,6 +247,7 @@ services:
       ADMIN_SERVICE_URL: http://administration-service:8087
       PHARMACY_SERVICE_URL: http://pharmacy-service:8088
       COMMUNICATION_SERVICE_URL: http://communication-service:8085
+      SERVICES_AI_CLINICAL_BASE_URL: http://ai-clinical-service:8091
       ENVIRONMENT: docker
       LOGGING_LEVEL_ROOT: INFO
       LOGGING_LEVEL_TN_ESPRIT: DEBUG
@@ -257,14 +260,33 @@ services:
       - user-service
       - administration-service
       - communication-service
+      - ai-clinical-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 40s
+      start_period: 120s
     cpus: "0.70"
     mem_limit: "768m"
+    networks:
+      - nephro-net
+
+  ai-clinical-service:
+    build:
+      context: ./BackEnd/microservices/ai-clinical-service
+    container_name: nephro-ai-clinical-service
+    restart: unless-stopped
+    ports:
+      - "8091:8091"
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8091/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    cpus: "0.50"
+    mem_limit: "512m"
     networks:
       - nephro-net
 

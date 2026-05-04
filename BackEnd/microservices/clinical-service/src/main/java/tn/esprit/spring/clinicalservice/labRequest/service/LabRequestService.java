@@ -2,7 +2,7 @@ package tn.esprit.spring.clinicalservice.labRequest.service;
 
 import tn.esprit.spring.clinicalservice.labRequest.dto.CreateLabRequestRequest;
 import tn.esprit.spring.clinicalservice.labRequest.dto.LabRequestDto;
-import tn.esprit.spring.clinicalservice.labRequest.dto.UploadLabResultRequest;
+import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.spring.clinicalservice.labRequest.entity.LabRequest;
 
 import java.util.List;
@@ -17,7 +17,7 @@ public interface LabRequestService {
     
     LabRequestDto getLabRequestById(UUID id);
     
-    LabRequestDto uploadLabResult(UUID labRequestId, UploadLabResultRequest request, UUID uploadedBy);
+    LabRequestDto uploadLabResult(UUID labRequestId, MultipartFile file, UUID uploadedBy);
     
     LabRequestDto updateLabRequestStatus(UUID id, LabRequest.LabStatus status);
 }

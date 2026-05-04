@@ -9,10 +9,15 @@ interface LabRequest {
   id: string;
   doctorId: string;
   patientId: number;
+  consultationId?: string;
   testType: string;
   urgency: string;
   status: string;
   notes?: string;
+  latestAiRecommendation?: string;
+  latestAiConfidence?: number;
+  latestAiRequiresDoctorReview?: boolean;
+  latestAiSummary?: string;
   createdAt: string;
 }
 
@@ -36,8 +41,7 @@ export class LabInboxComponent implements OnInit {
   
   showUploadModal = false;
   selectedRequest: LabRequest | null = null;
-  filePath = '';
-  fileName = '';
+  selectedFile: File | null = null;
   uploadingId = '';
 
   constructor(
@@ -83,33 +87,40 @@ export class LabInboxComponent implements OnInit {
 
   openUploadModal(request: LabRequest): void {
     this.selectedRequest = request;
-    this.filePath = '';
-    this.fileName = '';
+    this.selectedFile = null;
     this.showUploadModal = true;
   }
 
   closeUploadModal(): void {
     this.showUploadModal = false;
     this.selectedRequest = null;
+    this.selectedFile = null;
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedFile = input.files?.[0] ?? null;
   }
 
   uploadResult(): void {
-    if (!this.selectedRequest || !this.filePath || !this.fileName) {
-      this.errorMessage = 'Please fill in all fields';
+    if (!this.selectedRequest || !this.selectedFile) {
+      this.errorMessage = 'Please choose a result file';
       return;
     }
 
     this.uploadingId = this.selectedRequest.id;
     const token = this.authStorage.getAccessToken();
     const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+    const formData = new FormData();
+    formData.append('file', this.selectedFile, this.selectedFile.name);
 
     this.http.post(
       `${environment.apiBaseUrl}/api/clinical/lab-requests/${this.selectedRequest.id}/results`,
-      { filePath: this.filePath, fileName: this.fileName },
+      formData,
       { headers }
     ).subscribe({
       next: () => {
-        this.successMessage = 'Lab result uploaded successfully';
+        this.successMessage = 'Lab result uploaded and analyzed successfully';
         this.closeUploadModal();
         this.loadLabRequests();
       },

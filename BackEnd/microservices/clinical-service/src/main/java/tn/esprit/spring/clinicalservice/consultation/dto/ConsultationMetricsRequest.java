@@ -21,4 +21,27 @@ public class ConsultationMetricsRequest {
     private Double weightKg;
     private Integer ageYears;
     private String sex;  // 'M' or 'F' - required for CKD-EPI formula
+    private Double systolicBpMmHg;
+    private Double diastolicBpMmHg;
+    private Double creatinineUmol;
+    private String serumCreatinineUnit;
+    private String egfrFormulaUsed;
+    private Double ckdEpiEgfr;
+    private Double egfr;
+    private String ckdStage;
+    private Double previousEgfr;
+    private Double egfrChange;
+    private Double egfrChangePercent;
+    private String egfrTrend;
+    private String egfrQualityIndicator;
+    private String egfrLastUpdatedAt;
+    private Boolean alertLowEgfr;
+    private Boolean alertRapidDecline;
+    private String alertMessage;
+    private String aiRecommendation;
+    private Double aiConfidence;
+    private String aiSummary;
+    private Boolean aiRequiresReview;
+    private String aiSourceFileName;
+    private String aiUpdatedAt;
 }

@@ -49,7 +49,7 @@
         </div>
         <div class="card-body">
           <div class="metric-row">
-            <span>eGFR (Schwartz)</span>
+            <span>eGFR ({{ egfrFormulaLabel }})</span>
             <strong>{{ egfrValue !== null ? (egfrValue + ' mL/min/1.73m2') : '-' }}</strong>
           </div>
           <div class="metric-row">
@@ -115,6 +115,33 @@
           <ng-template #noAlerts>
             <div class="text-muted mt-2">No alerts triggered.</div>
           </ng-template>
+        </div>
+      </div>
+
+      <div class="card stretch stretch-full mt-4">
+        <div class="card-header">
+          <h5 class="card-title">AI Clinical Assistant</h5>
+        </div>
+        <div class="card-body">
+          <div class="metric-row">
+            <span>Recommendation</span>
+            <strong>{{ aiRecommendationLabel }}</strong>
+          </div>
+          <div class="metric-row">
+            <span>Confidence</span>
+            <strong>{{ aiConfidencePercent }}</strong>
+          </div>
+          <div class="metric-row">
+            <span>Source File</span>
+            <strong>{{ draft.metrics.aiSourceFileName || '-' }}</strong>
+          </div>
+          <div class="metric-row">
+            <span>Doctor Review</span>
+            <strong>{{ draft.metrics.aiRequiresReview ? 'Required' : 'Not flagged' }}</strong>
+          </div>
+          <div class="alert alert-light border mt-3 mb-0 small">
+            {{ draft.metrics.aiSummary || 'Upload a lab result from the lab inbox to generate an AI recommendation here.' }}
+          </div>
         </div>
       </div>
 
@@ -249,7 +276,7 @@
 
                 <!-- eGFR (Auto-Calculated - READ-ONLY) -->
                 <div class="col-md-6">
-                  <label class="form-label">eGFR (CKD-EPI)</label>
+                  <label class="form-label">eGFR ({{ egfrFormulaLabel }})</label>
                   <div class="form-control-static border rounded p-2 bg-light" [ngClass]="getCkdStageColor(draft.metrics.ckdStage)">
                     <strong>{{ formatEgfr(draft.metrics.egfr) }}</strong>
                   </div>

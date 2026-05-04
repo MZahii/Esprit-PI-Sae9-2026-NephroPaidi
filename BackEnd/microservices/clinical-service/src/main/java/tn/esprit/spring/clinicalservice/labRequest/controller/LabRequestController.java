@@ -1,13 +1,14 @@
 package tn.esprit.spring.clinicalservice.labRequest.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.spring.clinicalservice.labRequest.dto.CreateLabRequestRequest;
 import tn.esprit.spring.clinicalservice.labRequest.dto.LabRequestDto;
-import tn.esprit.spring.clinicalservice.labRequest.dto.UploadLabResultRequest;
 import tn.esprit.spring.clinicalservice.labRequest.service.LabRequestService;
 import tn.esprit.spring.clinicalservice.security.DoctorIdResolver;
 
@@ -53,14 +54,14 @@ public class LabRequestController {
         return ResponseEntity.ok(request);
     }
 
-    @PostMapping("/{id}/results")
+    @PostMapping(value = "/{id}/results", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<LabRequestDto> uploadLabResult(
             @PathVariable UUID id,
-            @RequestBody UploadLabResultRequest request,
+            @RequestPart("file") MultipartFile file,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             Authentication authentication) {
         // TODO: Resolve userId from authentication if not provided
-        LabRequestDto response = labRequestService.uploadLabResult(id, request, userId);
+        LabRequestDto response = labRequestService.uploadLabResult(id, file, userId);
         return ResponseEntity.ok(response);
     }
 }
