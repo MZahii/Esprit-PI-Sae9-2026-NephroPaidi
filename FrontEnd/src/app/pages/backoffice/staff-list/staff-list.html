@@ -49,42 +49,48 @@
             </button>
           </div>
 
-          <div class="stats-grid mb-3" *ngIf="!loading">
-            <div class="stats-card">
-              <div class="stats-label">Total Staff</div>
-              <div class="stats-value">{{ totalStaff }}</div>
-            </div>
-            <div class="stats-card chart-card">
-              <div class="stats-label">Account Status</div>
-              <div class="circle-wrap" [style.background]="circleStyle(toPercent(activeStaff, totalStaff), '#2563eb')">
-                <div class="circle-value">{{ toPercent(activeStaff, totalStaff) }}%</div>
+          <div class="hr-summary-grid mb-3" *ngIf="!loading">
+            <div class="hr-summary-card primary">
+              <div>
+                <div class="stats-label">Total Staff</div>
+                <div class="stats-value" appCountUp>{{ totalStaff }}</div>
               </div>
-              <div class="chart-legend">Active {{ activeStaff }} / Pending {{ pendingStaff }} / Inactive {{ inactiveStaff }}</div>
+              <div class="summary-lines">
+                <span>{{ activeStaff }} active</span>
+                <span>{{ pendingStaff }} pending</span>
+                <span>{{ inactiveStaff }} inactive</span>
+              </div>
             </div>
-            <div class="stats-card chart-card">
+
+            <div class="hr-summary-card chart-card">
+              <div class="stats-label">Account Health</div>
+              <div class="circle-wrap" [style.background]="circleStyle(toPercent(activeStaff, totalStaff), '#2563eb')">
+                <div class="circle-value" appCountUp>{{ toPercent(activeStaff, totalStaff) }}%</div>
+              </div>
+              <div class="chart-legend">Active accounts</div>
+            </div>
+
+            <div class="hr-summary-card chart-card">
               <div class="stats-label">Contract Coverage</div>
               <div class="circle-wrap" [style.background]="circleStyle(toPercent(withContractStaff, totalStaff), '#14b8a6')">
-                <div class="circle-value">{{ toPercent(withContractStaff, totalStaff) }}%</div>
+                <div class="circle-value" appCountUp>{{ toPercent(withContractStaff, totalStaff) }}%</div>
               </div>
-              <div class="chart-legend">With {{ withContractStaff }} / Without {{ withoutContractStaff }}</div>
+              <div class="chart-legend">{{ withContractStaff }} with / {{ withoutContractStaff }} without</div>
             </div>
-            <div class="stats-card chart-card">
-              <div class="stats-label">Access State</div>
+
+            <div class="hr-summary-card chart-card">
+              <div class="stats-label">Access Enabled</div>
               <div class="circle-wrap" [style.background]="circleStyle(toPercent(enabledStaff, totalStaff), '#22c55e')">
-                <div class="circle-value">{{ toPercent(enabledStaff, totalStaff) }}%</div>
+                <div class="circle-value" appCountUp>{{ toPercent(enabledStaff, totalStaff) }}%</div>
               </div>
-              <div class="chart-legend">Enabled {{ enabledStaff }} / Disabled {{ disabledStaff }}</div>
-            </div>
-            <div class="stats-card">
-              <div class="stats-label">Archived In Session</div>
-              <div class="stats-value">{{ archivedStaffCount }}</div>
+              <div class="chart-legend">{{ enabledStaff }} enabled / {{ disabledStaff }} disabled</div>
             </div>
           </div>
 
           <div class="role-stats-grid mb-3" *ngIf="!loading">
-            <div class="role-card" *ngFor="let rs of roleStats">
+            <div class="role-card" *ngFor="let rs of roleStats" [attr.data-stat-tooltip]="rs.role + ' share: ' + toPercent(rs.total, totalStaff) + '% of staff'">
               <div class="role-title">{{ rs.role }}</div>
-              <div class="role-total">{{ rs.total }}</div>
+              <div class="role-total" appCountUp>{{ rs.total }}</div>
               <div class="role-line">Active: {{ rs.active }}</div>
               <div class="role-line">Pending: {{ rs.pending }}</div>
               <div class="role-line">Inactive: {{ rs.inactive }}</div>
@@ -92,7 +98,7 @@
             </div>
           </div>
 
-          <div class="filters-panel mb-3">
+          <div class="filters-panel staff-filter-panel mb-3">
             <div class="filters-header">
               <div>
                 <h6 class="mb-1">Advanced Search & Filters</h6>
@@ -105,7 +111,7 @@
               </div>
             </div>
 
-            <div class="filters">
+            <div class="filters staff-filters">
             <input
               type="text"
               class="form-control"
@@ -203,7 +209,8 @@
                         {{ user.deleted ? 'ARCHIVED' : 'LIVE' }}
                       </span>
                     </td>
-                    <td class="d-flex gap-2 flex-wrap">
+                    <td>
+                      <div class="action-stack">
                       <a
                         class="btn btn-sm btn-light"
                         [routerLink]="['/backoffice/staff', user.id]"
@@ -245,6 +252,7 @@
                       >
                         Create Contract
                       </a>
+                      </div>
                     </td>
                   </tr>
                 </ng-container>
@@ -287,3 +295,6 @@
     </div>
   </div>
 </div>
+
+
+

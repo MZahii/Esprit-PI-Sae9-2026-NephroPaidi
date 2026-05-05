@@ -24,29 +24,28 @@
           </div>
 
           <div class="stats-grid mb-3" *ngIf="!loading">
-            <div class="stats-card">
+            <div class="stats-card" [attr.data-stat-tooltip]="'100% of current patient records. Live total: ' + totalPatients">
               <div class="stats-label">Total Patients</div>
-              <div class="stats-value">{{ totalPatients }}</div>
+              <div class="stats-value" appCountUp>{{ totalPatients }}</div>
             </div>
-            <div class="stats-card chart-card">
+            <div class="stats-card" [attr.data-stat-tooltip]="'New this month: ' + toPercent(newPatientsThisMonthCount, totalPatients) + '% of all patients'">
+              <div class="stats-label">New This Month</div>
+              <div class="stats-value" appCountUp>{{ newPatientsThisMonthCount }}</div>
+              <div class="stats-line">Loaded from patient creation dates when available</div>
+            </div>
+            <div class="stats-card chart-card" [attr.data-stat-tooltip]="'Male patients represent ' + toPercent(maleCount, totalPatients) + '% of all patients'">
               <div class="stats-label">Sex Distribution</div>
               <div class="circle-wrap" [style.background]="circleStyle(toPercent(maleCount, totalPatients), '#2563eb')">
-                <div class="circle-value">{{ toPercent(maleCount, totalPatients) }}%</div>
+                <div class="circle-value" appCountUp>{{ toPercent(maleCount, totalPatients) }}%</div>
               </div>
               <div class="chart-legend">Male {{ maleCount }} / Female {{ femaleCount }}</div>
             </div>
-            <div class="stats-card chart-card">
+            <div class="stats-card chart-card" [attr.data-stat-tooltip]="'Blood type completion is ' + toPercent(withBloodTypeCount, totalPatients) + '%'">
               <div class="stats-label">Blood Type Filled</div>
               <div class="circle-wrap" [style.background]="circleStyle(toPercent(withBloodTypeCount, totalPatients), '#14b8a6')">
-                <div class="circle-value">{{ toPercent(withBloodTypeCount, totalPatients) }}%</div>
+                <div class="circle-value" appCountUp>{{ toPercent(withBloodTypeCount, totalPatients) }}%</div>
               </div>
               <div class="chart-legend">Filled {{ withBloodTypeCount }} / Missing {{ totalPatients - withBloodTypeCount }}</div>
-            </div>
-            <div class="stats-card">
-              <div class="stats-label">Reception Insights</div>
-              <div class="stats-line">Linked Guardians: {{ linkedGuardianCount }}</div>
-              <div class="stats-line">Minors (&lt; 18): {{ minorsCount }}</div>
-              <div class="stats-line">With Allergies: {{ withAllergiesCount }}</div>
             </div>
           </div>
 
@@ -276,3 +275,6 @@
     </div>
   </div>
 </div>
+
+
+

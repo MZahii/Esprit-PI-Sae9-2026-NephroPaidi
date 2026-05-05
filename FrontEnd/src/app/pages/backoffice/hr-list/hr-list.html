@@ -27,34 +27,35 @@
           </div>
 
           <div class="stats-grid mb-3" *ngIf="!loading">
-            <div class="stats-card">
+            <div class="stats-card" [attr.data-stat-tooltip]="'100% of HR records currently loaded. Live total: ' + totalHr">
               <div class="stats-label">Total HR</div>
-              <div class="stats-value">{{ totalHr }}</div>
+              <div class="stats-value" appCountUp>{{ totalHr }}</div>
             </div>
-            <div class="stats-card chart-card">
+            <div class="stats-card" [attr.data-stat-tooltip]="'Office coverage: ' + toPercent(withOfficeAssignmentHr, totalHr) + '% assigned, ' + toPercent(withoutOfficeAssignmentHr, totalHr) + '% without office'">
+              <div class="stats-label">Office Coverage</div>
+              <div class="stats-value" appCountUp>{{ withOfficeAssignmentHr }}</div>
+              <div class="stats-line">Without office assignment: {{ withoutOfficeAssignmentHr }}</div>
+            </div>
+            <div class="stats-card chart-card" [attr.data-stat-tooltip]="'Active HR accounts: ' + toPercent(activeHr, totalHr) + '%'">
               <div class="stats-label">Account Status</div>
               <div class="circle-wrap" [style.background]="circleStyle(toPercent(activeHr, totalHr), '#2563eb')">
-                <div class="circle-value">{{ toPercent(activeHr, totalHr) }}%</div>
+                <div class="circle-value" appCountUp>{{ toPercent(activeHr, totalHr) }}%</div>
               </div>
               <div class="chart-legend">Active {{ activeHr }} / Pending {{ pendingHr }} / Inactive {{ inactiveHr }}</div>
             </div>
-            <div class="stats-card chart-card">
+            <div class="stats-card chart-card" [attr.data-stat-tooltip]="'HR contract coverage: ' + toPercent(withContractHr, totalHr) + '%'">
               <div class="stats-label">Contract Coverage</div>
               <div class="circle-wrap" [style.background]="circleStyle(toPercent(withContractHr, totalHr), '#14b8a6')">
-                <div class="circle-value">{{ toPercent(withContractHr, totalHr) }}%</div>
+                <div class="circle-value" appCountUp>{{ toPercent(withContractHr, totalHr) }}%</div>
               </div>
               <div class="chart-legend">With {{ withContractHr }} / Without {{ withoutContractHr }}</div>
             </div>
-            <div class="stats-card chart-card">
+            <div class="stats-card chart-card" [attr.data-stat-tooltip]="'Enabled access rate: ' + toPercent(enabledHr, totalHr) + '%'">
               <div class="stats-label">Access State</div>
               <div class="circle-wrap" [style.background]="circleStyle(toPercent(enabledHr, totalHr), '#22c55e')">
-                <div class="circle-value">{{ toPercent(enabledHr, totalHr) }}%</div>
+                <div class="circle-value" appCountUp>{{ toPercent(enabledHr, totalHr) }}%</div>
               </div>
               <div class="chart-legend">Enabled {{ enabledHr }} / Disabled {{ disabledHr }}</div>
-            </div>
-            <div class="stats-card">
-              <div class="stats-label">Archived In Session</div>
-              <div class="stats-value">{{ archivedHrCount }}</div>
             </div>
           </div>
 
@@ -208,3 +209,6 @@
     </div>
   </div>
 </div>
+
+
+

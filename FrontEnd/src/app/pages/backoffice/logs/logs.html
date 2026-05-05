@@ -27,15 +27,7 @@
     <div class="card-body">
       <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
       <div *ngIf="loading" class="text-muted py-3">Loading logs...</div>
-
-      <div class="kpi-grid mb-3" *ngIf="!loading">
-        <article class="kpi-card"><span>Total Logs</span><strong>{{ filteredLogs.length }}</strong></article>
-        <article class="kpi-card"><span>Account Logs</span><strong>{{ accountSourceCount }}</strong></article>
-        <article class="kpi-card"><span>Contract Logs</span><strong>{{ contractSourceCount }}</strong></article>
-        <article class="kpi-card"><span>Unique Actors</span><strong>{{ uniqueActorsCount }}</strong></article>
-      </div>
-
-      <div class="filters mb-3" *ngIf="!loading">
+<div class="filters mb-3" *ngIf="!loading">
         <input
           type="text"
           class="form-control"
@@ -72,8 +64,8 @@
           </header>
 
           <div class="group-body" *ngIf="isGroupExpanded(group.key)">
-            <article class="log-row" *ngFor="let log of group.entries">
-              <div class="log-left">
+            <article class="log-row improved-log-row" *ngFor="let log of group.entries">
+              <div class="log-left log-timeline-cell">
                 <div class="log-date">{{ log.createdAt | date:'yyyy-MM-dd HH:mm:ss' }}</div>
                 <div class="log-tags">
                   <span class="source-pill" [ngClass]="sourceClass(log.source)">{{ log.source }}</span>
@@ -82,13 +74,13 @@
                 <div class="actor-line"><strong>Actor:</strong> {{ log.actor || '-' }}</div>
               </div>
 
-              <div class="log-right">
+              <div class="log-right log-change-panel">
                 <ng-container *ngIf="getChangedFields(log).length > 0; else rawDetails">
-                  <div class="diff-item" *ngFor="let diff of getChangedFields(log)">
+                  <div class="diff-item diff-card" *ngFor="let diff of getChangedFields(log)">
                     <div class="diff-field">{{ diff.field }}</div>
                     <div class="diff-values">
                       <span class="diff-old">{{ diff.oldValue }}</span>
-                      <span class="diff-arrow">?</span>
+                      <span class="diff-arrow">-></span>
                       <span class="diff-new">{{ diff.newValue }}</span>
                     </div>
                   </div>
@@ -140,3 +132,7 @@
     </div>
   </section>
 </div>
+
+
+
+

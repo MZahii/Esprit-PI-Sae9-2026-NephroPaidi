@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthStorageService } from '../../../core/auth/auth-storage.service';
+import { InterfacePreferencesService } from '../../../core/services/interface-preferences.service';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
 
@@ -21,7 +22,6 @@ interface AccountSettingsResponse {
   role: string;
   accountStatus: string;
   enabled: boolean;
-  avatarUrl?: string;
   preferredLanguage: string;
   notificationsEnabled: boolean;
   theme: string;
@@ -53,8 +53,7 @@ export class AccountSettingsComponent implements OnInit {
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
-    avatarUrl: ''
+    phone: ''
   };
 
   preferencesForm = {
@@ -73,7 +72,8 @@ export class AccountSettingsComponent implements OnInit {
     private http: HttpClient,
     private route: ActivatedRoute,
     private router: Router,
-    private authStorage: AuthStorageService
+    private authStorage: AuthStorageService,
+    private interfacePreferences: InterfacePreferencesService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -108,8 +108,7 @@ export class AccountSettingsComponent implements OnInit {
         firstName: response.firstName ?? '',
         lastName: response.lastName ?? '',
         email: response.email ?? '',
-        phone: response.phone ?? '',
-        avatarUrl: response.avatarUrl ?? ''
+        phone: response.phone ?? ''
       };
       this.preferencesForm = {
         preferredLanguage: response.preferredLanguage ?? 'en',
@@ -153,8 +152,7 @@ export class AccountSettingsComponent implements OnInit {
           firstName: this.profileForm.firstName,
           lastName: this.profileForm.lastName,
           email: this.profileForm.email,
-          phone: this.profileForm.phone || null,
-          avatarUrl: this.profileForm.avatarUrl.trim() || null
+          phone: this.profileForm.phone || null
         }, { headers })
       );
       this.successMessage = 'Profile updated successfully.';
@@ -286,8 +284,12 @@ export class AccountSettingsComponent implements OnInit {
   private applyPreferencesLocally(): void {
     const language = this.preferencesForm.preferredLanguage || 'en';
     const theme = this.preferencesForm.theme || 'light';
+    const effectiveTheme = theme === 'system'
+      ? (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : theme;
     document.documentElement.setAttribute('lang', language);
     document.documentElement.setAttribute('data-theme-preference', theme);
-    document.body.classList.toggle('np-theme-dark', theme === 'dark');
+    document.body.classList.toggle('np-theme-dark', effectiveTheme === 'dark');
+    this.interfacePreferences.setLanguage(language);
   }
 }

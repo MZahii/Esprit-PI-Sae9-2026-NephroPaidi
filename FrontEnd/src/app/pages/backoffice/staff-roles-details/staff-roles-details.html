@@ -11,15 +11,36 @@
 </div>
 
 <div class="main-content">
+  <div class="stats-grid mb-3">
+    <div class="stats-card" [attr.data-stat-tooltip]="'100% of staff records included in role overview: ' + totalStaffForStats">
+      <div class="stats-label">Total Staff</div>
+      <div class="stats-value" appCountUp>{{ totalStaffForStats }}</div>
+    </div>
+    <div class="stats-card" [attr.data-stat-tooltip]="'Active staff rate: ' + (totalStaffForStats ? ((activeStaffForStats * 100 / totalStaffForStats) | number:'1.0-0') : 0) + '%'">
+      <div class="stats-label">Active Staff</div>
+      <div class="stats-value" appCountUp>{{ activeStaffForStats }}</div>
+    </div>
+    <div class="stats-card" [attr.data-stat-tooltip]="'Without contract: ' + (totalStaffForStats ? ((withoutContractForStats * 100 / totalStaffForStats) | number:'1.0-0') : 0) + '% of staff'">
+      <div class="stats-label">Without Contract</div>
+      <div class="stats-value" appCountUp>{{ withoutContractForStats }}</div>
+    </div>
+    <div class="stats-card" [attr.data-stat-tooltip]="'Without placement: ' + (totalStaffForStats ? ((withoutPlacementForStats * 100 / totalStaffForStats) | number:'1.0-0') : 0) + '% of staff'">
+      <div class="stats-label">Without Placement</div>
+      <div class="stats-value" appCountUp>{{ withoutPlacementForStats }}</div>
+    </div>
+  </div>
+
   <div class="row g-3 mb-3">
     <div class="col-xl-2 col-md-4 col-6" *ngFor="let stat of roleStats">
-      <div class="role-card">
+      <div class="role-card" [attr.data-stat-tooltip]="stat.role + ' share: ' + (totalStaffForStats ? ((stat.total * 100 / totalStaffForStats) | number:'1.0-0') : 0) + '% of all staff'">
         <h6>{{ stat.role }}</h6>
-        <div class="role-total">{{ stat.total }}</div>
+        <div class="role-total" appCountUp>{{ stat.total }}</div>
         <div class="role-meta">
           <small>Active: {{ stat.active }}</small>
           <small>Pending: {{ stat.pending }}</small>
           <small>Inactive: {{ stat.inactive }}</small>
+          <small>No contract: {{ stat.withoutContract }}</small>
+          <small>No placement: {{ stat.withoutPlacement }}</small>
         </div>
       </div>
     </div>
@@ -145,3 +166,6 @@
     </div>
   </div>
 </div>
+
+
+

@@ -6,6 +6,7 @@
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
   "verifyEmail": true,
+  "emailTheme": "nephrospaidi",
   "editUsernameAllowed": false,
 
   "roles": {

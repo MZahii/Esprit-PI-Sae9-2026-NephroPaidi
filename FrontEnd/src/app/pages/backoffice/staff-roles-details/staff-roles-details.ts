@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
+import { CountUpDirective } from '../../../shared/directives/count-up.directive';
 
 type StaffRole = 'DOCTOR' | 'NURSE' | 'SURGEON' | 'PHARMACIST' | 'RECEPTIONIST' | 'LAB_AGENT';
 type AccountStatus = 'PENDING_CONTRACT' | 'ACTIVE' | 'INACTIVE';
@@ -30,10 +31,20 @@ interface StaffSearchResponse {
   size: number;
 }
 
+interface ContractRow {
+  staffUserId: number;
+  status: 'ACTIVE' | 'SUSPENDED' | 'ENDED' | 'EXPIRED';
+}
+
+interface AssignmentRow {
+  userId: number;
+  role: StaffRole;
+}
+
 @Component({
   selector: 'app-staff-roles-details',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, CountUpDirective],
   templateUrl: './staff-roles-details.html',
   styleUrl: './staff-roles-details.scss'
 })
@@ -53,6 +64,8 @@ export class StaffRolesDetails implements OnInit, OnDestroy {
   readonly staffRoles: StaffRole[] = ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST', 'LAB_AGENT'];
   allStaff: UserRow[] = [];
   allStaffForStats: UserRow[] = [];
+  allContracts: ContractRow[] = [];
+  allAssignments: AssignmentRow[] = [];
   totalElements = 0;
   totalPages = 1;
   private refreshTimer?: ReturnType<typeof setInterval>;
@@ -82,18 +95,40 @@ export class StaffRolesDetails implements OnInit, OnDestroy {
     return this.allStaff;
   }
 
-  get roleStats(): Array<{ role: StaffRole; total: number; active: number; pending: number; inactive: number }> {
+  get roleStats(): Array<{ role: StaffRole; total: number; active: number; pending: number; inactive: number; withoutContract: number; withoutPlacement: number }> {
     return this.staffRoles.map(role => {
       const users = this.allStaffForStats.filter(u => u.role === role);
+      const contractedIds = new Set(this.allContracts.map((contract) => contract.staffUserId));
+      const assignedIds = new Set(this.allAssignments.filter((assignment) => assignment.role === role).map((assignment) => assignment.userId));
 
       return {
         role,
         total: users.length,
         active: users.filter(u => u.accountStatus === 'ACTIVE').length,
         pending: users.filter(u => u.accountStatus === 'PENDING_CONTRACT').length,
-        inactive: users.filter(u => u.accountStatus === 'INACTIVE').length
+        inactive: users.filter(u => u.accountStatus === 'INACTIVE').length,
+        withoutContract: users.filter(u => !contractedIds.has(u.id)).length,
+        withoutPlacement: users.filter(u => !assignedIds.has(u.id)).length
       };
     });
+  }
+
+  get totalStaffForStats(): number {
+    return this.allStaffForStats.length;
+  }
+
+  get activeStaffForStats(): number {
+    return this.allStaffForStats.filter((user) => user.accountStatus === 'ACTIVE').length;
+  }
+
+  get withoutContractForStats(): number {
+    const contractedIds = new Set(this.allContracts.map((contract) => contract.staffUserId));
+    return this.allStaffForStats.filter((user) => !contractedIds.has(user.id)).length;
+  }
+
+  get withoutPlacementForStats(): number {
+    const assignedIds = new Set(this.allAssignments.map((assignment) => assignment.userId));
+    return this.allStaffForStats.filter((user) => !assignedIds.has(user.id)).length;
   }
 
   fullName(user: UserRow): string {
@@ -142,16 +177,37 @@ export class StaffRolesDetails implements OnInit, OnDestroy {
   private async loadRoleStats(): Promise<void> {
     try {
       const token = await getValidToken();
-      const response = await firstValueFrom(this.http.get<UserRow[] | unknown>(`${environment.apiBaseUrl}/api/users`, {
-        headers: new HttpHeaders({
-          Authorization: `Bearer ${token}`
-        })
-      }));
-      const users = Array.isArray(response) ? response : [];
-      this.allStaffForStats = users.filter(u => this.staffRoles.includes(u.role as StaffRole));
+      const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+      const staffResponse = await firstValueFrom(this.http.post<StaffSearchResponse | unknown>(`${environment.apiBaseUrl}/api/users/staff/search`, {
+        query: null,
+        roles: [],
+        statuses: [],
+        enabled: null,
+        sortBy: 'firstName',
+        sortDir: 'asc',
+        page: 0,
+        size: 500
+      }, { headers }));
+      const payload = (staffResponse && typeof staffResponse === 'object') ? staffResponse as StaffSearchResponse : null;
+      this.allStaffForStats = Array.isArray(payload?.items) ? payload.items : [];
+
+      const contractsResponse = await firstValueFrom(this.http.get<ContractRow[] | unknown>(`${environment.apiBaseUrl}/api/contracts`, { headers }))
+        .catch(() => []);
+      this.allContracts = Array.isArray(contractsResponse) ? contractsResponse : [];
+
+      const assignmentResponses = await Promise.all(this.staffRoles.map((role) =>
+        firstValueFrom(this.http.get<AssignmentRow[] | unknown>(`${environment.apiBaseUrl}/api/staff-assignments`, {
+          headers,
+          params: { role }
+        })).catch(() => [])
+      ));
+      this.allAssignments = assignmentResponses.flatMap((items) => Array.isArray(items) ? items as AssignmentRow[] : []);
     } catch {
-      this.allStaffForStats = [];
+      this.allStaffForStats = [...this.allStaff];
     } finally {
+      if (this.allStaffForStats.length === 0 && this.allStaff.length > 0) {
+        this.allStaffForStats = [...this.allStaff];
+      }
       this.cdr.detectChanges();
     }
   }
@@ -181,6 +237,9 @@ export class StaffRolesDetails implements OnInit, OnDestroy {
       this.totalElements = Number(payload?.totalElements ?? 0);
       this.totalPages = Math.max(1, Number(payload?.totalPages ?? 1));
       this.currentPage = Math.min(Math.max(1, Number(payload?.page ?? 0) + 1), this.totalPages);
+      if (this.allStaffForStats.length === 0) {
+        this.allStaffForStats = [...this.allStaff];
+      }
       this.cdr.detectChanges();
     } catch (error: unknown) {
       const err = error as { status?: number; error?: { message?: string }; message?: string };
@@ -199,3 +258,7 @@ export class StaffRolesDetails implements OnInit, OnDestroy {
     }
   }
 }
+
+
+
+

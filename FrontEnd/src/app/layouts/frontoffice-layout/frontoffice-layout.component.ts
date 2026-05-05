@@ -11,6 +11,7 @@ import { filter, Subscription } from 'rxjs';
 import { AuthStorageService } from '../../core/auth/auth-storage.service';
 import { logout } from '../../core/auth/keycloak.service';
 import { TemplateAssetsService } from '../../core/services/template-assets.service';
+import { InterfacePreferencesService } from '../../core/services/interface-preferences.service';
 
 declare const window: any;
 declare const AOS: any;
@@ -60,7 +61,8 @@ export class FrontofficeLayoutComponent implements OnInit, OnDestroy {
   constructor(
     private templateAssetsService: TemplateAssetsService,
     private router: Router,
-    private authStorage: AuthStorageService
+    private authStorage: AuthStorageService,
+    private interfacePreferences: InterfacePreferencesService
   ) {}
 
   get user(): any | null {
@@ -96,6 +98,7 @@ export class FrontofficeLayoutComponent implements OnInit, OnDestroy {
 
     document.body.classList.remove('public-body', 'backoffice-body');
     document.body.classList.add('frontoffice-body');
+    this.applyPreferences(this.authStorage.getPreferences());
 
     try {
       await this.templateAssetsService.loadGroup(
@@ -259,6 +262,20 @@ export class FrontofficeLayoutComponent implements OnInit, OnDestroy {
     document.removeEventListener('click', this.bodyClickHandler);
     window.removeEventListener('scroll', this.scrollHandler);
     this.templateAssetsService.unloadGroup('frontoffice');
+    this.interfacePreferences.stop();
     document.body.classList.remove('frontoffice-body');
+  }
+
+  private applyPreferences(preferences: { theme: string; preferredLanguage: string; notificationsEnabled: boolean }): void {
+    const language = preferences.preferredLanguage || 'en';
+    const theme = preferences.theme || 'light';
+    const effectiveTheme = theme === 'system'
+      ? (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : theme;
+
+    document.documentElement.setAttribute('lang', language);
+    document.documentElement.setAttribute('data-theme-preference', theme);
+    document.body.classList.toggle('np-theme-dark', effectiveTheme === 'dark');
+    this.interfacePreferences.setLanguage(language);
   }
 }

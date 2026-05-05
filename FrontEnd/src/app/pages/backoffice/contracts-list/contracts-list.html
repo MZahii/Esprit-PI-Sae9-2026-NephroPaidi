@@ -32,30 +32,28 @@
           </div>
 
           <div class="stats-grid mb-3" *ngIf="!loading">
-            <div class="stats-card">
+            <div class="stats-card" [attr.data-stat-tooltip]="'100% of displayed contracts. Live total: ' + totalContracts">
               <div class="stats-label">Total Contracts</div>
-              <div class="stats-value">{{ totalContracts }}</div>
+              <div class="stats-value" appCountUp>{{ totalContracts }}</div>
             </div>
-            <div class="stats-card chart-card">
+            <div class="stats-card" [attr.data-stat-tooltip]="'Ending soon: ' + toPercent(endingSoonContracts, totalContracts) + '% of displayed contracts'">
+              <div class="stats-label">Ending Soon</div>
+              <div class="stats-value" appCountUp>{{ endingSoonContracts }}</div>
+              <div class="stats-line">Active/suspended contracts ending in 30 days</div>
+            </div>
+            <div class="stats-card chart-card" [attr.data-stat-tooltip]="'Active contract rate: ' + toPercent(activeContracts, totalContracts) + '%'">
               <div class="stats-label">Contract Status</div>
               <div class="circle-wrap" [style.background]="circleStyle(toPercent(activeContracts, totalContracts), '#2563eb')">
-                <div class="circle-value">{{ toPercent(activeContracts, totalContracts) }}%</div>
+                <div class="circle-value" appCountUp>{{ toPercent(activeContracts, totalContracts) }}%</div>
               </div>
               <div class="chart-legend">Active {{ activeContracts }} / Suspended {{ suspendedContracts }} / Ended {{ endedContracts }}</div>
             </div>
-            <div class="stats-card chart-card">
+            <div class="stats-card chart-card" [attr.data-stat-tooltip]="'Account active access rate: ' + toPercent(userActiveAccessContracts, totalContracts) + '%'">
               <div class="stats-label">Account Access</div>
               <div class="circle-wrap" [style.background]="circleStyle(toPercent(userActiveAccessContracts, totalContracts), '#22c55e')">
-                <div class="circle-value">{{ toPercent(userActiveAccessContracts, totalContracts) }}%</div>
+                <div class="circle-value" appCountUp>{{ toPercent(userActiveAccessContracts, totalContracts) }}%</div>
               </div>
               <div class="chart-legend">User Active {{ userActiveAccessContracts }} / User Inactive {{ userInactiveAccessContracts }}</div>
-            </div>
-            <div class="stats-card">
-              <div class="stats-label">Scope</div>
-              <div class="stats-line">
-                {{ contractScope === 'HR' ? 'Only HR contracts are displayed.' : 'Only staff contracts are displayed.' }}
-                <span *ngIf="isAdmin">Archived: {{ archivedContracts }}</span>
-              </div>
             </div>
           </div>
 
@@ -223,3 +221,6 @@
     </div>
   </div>
 </div>
+
+
+

@@ -1,4 +1,4 @@
-<div class="module-page placements-page">
+﻿<div class="module-page placements-page">
   <header class="module-header card stretch stretch-full">
     <div>
       <p class="module-kicker">HR Operations</p>
@@ -63,11 +63,11 @@
   </section>
 
   <section class="workspace-grid" *ngIf="!loading">
-    <article class="workspace-card" *ngFor="let group of tabWorkspaceGroups">
+    <article class="workspace-card" *ngFor="let group of tabWorkspaceGroups; trackBy: trackByWorkspaceGroup">
       <header class="workspace-head">
         <div>
           <div class="workspace-title">{{ group.floorLabel }} / {{ group.workspaceName }}</div>
-          <div class="workspace-meta">{{ group.workspaceCode }} � {{ group.workspaceType.replaceAll('_', ' ') }}</div>
+          <div class="workspace-meta">{{ group.workspaceCode }} • {{ group.workspaceType.replaceAll('_', ' ') }}</div>
         </div>
         <span class="count-pill">{{ group.assigned.length }} assigned</span>
       </header>
@@ -75,7 +75,7 @@
       <div *ngIf="group.assigned.length === 0" class="empty-inline">No users assigned.</div>
 
       <div class="assigned-stack" *ngIf="group.assigned.length > 0">
-        <div class="assigned-row" *ngFor="let assignment of group.assigned">
+        <div class="assigned-row" *ngFor="let assignment of group.assigned; trackBy: trackByAssignment">
           <div class="assigned-main">
             <div class="assigned-name">{{ userLabel(assignment.userId) }}</div>
             <div class="assigned-meta">{{ userEmail(assignment.userId) }}</div>
@@ -86,6 +86,7 @@
               *ngIf="activeTab !== 'DOCTOR'"
               type="button"
               class="btn btn-outline-warning btn-sm"
+              [disabled]="saving"
               (click)="moveState[assignment.id]?.enabled ? cancelMove(assignment.id) : startMove(assignment.id)"
             >
               {{ moveState[assignment.id]?.enabled ? 'Cancel' : 'Move' }}
@@ -107,3 +108,6 @@
     </article>
   </section>
 </div>
+
+
+

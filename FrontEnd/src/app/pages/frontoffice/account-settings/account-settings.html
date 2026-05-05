@@ -1,0 +1,149 @@
+﻿<section class="guardian-settings section" *ngIf="!loading">
+  <div class="container">
+    <div class="settings-hero">
+      <div class="settings-avatar">{{ initials }}</div>
+      <div>
+        <span class="eyebrow">Guardian Account</span>
+        <h1>Account Settings</h1>
+        <p>Manage your profile, password, notifications, language, and display preferences.</p>
+      </div>
+      <button type="button" class="ghost-action" (click)="backToPortal()">Back to portal</button>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger mt-4">{{ errorMessage }}</div>
+    <div *ngIf="successMessage" class="alert alert-success mt-4">{{ successMessage }}</div>
+
+    <div class="settings-tabs" aria-label="Account settings sections">
+      <button type="button" [class.active]="activeTab === 'profile'" (click)="setTab('profile')">
+        <i class="bi bi-person"></i>
+        Profile
+      </button>
+      <button type="button" [class.active]="activeTab === 'security'" (click)="setTab('security')">
+        <i class="bi bi-shield-lock"></i>
+        Security
+      </button>
+      <button type="button" [class.active]="activeTab === 'preferences'" (click)="setTab('preferences')">
+        <i class="bi bi-sliders"></i>
+        Preferences
+      </button>
+    </div>
+
+    <section class="settings-panel" *ngIf="settings && activeTab === 'profile'">
+      <div class="panel-head">
+        <h2>Profile Information</h2>
+        <p>Keep your guardian contact information up to date for care communication.</p>
+      </div>
+
+      <div class="settings-grid">
+        <label class="field-wrap">
+          <span>First Name</span>
+          <input class="form-control" [(ngModel)]="profileForm.firstName" placeholder="First name" />
+        </label>
+        <label class="field-wrap">
+          <span>Last Name</span>
+          <input class="form-control" [(ngModel)]="profileForm.lastName" placeholder="Last name" />
+        </label>
+        <label class="field-wrap">
+          <span>Email</span>
+          <input class="form-control" [(ngModel)]="profileForm.email" placeholder="Email" />
+        </label>
+        <label class="field-wrap">
+          <span>Phone</span>
+          <input class="form-control" [(ngModel)]="profileForm.phone" placeholder="Phone" />
+        </label>
+
+        <aside class="account-card">
+          <h3>Read-only Account Data</h3>
+          <div><strong>Username</strong><span>{{ settings.username }}</span></div>
+          <div><strong>Role</strong><span>{{ settings.role }}</span></div>
+          <div><strong>CIN</strong><span>{{ settings.cin || '-' }}</span></div>
+          <div><strong>Status</strong><span>{{ settings.accountStatus }}</span></div>
+        </aside>
+      </div>
+
+      <div class="panel-actions">
+        <button class="primary-action" type="button" [disabled]="savingProfile" (click)="saveProfile()">
+          {{ savingProfile ? 'Saving...' : 'Save Profile' }}
+        </button>
+      </div>
+    </section>
+
+    <section class="settings-panel" *ngIf="settings && activeTab === 'security'">
+      <div class="panel-head">
+        <h2>Security Settings</h2>
+        <p>Use a strong password to keep your family health information protected.</p>
+      </div>
+
+      <div class="settings-grid">
+        <label class="field-wrap">
+          <span>Current Password</span>
+          <input class="form-control" type="password" [(ngModel)]="securityForm.currentPassword" placeholder="Current password" />
+        </label>
+        <label class="field-wrap">
+          <span>New Password</span>
+          <input class="form-control" type="password" [(ngModel)]="securityForm.newPassword" placeholder="New password" />
+        </label>
+        <label class="field-wrap">
+          <span>Confirm New Password</span>
+          <input class="form-control" type="password" [(ngModel)]="securityForm.confirmPassword" placeholder="Confirm new password" />
+        </label>
+
+        <aside class="hint-card">
+          <i class="bi bi-info-circle"></i>
+          <span>Password must be at least 10 characters and include uppercase, lowercase, number, and special character.</span>
+        </aside>
+      </div>
+
+      <div class="panel-actions">
+        <button class="primary-action" type="button" [disabled]="savingPassword" (click)="changePassword()">
+          {{ savingPassword ? 'Updating...' : 'Change Password' }}
+        </button>
+      </div>
+    </section>
+
+    <section class="settings-panel" *ngIf="settings && activeTab === 'preferences'">
+      <div class="panel-head">
+        <h2>Preferences</h2>
+        <p>Adjust the portal language, notification behavior, and visual theme.</p>
+      </div>
+
+      <div class="settings-grid">
+        <label class="field-wrap">
+          <span>Language</span>
+          <select class="form-control" [(ngModel)]="preferencesForm.preferredLanguage">
+            <option value="en">English</option>
+            <option value="fr">French</option>
+            <option value="ar">Arabic</option>
+          </select>
+        </label>
+        <label class="field-wrap">
+          <span>Theme</span>
+          <select class="form-control" [(ngModel)]="preferencesForm.theme">
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+            <option value="system">System</option>
+          </select>
+        </label>
+        <label class="toggle-card">
+          <input type="checkbox" [(ngModel)]="preferencesForm.notificationsEnabled" />
+          <span>
+            <strong>Enable notifications</strong>
+            <small>Receive account and care updates when available.</small>
+          </span>
+        </label>
+      </div>
+
+      <div class="panel-actions">
+        <button class="primary-action" type="button" [disabled]="savingPrefs" (click)="savePreferences()">
+          {{ savingPrefs ? 'Saving...' : 'Save Preferences' }}
+        </button>
+      </div>
+    </section>
+  </div>
+</section>
+
+<section class="guardian-settings section" *ngIf="loading">
+  <div class="container">
+    <div class="settings-panel loading-card">Loading account settings...</div>
+  </div>
+</section>

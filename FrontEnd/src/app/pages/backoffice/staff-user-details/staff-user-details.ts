@@ -253,6 +253,29 @@ export class StaffUserDetails implements OnInit {
     });
   }
 
+  get activeContractCount(): number {
+    return this.contracts.filter((contract) => ['ACTIVE', 'SUSPENDED'].includes(contract.status)).length;
+  }
+
+  get endedContractCount(): number {
+    return this.contracts.filter((contract) => ['ENDED', 'EXPIRED'].includes(contract.status)).length;
+  }
+
+  get latestContractStatus(): string {
+    return this.contracts[0]?.status ?? 'NO CONTRACT';
+  }
+
+  get auditEventCount(): number {
+    return this.auditLogs.length;
+  }
+
+  get profileCompleteness(): number {
+    if (!this.user) return 0;
+    const fields = [this.user.firstName, this.user.lastName, this.user.email, this.user.phone, this.user.dateOfBirth, this.user.sex, this.user.cin];
+    const filled = fields.filter((value) => String(value ?? '').trim().length > 0).length;
+    return Math.round((filled / fields.length) * 100);
+  }
+
   startProfileEdit(): void {
     if (!this.user || !this.canEditProfile) return;
     this.editProfile = true;

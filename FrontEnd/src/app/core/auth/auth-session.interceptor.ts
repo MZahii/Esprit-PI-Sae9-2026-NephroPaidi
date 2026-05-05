@@ -59,6 +59,8 @@ export const authSessionInterceptor: HttpInterceptorFn = (req, next) => {
   const authStorage = inject(AuthStorageService);
   const router = inject(Router);
   const isLoginRequest = req.url.endsWith('/api/auth/login');
+  const isOnLoginPage = router.url.startsWith('/login');
+  const hadAuthHeader = req.headers.has('Authorization');
 
   if (isLoginRequest) {
     return next(req);
@@ -70,6 +72,8 @@ export const authSessionInterceptor: HttpInterceptorFn = (req, next) => {
         error.status === 401
         && !isLoginRequest
         && !isPublicApiRequest(req.url)
+        && !isOnLoginPage
+        && hadAuthHeader
         && authStorage.isAuthenticated()
       ) {
         authStorage.clear();

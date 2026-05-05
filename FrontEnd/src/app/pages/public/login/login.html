@@ -79,15 +79,20 @@
         <div class="appointment-form-wrapper" data-aos="fade-up" data-aos-delay="200">
           <form class="appointment-form" (ngSubmit)="submit()" #loginFormRef="ngForm">
 
-            <h3 class="mb-3">Secure Login</h3>
-            <p class="mb-4">Enter your credentials to access your medical space.</p>
+            <h3 class="mb-3">{{ forgotMode ? 'Reset Password' : 'Secure Login' }}</h3>
+            <p class="mb-4">
+              {{ forgotMode ? 'Enter your email or username to receive a secure password reset link.' : 'Enter your credentials to access your medical space.' }}
+            </p>
 
             <div *ngIf="errorMessage" class="alert alert-danger mb-3">
               {{ errorMessage }}
             </div>
+            <div *ngIf="infoMessage" class="alert alert-success mb-3">
+              {{ infoMessage }}
+            </div>
 
             <div class="row gy-3">
-              <div class="col-12">
+              <div class="col-12" *ngIf="!forgotMode">
                 <input
                   type="text"
                   name="identifier"
@@ -98,7 +103,7 @@
                 >
               </div>
 
-              <div class="col-12">
+              <div class="col-12" *ngIf="!forgotMode">
                 <input
                   type="password"
                   name="password"
@@ -109,7 +114,7 @@
                 >
               </div>
 
-              <div class="col-12 d-flex justify-content-between align-items-center">
+              <div class="col-12 d-flex justify-content-between align-items-center" *ngIf="!forgotMode">
                 <div>
                   <input
                     type="checkbox"
@@ -120,17 +125,32 @@
                   <label for="remember"> Remember me</label>
                 </div>
 
-                <a href="javascript:void(0)" class="small">Forgot password?</a>
+                <button type="button" class="btn btn-link p-0 small" (click)="showForgotPassword()">Forgot password?</button>
+              </div>
+
+              <div class="col-12" *ngIf="forgotMode">
+                <input
+                  type="text"
+                  name="forgotIdentifier"
+                  class="form-control"
+                  placeholder="Email Address or Username"
+                  [(ngModel)]="form.forgotIdentifier"
+                  required
+                >
+              </div>
+
+              <div class="col-12 d-flex justify-content-end" *ngIf="forgotMode">
+                <button type="button" class="btn btn-link p-0 small" (click)="backToLogin()">Back to login</button>
               </div>
 
               <div class="col-12">
                 <button
                   type="submit"
                   class="btn btn-appointment w-100"
-                  [disabled]="loading || loginFormRef.invalid"
+                  [disabled]="loading || (forgotMode ? !form.forgotIdentifier.trim() : loginFormRef.invalid)"
                 >
                   <i class="bi bi-box-arrow-in-right me-2"></i>
-                  {{ loading ? 'Signing in...' : 'Login' }}
+                  {{ loading ? (forgotMode ? 'Sending...' : 'Signing in...') : (forgotMode ? 'Send reset link' : 'Login') }}
                 </button>
               </div>
 

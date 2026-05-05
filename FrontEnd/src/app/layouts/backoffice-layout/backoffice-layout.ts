@@ -18,6 +18,7 @@ import { filter, firstValueFrom, Subscription } from 'rxjs';
 import { AuthStorageService } from '../../core/auth/auth-storage.service';
 import { getValidToken, logout } from '../../core/auth/keycloak.service';
 import { TemplateAssetsService } from '../../core/services/template-assets.service';
+import { InterfacePreferencesService } from '../../core/services/interface-preferences.service';
 import { environment } from '../../../environments/environment';
 
 declare const window: any;
@@ -108,6 +109,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
   constructor(
     private authStorage: AuthStorageService,
     private templateAssetsService: TemplateAssetsService,
+    private interfacePreferences: InterfacePreferencesService,
     private router: Router,
     private http: HttpClient
   ) {
@@ -554,7 +556,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     this.templateAssetsService.clearAll();
 
     document.body.classList.remove('public-body', 'frontoffice-body');
-    document.body.classList.add('backoffice-body');
+    document.body.classList.add('backoffice-body', 'admin-redesign');
 
     await this.templateAssetsService.loadGroup(
       'backoffice',
@@ -571,6 +573,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
         this.notificationsOpen = false;
         setTimeout(() => {
           this.refreshFeatherIcons();
+          this.interfacePreferences.setLanguage(this.authStorage.getPreferences().preferredLanguage);
         }, 120);
       });
 
@@ -594,7 +597,8 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
       clearInterval(this.notificationsTimer);
     }
     this.templateAssetsService.unloadGroup('backoffice');
-    document.body.classList.remove('backoffice-body');
+    this.interfacePreferences.stop();
+    document.body.classList.remove('backoffice-body', 'admin-redesign');
   }
 
   toggleMenu(event: MouseEvent, key: string): void {
@@ -753,9 +757,13 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
   private applyPreferences(preferences: { theme: string; preferredLanguage: string; notificationsEnabled: boolean }): void {
     const theme = preferences.theme || 'light';
     const language = preferences.preferredLanguage || 'en';
+    const effectiveTheme = theme === 'system'
+      ? (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : theme;
     this.notificationsEnabled = preferences.notificationsEnabled !== false;
     document.documentElement.setAttribute('lang', language);
     document.documentElement.setAttribute('data-theme-preference', theme);
-    document.body.classList.toggle('np-theme-dark', theme === 'dark');
+    document.body.classList.toggle('np-theme-dark', effectiveTheme === 'dark');
+    this.interfacePreferences.setLanguage(language);
   }
 }

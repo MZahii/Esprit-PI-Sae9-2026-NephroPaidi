@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
+import { CountUpDirective } from '../../../shared/directives/count-up.directive';
 import { AuthStorageService } from '../../../core/auth/auth-storage.service';
 
 type PatientSex = 'MALE' | 'FEMALE';
@@ -21,6 +22,7 @@ interface PatientProfile {
   allergies?: string | null;
   chronicConditions?: string | null;
   medicalNotes?: string | null;
+  createdAt?: string | null;
 }
 
 interface GuardianUser {
@@ -37,7 +39,7 @@ type AgeGroup = 'ALL' | 'BABY' | 'CHILD' | 'TEEN';
 @Component({
   selector: 'app-patients-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, CountUpDirective],
   templateUrl: './patients-list.html',
   styleUrl: './patients-list.scss'
 })
@@ -172,6 +174,28 @@ export class PatientsList implements OnInit {
 
   get linkedGuardianCount(): number {
     return new Set(this.allPatients.map(p => p.guardianUserId)).size;
+  }
+
+  get patientsWithoutKnownGuardianCount(): number {
+    return this.allPatients.filter((patient) => !this.guardianMap[patient.guardianUserId]).length;
+  }
+
+  get newPatientsThisMonthCount(): number {
+    const now = new Date();
+    return this.allPatients.filter((patient) => {
+      const created = new Date(patient.createdAt ?? '');
+      return !Number.isNaN(created.getTime())
+        && created.getFullYear() === now.getFullYear()
+        && created.getMonth() === now.getMonth();
+    }).length;
+  }
+
+  get missingClinicalBasicsCount(): number {
+    return this.allPatients.filter((patient) => {
+      const bloodType = (patient.bloodType ?? '').trim();
+      const notes = (patient.medicalNotes ?? '').trim();
+      return !bloodType || bloodType === '-' || !notes || notes === '-';
+    }).length;
   }
 
   onFiltersChanged(): void {
@@ -397,3 +421,7 @@ export class PatientsList implements OnInit {
     ].map((v) => String(v).toLowerCase());
   }
 }
+
+
+
+

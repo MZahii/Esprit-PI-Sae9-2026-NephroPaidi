@@ -12,11 +12,13 @@ services:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin123}
       KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_URL: http://localhost:8080
       KC_HOSTNAME_STRICT: "false"
     ports:
       - "8080:8080"
     volumes:
       - ./BackEnd/keycloak/realm:/opt/keycloak/data/import
+      - ./BackEnd/keycloak/themes:/opt/keycloak/themes
     cpus: "1.00"
     mem_limit: "1g"
     networks:
@@ -84,11 +86,11 @@ services:
       SERVER_PORT: 8083
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: api-gateway
-      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
       KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
       USER_SERVICE_URI: http://user-service:8090
       ADMINISTRATION_SERVICE_URI: http://administration-service:8087
@@ -125,7 +127,7 @@ services:
       EUREKA_URL: http://eureka:8761/eureka
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: user-service
-      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
       KEYCLOAK_SERVER_URL: http://keycloak:8080
       KEYCLOAK_REALM: nephrospaidi
       KEYCLOAK_ADMIN_CLIENT_ID: admin-cli
@@ -157,7 +159,7 @@ services:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: administration-service
-      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
       USER_SERVICE_BASE_URL: http://user-service:8090
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-my-super-secret-internal-key}
       ENVIRONMENT: docker
@@ -183,7 +185,7 @@ services:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: communication-service
-      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
       USER_SERVICE_BASE_URL: http://user-service:8090
       ADMINISTRATION_SERVICE_BASE_URL: http://administration-service:8087
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-my-super-secret-internal-key}
@@ -211,7 +213,7 @@ services:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: clinical-service
-      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
       SERVICES_ADMINISTRATION_BASE: http://administration-service:8087
       SERVICES_USER_BASE: http://user-service:8090
       USER_SERVICE_URL: http://user-service:8090
@@ -243,7 +245,7 @@ services:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: ops-service
-      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
       ENVIRONMENT: docker
     ports:
       - "8082:8082"
@@ -285,7 +287,7 @@ services:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: pharmacy-service
-      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
       USER_SERVICE_BASE_URL: http://user-service:8090
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-my-super-secret-internal-key}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
@@ -312,7 +314,7 @@ services:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: procedure-service
-      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
       RESEND_ENABLED: ${RESEND_ENABLED:-false}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-onboarding@resend.dev}

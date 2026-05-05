@@ -6,6 +6,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom, forkJoin, Subscription } from 'rxjs';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
+import { CountUpDirective } from '../../../shared/directives/count-up.directive';
 import { AuthStorageService } from '../../../core/auth/auth-storage.service';
 import { DocumentExportService } from '../../../core/services/document-export.service';
 
@@ -45,7 +46,7 @@ interface UserRow {
 @Component({
   selector: 'app-contracts-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, CountUpDirective],
   templateUrl: './contracts-list.html',
   styleUrl: './contracts-list.scss'
 })
@@ -215,6 +216,26 @@ export class ContractsList implements OnInit, OnDestroy {
 
   get userInactiveAccessContracts(): number {
     return this.totalContracts - this.userActiveAccessContracts;
+  }
+
+  get endingSoonContracts(): number {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const limit = new Date(today);
+    limit.setDate(limit.getDate() + 30);
+    return this.visibleContracts.filter((contract) => {
+      if (contract.deleted || !['ACTIVE', 'SUSPENDED'].includes(contract.status)) return false;
+      const end = new Date(contract.endDate);
+      return !Number.isNaN(end.getTime()) && end >= today && end <= limit;
+    }).length;
+  }
+
+  get expiredContracts(): number {
+    return this.visibleContracts.filter(c => !c.deleted && c.status === 'EXPIRED').length;
+  }
+
+  get missingAccessContracts(): number {
+    return this.visibleContracts.filter(c => !c.deleted && this.accountAccessStatus(c) === 'USER_INACTIVE').length;
   }
 
   statusClass(status: ContractStatus): string {
@@ -493,3 +514,7 @@ export class ContractsList implements OnInit, OnDestroy {
     };
   }
 }
+
+
+
+

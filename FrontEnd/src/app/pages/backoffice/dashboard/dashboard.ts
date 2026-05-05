@@ -9,6 +9,7 @@ import { AuthStorageService } from '../../../core/auth/auth-storage.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { CountUpDirective } from '../../../shared/directives/count-up.directive';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 
 declare global {
@@ -43,7 +44,7 @@ interface PlacementFloorSummary {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, CountUpDirective],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })
@@ -71,6 +72,14 @@ export class Dashboard implements AfterViewInit, OnInit {
     LAB_AGENT: 0,
     PHARMACIST: 0,
     RECEPTIONIST: 0
+  };
+  assignmentUserIds: Record<string, Set<number>> = {
+    ADMIN: new Set<number>(),
+    HR: new Set<number>(),
+    DOCTOR: new Set<number>(),
+    LAB_AGENT: new Set<number>(),
+    PHARMACIST: new Set<number>(),
+    RECEPTIONIST: new Set<number>()
   };
 
   get expiringContractsPreview(): Array<{
@@ -255,8 +264,24 @@ export class Dashboard implements AfterViewInit, OnInit {
     return this.allUsers.filter((user) => user.role === 'HR');
   }
 
+  get adminUsers(): any[] {
+    return this.allUsers.filter((user) => user.role === 'ADMIN');
+  }
+
   get totalHr(): number {
     return this.hrUsers.length;
+  }
+
+  get adminWithoutOffice(): number {
+    return this.adminUsers.filter((user) => !this.assignmentUserIds['ADMIN'].has(Number(user.id))).length;
+  }
+
+  get hrWithoutOffice(): number {
+    return this.hrUsers.filter((user) => !this.assignmentUserIds['HR'].has(Number(user.id))).length;
+  }
+
+  get staffWithoutPlacement(): number {
+    return this.staffUsers.filter((user) => !this.assignmentUserIds[String(user.role)]?.has(Number(user.id))).length;
   }
 
   get activeHr(): number {
@@ -512,6 +537,14 @@ export class Dashboard implements AfterViewInit, OnInit {
           PHARMACIST: Array.isArray(pharmacistAssignments) ? pharmacistAssignments.length : 0,
           RECEPTIONIST: Array.isArray(receptionistAssignments) ? receptionistAssignments.length : 0
         };
+        this.assignmentUserIds = {
+          ADMIN: this.toAssignmentUserSet(adminAssignments),
+          HR: this.toAssignmentUserSet(hrAssignments),
+          DOCTOR: this.toAssignmentUserSet(doctorAssignments),
+          LAB_AGENT: this.toAssignmentUserSet(labAssignments),
+          PHARMACIST: this.toAssignmentUserSet(pharmacistAssignments),
+          RECEPTIONIST: this.toAssignmentUserSet(receptionistAssignments)
+        };
       }
 
       if (this.isReceptionist || this.isAdmin) {
@@ -554,4 +587,13 @@ export class Dashboard implements AfterViewInit, OnInit {
       this.loadingStats = false;
     }
   }
+
+  private toAssignmentUserSet(assignments: unknown): Set<number> {
+    const rows = Array.isArray(assignments) ? assignments : [];
+    return new Set(rows.map((assignment: any) => Number(assignment?.userId)).filter((id) => Number.isFinite(id)));
+  }
 }
+
+
+
+

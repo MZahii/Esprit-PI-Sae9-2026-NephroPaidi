@@ -35,6 +35,10 @@ export interface TokenRefreshResponse {
   expiresIn: number;
 }
 
+export interface GenericAuthMessageResponse {
+  message: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -48,5 +52,9 @@ export class AuthApiService {
 
   refresh(payload: TokenRefreshRequest): Observable<TokenRefreshResponse> {
     return this.http.post<TokenRefreshResponse>(`${this.baseUrl}/api/auth/refresh`, payload);
+  }
+
+  forgotPassword(identifier: string): Observable<GenericAuthMessageResponse> {
+    return this.http.post<GenericAuthMessageResponse>(`${this.baseUrl}/api/auth/forgot-password`, { identifier });
   }
 }

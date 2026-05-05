@@ -7,6 +7,7 @@ import { firstValueFrom, forkJoin } from 'rxjs';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { AuthStorageService } from '../../../core/auth/auth-storage.service';
 import { environment } from '../../../../environments/environment';
+import { CountUpDirective } from '../../../shared/directives/count-up.directive';
 
 type StaffRole = 'DOCTOR' | 'NURSE' | 'SURGEON' | 'PHARMACIST' | 'RECEPTIONIST' | 'LAB_AGENT';
 type AccountStatus = 'PENDING_CONTRACT' | 'ACTIVE' | 'INACTIVE';
@@ -63,7 +64,7 @@ interface RoleStats {
 @Component({
   selector: 'app-staff-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, CountUpDirective],
   templateUrl: './staff-list.html',
   styleUrl: './staff-list.scss'
 })
@@ -605,3 +606,7 @@ export class StaffList implements OnInit, OnDestroy {
     return a.username.toLowerCase().localeCompare(b.username.toLowerCase());
   }
 }
+
+
+
+

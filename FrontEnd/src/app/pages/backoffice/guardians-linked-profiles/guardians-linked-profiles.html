@@ -24,25 +24,24 @@
           </div>
 
           <div class="stats-grid mb-3" *ngIf="!loading">
-            <div class="stats-card">
+            <div class="stats-card" [attr.data-stat-tooltip]="'100% of guardian records. Live total: ' + totalGuardians">
               <div class="stats-label">Total Guardians</div>
-              <div class="stats-value">{{ totalGuardians }}</div>
+              <div class="stats-value" appCountUp>{{ totalGuardians }}</div>
             </div>
-            <div class="stats-card">
+            <div class="stats-card" [attr.data-stat-tooltip]="'Linked guardian coverage: ' + linkedGuardianRate + '%'">
               <div class="stats-label">With Linked Patients</div>
-              <div class="stats-value">{{ withPatientsCount }}</div>
-              <div class="stats-line">Without: {{ withoutPatientsCount }}</div>
+              <div class="stats-value" appCountUp>{{ withPatientsCount }}</div>
+              <div class="stats-line">Without: {{ withoutPatientsCount }} | Coverage: {{ linkedGuardianRate }}%</div>
             </div>
-            <div class="stats-card">
+            <div class="stats-card" [attr.data-stat-tooltip]="'Recent guardians: ' + (totalGuardians ? ((recentGuardiansCount * 100 / totalGuardians) | number:'1.0-0') : 0) + '% of guardians'">
+              <div class="stats-label">Recent Guardians</div>
+              <div class="stats-value" appCountUp>{{ recentGuardiansCount }}</div>
+              <div class="stats-line">Created in the last 30 days when available</div>
+            </div>
+            <div class="stats-card" [attr.data-stat-tooltip]="'Linked profiles per guardian average: ' + averageProfilesPerGuardian">
               <div class="stats-label">Total Linked Profiles</div>
-              <div class="stats-value">{{ totalLinkedProfiles }}</div>
+              <div class="stats-value" appCountUp>{{ totalLinkedProfiles }}</div>
               <div class="stats-line">Avg / Guardian: {{ averageProfilesPerGuardian }}</div>
-            </div>
-            <div class="stats-card">
-              <div class="stats-label">Top Linked Guardians</div>
-              <div class="stats-line" *ngFor="let row of topLinkedGuardians">
-                {{ guardianFullName(row.guardian) }}: {{ row.patients.length }}
-              </div>
             </div>
           </div>
 
@@ -182,3 +181,6 @@
     </div>
   </div>
 </div>
+
+
+

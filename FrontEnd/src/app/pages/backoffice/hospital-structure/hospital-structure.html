@@ -21,14 +21,22 @@
 
   <ng-container *ngIf="!loading && structure as state">
     <section class="kpi-grid">
-      <article class="kpi-card"><span>Total Floors</span><strong>{{ summaryStats.totalFloors }}</strong></article>
-      <article class="kpi-card"><span>Total Workspaces</span><strong>{{ summaryStats.totalWorkspaces }}</strong></article>
-      <article class="kpi-card"><span>Types Used</span><strong>{{ summaryStats.totalWorkspaceTypesUsed }}</strong></article>
-      <article class="kpi-card"><span>Empty Floors</span><strong>{{ summaryStats.emptyFloors }}</strong></article>
-      <article class="kpi-card"><span>Active Floors</span><strong>{{ summaryStats.floorsWithWorkspaces }}</strong></article>
-      <article class="kpi-card"><span>Most Used Type</span><strong>{{ summaryStats.mostUsedWorkspaceType }}</strong></article>
-      <article class="kpi-card"><span>Last Update</span><strong>{{ summaryStats.lastUpdatedAt }}</strong></article>
-      <article class="kpi-card"><span>Status</span><strong>{{ state.initialized ? 'Initialized' : 'Not initialized' }}</strong></article>
+      <article class="kpi-card" [attr.data-stat-tooltip]="'100% of configured floors. Live total: ' + summaryStats.totalFloors"><span>Total Floors</span><strong appCountUp>{{ summaryStats.totalFloors }}</strong></article>
+      <article class="kpi-card" [attr.data-stat-tooltip]="'100% of configured workspaces. Live total: ' + summaryStats.totalWorkspaces"><span>Total Workspaces</span><strong appCountUp>{{ summaryStats.totalWorkspaces }}</strong></article>
+      <article class="kpi-card" [attr.data-stat-tooltip]="'Active floors: ' + (summaryStats.totalFloors ? ((summaryStats.floorsWithWorkspaces * 100 / summaryStats.totalFloors) | number:'1.0-0') : 0) + '% of floors'"><span>Active Floors</span><strong appCountUp>{{ summaryStats.floorsWithWorkspaces }}</strong></article>
+      <article class="kpi-card" [attr.data-stat-tooltip]="'Most used workspace type based on current structure'"><span>Most Used Type</span><strong appCountUp>{{ summaryStats.mostUsedWorkspaceType }}</strong></article>
+      <article class="kpi-card" [attr.data-stat-tooltip]="'Floor with the highest workspace count right now'"><span>Busiest Floor</span><strong appCountUp>{{ busiestFloorLabel }}</strong></article>
+    </section>
+
+    <section class="card stretch stretch-full control-panel" *ngIf="workspaceTypeDistribution.length">
+      <div class="card-header"><h5 class="card-title">Workspace Mix</h5></div>
+      <div class="card-body">
+        <div class="floor-preview">
+          <span class="preview-chip" *ngFor="let item of workspaceTypeDistribution">
+            {{ item.label }}: {{ item.count }}
+          </span>
+        </div>
+      </div>
     </section>
 
     <section class="card stretch stretch-full control-panel" *ngIf="!state.initialized">
@@ -152,3 +160,6 @@
     </div>
   </div>
 </div>
+
+
+

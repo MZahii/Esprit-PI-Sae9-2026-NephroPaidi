@@ -12,6 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 import tn.esprit.spring.userservice.config.KeycloakAdminConfig;
 import tn.esprit.spring.userservice.dto.request.LoginRequest;
 import tn.esprit.spring.userservice.dto.request.ResendVerificationEmailRequest;
+import tn.esprit.spring.userservice.dto.request.ForgotPasswordRequest;
 import tn.esprit.spring.userservice.dto.response.TokenRefreshResponse;
 import tn.esprit.spring.userservice.dto.response.KeycloakTokenResponse;
 import tn.esprit.spring.userservice.dto.response.LoginResponse;
@@ -101,6 +102,17 @@ public class AuthService {
             keycloakAdminService.ensureEmailVerificationRequired(user.getKeycloakId());
             keycloakAdminService.sendVerificationEmailIfPossible(user.getKeycloakId());
         });
+    }
+
+    public void forgotPassword(ForgotPasswordRequest request) {
+        String identifier = request.getIdentifier() == null ? "" : request.getIdentifier().trim();
+        if (identifier.isBlank()) {
+            return;
+        }
+
+        userRepository.findByIdentifier(identifier).ifPresent(user ->
+                keycloakAdminService.sendPasswordResetOrVerificationEmail(user.getKeycloakId())
+        );
     }
 
     private KeycloakTokenResponse requestTokenFromKeycloak(String username, String password) {

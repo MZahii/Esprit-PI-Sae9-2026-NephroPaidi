@@ -438,6 +438,45 @@ export class LogsComponent implements OnInit {
     return new Set(this.filteredLogs.map((log) => log.actor).filter(Boolean)).size;
   }
 
+  get logsTodayCount(): number {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.filteredLogs.filter((log) => (log.createdAt ?? '').slice(0, 10) === today).length;
+  }
+
+  get logsThisWeekCount(): number {
+    const now = new Date();
+    const start = new Date(now);
+    start.setDate(now.getDate() - 7);
+    return this.filteredLogs.filter((log) => {
+      const created = new Date(log.createdAt);
+      return !Number.isNaN(created.getTime()) && created >= start && created <= now;
+    }).length;
+  }
+
+  get sensitiveActionCount(): number {
+    return this.filteredLogs.filter((log) => {
+      const action = (log.action ?? '').toLowerCase();
+      return ['delete', 'archive', 'suspend', 'status', 'password', 'restore'].some((term) => action.includes(term));
+    }).length;
+  }
+
+  get topActionType(): string {
+    const counters = new Map<string, number>();
+    for (const log of this.filteredLogs) {
+      const action = (log.action || 'UNKNOWN').split(/[.:_-]/)[0].toUpperCase();
+      counters.set(action, (counters.get(action) ?? 0) + 1);
+    }
+    let top = '-';
+    let topCount = 0;
+    for (const [action, count] of counters.entries()) {
+      if (count > topCount) {
+        top = action;
+        topCount = count;
+      }
+    }
+    return topCount ? `${top} (${topCount})` : '-';
+  }
+
   private buildExportConfig() {
     const currentUser = this.authStorage.getUser();
     const generatedBy = currentUser
@@ -452,7 +491,9 @@ export class LogsComponent implements OnInit {
         { label: 'Total Logs', value: this.filteredLogs.length },
         { label: 'Account Logs', value: this.accountSourceCount },
         { label: 'Contract Logs', value: this.contractSourceCount },
-        { label: 'Unique Actors', value: this.uniqueActorsCount }
+        { label: 'Unique Actors', value: this.uniqueActorsCount },
+        { label: 'Logs Today', value: this.logsTodayCount },
+        { label: 'Sensitive Actions', value: this.sensitiveActionCount }
       ],
       columns: [
         { key: 'createdAt', label: 'Date / Time' },
@@ -516,3 +557,8 @@ export class LogsComponent implements OnInit {
     };
   }
 }
+
+
+
+
+

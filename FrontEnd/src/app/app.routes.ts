@@ -47,6 +47,7 @@ import { CommunicationNewComponent } from './pages/frontoffice/communication-new
 import { CommunicationThreadComponent } from './pages/frontoffice/communication-thread/communication-thread';
 import { FrontofficeAppointmentsComponent } from './pages/frontoffice/appointments/appointments';
 import { FrontofficeProfileComponent } from './pages/frontoffice/profile/profile';
+import { GuardianAccountSettingsComponent } from './pages/frontoffice/account-settings/account-settings';
 import { DoctorComponent } from './pages/backoffice/doctor/doctor.component';
 import { ConsultationsListPage } from './features/clinical/consultations/consultations-list.page';
 import { ConsultationDetailsPage as ClinicalConsultationDetailsPage } from './features/clinical/consultations/consultation-details.page';
@@ -406,6 +407,7 @@ export const routes: Routes = [
       { path: 'appointments', pathMatch: 'full', redirectTo: 'schedule/appointments' },
       { path: 'profile', component: ProfilePage },
       { path: 'profile-legacy', component: FrontofficeProfileComponent },
+      { path: 'account-settings', component: GuardianAccountSettingsComponent },
       { path: 'patients/:id', component: FrontofficePatientDetailsComponent },
       { path: 'my-contract', component: MyContractComponent },
       { path: 'tracking', component: GuardianTrackingComponent },

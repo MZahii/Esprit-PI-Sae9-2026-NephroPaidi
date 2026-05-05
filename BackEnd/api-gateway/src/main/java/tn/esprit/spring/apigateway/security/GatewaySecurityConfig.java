@@ -39,6 +39,7 @@ public class GatewaySecurityConfig {
                         .pathMatchers("/api/auth/login").permitAll()
                         .pathMatchers("/api/auth/refresh").permitAll()
                         .pathMatchers("/api/auth/resend-verification").permitAll()
+                        .pathMatchers("/api/auth/forgot-password").permitAll()
                         .pathMatchers("/swagger/**", "/v3/api-docs/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/users/public/doctors").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/core-ops/health", "/api/core-ops/rabbitmq/health").permitAll()
