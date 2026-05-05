@@ -71,6 +71,14 @@ spring:
               predicates:
                 - Path=/api/ops/**
 
+            # AI Service - Pediatric dosing verification
+            - id: ai-service-api
+              uri: ${AI_SERVICE_URI:http://localhost:8091}
+              predicates:
+                - Path=/api/ai/**
+              filters:
+                - RewritePath=/api/ai/?(.*), /$1
+
   security:
     oauth2:
       resourceserver:
