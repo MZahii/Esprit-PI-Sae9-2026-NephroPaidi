@@ -188,6 +188,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     if (this.isAdmin) return 'bg-soft-primary text-primary';
     if (this.isHr) return 'bg-soft-warning text-warning';
     if (this.isSurgeon) return 'bg-soft-success text-success';
+    if (this.isLabAgent) return 'bg-soft-info text-info';
     return 'bg-soft-secondary text-muted';
   }
 
@@ -204,6 +205,10 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
       return 'Procedure Service Workspace';
     }
 
+    if (this.isLabAgent) {
+      return 'Lab Agent Workspace';
+    }
+
     return 'Backoffice Dashboard';
   }
 
@@ -218,6 +223,10 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
 
     if (this.isSurgeon) {
       return 'Manage surgical and dialysis workflows from your procedure-service module.';
+    }
+
+    if (this.isLabAgent) {
+      return 'Receive lab orders, upload result files, and monitor AI-assisted clinical analysis.';
     }
 
     return 'Manage your backoffice workspace.';
@@ -528,6 +537,21 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
           {
             label: 'Consultations',
             route: '/backoffice/consultations',
+            implemented: true
+          }
+        ]
+      });
+    }
+
+    if (this.isLabAgent) {
+      items.push({
+        key: 'labWorkflow',
+        label: 'Lab Workflow',
+        icon: 'feather-droplet',
+        children: [
+          {
+            label: 'Lab Requests Inbox',
+            route: '/backoffice/lab-inbox',
             implemented: true
           }
         ]

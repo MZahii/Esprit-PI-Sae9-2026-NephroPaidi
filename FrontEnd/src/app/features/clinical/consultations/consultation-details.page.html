@@ -26,7 +26,7 @@
         </div>
       </div>
       <span class="badge" [ngClass]="statusBadge(consultation?.status)">
-        {{ consultation?.status || 'OPEN' }}
+        {{ statusLabel(consultation?.status) }}
       </span>
     </div>
 

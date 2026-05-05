@@ -45,6 +45,8 @@ public class SecurityConfig {
                 .requestMatchers(mvcMatcherBuilder.pattern(HttpMethod.POST, "/clinical/appointments")).hasAnyRole("RECEPTIONIST", "DOCTOR")
                 .requestMatchers(mvcMatcherBuilder.pattern(HttpMethod.PUT, "/clinical/appointments/{id}")).hasRole("RECEPTIONIST")
                 .requestMatchers(mvcMatcherBuilder.pattern(HttpMethod.POST, "/clinical/appointments/{id}/cancel")).hasRole("RECEPTIONIST")
+                .requestMatchers(mvcMatcherBuilder.pattern(HttpMethod.GET, "/clinical/follow-up-requests")).hasAnyRole("RECEPTIONIST", "ADMIN", "PLATFORM_ADMIN")
+                .requestMatchers(mvcMatcherBuilder.pattern(HttpMethod.POST, "/clinical/follow-up-requests/{id}/confirm")).hasAnyRole("RECEPTIONIST", "ADMIN", "PLATFORM_ADMIN")
                 .requestMatchers(mvcMatcherBuilder.pattern("/clinical/consultations/**")).hasRole("DOCTOR")
                 .anyRequest().authenticated()
         )

@@ -24,6 +24,37 @@ export interface ConsultationMetricsRequest {
   ageYears?: number;
   systolicBpMmHg?: number;
   diastolicBpMmHg?: number;
+  sex?: string;  // 'M' or 'F' - REQUIRED for CKD-EPI formula
+  // Response fields (calculated by backend)
+  creatinineUmol?: number;  // SI units storage
+  serumCreatinineUnit?: string;  // "MICROMOL_L" or "MG_DL"
+  egfrFormulaUsed?: string;  // "CKD_EPI_2021" or "COCKCROFT_GAULT"
+  ckdEpiEgfr?: number;  // CKD-EPI result
+  previousEgfr?: number;  // Trend comparison
+  egfrChange?: number;  // Absolute change
+  egfrChangePercent?: number;  // Percentage change
+  egfrTrend?: string;  // "STABLE", "DECLINING", etc.
+  egfrQualityIndicator?: string;  // "HIGH_QUALITY", "MEDIUM_QUALITY", "LOW_QUALITY"
+  egfrLastUpdatedAt?: string;  // ISO timestamp
+  egfr?: number;  // eGFR value
+  ckdStage?: string;  // "NORMAL", "STAGE_1", etc.
+  alertLowEgfr?: boolean;  // Low eGFR alert
+  alertRapidDecline?: boolean;  // Rapid decline alert
+  alertMessage?: string;  // Clinical alert message
+  aiRecommendation?: string;
+  aiConfidence?: number;
+  aiSummary?: string;
+  aiRequiresReview?: boolean;
+  aiSourceFileName?: string;
+  aiUpdatedAt?: string;
+}
+
+export interface ClinicalLabRequestPayload {
+  patientId: number;
+  consultationId?: string;
+  testType: string;
+  urgency: string;
+  notes?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -279,7 +310,7 @@ export class ClinicalApiService {
   getConsultation(id: string): Observable<any> {
     return this.http.get<any>(
       `${this.base}/api/clinical/consultations/${id}`,
-      { headers: this.authHeaders() }
+      { headers: this.doctorHeaders() }
     );
   }
 
@@ -294,6 +325,14 @@ export class ClinicalApiService {
     return this.http.post<any>(
       `${this.base}/api/clinical/consultations/${id}/lab-requests`,
       { content },
+      { headers: this.doctorHeaders() }
+    );
+  }
+
+  createLabRequest(payload: ClinicalLabRequestPayload): Observable<any> {
+    return this.http.post<any>(
+      `${this.base}/api/clinical/lab-requests`,
+      payload,
       { headers: this.doctorHeaders() }
     );
   }
@@ -338,6 +377,69 @@ export class ClinicalApiService {
     );
   }
 
+  getConsultationMetrics(id: string): Observable<ConsultationMetricsRequest> {
+    return this.http.get<ConsultationMetricsRequest>(
+      `${this.base}/api/clinical/consultations/${id}/metrics`,
+      { headers: this.doctorHeaders() }
+    );
+  }
+
+  downloadLatestConsultationLabResult(consultationId: string): Observable<Blob> {
+    return this.http.get(
+      `${this.base}/api/clinical/lab-requests/consultation/${consultationId}/results/latest/download`,
+      { headers: this.doctorHeaders(), responseType: 'blob' }
+    );
+  }
+
+  /** Pharmacy catalog via gateway → pharmacy-service */
+  searchMedications(namePrefix: string, limit = 20): Observable<any[]> {
+    const term = (namePrefix ?? '').trim();
+    let params = new HttpParams().set('sort', 'az');
+    if (term.length > 0) {
+      params = params.set('name', term);
+    }
+    return this.http.get<any[]>(`${this.base}/api/medications`, {
+      headers: this.authHeaders(),
+      params
+    }).pipe(
+      map((list) => (Array.isArray(list) ? list.slice(0, limit) : []))
+    );
+  }
+
+  listPendingDoctorFollowUpRequests(): Observable<any[]> {
+    return this.http.get<any[]>(
+      `${this.base}/api/clinical/follow-up-requests`,
+      { headers: this.authHeaders() }
+    );
+  }
+
+  createDoctorFollowUpRequest(
+    consultationId: string,
+    body: { offsetAmount: number; offsetUnit: 'DAYS' | 'WEEKS' | 'MONTHS'; notes?: string }
+  ): Observable<any> {
+    return this.http.post<any>(
+      `${this.base}/api/clinical/consultations/${consultationId}/follow-up-requests`,
+      body,
+      { headers: this.doctorHeaders() }
+    );
+  }
+
+  confirmDoctorFollowUpRequest(
+    id: string,
+    body: {
+      scheduledAt: string;
+      doctorId?: string;
+      durationMinutes?: number;
+      reason?: string;
+    }
+  ): Observable<any> {
+    return this.http.post<any>(
+      `${this.base}/api/clinical/follow-up-requests/${id}/confirm`,
+      body,
+      { headers: this.authHeaders() }
+    );
+  }
+
   createAppointment(payload: {
     patientId: number;
     doctorId: string;
@@ -372,6 +474,14 @@ export class ClinicalApiService {
       `${this.base}/api/clinical/appointments/${id}/cancel`,
       { reason },
       { headers: this.authHeaders() }
+    );
+  }
+
+  startConsultation(appointmentId: string): Observable<any> {
+    return this.http.post<any>(
+      `${this.base}/api/clinical/appointments/${appointmentId}/start`,
+      {},
+      { headers: this.doctorHeaders() }
     );
   }
 

@@ -77,6 +77,12 @@ spring:
               filters:
                 - RewritePath=/api/pharmacy/?(.*), /api/$1
 
+            # Pharmacy medication catalog (same path as pharmacy-service controllers)
+            - id: pharmacy-medications-api
+              uri: lb://pharmacy-service
+              predicates:
+                - Path=/api/medications/**
+
             # Operations Service - Rewrite frontend path to service endpoints
             - id: ops-service-api
               uri: lb://ops-service

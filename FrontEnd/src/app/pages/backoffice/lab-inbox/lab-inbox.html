@@ -1,0 +1,186 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Lab Requests Inbox</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="/backoffice/dashboard">Home</a>
+      </li>
+      <li class="breadcrumb-item">Lab Inbox</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="alert alert-success mb-3">{{ successMessage }}</div>
+
+  <div class="lab-hero card mb-3 border-0">
+    <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div>
+        <h6 class="mb-1">AI-enabled lab workflow</h6>
+        <p class="text-muted small mb-0">
+          New doctor orders appear here automatically. Upload the verified result file and the clinical AI analysis will feed back into the consultation workspace.
+        </p>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-light" type="button" (click)="loadLabRequests()">Refresh</button>
+        <a class="btn btn-outline-primary" routerLink="/backoffice/dashboard">Back to dashboard</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <div class="lab-kpi-card">
+        <span>Pending requests</span>
+        <strong>{{ pendingCount }}</strong>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="lab-kpi-card">
+        <span>Urgent / STAT</span>
+        <strong>{{ urgentCount }}</strong>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="lab-kpi-card">
+        <span>Doctor review flags</span>
+        <strong>{{ aiFlaggedCount }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Status</label>
+          <select class="form-select" [(ngModel)]="filterStatus" (change)="applyFilters()">
+            <option value="ALL">All</option>
+            <option value="PENDING">Pending</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="COMPLETED">Completed</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Urgency</label>
+          <select class="form-select" [(ngModel)]="filterUrgency" (change)="applyFilters()">
+            <option value="ALL">All</option>
+            <option value="ROUTINE">Routine</option>
+            <option value="URGENT">Urgent</option>
+            <option value="STAT">STAT</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border" role="status">
+      <span class="sr-only">Loading...</span>
+    </div>
+  </div>
+
+  <div *ngIf="!loading" class="card">
+    <div class="card-header">
+      <h6 class="card-title mb-0">Requests ({{ filteredRequests.length }})</h6>
+    </div>
+    <div class="table-responsive" *ngIf="filteredRequests.length > 0">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Patient ID</th>
+            <th>Test Type</th>
+            <th>Urgency</th>
+            <th>Status</th>
+            <th>AI Status</th>
+            <th>Requested</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let req of filteredRequests">
+            <td>{{ req.patientId }}</td>
+            <td>{{ req.testType }}</td>
+            <td>
+              <span [class]="'badge ' + getUrgencyBadgeClass(req.urgency)">
+                {{ req.urgency }}
+              </span>
+            </td>
+            <td>
+              <span [class]="'badge ' + getStatusBadgeClass(req.status)">
+                {{ req.status }}
+              </span>
+            </td>
+            <td>
+              <div class="small fw-semibold">{{ getAiStateLabel(req) }}</div>
+              <div class="text-muted small" *ngIf="req.latestAiSummary">{{ req.latestAiSummary }}</div>
+            </td>
+            <td>{{ req.createdAt | date: 'short' }}</td>
+            <td>
+              <button
+                class="btn btn-sm btn-primary"
+                (click)="openUploadModal(req)"
+                [disabled]="req.status === 'COMPLETED'"
+              >
+                Upload Result
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="filteredRequests.length === 0" class="card-body text-center text-muted">
+      <p>No lab requests found</p>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div *ngIf="showUploadModal" class="modal show d-block" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Upload Lab Result</h5>
+        <button type="button" class="btn-close" (click)="closeUploadModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="selectedRequest" class="mb-3">
+          <p><strong>Patient ID:</strong> {{ selectedRequest.patientId }}</p>
+          <p><strong>Test Type:</strong> {{ selectedRequest.testType }}</p>
+          <p><strong>Urgency:</strong> {{ selectedRequest.urgency }}</p>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Lab Result File</label>
+          <input
+            type="file"
+            class="form-control"
+            accept=".pdf,.txt,.png,.jpg,.jpeg"
+            (change)="onFileSelected($event)"
+          />
+          <small class="text-muted">PDF and text files are supported best in this build. Images trigger manual review if OCR is unavailable.</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeUploadModal()">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="uploadResult()"
+          [disabled]="uploadingId === selectedRequest?.id"
+        >
+          <span *ngIf="uploadingId === selectedRequest?.id" class="spinner-border spinner-border-sm me-2"></span>
+          Upload
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showUploadModal" class="modal-backdrop fade show"></div>

@@ -30,7 +30,7 @@ public class ClinicalProxyController {
     // Proxy to administration-service patient profile
     @GetMapping("/patients/{id}")
     public ResponseEntity<String> getPatientProfile(@PathVariable("id") Long id, Authentication authentication) {
-        String url = administrationBase + "/patients/" + id;
+        String url = administrationBase + "/api/patients/" + id;
         try {
             ResponseEntity<String> resp = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(authHeaders(authentication)), String.class);
             return ResponseEntity.status(resp.getStatusCode()).body(resp.getBody());

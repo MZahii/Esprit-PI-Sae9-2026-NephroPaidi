@@ -1,0 +1,39 @@
+{
+  "model_name": "random_forest",
+  "model_version": "v1",
+  "training_dataset": "Mohamed_DataSet_FEATURES_V4.csv",
+  "feature_columns": [
+    "patient_age",
+    "y_value_creatinine",
+    "y_value_creatinine_umol_l",
+    "y_class_hasdata",
+    "parser_has_creatinine",
+    "is_reviewed",
+    "metadata_quality_score",
+    "needs_manual_review",
+    "fe_document_age_days",
+    "fe_creatinine_log",
+    "fe_age_normalized",
+    "fe_age_group",
+    "fe_scan_quality_encoded",
+    "fe_hospital_encoded",
+    "fe_department_encoded",
+    "fe_sex_encoded",
+    "fe_creatinine_abnormal",
+    "fe_data_quality_score",
+    "fe_high_risk_dept",
+    "fe_manual_review_flag",
+    "fe_metadata_quality_score"
+  ],
+  "class_names": [
+    "other",
+    "review",
+    "urgent",
+    "warning"
+  ],
+  "doctor_final_decision": true,
+  "selected_because": {
+    "reason": "Best tuned compromise between urgent recall and overall performance",
+    "smote_used": false
+  }
+}

@@ -1,0 +1,50 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Lab Source Viewer</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a routerLink="/backoffice/dashboard">Home</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a routerLink="/backoffice/consultations">Consultations</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a [routerLink]="['/backoffice/consultations', consultationId, 'workspace']">Workspace</a>
+      </li>
+      <li class="breadcrumb-item">Lab Source</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content consultation-lab-source-page">
+  <div class="card stretch stretch-full">
+    <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div>
+        <h5 class="card-title mb-1">{{ fileName }}</h5>
+        <small class="text-muted">Reviewed source document linked to this consultation.</small>
+      </div>
+      <div class="d-flex gap-2">
+        <a class="btn btn-light btn-sm" [routerLink]="['/backoffice/consultations', consultationId, 'workspace']">Back to Workspace</a>
+        <a *ngIf="objectUrl" class="btn btn-outline-primary btn-sm" [href]="objectUrl" [attr.download]="fileName">Download Copy</a>
+      </div>
+    </div>
+
+    <div class="card-body" *ngIf="loading">
+      <div class="text-muted">Loading lab source file...</div>
+    </div>
+
+    <div class="card-body" *ngIf="error">
+      <div class="alert alert-danger mb-0">{{ error }}</div>
+    </div>
+
+    <div class="card-body viewer-body" *ngIf="!loading && !error && safeObjectUrl">
+      <img *ngIf="isImage" class="viewer-image" [src]="objectUrl!" alt="Lab source image" />
+      <iframe *ngIf="isPdf" class="viewer-frame" [src]="safeObjectUrl" title="Lab source PDF"></iframe>
+      <div *ngIf="!isPdf && !isImage" class="alert alert-light border mb-0">
+        Preview is not available for this file type. Use <strong>Download Copy</strong> to open it locally.
+      </div>
+    </div>
+  </div>
+</div>

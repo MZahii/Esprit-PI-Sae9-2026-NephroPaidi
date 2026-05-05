@@ -168,6 +168,14 @@ export class Dashboard implements AfterViewInit, OnInit {
     return this.role === 'RECEPTIONIST';
   }
 
+  get isLabAgent(): boolean {
+    return this.role === 'LAB_AGENT';
+  }
+
+  get isNurse(): boolean {
+    return this.role === 'NURSE';
+  }
+
   get displayName(): string {
     if (this.user?.firstName && this.user?.lastName) {
       return `${this.user.firstName} ${this.user.lastName}`;
@@ -180,13 +188,18 @@ export class Dashboard implements AfterViewInit, OnInit {
   }
 
   get roleBadgeClass(): string {
-    return this.isAdmin ? 'bg-soft-primary text-primary' : 'bg-soft-warning text-warning';
+    if (this.isAdmin) return 'bg-soft-primary text-primary';
+    if (this.isLabAgent) return 'bg-soft-info text-info';
+    if (this.isNurse) return 'bg-soft-success text-success';
+    return 'bg-soft-warning text-warning';
   }
 
   get roleDescription(): string {
     if (this.isAdmin) return 'Global administration and platform supervision';
     if (this.isHr) return 'Human resources and operational management';
     if (this.isReceptionist) return 'Reception and patient onboarding operations';
+    if (this.isLabAgent) return 'Process incoming lab orders, upload results, and trigger clinical AI analysis';
+    if (this.isNurse) return 'Monitor hospitalized patients, execute bedside tasks, and keep shift progress updated';
     return 'Connected backoffice user';
   }
 

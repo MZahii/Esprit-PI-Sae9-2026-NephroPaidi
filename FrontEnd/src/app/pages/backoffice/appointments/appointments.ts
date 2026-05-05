@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ClinicalApiService } from '../../../core/services/clinical-api.service';
+import { AuthStorageService } from '../../../core/auth/auth-storage.service';
 import { forkJoin, of, Subject, throwError } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, map, switchMap, takeUntil } from 'rxjs/operators';
 
@@ -40,6 +41,8 @@ export class Appointments implements OnInit, OnDestroy {
   showCreateModal = false;
   showEditModal = false;
   showCancelModal = false;
+  startingAppointmentId: string | null = null;
+  appointmentCountdown: { [key: string]: { timeLeft: number; canStart: boolean } } = {};
 
   createForm = {
     patientId: 0,
@@ -100,7 +103,15 @@ export class Appointments implements OnInit, OnDestroy {
   calendarDays: Array<{ date: Date | null; inMonth: boolean; isToday: boolean; count: number }> = [];
   selectedDate = new Date();
 
-  constructor(private api: ClinicalApiService) {}
+  constructor(
+    private api: ClinicalApiService,
+    private auth: AuthStorageService
+  ) {}
+
+  /** Receptionists schedule only; they must not start consultations or change/cancel appointment times here. */
+  get isReceptionist(): boolean {
+    return this.auth.hasAnyRole(['RECEPTIONIST']);
+  }
 
   ngOnInit(): void {
     this.initPatientSearch();
@@ -184,6 +195,9 @@ export class Appointments implements OnInit, OnDestroy {
   }
 
   openEditModal(item: any): void {
+    if (this.isReceptionist) {
+      return;
+    }
     this.editForm = {
       id: item.id,
       patientId: Number(item.patientId),
@@ -210,6 +224,9 @@ export class Appointments implements OnInit, OnDestroy {
   }
 
   openCancelModal(item: any): void {
+    if (this.isReceptionist) {
+      return;
+    }
     this.cancelForm = { id: item.id, reason: '' };
     this.showCancelModal = true;
   }
@@ -241,6 +258,9 @@ export class Appointments implements OnInit, OnDestroy {
   }
 
   submitEdit(): void {
+    if (this.isReceptionist) {
+      return;
+    }
     if (!this.editForm.id) return;
     this.api.updateAppointment(this.editForm.id, {
       patientId: this.editForm.patientId || undefined,
@@ -261,6 +281,9 @@ export class Appointments implements OnInit, OnDestroy {
   }
 
   submitCancel(): void {
+    if (this.isReceptionist) {
+      return;
+    }
     if (!this.cancelForm.id) return;
     this.api.cancelAppointment(this.cancelForm.id, this.cancelForm.reason || undefined).subscribe({
       next: () => {
@@ -271,6 +294,81 @@ export class Appointments implements OnInit, OnDestroy {
         this.errorMessage = err?.error?.message || 'Failed to cancel appointment.';
       }
     });
+  }
+
+  startConsultation(appointmentId: string): void {
+    if (this.isReceptionist) {
+      return;
+    }
+    this.startingAppointmentId = appointmentId;
+
+    this.api.startConsultation(appointmentId).subscribe({
+      next: (response) => {
+        this.startingAppointmentId = null;
+        this.loadAppointments();
+        this.errorMessage = '';
+      },
+      error: (err) => {
+        this.startingAppointmentId = null;
+        const message = err?.error?.message || 'Failed to start consultation. Appointment window is 5 min before to 30 min after scheduled time.';
+        this.errorMessage = message;
+        setTimeout(() => this.errorMessage = '', 5000);
+      }
+    });
+  }
+
+  canStartAppointment(appointment: any): boolean {
+    if (!appointment || appointment.status !== 'SCHEDULED') return false;
+
+    const now = new Date();
+    const appointmentTime = new Date(appointment.scheduledAt);
+    const today = new Date();
+
+    // Check if appointment is today
+    if (appointmentTime.toDateString() !== today.toDateString()) return false;
+
+    // OPTION 3 HYBRID: 20-30 minute window with 5-minute buffer
+    // Button available: 5 minutes BEFORE appointment
+    // Hard cancel at: 30 minutes AFTER appointment
+    const diffMinutes = (now.getTime() - appointmentTime.getTime()) / 60000;
+    
+    // Can start from 5 min before (-5) up to 30 min after (+30)
+    return diffMinutes >= -5 && diffMinutes <= 30;
+  }
+
+  getAppointmentCountdown(appointment: any): string {
+    if (!appointment) return '';
+
+    const now = new Date();
+    const appointmentTime = new Date(appointment.scheduledAt);
+    const diffMinutes = (appointmentTime.getTime() - now.getTime()) / 60000;
+
+    // 5 minutes before
+    if (diffMinutes >= 5) {
+      const minutes = Math.floor(diffMinutes);
+      const seconds = Math.floor((diffMinutes % 1) * 60);
+      return `starts in ${minutes}m ${seconds}s`;
+    }
+    
+    // 5 minutes before to appointment time (prep window)
+    if (diffMinutes >= 0) {
+      const minutes = Math.floor(diffMinutes);
+      const seconds = Math.floor((diffMinutes % 1) * 60);
+      return `⏱️ Starts in ${minutes}m ${seconds}s (Prep ready!)`;
+    }
+
+    const diffMinutesAfter = Math.abs(diffMinutes);
+    
+    // Up to 30 minutes after (window open)
+    if (diffMinutesAfter <= 30) {
+      const minutes = Math.floor(diffMinutesAfter);
+      const seconds = Math.floor((diffMinutesAfter % 1) * 60);
+      const minutesUntilClose = Math.floor(30 - diffMinutesAfter);
+      return `⏳ ${minutes}m ${seconds}s late | Closes in ${minutesUntilClose}m`;
+    }
+
+    // After 30 minutes (window closed)
+    return `⛔ Window closed`;
   }
 
   ensureDoctorsLoaded(): void {

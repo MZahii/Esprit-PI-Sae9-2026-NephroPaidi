@@ -2,6 +2,7 @@ package tn.esprit.spring.opsservice.hospitalization.application;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -26,13 +27,16 @@ import tn.esprit.spring.opsservice.hospitalization.repository.HospitalizationTas
 import tn.esprit.spring.opsservice.security.CurrentUserService;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class HospitalizationServiceImpl implements HospitalizationService {
 
     private final HospitalizationCaseRepository hospitalizationCaseRepository;
@@ -95,6 +99,7 @@ public class HospitalizationServiceImpl implements HospitalizationService {
     @Override
     @Transactional
     public HospitalizationCaseResponse getHospitalization(UUID hospitalizationId) {
+        log.info("Loading hospitalization details for {}", hospitalizationId);
         HospitalizationCase hospitalizationCase = hospitalizationCaseRepository.findDetailedById(hospitalizationId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Hospitalization not found"));
         return toCaseResponse(hospitalizationCase);
@@ -229,9 +234,11 @@ public class HospitalizationServiceImpl implements HospitalizationService {
     }
 
     private HospitalizationCaseResponse toCaseResponse(HospitalizationCase hospitalizationCase) {
-        List<HospitalizationTaskResponse> tasks = hospitalizationCase.getTasks().stream()
-                .sorted(Comparator.comparing(HospitalizationTask::getDisplayOrder)
-                        .thenComparing(HospitalizationTask::getCreatedAt))
+        List<HospitalizationTaskResponse> tasks = safeList(hospitalizationCase.getTasks()).stream()
+                .filter(Objects::nonNull)
+                .sorted(Comparator
+                        .comparing(HospitalizationTask::getDisplayOrder, Comparator.nullsLast(Integer::compareTo))
+                        .thenComparing(HospitalizationTask::getCreatedAt, Comparator.nullsLast(LocalDateTime::compareTo)))
                 .map(this::toTaskResponse)
                 .toList();
 
@@ -252,7 +259,8 @@ public class HospitalizationServiceImpl implements HospitalizationService {
     }
 
     private HospitalizationTaskResponse toTaskResponse(HospitalizationTask task) {
-        List<HospitalizationTaskExecutionResponse> executions = task.getExecutions().stream()
+        List<HospitalizationTaskExecutionResponse> executions = safeList(task.getExecutions()).stream()
+                .filter(Objects::nonNull)
                 .map(execution -> new HospitalizationTaskExecutionResponse(
                         execution.getId(),
                         execution.getActionPerformed(),
@@ -287,5 +295,9 @@ public class HospitalizationServiceImpl implements HospitalizationService {
                 task.getLastUpdatedAt(),
                 executions
         );
+    }
+
+    private <T> List<T> safeList(List<T> items) {
+        return items == null ? new ArrayList<>() : items;
     }
 }

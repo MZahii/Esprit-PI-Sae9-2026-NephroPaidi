@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public interface HospitalizationCaseRepository extends JpaRepository<HospitalizationCase, UUID> {
 
-    @EntityGraph(attributePaths = {"tasks", "tasks.executions"})
+    @EntityGraph(attributePaths = {"tasks"})
     Optional<HospitalizationCase> findDetailedById(UUID id);
 
     @EntityGraph(attributePaths = {"tasks"})
