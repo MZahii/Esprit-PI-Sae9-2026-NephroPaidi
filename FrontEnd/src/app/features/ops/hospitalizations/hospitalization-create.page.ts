@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   CreateHospitalizationPayload,
   CreateHospitalizationTaskPayload,
+  HospitalizationMeasurementKind,
   HospitalizationTaskType,
   OpsApiService
 } from '../../../core/services/ops-api.service';
@@ -15,6 +16,57 @@ type TaskTemplate = {
   type: HospitalizationTaskType;
   title: string;
   instructions: string;
+  measurementKind: HospitalizationMeasurementKind;
+  expectedUnit?: string;
+};
+
+type TaskDefinition = {
+  label: string;
+  defaultTitle: string;
+  defaultInstructions: string;
+  measurementKind: HospitalizationMeasurementKind;
+  expectedUnit?: string;
+};
+
+const TASK_DEFINITIONS: Record<HospitalizationTaskType, TaskDefinition> = {
+  WEIGHT_CHECK: {
+    label: 'Weight check',
+    defaultTitle: 'Record current weight',
+    defaultInstructions: 'Measure and record the patient weight during the shift and alert the team to rapid change.',
+    measurementKind: 'NUMERIC',
+    expectedUnit: 'kg'
+  },
+  MEDICATION: {
+    label: 'Medication administration',
+    defaultTitle: 'Administer prescribed medication',
+    defaultInstructions: 'Confirm medication administration or document why the dose was not given.',
+    measurementKind: 'TEXT'
+  },
+  TEMPERATURE: {
+    label: 'Temperature watch',
+    defaultTitle: 'Record body temperature',
+    defaultInstructions: 'Check temperature according to the nursing schedule and escalate persistent fever or instability.',
+    measurementKind: 'NUMERIC',
+    expectedUnit: '°C'
+  },
+  BLOOD_MONITORING: {
+    label: 'Lab follow-up',
+    defaultTitle: 'Follow blood test status',
+    defaultInstructions: 'Track ordered blood work and document important updates for the clinical team.',
+    measurementKind: 'TEXT'
+  },
+  PATIENT_MONITORING: {
+    label: 'Clinical monitoring',
+    defaultTitle: 'Observe patient clinical condition',
+    defaultInstructions: 'Observe the patient and document any improvement, deterioration, or new concern.',
+    measurementKind: 'TEXT'
+  },
+  CUSTOM: {
+    label: 'Custom handoff task',
+    defaultTitle: '',
+    defaultInstructions: '',
+    measurementKind: 'TEXT'
+  }
 };
 
 @Component({
@@ -51,31 +103,37 @@ export class HospitalizationCreatePage implements OnInit {
       label: 'Vitals monitoring',
       type: 'PATIENT_MONITORING',
       title: 'Monitor vital signs and clinical status',
-      instructions: 'Observe the patient during the shift and document any significant change that should be escalated.'
+      instructions: 'Observe the patient during the shift and document any significant change that should be escalated.',
+      measurementKind: 'TEXT'
     },
     {
       label: 'Medication administration',
       type: 'MEDICATION',
       title: 'Administer prescribed medication safely',
-      instructions: 'Follow the prescription plan, confirm administration times, and report any intolerance or missed dose.'
+      instructions: 'Follow the prescription plan, confirm administration times, and report any intolerance or missed dose.',
+      measurementKind: 'TEXT'
     },
     {
       label: 'Fluid balance / urine output',
       type: 'PATIENT_MONITORING',
       title: 'Monitor hydration and urine output',
-      instructions: 'Track intake/output, observe edema or dehydration signs, and alert the team if values are concerning.'
+      instructions: 'Track intake/output, observe edema or dehydration signs, and alert the team if values are concerning.',
+      measurementKind: 'TEXT'
     },
     {
       label: 'Temperature watch',
       type: 'TEMPERATURE',
       title: 'Watch for fever or temperature instability',
-      instructions: 'Check temperature according to the nursing schedule and report persistent fever or abrupt change.'
+      instructions: 'Check temperature according to the nursing schedule and report persistent fever or abrupt change.',
+      measurementKind: 'NUMERIC',
+      expectedUnit: '°C'
     },
     {
       label: 'Lab follow-up',
       type: 'BLOOD_MONITORING',
       title: 'Follow pending lab-related monitoring',
-      instructions: 'Ensure ordered tests are followed up and notify the doctor if results suggest clinical deterioration.'
+      instructions: 'Ensure ordered tests are followed up and notify the doctor if results suggest clinical deterioration.',
+      measurementKind: 'TEXT'
     }
   ];
 
@@ -95,15 +153,17 @@ export class HospitalizationCreatePage implements OnInit {
   }
 
   addTask(partial?: Partial<CreateHospitalizationTaskPayload>): void {
+    const type = partial?.type || 'CUSTOM';
+    const definition = TASK_DEFINITIONS[type];
     this.tasks = [
       ...this.tasks,
       {
         localId: ++this.taskCounter,
-        type: partial?.type || 'CUSTOM',
-        title: partial?.title || '',
-        instructions: partial?.instructions || '',
-        measurementKind: 'NONE',
-        expectedUnit: '',
+        type,
+        title: partial?.title || definition.defaultTitle,
+        instructions: partial?.instructions || definition.defaultInstructions,
+        measurementKind: partial?.measurementKind || definition.measurementKind,
+        expectedUnit: partial?.expectedUnit || definition.expectedUnit || '',
         displayOrder: this.tasks.length
       }
     ];
@@ -123,6 +183,32 @@ export class HospitalizationCreatePage implements OnInit {
       .map((task, index) => ({ ...task, displayOrder: index }));
   }
 
+  taskTypeLabel(type: HospitalizationTaskType): string {
+    return TASK_DEFINITIONS[type]?.label || type.replace(/_/g, ' ');
+  }
+
+  taskTypeHint(task: TaskDraft): string {
+    const definition = TASK_DEFINITIONS[task.type];
+    if (!definition) return '';
+    const valueMode = definition.measurementKind === 'NUMERIC'
+      ? `Nurse records a numeric value${definition.expectedUnit ? ` in ${definition.expectedUnit}` : ''}.`
+      : 'Nurse records an observed status and note.';
+    return valueMode;
+  }
+
+  onTaskTypeChange(task: TaskDraft): void {
+    const definition = TASK_DEFINITIONS[task.type];
+    if (!definition) return;
+    task.measurementKind = definition.measurementKind;
+    task.expectedUnit = definition.expectedUnit || '';
+    if (!task.title?.trim()) {
+      task.title = definition.defaultTitle;
+    }
+    if (!task.instructions?.trim()) {
+      task.instructions = definition.defaultInstructions;
+    }
+  }
+
   submit(): void {
     this.error = '';
     this.success = '';
@@ -134,14 +220,17 @@ export class HospitalizationCreatePage implements OnInit {
 
     const normalizedTasks = this.tasks
       .filter((task) => (task.title || '').trim().length > 0)
-      .map((task, index) => ({
-        type: task.type,
-        title: task.title.trim(),
-        instructions: (task.instructions || '').trim(),
-        measurementKind: 'NONE' as const,
-        expectedUnit: '',
-        displayOrder: index
-      }));
+      .map((task, index) => {
+        const definition = TASK_DEFINITIONS[task.type];
+        return {
+          type: task.type,
+          title: task.title.trim(),
+          instructions: (task.instructions || '').trim(),
+          measurementKind: definition.measurementKind,
+          expectedUnit: definition.expectedUnit || '',
+          displayOrder: index
+        };
+      });
 
     const payload: CreateHospitalizationPayload = {
       patientId: this.patientId,

@@ -43,13 +43,13 @@ public class AppointmentStartServiceImpl implements AppointmentStartService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime appointmentTime = appointment.getScheduledAt();
         
-        // OPTION 3 HYBRID: 20-30 minute window with 5-minute buffer
+        // Start window: from 5 minutes before scheduled time until 20 minutes after.
         // Button visible from: appointment_time - 5 minutes
-        // Hard cancel at: appointment_time + 30 minutes
+        // Hard cancel at: appointment_time + 20 minutes
         LocalDateTime earliestStart = appointmentTime.minusMinutes(5);  // 5-min buffer
-        LocalDateTime hardCancelTime = appointmentTime.plusMinutes(30);
+        LocalDateTime hardCancelTime = appointmentTime.plusMinutes(20);
 
-        // Check if within window (can start 5 min early or up to 30 min late)
+        // Check if within window (can start 5 min early or up to 20 min late)
         if (now.isBefore(earliestStart)) {
             throw new IllegalStateException("Too early to start consultation (available from " + 
                 earliestStart + ")");
@@ -59,7 +59,7 @@ public class AppointmentStartServiceImpl implements AppointmentStartService {
                 hardCancelTime + ")");
         }
 
-        // Update appointment status to CONFIRMED (consultation started)
+        // Update appointment status to CONFIRMED (used as "in progress" in the UI layer)
         appointment.setStatus(AppointmentStatus.CONFIRMED);
         appointment.setStartedAt(now);
         appointment.setUpdatedAt(now);
@@ -85,9 +85,9 @@ public class AppointmentStartServiceImpl implements AppointmentStartService {
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime appointmentTime = appointment.getScheduledAt();
-        LocalDateTime hardCancelTime = appointmentTime.plusMinutes(30);
+        LocalDateTime hardCancelTime = appointmentTime.plusMinutes(20);
         
-        // Can only extend if still within 30-min window
+        // Can only extend if still within the active window
         if (now.isAfter(hardCancelTime)) {
             throw new IllegalStateException("Extension denied: Appointment window has completely expired");
         }
@@ -127,28 +127,13 @@ public class AppointmentStartServiceImpl implements AppointmentStartService {
 
         for (Appointment appointment : scheduledAppointments) {
             LocalDateTime appointmentTime = appointment.getScheduledAt();
-            LocalDateTime missedMarkerTime = appointmentTime.plusMinutes(20);  // Mark as MISSED at 20 min
-            LocalDateTime hardCancelTime = appointmentTime.plusMinutes(30);    // HARD CANCEL at 30 min
+            LocalDateTime hardCancelTime = appointmentTime.plusMinutes(20);
 
-            // At 20 minutes: Mark as NO_SHOW if not yet started
-            if (now.isAfter(missedMarkerTime) && now.isBefore(hardCancelTime) && 
-                appointment.getStatus().equals(AppointmentStatus.SCHEDULED)) {
-                log.info("Marking appointment as NO_SHOW (20-min mark): {}", appointment.getId());
-                
-                appointment.setStatus(AppointmentStatus.NO_SHOW);
-                appointment.setUpdatedAt(now);
-                appointmentRepository.save(appointment);
-                
-                // Notify doctor: "Patient did not show up"
-                // Notify patient/guardian: "Appointment was missed"
-                log.info("Appointment {} marked as NO_SHOW", appointment.getId());
-            }
-            
-            // At 30 minutes: Hard cancel
+            // At 20 minutes: Hard cancel if never started
             if (now.isAfter(hardCancelTime) && 
                 (appointment.getStatus().equals(AppointmentStatus.SCHEDULED) || 
                  appointment.getStatus().equals(AppointmentStatus.NO_SHOW))) {
-                log.info("Auto-cancelling stale appointment (30-min mark): {}", appointment.getId());
+                log.info("Auto-cancelling stale appointment (20-min mark): {}", appointment.getId());
 
                 appointment.setStatus(AppointmentStatus.CANCELLED);
                 appointment.setUpdatedAt(now);

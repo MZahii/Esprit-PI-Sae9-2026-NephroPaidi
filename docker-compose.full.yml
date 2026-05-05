@@ -115,6 +115,18 @@ services:
         condition: service_started
       keycloak:
         condition: service_started
+      user-service:
+        condition: service_healthy
+      administration-service:
+        condition: service_healthy
+      clinical-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8083/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
     cpus: "0.60"
     mem_limit: "640m"
     networks:
@@ -154,9 +166,12 @@ services:
     ports:
       - "8090:8090"
     depends_on:
-      - config-server
-      - eureka
-      - keycloak
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      keycloak:
+        condition: service_started
     cpus: "0.60"
     mem_limit: "640m"
     networks:
@@ -185,10 +200,20 @@ services:
     ports:
       - "8087:8087"
     depends_on:
-      - config-server
-      - eureka
-      - keycloak
-      - user-service
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      user-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8087/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
     cpus: "0.60"
     mem_limit: "640m"
     networks:
@@ -212,11 +237,16 @@ services:
     ports:
       - "8085:8085"
     depends_on:
-      - config-server
-      - eureka
-      - keycloak
-      - user-service
-      - administration-service
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      user-service:
+        condition: service_healthy
+      administration-service:
+        condition: service_healthy
     cpus: "0.60"
     mem_limit: "640m"
     networks:
@@ -231,9 +261,11 @@ services:
       SPRING_PROFILES_ACTIVE: local
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://ep-cool-breeze-agqhhjlc-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://ep-cool-breeze-agqhhjlc-pooler.c-2.eu-central-1.aws.neon.tech:5432/nephros_clinical_service.db?sslmode=require&channel_binding=require}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-neondb_owner}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-npg_Zb1Kda5LPlin}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SERVER_PORT: "8084"
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
       SPRING_FLYWAY_ENABLED: "true"
@@ -258,15 +290,20 @@ services:
     ports:
       - "8084:8084"
     depends_on:
-      - config-server
-      - eureka
-      - keycloak
-      - user-service
-      - administration-service
-      - communication-service
-      - ai-clinical-service
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      user-service:
+        condition: service_healthy
+      administration-service:
+        condition: service_healthy
+      ai-clinical-service:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -275,6 +312,8 @@ services:
     mem_limit: "768m"
     networks:
       - nephro-net
+    volumes:
+      - ./BackEnd/runtime/clinical-lab-results:/app/data/lab-results
 
   ai-clinical-service:
     build:
@@ -302,6 +341,12 @@ services:
     environment:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      SPRING_DATASOURCE_URL: ${OPS_DB_URL:-jdbc:postgresql://ep-cool-breeze-agqhhjlc.c-2.eu-central-1.aws.neon.tech/nephros_ops_service_db?sslmode=require&channel_binding=require}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-neondb_owner}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-npg_Zb1Kda5LPlin}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: ops-service
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
@@ -309,9 +354,12 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      - config-server
-      - eureka
-      - keycloak
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      keycloak:
+        condition: service_started
     cpus: "0.60"
     mem_limit: "640m"
     networks:
@@ -402,7 +450,8 @@ services:
     ports:
       - "4200:80"
     depends_on:
-      - api-gateway
+      api-gateway:
+        condition: service_healthy
     cpus: "0.50"
     mem_limit: "512m"
     networks:

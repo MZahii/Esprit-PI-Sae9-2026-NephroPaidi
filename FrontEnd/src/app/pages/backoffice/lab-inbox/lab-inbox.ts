@@ -103,6 +103,18 @@ export class LabInboxComponent implements OnInit, OnDestroy {
     this.showUploadModal = true;
   }
 
+  get pendingCount(): number {
+    return this.labRequests.filter((req) => req.status === 'PENDING').length;
+  }
+
+  get urgentCount(): number {
+    return this.labRequests.filter((req) => req.urgency === 'URGENT' || req.urgency === 'STAT').length;
+  }
+
+  get aiFlaggedCount(): number {
+    return this.labRequests.filter((req) => req.latestAiRequiresDoctorReview).length;
+  }
+
   closeUploadModal(): void {
     this.showUploadModal = false;
     this.selectedRequest = null;
@@ -122,7 +134,15 @@ export class LabInboxComponent implements OnInit, OnDestroy {
 
     this.uploadingId = this.selectedRequest.id;
     const token = this.authStorage.getAccessToken();
-    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+    const user = this.authStorage.getUser();
+    const headerMap: Record<string, string> = {};
+    if (token) {
+      headerMap['Authorization'] = `Bearer ${token}`;
+    }
+    if (user?.keycloakId) {
+      headerMap['X-User-Id'] = user.keycloakId;
+    }
+    const headers = new HttpHeaders(headerMap);
     const formData = new FormData();
     formData.append('file', this.selectedFile, this.selectedFile.name);
 
@@ -166,5 +186,12 @@ export class LabInboxComponent implements OnInit, OnDestroy {
       default:
         return 'bg-warning';
     }
+  }
+
+  getAiStateLabel(request: LabRequest): string {
+    if (request.latestAiRecommendation) {
+      return request.latestAiRecommendation.replace(/_/g, ' ');
+    }
+    return request.status === 'COMPLETED' ? 'Result uploaded' : 'Awaiting result upload';
   }
 }

@@ -187,6 +187,16 @@ public class LabRequestServiceImpl implements LabRequestService {
         return mapToDto(labRequest);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public LabResult getLatestLabResultForConsultation(UUID consultationId) {
+        LabRequest labRequest = labRequestRepository.findTopByConsultationIdOrderByCreatedAtDesc(consultationId)
+                .orElseThrow(() -> new RuntimeException("No lab request found for consultation: " + consultationId));
+
+        return labResultRepository.findTopByLabRequestIdOrderByUploadedAtDesc(labRequest.getId())
+                .orElseThrow(() -> new RuntimeException("No uploaded lab result found for consultation: " + consultationId));
+    }
+
     private LabRequestDto mapToDto(LabRequest labRequest) {
         LabResult latestResult = labResultRepository.findTopByLabRequestIdOrderByUploadedAtDesc(labRequest.getId()).orElse(null);
         return LabRequestDto.builder()

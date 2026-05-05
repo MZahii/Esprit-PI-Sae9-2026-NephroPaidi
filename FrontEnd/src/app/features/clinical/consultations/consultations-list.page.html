@@ -55,7 +55,7 @@
         <div class="col-md-4">
           <label class="form-label">Status</label>
           <select class="form-select" [(ngModel)]="filters.status">
-            <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+            <option *ngFor="let status of statuses" [value]="status">{{ statusOptionLabel(status) }}</option>
           </select>
         </div>
         <div class="col-md-4 d-flex gap-2">
@@ -90,7 +90,7 @@
             <td class="fw-semibold">{{ item.id }}</td>
             <td>{{ item.dateTime | date:'medium' }}</td>
             <td>
-              <span class="badge" [ngClass]="statusBadge(item.status)">{{ item.status }}</span>
+              <span class="badge" [ngClass]="statusBadge(item.status)">{{ statusLabel(item.status) }}</span>
             </td>
             <td>{{ item.patientName || item.patientId }}</td>
             <td>

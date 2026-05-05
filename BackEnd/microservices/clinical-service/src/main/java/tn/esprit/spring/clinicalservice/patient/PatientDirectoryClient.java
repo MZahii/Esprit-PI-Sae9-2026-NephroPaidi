@@ -47,7 +47,7 @@ public class PatientDirectoryClient {
         }
 
         URI uri = UriComponentsBuilder.fromHttpUrl(administrationBase)
-                .path("/patients/batch")
+                .path("/api/patients/batch")
                 .queryParam("ids", joinedIds)
                 .build(true)
                 .toUri();
@@ -78,7 +78,7 @@ public class PatientDirectoryClient {
         }
 
         URI uri = UriComponentsBuilder.fromHttpUrl(administrationBase)
-                .path("/patients/search")
+                .path("/api/patients/search")
                 .queryParam("q", trimmed)
                 .queryParam("limit", Math.min(Math.max(limit, 1), 20))
                 .build(true)
@@ -107,7 +107,7 @@ public class PatientDirectoryClient {
         }
 
         URI uri = UriComponentsBuilder.fromHttpUrl(administrationBase)
-                .path("/patients/guardian/{guardianUserId}")
+                .path("/api/patients/guardian/{guardianUserId}")
                 .buildAndExpand(guardianUserId)
                 .toUri();
 
@@ -134,7 +134,7 @@ public class PatientDirectoryClient {
         }
 
         URI uri = UriComponentsBuilder.fromHttpUrl(administrationBase)
-                .path("/patients/{patientId}")
+                .path("/api/patients/{patientId}")
                 .buildAndExpand(patientId)
                 .toUri();
 

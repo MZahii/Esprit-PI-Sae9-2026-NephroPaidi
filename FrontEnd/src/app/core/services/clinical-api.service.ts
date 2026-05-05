@@ -384,6 +384,13 @@ export class ClinicalApiService {
     );
   }
 
+  downloadLatestConsultationLabResult(consultationId: string): Observable<Blob> {
+    return this.http.get(
+      `${this.base}/api/clinical/lab-requests/consultation/${consultationId}/results/latest/download`,
+      { headers: this.doctorHeaders(), responseType: 'blob' }
+    );
+  }
+
   /** Pharmacy catalog via gateway → pharmacy-service */
   searchMedications(namePrefix: string, limit = 20): Observable<any[]> {
     const term = (namePrefix ?? '').trim();

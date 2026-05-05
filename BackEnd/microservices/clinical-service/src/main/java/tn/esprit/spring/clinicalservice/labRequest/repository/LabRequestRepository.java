@@ -12,6 +12,8 @@ import java.util.UUID;
 public interface LabRequestRepository extends JpaRepository<LabRequest, UUID> {
     List<LabRequest> findByDoctorIdOrderByCreatedAtDesc(UUID doctorId);
     List<LabRequest> findByPatientIdOrderByCreatedAtDesc(Long patientId);
+    List<LabRequest> findByConsultationIdOrderByCreatedAtDesc(UUID consultationId);
+    java.util.Optional<LabRequest> findTopByConsultationIdOrderByCreatedAtDesc(UUID consultationId);
     List<LabRequest> findByStatusOrderByCreatedAtDesc(LabRequest.LabStatus status);
     
     @Query("SELECT lr FROM LabRequest lr WHERE lr.status = :status ORDER BY lr.createdAt DESC")

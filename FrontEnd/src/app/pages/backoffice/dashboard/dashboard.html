@@ -41,7 +41,7 @@
 
     <ng-container *ngIf="!loadingStats && isLabAgent">
       <div class="col-lg-8">
-        <div class="card stretch stretch-full chart-card">
+        <div class="card stretch stretch-full chart-card workflow-card workflow-card-lab">
           <div class="card-header">
             <h5 class="card-title mb-0">Lab Workflow</h5>
           </div>
@@ -49,6 +49,23 @@
             <p class="text-muted mb-3">
               Open the lab inbox to receive doctor orders, upload PDF or image results, and trigger the AI analysis that feeds back into the consultation workspace.
             </p>
+            <div class="workflow-grid mb-3">
+              <div class="workflow-step">
+                <span>1</span>
+                <strong>Receive request</strong>
+                <small>Doctor orders appear automatically in the inbox.</small>
+              </div>
+              <div class="workflow-step">
+                <span>2</span>
+                <strong>Upload result</strong>
+                <small>Attach the verified PDF, image, or text result file.</small>
+              </div>
+              <div class="workflow-step">
+                <span>3</span>
+                <strong>Send back to clinic</strong>
+                <small>AI analysis updates the consultation metrics and recommendation.</small>
+              </div>
+            </div>
             <div class="d-flex gap-2 flex-wrap">
               <a routerLink="/backoffice/lab-inbox" class="btn btn-primary">Open Lab Inbox</a>
               <a routerLink="/backoffice/account-settings" class="btn btn-light">Account Settings</a>
@@ -58,7 +75,7 @@
       </div>
 
       <div class="col-lg-4">
-        <div class="card stretch stretch-full analytics-summary-card">
+        <div class="card stretch stretch-full analytics-summary-card workflow-side-card">
           <div class="card-header">
             <h5 class="card-title mb-0">Daily Focus</h5>
           </div>
@@ -71,6 +88,61 @@
               <li>Open requests from the lab inbox.</li>
               <li>Upload the verified result file.</li>
               <li>Check AI summary and doctor-review flags.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="!loadingStats && isNurse">
+      <div class="col-lg-8">
+        <div class="card stretch stretch-full chart-card workflow-card workflow-card-nurse">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Nurse Shift Operations</h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-3">
+              Hospitalization requests created by doctors should become active bedside task lists here. Open the nurse task board to update observations, medication rounds, and monitoring tasks in real time.
+            </p>
+            <div class="workflow-grid mb-3">
+              <div class="workflow-step">
+                <span>1</span>
+                <strong>Receive admission</strong>
+                <small>Doctor-created hospitalization cases appear in the nurse board.</small>
+              </div>
+              <div class="workflow-step">
+                <span>2</span>
+                <strong>Execute tasks</strong>
+                <small>Record vitals, observations, and task completion per shift.</small>
+              </div>
+              <div class="workflow-step">
+                <span>3</span>
+                <strong>Keep progress current</strong>
+                <small>Doctors and operations can follow hospitalization progress immediately.</small>
+              </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <a routerLink="/backoffice/nurse/hospitalizations" class="btn btn-primary">Open Nurse Task Board</a>
+              <a routerLink="/backoffice/account-settings" class="btn btn-light">Account Settings</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card stretch stretch-full analytics-summary-card workflow-side-card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Shift Checklist</h5>
+          </div>
+          <div class="card-body">
+            <div class="analytics-pill mb-3">
+              <span>Priority</span>
+              <strong>Close bedside tasks before handover</strong>
+            </div>
+            <ul class="mb-0 text-muted small">
+              <li>Open the selected hospitalization case.</li>
+              <li>Update task status and notes after each action.</li>
+              <li>Watch for medication safety or abnormal monitoring flags.</li>
             </ul>
           </div>
         </div>

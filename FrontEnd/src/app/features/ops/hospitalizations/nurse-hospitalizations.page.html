@@ -14,15 +14,63 @@
   <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
   <div *ngIf="detailError" class="alert alert-danger">{{ detailError }}</div>
 
+  <div class="nurse-hero card border-0 mb-4">
+    <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div>
+        <span class="hero-badge">NURSE SHIFT BOARD</span>
+        <h4 class="mb-2">Track hospitalized patients and close the right tasks on time</h4>
+        <p class="text-muted mb-0">
+          Active hospitalizations appear here automatically after the doctor requests hospitalization. Open a patient, update task execution, and keep the shift progress current.
+        </p>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <button type="button" class="btn btn-light" (click)="refreshNow()">Refresh board</button>
+        <a routerLink="/backoffice/dashboard" class="btn btn-outline-primary">Back to dashboard</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+      <div class="nurse-kpi-card">
+        <span>Active cases</span>
+        <strong>{{ activeCasesCount }}</strong>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="nurse-kpi-card">
+        <span>Completed tasks</span>
+        <strong>{{ completedTasksCount }}</strong>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="nurse-kpi-card">
+        <span>Pending tasks</span>
+        <strong>{{ pendingTasksCount }}</strong>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="nurse-kpi-card accent">
+        <span>Selected case progress</span>
+        <strong>{{ selectedCompletionPercent }}%</strong>
+      </div>
+    </div>
+  </div>
+
   <div class="row g-4">
-    <div class="col-lg-4">
-      <div class="card stretch stretch-full">
-        <div class="card-header">
-          <h5 class="card-title">Active Patients</h5>
+    <div class="col-xl-4">
+      <div class="card stretch stretch-full nurse-panel">
+        <div class="card-header border-0 pb-0">
+          <div>
+            <h5 class="card-title mb-1">Active Patients</h5>
+            <p class="text-muted small mb-0">Select a hospitalization to open the care task board.</p>
+          </div>
         </div>
         <div class="card-body">
           <div *ngIf="loading" class="text-muted">Loading active hospitalizations...</div>
-          <div *ngIf="!loading && summaries.length === 0" class="text-muted">No active hospitalization task lists.</div>
+          <div *ngIf="!loading && summaries.length === 0" class="text-muted">
+            No active hospitalization task lists.
+          </div>
 
           <button
             type="button"
@@ -31,21 +79,44 @@
             [class.active]="selectedHospitalization?.id === item.id"
             (click)="openHospitalization(item.id)"
           >
-            <div class="fw-semibold">Patient #{{ item.patientId }}</div>
-            <div class="text-muted small">{{ item.reason }}</div>
-            <div class="small mt-2">
-              {{ item.completedTasks }}/{{ item.totalTasks }} tasks done
+            <div class="summary-top">
+              <div>
+                <div class="summary-patient">Patient #{{ item.patientId }}</div>
+                <div class="summary-reason">{{ item.reason || 'Hospitalization request' }}</div>
+              </div>
+              <span class="summary-chip">{{ item.status === 'ACTIVE' ? 'Active' : item.status }}</span>
+            </div>
+
+            <div class="summary-metrics">
+              <span>{{ item.completedTasks }}/{{ item.totalTasks }} tasks done</span>
+              <span>{{ item.pendingTasks }} pending</span>
+            </div>
+
+            <div class="summary-progress">
+              <span
+                class="summary-progress-fill"
+                [style.width.%]="item.totalTasks ? (item.completedTasks * 100 / item.totalTasks) : 0"
+              ></span>
             </div>
           </button>
         </div>
       </div>
     </div>
 
-    <div class="col-lg-8">
-      <div class="card stretch stretch-full">
-        <div class="card-header">
-          <h5 class="card-title">Shift Task List</h5>
+    <div class="col-xl-8">
+      <div class="card stretch stretch-full nurse-panel">
+        <div class="card-header border-0 pb-0">
+          <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap w-100">
+            <div>
+              <h5 class="card-title mb-1">Shift Task List</h5>
+              <p class="text-muted small mb-0">
+                Record execution notes and bedside values without reopening the doctor consultation.
+              </p>
+            </div>
+            <span class="selected-status-chip" *ngIf="selectedHospitalization">{{ selectedHospitalization.status }}</span>
+          </div>
         </div>
+
         <div class="card-body">
           <div class="alert alert-info" *ngIf="loadingSafety">
             Loading medication safety insight from OpenFDA...
@@ -58,50 +129,84 @@
             <span>| Warnings {{ safetySignal.warningCount }}</span>
           </div>
 
-          <div *ngIf="!selectedHospitalization" class="text-muted">
-            Select a hospitalized patient to open the task list.
+          <div *ngIf="!selectedHospitalization" class="empty-state">
+            <h6 class="mb-2">No patient selected yet</h6>
+            <p class="text-muted mb-0">Choose an active hospitalization from the left to open the live task list for this shift.</p>
           </div>
 
           <ng-container *ngIf="selectedHospitalization">
-            <div class="task-card" *ngFor="let task of selectedHospitalization.tasks; trackBy: trackTask">
-              <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+            <div class="selected-case-banner">
+              <div>
+                <span class="case-mini-label">Selected hospitalization</span>
+                <h6 class="mb-1">Patient #{{ selectedHospitalization.patientId }}</h6>
+                <p class="text-muted mb-0">{{ selectedHospitalization.reason || 'Hospitalization monitoring requested by doctor.' }}</p>
+              </div>
+              <div class="selected-case-stats">
                 <div>
-                  <div class="fw-semibold">{{ task.title }}</div>
-                  <div class="text-muted small">{{ task.type }}</div>
+                  <span>Done</span>
+                  <strong>{{ selectedDoneTasksCount }}</strong>
                 </div>
-                <span class="badge bg-soft-warning text-warning">{{ task.status }}</span>
+                <div>
+                  <span>Pending</span>
+                  <strong>{{ selectedPendingTasksCount }}</strong>
+                </div>
+                <div>
+                  <span>Updated</span>
+                  <strong>{{ selectedHospitalization.updatedAt | date:'shortTime' }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="task-card" *ngFor="let task of selectedHospitalization.tasks; trackBy: trackTask">
+              <div class="task-card-top">
+                <div>
+                  <div class="task-title">{{ task.title }}</div>
+                  <div class="task-meta">
+                    <span>{{ taskTypeLabel(task.type) }}</span>
+                    <span *ngIf="resolvedUnit(task)">Unit: {{ resolvedUnit(task) }}</span>
+                  </div>
+                </div>
+                <span class="task-status-chip" [ngClass]="taskStatusClass(task.status)">{{ taskStatusLabel(task.status) }}</span>
               </div>
 
-              <div class="text-muted mt-2" *ngIf="task.instructions">{{ task.instructions }}</div>
+              <div class="task-instructions" *ngIf="task.instructions">{{ task.instructions }}</div>
 
-              <div class="row g-3 mt-2">
+              <div class="row g-3 mt-1">
                 <div class="col-md-3">
-                  <label class="form-label">Status</label>
+                  <label class="form-label">Task status</label>
                   <select class="form-select" [(ngModel)]="taskDrafts[task.id].status">
-                    <option *ngFor="let status of taskStatuses" [ngValue]="status">{{ status }}</option>
+                    <option *ngFor="let status of taskStatusOptions()" [ngValue]="status.value">{{ status.label }}</option>
                   </select>
                 </div>
-                <div class="col-md-3" *ngIf="task.measurementKind === 'NUMERIC'">
-                  <label class="form-label">Measured value</label>
+                <div class="col-md-4" *ngIf="task.measurementKind === 'NUMERIC'">
+                  <label class="form-label">{{ taskValueLabel(task) }}</label>
                   <input type="number" class="form-control" [(ngModel)]="taskDrafts[task.id].numericValue" />
                 </div>
-                <div class="col-md-3" *ngIf="task.measurementKind === 'TEXT'">
-                  <label class="form-label">Measured value</label>
+                <div class="col-md-4" *ngIf="task.measurementKind === 'TEXT' && shouldUseObservationDropdown(task)">
+                  <label class="form-label">{{ taskValueLabel(task) }}</label>
+                  <select class="form-select" [(ngModel)]="taskDrafts[task.id].textValue">
+                    <option value="">Select observation</option>
+                    <option *ngFor="let option of observationOptions(task)" [ngValue]="option.value">{{ option.label }}</option>
+                  </select>
+                </div>
+                <div class="col-md-4" *ngIf="task.measurementKind === 'TEXT' && !shouldUseObservationDropdown(task)">
+                  <label class="form-label">{{ taskValueLabel(task) }}</label>
                   <input class="form-control" [(ngModel)]="taskDrafts[task.id].textValue" />
                 </div>
-                <div class="col-md-2" *ngIf="task.measurementKind !== 'NONE'">
+                <div class="col-md-3" *ngIf="task.measurementKind !== 'NONE'">
                   <label class="form-label">Unit</label>
-                  <input class="form-control" [(ngModel)]="taskDrafts[task.id].unit" />
+                  <input class="form-control" [ngModel]="resolvedUnit(task)" readonly />
                 </div>
                 <div class="col-md-12">
-                  <label class="form-label">Notes / observations</label>
+                  <label class="form-label">Nurse notes / observations</label>
                   <textarea class="form-control" rows="3" [(ngModel)]="taskDrafts[task.id].note"></textarea>
                 </div>
               </div>
 
-              <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+              <div class="task-card-footer">
                 <div class="text-muted small">
-                  Last update: {{ task.lastUpdatedAt ? (task.lastUpdatedAt | date:'medium') : 'Not updated yet' }}
+                  Last update:
+                  {{ task.lastUpdatedAt ? (task.lastUpdatedAt | date:'medium') : 'Not updated yet' }}
                 </div>
                 <button
                   type="button"

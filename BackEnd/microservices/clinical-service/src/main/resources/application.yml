@@ -7,6 +7,15 @@ spring:
     outOfOrder: true
     validateOnMigrate: false
     repairOnMigrate: true
+  datasource:
+    hikari:
+      connection-timeout: 10000
+      validation-timeout: 5000
+      initialization-fail-timeout: 10000
+      maximum-pool-size: 5
+      minimum-idle: 1
+      keepalive-time: 30000
+      max-lifetime: 600000
 
 eureka:
   client:
@@ -105,3 +114,7 @@ management:
   health:
     circuitbreakers:
       enabled: true
+
+server:
+  port: 8084
+  address: 0.0.0.0
