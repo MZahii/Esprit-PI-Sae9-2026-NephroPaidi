@@ -51,6 +51,12 @@ public class HospitalizationCase {
     @Column(nullable = false, length = 1000)
     private String reason;
 
+    @Column(name = "room_number", length = 64)
+    private String roomNumber;
+
+    @Column(name = "bed_number", length = 64)
+    private String bedNumber;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
     private HospitalizationStatus status;

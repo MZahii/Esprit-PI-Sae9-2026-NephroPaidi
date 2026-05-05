@@ -143,9 +143,11 @@ export type HospitalizationStatus = 'REQUESTED' | 'ACTIVE' | 'COMPLETED' | 'CANC
 
 export interface HospitalizationTaskExecutionResponse {
   id: string;
+  actionPerformed: 'UPDATED' | 'COMPLETED' | 'MARKED_NOT_DONE';
   status: HospitalizationTaskStatus;
   nurseKeycloakId: string;
   nurseUsername: string;
+  nurseDisplayName?: string | null;
   note?: string | null;
   numericValue?: number | null;
   textValue?: string | null;
@@ -168,6 +170,7 @@ export interface HospitalizationTaskResponse {
   latestUnit?: string | null;
   lastUpdatedByNurseId?: string | null;
   lastUpdatedByNurseUsername?: string | null;
+  lastUpdatedByNurseDisplayName?: string | null;
   lastUpdatedAt?: string | null;
   executions: HospitalizationTaskExecutionResponse[];
 }
@@ -188,6 +191,8 @@ export interface HospitalizationCaseResponse {
   doctorKeycloakId: string;
   doctorUsername: string;
   reason: string;
+  roomNumber?: string | null;
+  bedNumber?: string | null;
   status: HospitalizationStatus;
   createdAt: string;
   updatedAt: string;
@@ -200,6 +205,8 @@ export interface HospitalizationSummaryResponse {
   consultationId: string;
   doctorUsername: string;
   reason: string;
+  roomNumber?: string | null;
+  bedNumber?: string | null;
   status: HospitalizationStatus;
   totalTasks: number;
   completedTasks: number;
@@ -214,4 +221,9 @@ export interface HospitalizationTaskUpdateRequest {
   numericValue?: number | null;
   textValue?: string | null;
   unit?: string | null;
+}
+
+export interface AssignHospitalizationLocationRequest {
+  roomNumber: string;
+  bedNumber: string;
 }

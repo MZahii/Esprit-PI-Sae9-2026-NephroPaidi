@@ -24,6 +24,7 @@ public record HospitalizationTaskResponse(
         String latestUnit,
         String lastUpdatedByNurseId,
         String lastUpdatedByNurseUsername,
+        String lastUpdatedByNurseDisplayName,
         LocalDateTime lastUpdatedAt,
         List<HospitalizationTaskExecutionResponse> executions
 ) {

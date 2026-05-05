@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import tn.esprit.spring.communicationservice.domain.enums.MessageType;
+import tn.esprit.spring.communicationservice.domain.enums.StaffRole;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -31,6 +32,10 @@ public class QuickReplyTemplate {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MessageType messageType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private StaffRole staffRole;
 
     @Column(nullable = false, length = 2000)
     private String templateText;

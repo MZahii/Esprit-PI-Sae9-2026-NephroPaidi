@@ -57,12 +57,36 @@
               <strong>{{ hospitalization.doctorUsername }}</strong>
             </div>
             <div class="info-line">
+              <span>Room</span>
+              <strong>{{ hospitalization.roomNumber || '-' }}</strong>
+            </div>
+            <div class="info-line">
+              <span>Bed</span>
+              <strong>{{ hospitalization.bedNumber || '-' }}</strong>
+            </div>
+            <div class="info-line">
               <span>Created</span>
               <strong>{{ hospitalization.createdAt | date:'medium' }}</strong>
             </div>
             <div class="mt-3">
               <label class="form-label">Reason</label>
               <div class="reason-box">{{ hospitalization.reason }}</div>
+            </div>
+            <div class="mt-4" *ngIf="isReceptionist">
+              <h6 class="mb-2">Assign Patient Location</h6>
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <label class="form-label">Room Number</label>
+                  <input class="form-control" [(ngModel)]="locationForm.roomNumber" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Bed Number</label>
+                  <input class="form-control" [(ngModel)]="locationForm.bedNumber" />
+                </div>
+              </div>
+              <button class="btn btn-primary btn-sm mt-3" type="button" [disabled]="savingLocation" (click)="saveLocation()">
+                {{ savingLocation ? 'Saving...' : 'Save Room / Bed' }}
+              </button>
             </div>
           </div>
         </div>
@@ -90,7 +114,7 @@
               <div class="text-muted mt-2" *ngIf="task.instructions">{{ task.instructions }}</div>
 
               <div class="task-meta mt-3">
-                <div><span>Last nurse</span><strong>{{ task.lastUpdatedByNurseUsername || '-' }}</strong></div>
+                <div><span>Last nurse</span><strong>{{ task.lastUpdatedByNurseDisplayName || task.lastUpdatedByNurseUsername || '-' }}</strong></div>
                 <div><span>Last update</span><strong>{{ task.lastUpdatedAt ? (task.lastUpdatedAt | date:'medium') : '-' }}</strong></div>
                 <div><span>Latest note</span><strong>{{ task.latestNote || '-' }}</strong></div>
                 <div><span>Latest value</span><strong>{{ task.latestNumericValue ?? task.latestTextValue ?? '-' }} {{ task.latestUnit || '' }}</strong></div>
@@ -100,8 +124,11 @@
                 <h6 class="mb-2">Execution History</h6>
                 <div class="execution-row" *ngFor="let execution of task.executions">
                   <div class="d-flex justify-content-between gap-3 flex-wrap">
-                    <strong>{{ execution.nurseUsername }}</strong>
+                    <strong>{{ execution.nurseDisplayName || execution.nurseUsername }}</strong>
                     <span class="text-muted small">{{ execution.recordedAt | date:'medium' }}</span>
+                  </div>
+                  <div class="small text-muted mt-1">
+                    {{ execution.actionPerformed }} | {{ execution.nurseUsername }} | {{ execution.nurseKeycloakId }}
                   </div>
                   <div class="small mt-1">
                     Status: <span class="fw-semibold">{{ execution.status }}</span>

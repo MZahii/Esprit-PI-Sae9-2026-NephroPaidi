@@ -26,6 +26,7 @@ import { CommunicationInboxComponent } from './pages/backoffice/communication-in
 import { CommunicationDetailsComponent } from './pages/backoffice/communication-details/communication-details';
 import { CommunicationTemplatesComponent } from './pages/backoffice/communication-templates/communication-templates';
 import { CommunicationAnalyticsComponent } from './pages/backoffice/communication-analytics/communication-analytics';
+import { InternalStaffMessagingComponent } from './pages/backoffice/internal-staff-messaging/internal-staff-messaging';
 import { AppointmentsRequestsComponent } from './pages/backoffice/appointments-requests/appointments-requests';
 import { Appointments } from './pages/backoffice/appointments/appointments';
 import { ProcedureDialysisComponent } from './pages/backoffice/procedure-dialysis/procedure-dialysis';
@@ -77,6 +78,7 @@ import { Login } from './pages/public/login/login';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { passwordChangeGuard } from './core/guards/password-change.guard';
+import { STAFF_BACKOFFICE_ROLES } from './core/auth/keycloak.service';
 
 export const routes: Routes = [
   // ================= PUBLIC WEBSITE =================
@@ -101,9 +103,7 @@ export const routes: Routes = [
     path: 'backoffice',
     component: BackofficeLayoutComponent,
     canActivate: [authGuard, roleGuard, passwordChangeGuard],
-    data: {
-      roles: ['ADMIN', 'HR', 'DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST', 'LAB_AGENT']
-    },
+    data: { roles: STAFF_BACKOFFICE_ROLES },
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'dashboard', component: Dashboard },
@@ -204,6 +204,12 @@ export const routes: Routes = [
         data: { roles: ['RECEPTIONIST', 'NURSE', 'DOCTOR'] }
       },
       {
+        path: 'internal-staff-messaging',
+        component: InternalStaffMessagingComponent,
+        canActivate: [roleGuard],
+        data: { roles: STAFF_BACKOFFICE_ROLES }
+      },
+      {
         path: 'appointments/requests',
         component: AppointmentsRequestsComponent,
         canActivate: [roleGuard],
@@ -270,7 +276,7 @@ export const routes: Routes = [
         path: 'hospitalizations/:id',
         component: HospitalizationReviewPage,
         canActivate: [roleGuard],
-        data: { roles: ['DOCTOR', 'NURSE'] }
+        data: { roles: ['DOCTOR', 'NURSE', 'RECEPTIONIST'] }
       },
       {
         path: 'nurse/hospitalizations',

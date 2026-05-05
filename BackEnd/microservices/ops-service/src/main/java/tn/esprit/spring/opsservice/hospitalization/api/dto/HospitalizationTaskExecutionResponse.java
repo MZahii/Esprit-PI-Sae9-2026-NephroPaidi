@@ -1,5 +1,6 @@
 package tn.esprit.spring.opsservice.hospitalization.api.dto;
 
+import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationTaskExecutionAction;
 import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationTaskStatus;
 
 import java.math.BigDecimal;
@@ -8,9 +9,11 @@ import java.util.UUID;
 
 public record HospitalizationTaskExecutionResponse(
         UUID id,
+        HospitalizationTaskExecutionAction actionPerformed,
         HospitalizationTaskStatus status,
         String nurseKeycloakId,
         String nurseUsername,
+        String nurseDisplayName,
         String note,
         BigDecimal numericValue,
         String textValue,

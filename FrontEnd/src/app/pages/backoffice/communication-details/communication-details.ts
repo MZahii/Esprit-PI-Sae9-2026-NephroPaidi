@@ -9,9 +9,10 @@ import {
   FollowUpMessage,
   PatientDirectoryItem,
   QuickReplyTemplate,
-  StaffDirectoryItem
+  StaffDirectoryItem,
+  StaffRole
 } from '../../../core/services/communication-api.service';
-import { finalize, switchMap } from 'rxjs';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-communication-details',
@@ -73,6 +74,18 @@ export class CommunicationDetailsComponent implements OnInit {
 
   get isNurse(): boolean {
     return this.authStorage.getRole() === 'NURSE';
+  }
+
+  get currentStaffRole(): StaffRole {
+    const role = this.authStorage.getRole();
+    if (role === 'DOCTOR' || role === 'NURSE') {
+      return role;
+    }
+    return 'RECEPTIONIST';
+  }
+
+  get canEscalate(): boolean {
+    return this.isNurse && !!this.message && this.message.status !== 'CLOSED';
   }
 
   get canUnassign(): boolean {
@@ -266,10 +279,7 @@ export class CommunicationDetailsComponent implements OnInit {
 
     const reason = this.escalationForm.value.reason?.trim() ?? '';
     const doctorKeycloakId = this.escalationForm.value.doctorKeycloakId?.trim() || null;
-    const escalationNote = `Escalation reason: ${reason}`;
-
-    this.communicationApi.replyMessage(this.message.id, escalationNote).pipe(
-      switchMap(() => this.communicationApi.escalate(this.message!.id, doctorKeycloakId)),
+    this.communicationApi.escalate(this.message.id, doctorKeycloakId, reason).pipe(
       finalize(() => {
         this.actionLoading = false;
       })
@@ -279,7 +289,6 @@ export class CommunicationDetailsComponent implements OnInit {
         this.successMessage = 'Message escalated to doctor review.';
         this.showEscalationModal = false;
         this.escalationForm.reset({ doctorKeycloakId: '', reason: '' });
-        this.load();
       },
       error: (err) => { this.errorMessage = err?.error?.message || 'Escalate failed.'; }
     });
@@ -316,6 +325,9 @@ export class CommunicationDetailsComponent implements OnInit {
   }
 
   openEscalationModal(): void {
+    if (!this.canEscalate) {
+      return;
+    }
     const defaultDoctor = this.message?.assignedDoctorKeycloakId ?? '';
     this.escalationForm.patchValue({ doctorKeycloakId: defaultDoctor, reason: '' });
     this.showEscalationModal = true;

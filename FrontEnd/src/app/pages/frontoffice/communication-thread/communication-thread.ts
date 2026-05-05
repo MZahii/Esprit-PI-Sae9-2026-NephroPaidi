@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommunicationApiService, FollowUpMessage } from '../../../core/services/communication-api.service';
-import { Subscription, finalize } from 'rxjs';
+import { Subscription, finalize, timeout } from 'rxjs';
 
 @Component({
   selector: 'app-communication-thread',
@@ -33,7 +33,9 @@ export class CommunicationThreadComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
-    private communicationApi: CommunicationApiService
+    private communicationApi: CommunicationApiService,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
@@ -51,10 +53,12 @@ export class CommunicationThreadComponent implements OnInit, OnDestroy {
   load(idFromRoute?: string | null): void {
     const id = idFromRoute ?? this.route.snapshot.paramMap.get('id');
     if (!id) {
-      this.loading = false;
-      this.loadFailed = true;
-      this.errorMessage = 'Message ID is missing. Please return to the messages list and try again.';
-      this.message = undefined;
+      this.runInView(() => {
+        this.loading = false;
+        this.loadFailed = true;
+        this.errorMessage = 'Message ID is missing. Please return to the messages list and try again.';
+        this.message = undefined;
+      });
       return;
     }
 
@@ -62,19 +66,28 @@ export class CommunicationThreadComponent implements OnInit, OnDestroy {
     this.loadFailed = false;
     this.errorMessage = '';
     this.communicationApi.getMessageById(id).pipe(
+      timeout(15000),
       finalize(() => {
-        this.loading = false;
+        this.runInView(() => {
+          this.loading = false;
+        });
       })
     ).subscribe({
       next: (msg) => {
-        this.message = msg;
-        this.loadFailed = false;
-        this.closeConfirmOpen = false;
+        this.runInView(() => {
+          this.message = msg;
+          this.loadFailed = false;
+          this.closeConfirmOpen = false;
+        });
       },
       error: (err) => {
-        this.message = undefined;
-        this.loadFailed = true;
-        this.errorMessage = err?.error?.message || 'Failed to load message.';
+        this.runInView(() => {
+          this.message = undefined;
+          this.loadFailed = true;
+          this.errorMessage = err?.name === 'TimeoutError'
+            ? 'Message details did not load in time. Please retry.'
+            : err?.error?.message || err?.message || 'Failed to load message.';
+        });
       }
     });
   }
@@ -223,5 +236,12 @@ export class CommunicationThreadComponent implements OnInit, OnDestroy {
     } catch {
       // ignore persistence failures on restricted browsers
     }
+  }
+
+  private runInView(update: () => void): void {
+    this.ngZone.run(() => {
+      update();
+      this.cdr.detectChanges();
+    });
   }
 }

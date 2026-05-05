@@ -2,7 +2,7 @@ spring:
   application:
     name: administration-service
   config:
-    import: optional:configserver:http://localhost:8888
+    import: "configserver:"
   flyway:
     outOfOrder: true
     validateOnMigrate: false

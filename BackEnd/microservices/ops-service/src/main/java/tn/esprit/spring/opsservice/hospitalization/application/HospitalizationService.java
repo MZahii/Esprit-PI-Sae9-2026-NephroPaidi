@@ -1,5 +1,6 @@
 package tn.esprit.spring.opsservice.hospitalization.application;
 
+import tn.esprit.spring.opsservice.hospitalization.api.dto.AssignHospitalizationLocationRequest;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.CreateHospitalizationRequest;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.CreateHospitalizationTaskRequest;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.HospitalizationCaseResponse;
@@ -13,6 +14,8 @@ import java.util.UUID;
 public interface HospitalizationService {
 
     HospitalizationCaseResponse createHospitalization(CreateHospitalizationRequest request);
+
+    HospitalizationCaseResponse assignLocation(UUID hospitalizationId, AssignHospitalizationLocationRequest request);
 
     HospitalizationTaskResponse addTask(UUID hospitalizationId, CreateHospitalizationTaskRequest request);
 

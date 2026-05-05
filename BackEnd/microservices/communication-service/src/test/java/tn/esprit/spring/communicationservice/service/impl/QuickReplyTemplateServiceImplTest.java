@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 import tn.esprit.spring.communicationservice.domain.entity.QuickReplyTemplate;
 import tn.esprit.spring.communicationservice.domain.enums.MessageType;
+import tn.esprit.spring.communicationservice.domain.enums.StaffRole;
 import tn.esprit.spring.communicationservice.dto.request.CreateQuickReplyTemplateRequest;
 import tn.esprit.spring.communicationservice.dto.request.UpdateQuickReplyTemplateRequest;
 import tn.esprit.spring.communicationservice.dto.response.QuickReplyTemplateResponse;
@@ -23,7 +24,6 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,7 +43,7 @@ class QuickReplyTemplateServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        when(currentUserService.getStaffRoleOrThrow()).thenReturn(tn.esprit.spring.communicationservice.domain.enums.StaffRole.RECEPTIONIST);
+        when(currentUserService.getStaffRoleOrThrow()).thenReturn(StaffRole.RECEPTIONIST);
     }
 
     @Test
@@ -61,6 +61,7 @@ class QuickReplyTemplateServiceImplTest {
         assertEquals("Welcome", response.getName());
         assertEquals(0L, response.getUsageCount());
         assertEquals(MessageType.APPOINTMENT, response.getMessageType());
+        assertEquals(StaffRole.RECEPTIONIST, response.getStaffRole());
         verify(repository).save(any(QuickReplyTemplate.class));
     }
 
@@ -71,12 +72,13 @@ class QuickReplyTemplateServiceImplTest {
         template.setId(UUID.randomUUID());
         template.setName("Alpha");
         template.setMessageType(MessageType.QUESTION);
+        template.setStaffRole(StaffRole.RECEPTIONIST);
         template.setTemplateText("Hello");
         template.setUsageCount(3);
         template.setCreatedAt(java.time.Instant.now());
         template.setUpdatedAt(java.time.Instant.now());
 
-        when(repository.findAllByOrderByNameAsc()).thenReturn(List.of(template));
+        when(repository.findByStaffRoleOrderByNameAsc(StaffRole.RECEPTIONIST)).thenReturn(List.of(template));
 
         List<QuickReplyTemplateResponse> responses = service.list(null);
 
@@ -106,6 +108,7 @@ class QuickReplyTemplateServiceImplTest {
         template.setId(UUID.randomUUID());
         template.setName("Alpha");
         template.setMessageType(MessageType.QUESTION);
+        template.setStaffRole(StaffRole.RECEPTIONIST);
         template.setTemplateText("Hello");
         template.setUsageCount(7);
         template.setCreatedAt(java.time.Instant.now());

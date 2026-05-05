@@ -1,14 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HospitalizationCaseDto, OpsApiService } from '../../../core/services/ops-api.service';
 import { DrugSafetyService, DrugSafetySignal } from '../../../core/services/drug-safety.service';
 import { catchError, of } from 'rxjs';
+import { AuthStorageService } from '../../../core/auth/auth-storage.service';
 
 @Component({
   selector: 'app-hospitalization-review-page',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './hospitalization-review.page.html',
   styleUrl: './hospitalization-review.page.scss'
 })
@@ -19,11 +21,17 @@ export class HospitalizationReviewPage implements OnInit {
   safetyError = '';
   loadingSafety = false;
   safetySignal: DrugSafetySignal | null = null;
+  savingLocation = false;
+  locationForm = {
+    roomNumber: '',
+    bedNumber: ''
+  };
 
   constructor(
     private route: ActivatedRoute,
     private opsApi: OpsApiService,
-    private drugSafety: DrugSafetyService
+    private drugSafety: DrugSafetyService,
+    private authStorage: AuthStorageService
   ) {}
 
   ngOnInit(): void {
@@ -38,9 +46,13 @@ export class HospitalizationReviewPage implements OnInit {
   load(hospitalizationId: string): void {
     this.loading = true;
     this.error = '';
-    this.opsApi.getHospitalizationProgress(hospitalizationId).subscribe({
+    this.opsApi.getHospitalizationById(hospitalizationId).subscribe({
       next: (item) => {
         this.hospitalization = item;
+        this.locationForm = {
+          roomNumber: item.roomNumber || '',
+          bedNumber: item.bedNumber || ''
+        };
         this.loading = false;
         this.safetyError = '';
         this.safetySignal = null;
@@ -65,6 +77,44 @@ export class HospitalizationReviewPage implements OnInit {
     if (status === 'COMPLETED') return 'bg-soft-success text-success';
     if (status === 'CANCELLED') return 'bg-soft-danger text-danger';
     return 'bg-soft-warning text-warning';
+  }
+
+  get currentRole(): string {
+    return String(this.authStorage.getRole() ?? '');
+  }
+
+  get isReceptionist(): boolean {
+    return this.currentRole === 'RECEPTIONIST';
+  }
+
+  saveLocation(): void {
+    if (!this.hospitalization || this.savingLocation) {
+      return;
+    }
+
+    const roomNumber = this.locationForm.roomNumber.trim();
+    const bedNumber = this.locationForm.bedNumber.trim();
+    if (!roomNumber || !bedNumber) {
+      this.error = 'Room number and bed number are required.';
+      return;
+    }
+
+    this.savingLocation = true;
+    this.error = '';
+    this.opsApi.assignHospitalizationLocation(this.hospitalization.id, { roomNumber, bedNumber }).subscribe({
+      next: (updated) => {
+        this.hospitalization = updated;
+        this.locationForm = {
+          roomNumber: updated.roomNumber || '',
+          bedNumber: updated.bedNumber || ''
+        };
+        this.savingLocation = false;
+      },
+      error: (err) => {
+        this.error = err?.error?.message || 'Unable to assign room and bed.';
+        this.savingLocation = false;
+      }
+    });
   }
 
   private loadSafetyMetric(item: HospitalizationCaseDto): void {

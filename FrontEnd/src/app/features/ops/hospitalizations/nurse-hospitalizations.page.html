@@ -36,6 +36,9 @@
             <div class="small mt-2">
               {{ item.completedTasks }}/{{ item.totalTasks }} tasks done
             </div>
+            <div class="small text-muted mt-1">
+              Room {{ item.roomNumber || '-' }} | Bed {{ item.bedNumber || '-' }}
+            </div>
           </button>
         </div>
       </div>
@@ -63,6 +66,11 @@
           </div>
 
           <ng-container *ngIf="selectedHospitalization">
+            <div class="border rounded p-3 mb-3 bg-light-subtle">
+              <div class="fw-semibold mb-2">Patient Location</div>
+              <div class="small text-muted">Room {{ selectedHospitalization.roomNumber || '-' }} | Bed {{ selectedHospitalization.bedNumber || '-' }}</div>
+            </div>
+
             <div class="task-card" *ngFor="let task of selectedHospitalization.tasks; trackBy: trackTask">
               <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
                 <div>
@@ -101,7 +109,11 @@
 
               <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
                 <div class="text-muted small">
-                  Last update: {{ task.lastUpdatedAt ? (task.lastUpdatedAt | date:'medium') : 'Not updated yet' }}
+                  Last update:
+                  {{ task.lastUpdatedAt ? (task.lastUpdatedAt | date:'medium') : 'Not updated yet' }}
+                  <span *ngIf="task.lastUpdatedByNurseDisplayName || task.lastUpdatedByNurseUsername">
+                    by {{ task.lastUpdatedByNurseDisplayName || task.lastUpdatedByNurseUsername }}
+                  </span>
                 </div>
                 <button
                   type="button"
@@ -111,6 +123,27 @@
                 >
                   {{ savingTaskId === task.id ? 'Saving...' : 'Save task update' }}
                 </button>
+              </div>
+
+              <div class="execution-history mt-3" *ngIf="task.executions.length > 0">
+                <div class="small fw-semibold mb-2">Execution History</div>
+                <div class="border rounded p-2 mb-2" *ngFor="let execution of task.executions">
+                  <div class="d-flex justify-content-between gap-2 flex-wrap">
+                    <strong>{{ execution.nurseDisplayName || execution.nurseUsername }}</strong>
+                    <span class="small text-muted">{{ execution.recordedAt | date:'medium' }}</span>
+                  </div>
+                  <div class="small text-muted mt-1">
+                    {{ execution.actionPerformed }} | {{ execution.nurseUsername }} | {{ execution.nurseKeycloakId }}
+                  </div>
+                  <div class="small mt-1">
+                    Status: <span class="fw-semibold">{{ execution.status }}</span>
+                    <span *ngIf="execution.numericValue !== null && execution.numericValue !== undefined">
+                      | Value: {{ execution.numericValue }} {{ execution.unit || '' }}
+                    </span>
+                    <span *ngIf="execution.textValue">| Value: {{ execution.textValue }}</span>
+                  </div>
+                  <div class="small text-muted mt-1" *ngIf="execution.note">{{ execution.note }}</div>
+                </div>
               </div>
             </div>
           </ng-container>

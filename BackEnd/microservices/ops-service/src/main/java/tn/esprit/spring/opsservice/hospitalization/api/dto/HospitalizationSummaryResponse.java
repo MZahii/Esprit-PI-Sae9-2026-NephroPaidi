@@ -11,6 +11,8 @@ public record HospitalizationSummaryResponse(
         UUID consultationId,
         String doctorUsername,
         String reason,
+        String roomNumber,
+        String bedNumber,
         HospitalizationStatus status,
         int totalTasks,
         int completedTasks,

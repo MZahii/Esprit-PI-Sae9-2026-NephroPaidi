@@ -86,6 +86,9 @@ public class HospitalizationTask {
     @Column(name = "last_updated_by_nurse_username", length = 120)
     private String lastUpdatedByNurseUsername;
 
+    @Column(name = "last_updated_by_nurse_display_name", length = 160)
+    private String lastUpdatedByNurseDisplayName;
+
     @Column(name = "last_updated_at")
     private LocalDateTime lastUpdatedAt;
 

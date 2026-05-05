@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { LoginResponse } from './auth-api.service';
-import { extractRolesFromToken, getPrimaryRoleFromToken } from './keycloak.service';
+import { extractAppRolesFromToken, getPrimaryRoleFromToken } from './keycloak.service';
 
 @Injectable({
   providedIn: 'root'
@@ -16,14 +16,30 @@ export class AuthStorageService {
   private readonly PREF_LANGUAGE_KEY = 'np_pref_language';
   private readonly PREF_NOTIFICATIONS_KEY = 'np_pref_notifications_enabled';
 
+  private normalizeRole(role: string | null | undefined): string | null {
+    const normalized = String(role ?? '').trim().toUpperCase();
+    return normalized || null;
+  }
+
+  private getStoredRole(): string | null {
+    const localRole = this.normalizeRole(localStorage.getItem(this.ROLE_KEY));
+    if (localRole) {
+      return localRole;
+    }
+
+    return this.normalizeRole(sessionStorage.getItem(this.ROLE_KEY));
+  }
+
   saveSession(response: LoginResponse, rememberMe: boolean = true): void {
     this.clear();
 
     const storage = rememberMe ? localStorage : sessionStorage;
+    const derivedRole = getPrimaryRoleFromToken(response.accessToken);
+    const fallbackRole = this.normalizeRole(response.role);
 
     storage.setItem(this.ACCESS_TOKEN_KEY, response.accessToken);
     storage.setItem(this.REFRESH_TOKEN_KEY, response.refreshToken);
-    storage.setItem(this.ROLE_KEY, getPrimaryRoleFromToken(response.accessToken) ?? response.role);
+    storage.setItem(this.ROLE_KEY, derivedRole ?? fallbackRole ?? '');
     storage.setItem(this.REDIRECT_KEY, response.redirectTo);
 
     storage.setItem(
@@ -53,25 +69,20 @@ export class AuthStorageService {
   getRole(): string | null {
     const token = this.getAccessToken();
     const derived = getPrimaryRoleFromToken(token);
-    if (derived) {
-      return derived;
-    }
-
-    return localStorage.getItem(this.ROLE_KEY)
-      ?? sessionStorage.getItem(this.ROLE_KEY);
+    const storedRole = this.getStoredRole();
+    return derived ?? storedRole;
   }
 
   getRoles(): string[] {
-    const roles = extractRolesFromToken(this.getAccessToken());
-    if (roles.length > 0) {
-      return roles;
-    }
-
+    const resolvedRoles = new Set<string>(extractAppRolesFromToken(this.getAccessToken()));
     const singleRole = this.getRole();
-    return singleRole ? [singleRole] : [];
+    if (singleRole) {
+      resolvedRoles.add(singleRole);
+    }
+    return Array.from(resolvedRoles);
   }
 
-  hasAnyRole(expectedRoles: string[]): boolean {
+  hasAnyRole(expectedRoles: readonly string[]): boolean {
     const roles = this.getRoles();
     return expectedRoles.some((role) => roles.includes(role));
   }

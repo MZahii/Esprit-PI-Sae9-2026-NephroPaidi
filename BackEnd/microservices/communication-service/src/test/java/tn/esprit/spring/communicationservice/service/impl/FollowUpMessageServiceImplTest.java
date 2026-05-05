@@ -146,10 +146,17 @@ class FollowUpMessageServiceImplTest {
         when(messageReplyRepository.findByMessageIdOrderByCreatedAtAsc(id)).thenReturn(List.of());
         doAnswer(invocation -> invocation.getArgument(0)).when(followUpMessageRepository).save(any(FollowUpMessage.class));
 
-        FollowUpMessageResponse response = service.escalate(id, new EscalateRequest() {{ setDoctorKeycloakId("doctor-target"); }});
+        EscalateRequest request = new EscalateRequest();
+        request.setDoctorKeycloakId("doctor-target");
+        request.setReason("Urgent symptoms require doctor review");
+
+        FollowUpMessageResponse response = service.escalate(id, request);
 
         assertEquals(MessageQueue.DOCTOR, response.getQueue());
         assertEquals(MessageStatus.ESCALATED, response.getStatus());
+        assertEquals(StaffRole.DOCTOR, response.getAssignedToRole());
+        assertEquals("doctor-target", response.getAssignedToUserKeycloakId());
+        assertEquals("doctor-target", response.getAssignedDoctorKeycloakId());
         verify(messageAuditLogRepository).save(any(MessageAuditLog.class));
     }
 

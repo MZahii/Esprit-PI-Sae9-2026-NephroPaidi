@@ -10,6 +10,7 @@ export type PriorityLevel = 'NORMAL' | 'HIGH';
 export type MessageQueue = 'RECEPTIONIST' | 'NURSE' | 'DOCTOR';
 export type MessageStatus = 'PENDING' | 'READ' | 'IN_PROGRESS' | 'ESCALATED' | 'RESPONDED' | 'CLOSED';
 export type SenderRole = 'GUARDIAN' | 'RECEPTIONIST' | 'NURSE' | 'DOCTOR';
+export type StaffRole = 'RECEPTIONIST' | 'NURSE' | 'DOCTOR';
 export type BulkMessageAction = 'TAKE' | 'MARK_READ' | 'UNASSIGN' | 'CLOSE';
 
 export interface CreateMessagePayload {
@@ -95,6 +96,7 @@ export interface QuickReplyTemplate {
   id: string;
   name: string;
   messageType: MessageType;
+  staffRole: StaffRole;
   templateText: string;
   usageCount: number;
   createdAt: string;
@@ -178,10 +180,13 @@ export class CommunicationApiService {
     return this.http.post<FollowUpMessage>(`${this.baseUrl}/messages/${id}/mark-read`, {});
   }
 
-  escalate(id: string, doctorKeycloakId?: string | null): Observable<FollowUpMessage> {
+  escalate(id: string, doctorKeycloakId?: string | null, reason?: string | null): Observable<FollowUpMessage> {
     return this.http.post<FollowUpMessage>(
       `${this.baseUrl}/messages/${id}/escalate`,
-      { doctorKeycloakId: doctorKeycloakId ?? null }
+      {
+        doctorKeycloakId: doctorKeycloakId ?? null,
+        reason: reason ?? null
+      }
     );
   }
 
@@ -216,7 +221,7 @@ export class CommunicationApiService {
   }
 
   getDoctorsDirectory(): Observable<StaffDirectoryItem[]> {
-    return this.http.get<StaffDirectoryItem[]>(`${this.baseUrl}/api/users/public/doctors`);
+    return this.http.get<StaffDirectoryItem[]>(`${this.baseUrl}/backoffice/doctors`);
   }
 
   listTemplates(messageType?: MessageType): Observable<QuickReplyTemplate[]> {

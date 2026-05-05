@@ -1,0 +1,152 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Internal Staff Messaging</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item">Internal Staff Messaging</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="card stretch stretch-full">
+    <div class="card-body p-0">
+      <div class="staff-messaging-shell">
+        <aside class="staff-messaging-sidebar">
+          <div class="pane-header">
+            <div>
+              <h5 class="mb-1">Inbox</h5>
+              <small class="text-muted">{{ liveStatusLabel }}</small>
+            </div>
+            <button class="btn btn-sm btn-light-brand" type="button" (click)="refreshAll()">Refresh</button>
+          </div>
+
+          <div class="search-panel">
+            <label class="form-label fw-semibold mb-2">New direct conversation</label>
+            <input
+              class="form-control"
+              placeholder="Search staff by name or username"
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="scheduleUserSearch()"
+            />
+
+            <div class="search-results mt-2" *ngIf="searchLoading || staffResults.length > 0 || searchTerm.trim()">
+              <div class="search-loading text-muted small" *ngIf="searchLoading">Searching staff...</div>
+              <button
+                class="search-result-item"
+                type="button"
+                *ngFor="let user of staffResults"
+                (click)="startDirectConversation(user)"
+              >
+                <div>
+                  <div class="fw-semibold">{{ user.displayName }}</div>
+                  <small class="text-muted">{{ getRoleLabel(user.role) }}</small>
+                </div>
+                <small class="text-muted">{{ user.username }}</small>
+              </button>
+              <div class="search-empty text-muted small" *ngIf="!searchLoading && staffResults.length === 0">
+                No staff matches yet.
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-danger m-3 mb-0" *ngIf="pageError">{{ pageError }}</div>
+
+          <div class="conversation-list" *ngIf="!conversationsLoading; else loadingConversations">
+            <button
+              class="conversation-row"
+              type="button"
+              *ngFor="let conversation of conversations; trackBy: trackConversation"
+              [class.active]="conversation.id === selectedConversationId"
+              (click)="openConversation(conversation)"
+            >
+              <div class="conversation-top">
+                <div>
+                  <div class="fw-semibold">{{ getPeer(conversation)?.displayName || 'Staff conversation' }}</div>
+                  <small class="text-muted">{{ getRoleLabel(getPeer(conversation)?.userRole) }}</small>
+                </div>
+                <div class="text-end">
+                  <small class="text-muted d-block">{{ (conversation.lastMessageAt || conversation.updatedAt) | date:'shortTime' }}</small>
+                  <span class="badge bg-primary" *ngIf="conversation.unreadCount > 0">{{ conversation.unreadCount }}</span>
+                </div>
+              </div>
+              <div class="conversation-preview text-muted">{{ getConversationPreview(conversation) }}</div>
+            </button>
+
+            <div class="pane-empty" *ngIf="conversations.length === 0">
+              No internal conversations yet.
+            </div>
+          </div>
+        </aside>
+
+        <section class="staff-messaging-thread">
+          <div class="thread-header" *ngIf="selectedConversation; else emptyThread">
+            <div>
+              <h5 class="mb-1">{{ selectedConversationLabel }}</h5>
+              <small class="text-muted">{{ getRoleLabel(selectedPeer?.userRole) }}</small>
+            </div>
+            <div class="thread-meta">
+              <span class="badge" [ngClass]="wsConnected ? 'bg-soft-success text-success' : 'bg-soft-warning text-warning'">
+                {{ wsConnected ? 'Live' : 'Fallback' }}
+              </span>
+            </div>
+          </div>
+
+          <ng-template #emptyThread>
+            <div class="pane-empty thread-empty-state">
+              Select a conversation or start a new one with a staff member.
+            </div>
+          </ng-template>
+
+          <div class="alert alert-danger mx-3 mt-3 mb-0" *ngIf="threadError">{{ threadError }}</div>
+
+          <div class="messages-viewport" #messageViewport *ngIf="selectedConversation">
+            <div class="messages-loading text-muted" *ngIf="messagesLoading">Loading messages...</div>
+
+            <div class="messages-list" *ngIf="!messagesLoading">
+              <div class="pane-empty" *ngIf="messages.length === 0">
+                No messages yet. Start the conversation.
+              </div>
+
+              <div
+                class="message-row"
+                *ngFor="let message of messages; trackBy: trackMessage"
+                [class.mine]="isMine(message)"
+              >
+                <div class="message-bubble">
+                  <div class="message-author" *ngIf="!isMine(message)">
+                    {{ message.senderDisplayName }} • {{ getRoleLabel(message.senderRole) }}
+                  </div>
+                  <div class="message-content">{{ message.content }}</div>
+                  <div class="message-meta">{{ message.createdAt | date:'short' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="composer" *ngIf="selectedConversation">
+            <div class="alert alert-danger mb-2" *ngIf="sendError">{{ sendError }}</div>
+            <textarea
+              class="form-control"
+              rows="3"
+              placeholder="Type an internal staff message"
+              [(ngModel)]="draftMessage"
+            ></textarea>
+            <div class="composer-actions">
+              <small class="text-muted">REST stays active even if live delivery is reconnecting.</small>
+              <button class="btn btn-primary" type="button" [disabled]="sending || !draftMessage.trim()" (click)="sendMessage()">
+                {{ sending ? 'Sending...' : 'Send' }}
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #loadingConversations>
+  <div class="pane-loading text-muted p-4">Loading conversations...</div>
+</ng-template>

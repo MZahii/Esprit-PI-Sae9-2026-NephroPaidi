@@ -15,7 +15,10 @@
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
       <div>
         <h5 class="card-title mb-0">Queue: {{ queue }}</h5>
-        <small class="text-muted">Monitor, prioritize, and handle incoming guardian communications.</small>
+        <small class="text-muted">
+          <ng-container *ngIf="queue === 'DOCTOR'; else staffQueueHelp">Review nurse escalations and reply back to guardians.</ng-container>
+          <ng-template #staffQueueHelp>Monitor, prioritize, and handle incoming guardian communications.</ng-template>
+        </small>
       </div>
       <div class="d-flex gap-2 flex-wrap">
         <a class="btn btn-light-brand" routerLink="/backoffice/communication/templates">Quick-Reply Templates</a>
@@ -36,7 +39,7 @@
 
       <div class="d-flex gap-2 flex-wrap mb-3">
         <button class="btn" [ngClass]="activeTab === 'MY_QUEUE' ? 'btn-primary' : 'btn-light-brand'" (click)="selectTab('MY_QUEUE')">
-          My Queue
+          Actionable Queue
         </button>
         <button class="btn" [ngClass]="activeTab === 'ALL_MESSAGES' ? 'btn-primary' : 'btn-light-brand'" (click)="selectTab('ALL_MESSAGES')">
           All Messages
@@ -70,6 +73,12 @@
           <div class="border rounded p-3 h-100">
             <small class="text-muted d-block">Avg. First Response</small>
             <h5 class="mb-0">{{ avgResponseHours }}</h5>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="border rounded p-3 h-100">
+            <small class="text-muted d-block">{{ queue === 'DOCTOR' ? 'Escalated To You' : 'Escalated Cases' }}</small>
+            <h5 class="mb-0">{{ queue === 'DOCTOR' ? escalatedAssignedToMeCount : escalatedCount }}</h5>
           </div>
         </div>
       </div>
@@ -205,6 +214,7 @@
               <td>{{ item.messageType }}</td>
               <td>
                 <div class="fw-semibold">{{ item.subject || 'No subject' }}</div>
+                <small class="d-block text-warning fw-semibold" *ngIf="item.status === 'ESCALATED'">{{ getEscalationLabel(item) }}</small>
                 <small class="text-muted">{{ getMessagePreview(item) }}</small>
               </td>
               <td>

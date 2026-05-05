@@ -5,7 +5,7 @@ spring:
   application:
     name: pharmacy-service
   config:
-    import: optional:configserver:http://localhost:8888
+    import: "configserver:"
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://ep-cool-breeze-agqhhjlc.c-2.eu-central-1.aws.neon.tech/nephros_pharmacy_db?sslmode=require&channel_binding=require}

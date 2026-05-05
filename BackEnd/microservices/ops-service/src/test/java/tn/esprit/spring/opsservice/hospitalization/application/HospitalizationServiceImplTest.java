@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.CreateHospitalizationRequest;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.CreateHospitalizationTaskRequest;
+import tn.esprit.spring.opsservice.hospitalization.api.dto.AssignHospitalizationLocationRequest;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.HospitalizationCaseResponse;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.HospitalizationSummaryResponse;
 import tn.esprit.spring.opsservice.hospitalization.api.dto.HospitalizationTaskResponse;
@@ -19,6 +20,7 @@ import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationMeasure
 import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationStatus;
 import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationTask;
 import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationTaskExecution;
+import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationTaskExecutionAction;
 import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationTaskStatus;
 import tn.esprit.spring.opsservice.hospitalization.domain.HospitalizationTaskType;
 import tn.esprit.spring.opsservice.hospitalization.repository.HospitalizationCaseRepository;
@@ -60,7 +62,7 @@ class HospitalizationServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        doctor = new CurrentUserService.AuthenticatedUser("doctor-sub-1", "dr.haddad");
+        doctor = new CurrentUserService.AuthenticatedUser("doctor-sub-1", "dr.haddad", "Dr. Haddad");
     }
 
     @Test
@@ -144,6 +146,23 @@ class HospitalizationServiceImplTest {
     }
 
     @Test
+    @DisplayName("assignLocation stores room and bed on hospitalization")
+    void assignLocationStoresRoomAndBed() {
+        UUID hospitalizationId = UUID.randomUUID();
+        HospitalizationCase hospitalizationCase = hospitalizationCase(hospitalizationId, HospitalizationStatus.REQUESTED);
+        when(hospitalizationCaseRepository.findDetailedById(hospitalizationId)).thenReturn(java.util.Optional.of(hospitalizationCase));
+        when(hospitalizationCaseRepository.save(any(HospitalizationCase.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        HospitalizationCaseResponse response = service.assignLocation(
+                hospitalizationId,
+                new AssignHospitalizationLocationRequest("A-203", "Bed-2")
+        );
+
+        assertEquals("A-203", response.roomNumber());
+        assertEquals("Bed-2", response.bedNumber());
+    }
+
+    @Test
     @DisplayName("addTask rejects closed hospitalization")
     void addTaskRejectsClosedHospitalization() {
         UUID hospitalizationId = UUID.randomUUID();
@@ -177,7 +196,7 @@ class HospitalizationServiceImplTest {
         hospitalizationCase.getTasks().add(task);
 
         when(hospitalizationTaskRepository.findById(taskId)).thenReturn(java.util.Optional.of(task));
-        when(currentUserService.getCurrentUser()).thenReturn(new CurrentUserService.AuthenticatedUser("nurse-sub-9", "nurse.amina"));
+        when(currentUserService.getCurrentUser()).thenReturn(new CurrentUserService.AuthenticatedUser("nurse-sub-9", "nurse.amina", "Amina Nurse"));
         when(hospitalizationTaskExecutionRepository.save(any(HospitalizationTaskExecution.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(hospitalizationTaskRepository.save(any(HospitalizationTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -193,6 +212,8 @@ class HospitalizationServiceImplTest {
         assertEquals(new BigDecimal("120"), response.latestNumericValue());
         assertEquals("mmHg", response.latestUnit());
         assertEquals("nurse.amina", response.lastUpdatedByNurseUsername());
+        assertEquals("Amina Nurse", response.lastUpdatedByNurseDisplayName());
+        assertEquals(HospitalizationTaskExecutionAction.COMPLETED, response.executions().get(0).actionPerformed());
         verify(hospitalizationTaskExecutionRepository).save(any(HospitalizationTaskExecution.class));
     }
 
