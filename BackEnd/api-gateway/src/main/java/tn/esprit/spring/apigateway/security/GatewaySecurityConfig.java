@@ -160,6 +160,10 @@ public class GatewaySecurityConfig {
                                 "PHARMACIST",
                                 "GUARDIAN"
                         )
+                        .pathMatchers(HttpMethod.POST, "/api/ai/**").hasAnyRole(
+                                "PHARMACIST"
+                        )
+                        .pathMatchers(HttpMethod.GET, "/api/ai/health").permitAll()
 
                         .anyExchange().authenticated()
                 )
