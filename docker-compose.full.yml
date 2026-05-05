@@ -128,6 +128,7 @@ services:
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: user-service
       KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
       KEYCLOAK_SERVER_URL: http://keycloak:8080
       KEYCLOAK_REALM: nephrospaidi
       KEYCLOAK_ADMIN_CLIENT_ID: admin-cli
@@ -160,6 +161,7 @@ services:
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: administration-service
       KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
       USER_SERVICE_BASE_URL: http://user-service:8090
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-my-super-secret-internal-key}
       ENVIRONMENT: docker
@@ -186,6 +188,7 @@ services:
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: communication-service
       KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
       USER_SERVICE_BASE_URL: http://user-service:8090
       ADMINISTRATION_SERVICE_BASE_URL: http://administration-service:8087
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-my-super-secret-internal-key}
@@ -214,6 +217,7 @@ services:
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: clinical-service
       KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
       SERVICES_ADMINISTRATION_BASE: http://administration-service:8087
       SERVICES_USER_BASE: http://user-service:8090
       USER_SERVICE_URL: http://user-service:8090
@@ -246,6 +250,7 @@ services:
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: ops-service
       KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
       ENVIRONMENT: docker
     ports:
       - "8082:8082"
@@ -288,6 +293,7 @@ services:
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: pharmacy-service
       KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
       USER_SERVICE_BASE_URL: http://user-service:8090
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-my-super-secret-internal-key}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
@@ -315,6 +321,7 @@ services:
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
       EUREKA_INSTANCE_HOSTNAME: procedure-service
       KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
       RESEND_ENABLED: ${RESEND_ENABLED:-false}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-onboarding@resend.dev}
