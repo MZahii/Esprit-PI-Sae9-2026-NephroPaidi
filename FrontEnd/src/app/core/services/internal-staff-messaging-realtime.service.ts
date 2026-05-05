@@ -2,7 +2,7 @@ import { Injectable, NgZone, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { getValidToken } from '../auth/keycloak.service';
+import { getValidToken, isAuthenticated } from '../auth/keycloak.service';
 import { StaffMessagingSocketEvent } from '../models/internal-staff-messaging.models';
 
 @Injectable({
@@ -23,6 +23,11 @@ export class InternalStaffMessagingRealtimeService implements OnDestroy {
   constructor(private ngZone: NgZone) {}
 
   async connect(): Promise<void> {
+    if (!isAuthenticated()) {
+      this.connectionStateSubject.next(false);
+      return;
+    }
+
     if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
       return;
     }
@@ -64,7 +69,9 @@ export class InternalStaffMessagingRealtimeService implements OnDestroy {
       };
     } catch (error) {
       this.connectionStateSubject.next(false);
-      this.scheduleReconnect();
+      if (isAuthenticated()) {
+        this.scheduleReconnect();
+      }
       console.error('Failed to connect staff messaging websocket:', error);
     }
   }
@@ -86,6 +93,10 @@ export class InternalStaffMessagingRealtimeService implements OnDestroy {
   }
 
   private scheduleReconnect(): void {
+    if (!isAuthenticated()) {
+      return;
+    }
+
     clearTimeout(this.reconnectTimer);
     const delayMs = Math.min(1000 * Math.max(1, this.reconnectAttempts + 1), 10000);
     this.reconnectAttempts += 1;
