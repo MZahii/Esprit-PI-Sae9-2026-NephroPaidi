@@ -9,6 +9,7 @@ public record CreateSurgicalCaseRequest(
     @NotBlank String patientId,
     String consultationId,
     String appointmentId,
+    Long surgeryRequestId,
     @NotBlank String firstName,
     @NotBlank String lastName,
     @NotNull Integer age,

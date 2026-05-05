@@ -27,6 +27,9 @@ export interface DialysisPlan {
 export interface SurgicalCase {
   id: number;
   patientId: string;
+  consultationId: string | null;
+  appointmentId: string | null;
+  surgeryRequestId: number | null;
   firstName: string;
   lastName: string;
   age: number;
@@ -46,6 +49,21 @@ export interface SurgicalCase {
   operatingRoom: string | null;
   status: string;
   offerStatus: string;
+}
+
+export interface SurgeryRequest {
+  id: number;
+  patientId: string;
+  consultationId: string;
+  requestedByDoctorId: string;
+  patientFirstName: string;
+  patientLastName: string;
+  reason: string;
+  urgencyLevel: string;
+  clinicalNote: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface DialysisSession {
@@ -91,6 +109,10 @@ export interface CareTask {
   surgicalCaseId: number;
   title: string;
   done: boolean;
+}
+
+export interface WhatsAppTestResponse {
+  status: string;
 }
 
 @Injectable({
@@ -218,8 +240,39 @@ export class ProcedureApiService {
     return this.http.get<SurgicalCase[]>(`${this.baseUrl}/api/procedures/surgical/cases`);
   }
 
+  getSurgeryRequests(filters?: { consultationId?: string; status?: string }): Observable<SurgeryRequest[]> {
+    const params: Record<string, string> = {};
+    if (filters?.consultationId) {
+      params['consultationId'] = filters.consultationId;
+    }
+    if (filters?.status) {
+      params['status'] = filters.status;
+    }
+    return this.http.get<SurgeryRequest[]>(`${this.baseUrl}/api/procedures/surgical/requests`, { params });
+  }
+
+  createSurgeryRequest(payload: {
+    patientId: string;
+    consultationId: string;
+    requestedByDoctorId: string;
+    patientFirstName: string;
+    patientLastName: string;
+    reason: string;
+    urgencyLevel: string;
+    clinicalNote?: string | null;
+  }): Observable<SurgeryRequest> {
+    return this.http.post<SurgeryRequest>(`${this.baseUrl}/api/procedures/surgical/requests`, payload);
+  }
+
+  updateSurgeryRequestStatus(id: number, payload: { status: string }): Observable<SurgeryRequest> {
+    return this.http.put<SurgeryRequest>(`${this.baseUrl}/api/procedures/surgical/requests/${id}/status`, payload);
+  }
+
   createSurgicalCase(payload: {
     patientId: string;
+    consultationId?: string | null;
+    appointmentId?: string | null;
+    surgeryRequestId?: number | null;
     firstName: string;
     lastName: string;
     age: number;
@@ -302,5 +355,9 @@ export class ProcedureApiService {
 
   updateCareTask(id: number, payload: { title: string; done: boolean }): Observable<CareTask> {
     return this.http.put<CareTask>(`${this.baseUrl}/api/procedures/surgical/care-tasks/${id}`, payload);
+  }
+
+  sendWhatsAppTestMessage(): Observable<WhatsAppTestResponse> {
+    return this.http.post<WhatsAppTestResponse>(`${this.baseUrl}/api/procedures/whatsapp/test`, {});
   }
 }

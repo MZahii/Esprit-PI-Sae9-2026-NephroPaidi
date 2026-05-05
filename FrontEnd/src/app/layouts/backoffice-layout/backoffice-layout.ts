@@ -534,7 +534,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
       });
     }
 
-    if (this.isSurgeon) {
+    if (this.isSurgeon || this.isReceptionist) {
       items.push({
         key: 'procedures',
         label: 'Procedure Service',
@@ -545,31 +545,35 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
             route: '/backoffice/procedures/surgical',
             implemented: true
           },
-          {
-            label: 'Surgical Advanced',
-            route: '/backoffice/procedures/surgical-advanced',
-            implemented: true
-          },
-          {
-            label: 'Dialysis Management',
-            route: '/backoffice/procedures/dialysis',
-            implemented: true
-          },
-          {
-            label: 'Dialysis Sessions',
-            route: '/backoffice/procedures/dialysis-sessions',
-            implemented: true
-          },
-          {
-            label: 'Dialysis Outcomes',
-            route: '/backoffice/procedures/dialysis-outcomes',
-            implemented: true
-          },
-          {
-            label: 'Dialysis Prescriptions',
-            route: '/backoffice/procedures/dialysis-prescriptions',
-            implemented: true
-          }
+          ...(this.isSurgeon
+            ? [
+              {
+                label: 'Surgical Advanced',
+                route: '/backoffice/procedures/surgical-advanced',
+                implemented: true
+              } as BackofficeNavChild,
+              {
+                label: 'Dialysis Management',
+                route: '/backoffice/procedures/dialysis',
+                implemented: true
+              } as BackofficeNavChild,
+              {
+                label: 'Dialysis Sessions',
+                route: '/backoffice/procedures/dialysis-sessions',
+                implemented: true
+              } as BackofficeNavChild,
+              {
+                label: 'Dialysis Outcomes',
+                route: '/backoffice/procedures/dialysis-outcomes',
+                implemented: true
+              } as BackofficeNavChild,
+              {
+                label: 'Dialysis Prescriptions',
+                route: '/backoffice/procedures/dialysis-prescriptions',
+                implemented: true
+              } as BackofficeNavChild
+            ]
+            : [])
         ]
       });
     }

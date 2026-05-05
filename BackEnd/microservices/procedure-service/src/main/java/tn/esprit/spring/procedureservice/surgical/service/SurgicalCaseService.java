@@ -5,16 +5,18 @@ import java.util.Optional;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Service;
-import tn.esprit.spring.procedureservice.notification.service.ResendEmailService;
 import tn.esprit.spring.procedureservice.shared.exception.BusinessException;
 import tn.esprit.spring.procedureservice.shared.exception.NotFoundException;
 import tn.esprit.spring.procedureservice.surgical.domain.entity.PreOpAssessment;
+import tn.esprit.spring.procedureservice.surgical.domain.entity.SurgeryRequest;
 import tn.esprit.spring.procedureservice.surgical.domain.entity.SurgicalCase;
 import tn.esprit.spring.procedureservice.surgical.dto.request.CreateSurgicalCaseRequest;
 import tn.esprit.spring.procedureservice.surgical.dto.request.DecideTransplantOfferRequest;
 import tn.esprit.spring.procedureservice.surgical.dto.request.UpdateSurgicalCaseRequest;
 import tn.esprit.spring.procedureservice.surgical.repository.PreOpAssessmentRepository;
+import tn.esprit.spring.procedureservice.surgical.repository.SurgeryRequestRepository;
 import tn.esprit.spring.procedureservice.surgical.repository.SurgicalCaseRepository;
+import tn.esprit.spring.procedureservice.whatsapp.service.ProcedureWhatsAppAlertService;
 
 @Service
 public class SurgicalCaseService {
@@ -44,23 +46,28 @@ public class SurgicalCaseService {
 
     private final SurgicalCaseRepository repository;
     private final PreOpAssessmentRepository preOpAssessmentRepository;
-    private final ResendEmailService resendEmailService;
+    private final SurgeryRequestRepository surgeryRequestRepository;
+    private final ProcedureWhatsAppAlertService whatsAppAlertService;
 
     public SurgicalCaseService(
         SurgicalCaseRepository repository,
         PreOpAssessmentRepository preOpAssessmentRepository,
-        ResendEmailService resendEmailService
+        SurgeryRequestRepository surgeryRequestRepository,
+        ProcedureWhatsAppAlertService whatsAppAlertService
     ) {
         this.repository = repository;
         this.preOpAssessmentRepository = preOpAssessmentRepository;
-        this.resendEmailService = resendEmailService;
+        this.surgeryRequestRepository = surgeryRequestRepository;
+        this.whatsAppAlertService = whatsAppAlertService;
     }
 
     public SurgicalCase create(CreateSurgicalCaseRequest request) {
+        SurgeryRequest linkedRequest = resolveLinkedSurgeryRequest(request.surgeryRequestId());
         SurgicalCase surgicalCase = new SurgicalCase();
         surgicalCase.setPatientId(request.patientId());
-        surgicalCase.setConsultationId(request.consultationId());
+        surgicalCase.setConsultationId(resolveConsultationId(request.consultationId(), linkedRequest));
         surgicalCase.setAppointmentId(request.appointmentId());
+        surgicalCase.setSurgeryRequestId(request.surgeryRequestId());
         surgicalCase.setFirstName(request.firstName());
         surgicalCase.setLastName(request.lastName());
         surgicalCase.setAge(request.age());
@@ -81,7 +88,11 @@ public class SurgicalCaseService {
         surgicalCase.setStatus("OPEN");
         surgicalCase.setOfferStatus("PENDING");
         SurgicalCase saved = repository.save(surgicalCase);
-        resendEmailService.sendSurgicalCaseCreatedNotification(saved);
+        if (linkedRequest != null) {
+            linkedRequest.setStatus("PLANNED");
+            surgeryRequestRepository.save(linkedRequest);
+        }
+        whatsAppAlertService.sendSurgicalCaseCreatedAlert(saved);
         return saved;
     }
 
@@ -189,5 +200,32 @@ public class SurgicalCaseService {
             }
         }
         return false;
+    }
+
+    private SurgeryRequest resolveLinkedSurgeryRequest(Long surgeryRequestId) {
+        if (surgeryRequestId == null) {
+            return null;
+        }
+
+        if (repository.existsBySurgeryRequestId(surgeryRequestId)) {
+            throw new BusinessException("Surgery request already linked to an existing surgical case: " + surgeryRequestId);
+        }
+
+        SurgeryRequest surgeryRequest = surgeryRequestRepository.findById(surgeryRequestId)
+            .orElseThrow(() -> new NotFoundException("Surgery request not found: " + surgeryRequestId));
+
+        if ("PLANNED".equalsIgnoreCase(surgeryRequest.getStatus())) {
+            throw new BusinessException("Surgery request is already planned: " + surgeryRequestId);
+        }
+
+        return surgeryRequest;
+    }
+
+    private String resolveConsultationId(String consultationId, SurgeryRequest linkedRequest) {
+        if (consultationId != null && !consultationId.isBlank()) {
+            return consultationId;
+        }
+
+        return linkedRequest != null ? linkedRequest.getConsultationId() : null;
     }
 }

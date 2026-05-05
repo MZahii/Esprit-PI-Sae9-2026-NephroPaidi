@@ -330,7 +330,7 @@ export const routes: Routes = [
         path: 'procedures/surgical',
         component: ProcedureSurgicalComponent,
         canActivate: [roleGuard],
-        data: { roles: ['SURGEON'] }
+        data: { roles: ['SURGEON', 'RECEPTIONIST'] }
       },
       {
         path: 'procedures/surgical-advanced',
