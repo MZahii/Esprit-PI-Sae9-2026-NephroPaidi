@@ -77,28 +77,6 @@
   transition: transform 0.2s ease;
 }
 
-/* submenu section headers */
-.submenu-section {
-  padding: 14px 16px 4px;
-  list-style: none;
-}
-
-.submenu-section-label {
-  display: block;
-  font-size: 10px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: #94a3b8;
-  border-top: 1px solid #e8eef6;
-  padding-top: 10px;
-}
-
-.submenu-section:first-child .submenu-section-label {
-  border-top: none;
-  padding-top: 0;
-}
-
 /* submenu disabled items */
 .disabled-link {
   display: flex !important;

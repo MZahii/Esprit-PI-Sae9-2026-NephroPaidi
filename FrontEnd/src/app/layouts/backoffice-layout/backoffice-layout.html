@@ -51,33 +51,25 @@
             </button>
 
             <ul class="nxl-submenu">
-              <ng-container *ngFor="let child of item.children">
-                <!-- Section header divider -->
-                <li *ngIf="child.divider" class="submenu-section">
-                  <span class="submenu-section-label">{{ child.label }}</span>
-                </li>
+              <li class="nxl-item" *ngFor="let child of item.children">
+                <a
+                  *ngIf="child.implemented && child.route"
+                  class="nxl-link"
+                  [routerLink]="child.route"
+                  [queryParams]="child.queryParams"
+                  routerLinkActive="active"
+                >
+                  {{ child.label }}
+                </a>
 
-                <!-- Regular link -->
-                <li class="nxl-item" *ngIf="!child.divider">
-                  <a
-                    *ngIf="child.implemented && child.route"
-                    class="nxl-link"
-                    [routerLink]="child.route"
-                    [queryParams]="child.queryParams"
-                    routerLinkActive="active"
-                  >
-                    {{ child.label }}
-                  </a>
-
-                  <div
-                    *ngIf="!child.implemented || !child.route"
-                    class="nxl-link disabled-link"
-                  >
-                    <span class="submenu-title">{{ child.label }}</span>
-                    <small *ngIf="child.note">{{ child.note }}</small>
-                  </div>
-                </li>
-              </ng-container>
+                <div
+                  *ngIf="!child.implemented || !child.route"
+                  class="nxl-link disabled-link"
+                >
+                  <span class="submenu-title">{{ child.label }}</span>
+                  <small *ngIf="child.note">{{ child.note }}</small>
+                </div>
+              </li>
             </ul>
           </li>
         </ng-container>
