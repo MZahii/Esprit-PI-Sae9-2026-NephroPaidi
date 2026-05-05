@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: 20
       - name: Frontend build
-        working-directory: FrontEnd/duralux-admin
+        working-directory: FrontEnd
         run: |
           npm ci
           npx ng build --configuration=production --no-progress
