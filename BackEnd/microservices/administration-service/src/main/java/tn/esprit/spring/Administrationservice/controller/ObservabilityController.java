@@ -1,10 +1,13 @@
 package tn.esprit.spring.Administrationservice.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tn.esprit.spring.Administrationservice.dto.request.InternalNotificationRequest;
 import tn.esprit.spring.Administrationservice.dto.response.AuditLogResponse;
 import tn.esprit.spring.Administrationservice.dto.response.NotificationResponse;
+import tn.esprit.spring.Administrationservice.entity.Notification;
 import tn.esprit.spring.Administrationservice.service.ObservabilityService;
 
 import java.util.List;
@@ -50,5 +53,16 @@ public class ObservabilityController {
     public ResponseEntity<List<AuditLogResponse>> getContractTimeline() {
         List<AuditLogResponse> timeline = observabilityService.getContractAuditTimeline();
         return ResponseEntity.ok(timeline);
+    }
+
+    @PostMapping("/internal/notifications")
+    public ResponseEntity<NotificationResponse> createInternalNotification(@Valid @RequestBody InternalNotificationRequest request) {
+        Notification created = observabilityService.createNotification(
+                request.getType(),
+                request.getTitle(),
+                request.getMessage(),
+                request.getTargetUserId()
+        );
+        return ResponseEntity.ok(NotificationResponse.from(created));
     }
 }

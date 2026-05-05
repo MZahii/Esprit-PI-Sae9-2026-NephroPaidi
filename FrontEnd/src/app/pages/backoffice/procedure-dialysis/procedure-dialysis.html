@@ -25,11 +25,34 @@
         <div class="card-body">
           <h6 class="section-title">Patient</h6>
           <div class="mb-3">
+            <label class="form-label">Select Existing Patient</label>
+            <select
+              class="form-select"
+              [ngModel]="createForm.patientId"
+              (ngModelChange)="onPatientSelectionChange($event)"
+              [disabled]="patientLoading"
+            >
+              <option value="">Choose a patient</option>
+              <option *ngFor="let patient of availablePatients" [value]="patient.id">
+                {{ formatPatientLabel(patient) }}
+              </option>
+            </select>
+            <small class="text-muted d-block mt-1">Select an existing patient profile before creating the dialysis plan.</small>
+            <small class="text-danger d-block mt-1" *ngIf="patientError">{{ patientError }}</small>
+            <div class="small text-muted mt-2" *ngIf="patientLoading">Loading patients...</div>
+          </div>
+
+          <div class="alert alert-light border small mb-3" *ngIf="selectedPatient">
+            Selected patient: <strong>{{ formatPatientLabel(selectedPatient) }}</strong>
+          </div>
+
+          <div class="mb-3">
             <label class="form-label">First Name</label>
             <input
               type="text"
               class="form-control"
               [(ngModel)]="createForm.firstName"
+              [readonly]="true"
               placeholder="Ali"
             />
           </div>
@@ -40,18 +63,34 @@
               type="text"
               class="form-control"
               [(ngModel)]="createForm.lastName"
+              [readonly]="true"
               placeholder="Ben Salah"
             />
           </div>
 
           <div class="mb-3">
-            <label class="form-label">Doctor ID</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="createForm.doctorId"
-              placeholder="DOC-001"
-            />
+            <label class="form-label">Assigned Nephrologist</label>
+            <select
+              class="form-select"
+              [ngModel]="createForm.doctorId"
+              (ngModelChange)="onDoctorSelectionChange($event)"
+              [disabled]="doctorLoading"
+            >
+              <option value="">Select a nephrologist</option>
+              <option
+                *ngFor="let doctor of availableDoctors"
+                [value]="doctor.keycloakId || doctor.id"
+              >
+                {{ formatDoctorLabel(doctor) }}
+              </option>
+            </select>
+            <small class="text-muted d-block mt-1">Choose the supervising doctor from the registered medical staff.</small>
+            <small class="text-danger d-block mt-1" *ngIf="doctorError">{{ doctorError }}</small>
+            <div class="small text-muted mt-2" *ngIf="doctorLoading">Loading doctors...</div>
+          </div>
+
+          <div class="alert alert-light border small mb-3" *ngIf="selectedDoctor">
+            Selected doctor: <strong>{{ formatDoctorLabel(selectedDoctor) }}</strong>
           </div>
 
           <h6 class="section-title">Dialysis Type</h6>
@@ -205,28 +244,32 @@
                 <td>{{ plan.firstName || '-' }} {{ plan.lastName || '' }}</td>
                 <td>{{ plan.dialysisType || '-' }}</td>
                 <td>{{ plan.sessionsPerWeek || '-' }}/week, {{ plan.sessionDurationMinutes || '-' }} min</td>
-                <td>{{ plan.startDate || '-' }}<span *ngIf="plan.endDate"> → {{ plan.endDate }}</span></td>
+                <td>{{ plan.startDate || '-' }}<span *ngIf="plan.endDate"> -> {{ plan.endDate }}</span></td>
                 <td>
-                  <select class="form-select form-select-sm status-select" [(ngModel)]="editState[plan.id]">
-                    <option *ngFor="let status of planStatuses" [value]="status">
-                      {{ status }}
-                    </option>
-                  </select>
+                  <span class="badge text-bg-light border">{{ plan.status || '-' }}</span>
                 </td>
                 <td class="text-end">
                   <div class="d-flex justify-content-end gap-2 flex-wrap">
                     <button
                       type="button"
                       class="btn btn-outline-primary btn-sm"
-                      (click)="updatePlan(plan)"
+                      (click)="openEditModal(plan)"
                     >
                       Update
                     </button>
                     <button
                       type="button"
+                      class="btn btn-outline-dark btn-sm"
+                      (click)="downloadPlanPdf(plan)"
+                      [disabled]="downloadingPdfId === plan.id"
+                    >
+                      {{ downloadingPdfId === plan.id ? 'Exporting...' : 'Export PDF' }}
+                    </button>
+                    <button
+                      type="button"
                       class="btn btn-outline-danger btn-sm"
                       (click)="archivePlan(plan)"
-                      [disabled]="plan.status === 'ARCHIVED'"
+                      [disabled]="!canArchivePlan(plan)"
                     >
                       Archive
                     </button>
@@ -237,6 +280,114 @@
             </table>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop fade show" *ngIf="showEditModal" (click)="closeEditModal()"></div>
+<div class="modal d-block" tabindex="-1" *ngIf="showEditModal">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Dialysis Plan</h5>
+        <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">First Name</label>
+            <input type="text" class="form-control" [(ngModel)]="editForm.firstName" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Last Name</label>
+            <input type="text" class="form-control" [(ngModel)]="editForm.lastName" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Assigned Nephrologist</label>
+            <select
+              class="form-select"
+              [ngModel]="editForm.doctorId"
+              (ngModelChange)="onDoctorSelectionChange($event)"
+              [disabled]="doctorLoading"
+            >
+              <option value="">Select a nephrologist</option>
+              <option *ngFor="let doctor of availableDoctors" [value]="doctor.keycloakId || doctor.id">
+                {{ formatDoctorLabel(doctor) }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Status</label>
+            <select class="form-select" [(ngModel)]="editForm.status">
+              <option *ngFor="let status of availableStatusesFor(editingPlan!)" [value]="status">{{ status }}</option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Dialysis Type</label>
+            <select class="form-select" [(ngModel)]="editForm.dialysisType">
+              <option *ngFor="let t of dialysisTypes" [value]="t">{{ t }}</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Days of Week</label>
+            <input type="text" class="form-control" [(ngModel)]="editForm.daysOfWeek" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Sessions / Week</label>
+            <input type="number" class="form-control" [(ngModel)]="editForm.sessionsPerWeek" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Duration (minutes)</label>
+            <input type="number" class="form-control" [(ngModel)]="editForm.sessionDurationMinutes" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Start Date</label>
+            <input type="date" class="form-control" [(ngModel)]="editForm.startDate" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">End Date</label>
+            <input type="date" class="form-control" [(ngModel)]="editForm.endDate" />
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Blood Flow Rate</label>
+            <input type="number" class="form-control" [(ngModel)]="editForm.bloodFlowRate" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Dialysate Flow Rate</label>
+            <input type="number" class="form-control" [(ngModel)]="editForm.dialysateFlowRate" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Ultrafiltration Goal</label>
+            <input type="number" class="form-control" [(ngModel)]="editForm.ultrafiltrationGoal" />
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Center ID</label>
+            <input type="text" class="form-control" [(ngModel)]="editForm.dialysisCenterId" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Room Number</label>
+            <input type="text" class="form-control" [(ngModel)]="editForm.roomNumber" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Machine ID</label>
+            <input type="text" class="form-control" [(ngModel)]="editForm.machineId" />
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-light" type="button" (click)="closeEditModal()" [disabled]="savingEdit">Cancel</button>
+        <button class="btn btn-primary" type="button" (click)="savePlanChanges()" [disabled]="savingEdit">
+          {{ savingEdit ? 'Saving...' : 'Save Changes' }}
+        </button>
       </div>
     </div>
   </div>

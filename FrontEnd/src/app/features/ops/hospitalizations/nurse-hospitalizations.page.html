@@ -1,0 +1,121 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Nurse Hospitalization Tasks</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Home</a></li>
+      <li class="breadcrumb-item">Nurse Space</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+  <div *ngIf="detailError" class="alert alert-danger">{{ detailError }}</div>
+
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="card stretch stretch-full">
+        <div class="card-header">
+          <h5 class="card-title">Active Patients</h5>
+        </div>
+        <div class="card-body">
+          <div *ngIf="loading" class="text-muted">Loading active hospitalizations...</div>
+          <div *ngIf="!loading && summaries.length === 0" class="text-muted">No active hospitalization task lists.</div>
+
+          <button
+            type="button"
+            class="summary-card"
+            *ngFor="let item of summaries; trackBy: trackSummary"
+            [class.active]="selectedHospitalization?.id === item.id"
+            (click)="openHospitalization(item.id)"
+          >
+            <div class="fw-semibold">Patient #{{ item.patientId }}</div>
+            <div class="text-muted small">{{ item.reason }}</div>
+            <div class="small mt-2">
+              {{ item.completedTasks }}/{{ item.totalTasks }} tasks done
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card stretch stretch-full">
+        <div class="card-header">
+          <h5 class="card-title">Shift Task List</h5>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info" *ngIf="loadingSafety">
+            Loading medication safety insight from OpenFDA...
+          </div>
+          <div class="alert alert-warning" *ngIf="safetyError">{{ safetyError }}</div>
+          <div class="alert alert-secondary" *ngIf="safetySignal">
+            <strong>Drug safety metric:</strong>
+            {{ safetySignal.queriedDrug }} | Risk {{ safetySignal.level }}
+            <span *ngIf="safetySignal.boxedWarning">| Boxed warning detected</span>
+            <span>| Warnings {{ safetySignal.warningCount }}</span>
+          </div>
+
+          <div *ngIf="!selectedHospitalization" class="text-muted">
+            Select a hospitalized patient to open the task list.
+          </div>
+
+          <ng-container *ngIf="selectedHospitalization">
+            <div class="task-card" *ngFor="let task of selectedHospitalization.tasks; trackBy: trackTask">
+              <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                <div>
+                  <div class="fw-semibold">{{ task.title }}</div>
+                  <div class="text-muted small">{{ task.type }}</div>
+                </div>
+                <span class="badge bg-soft-warning text-warning">{{ task.status }}</span>
+              </div>
+
+              <div class="text-muted mt-2" *ngIf="task.instructions">{{ task.instructions }}</div>
+
+              <div class="row g-3 mt-2">
+                <div class="col-md-3">
+                  <label class="form-label">Status</label>
+                  <select class="form-select" [(ngModel)]="taskDrafts[task.id].status">
+                    <option *ngFor="let status of taskStatuses" [ngValue]="status">{{ status }}</option>
+                  </select>
+                </div>
+                <div class="col-md-3" *ngIf="task.measurementKind === 'NUMERIC'">
+                  <label class="form-label">Measured value</label>
+                  <input type="number" class="form-control" [(ngModel)]="taskDrafts[task.id].numericValue" />
+                </div>
+                <div class="col-md-3" *ngIf="task.measurementKind === 'TEXT'">
+                  <label class="form-label">Measured value</label>
+                  <input class="form-control" [(ngModel)]="taskDrafts[task.id].textValue" />
+                </div>
+                <div class="col-md-2" *ngIf="task.measurementKind !== 'NONE'">
+                  <label class="form-label">Unit</label>
+                  <input class="form-control" [(ngModel)]="taskDrafts[task.id].unit" />
+                </div>
+                <div class="col-md-12">
+                  <label class="form-label">Notes / observations</label>
+                  <textarea class="form-control" rows="3" [(ngModel)]="taskDrafts[task.id].note"></textarea>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                <div class="text-muted small">
+                  Last update: {{ task.lastUpdatedAt ? (task.lastUpdatedAt | date:'medium') : 'Not updated yet' }}
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  [disabled]="savingTaskId === task.id"
+                  (click)="submitTask(task)"
+                >
+                  {{ savingTaskId === task.id ? 'Saving...' : 'Save task update' }}
+                </button>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

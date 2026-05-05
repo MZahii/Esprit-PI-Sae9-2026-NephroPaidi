@@ -1,0 +1,140 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Hospitalization Case</h5>
+    </div>
+
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Home</a></li>
+      <li class="breadcrumb-item">Operations</li>
+      <li class="breadcrumb-item">Hospitalization Details</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content ops-dossier-detail">
+  <div class="card stretch stretch-full">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h5 class="card-title mb-1">Hospitalization {{ hospitalizationId }}</h5>
+        <small class="text-muted" *ngIf="hospitalization">Patient {{ hospitalization.patientId }} • Doctor {{ hospitalization.doctorUsername }}</small>
+      </div>
+      <div class="d-flex align-items-center gap-2" *ngIf="hospitalization">
+        <span class="badge" [ngClass]="statusClass(hospitalization.status)">{{ hospitalization.status }}</span>
+        <button class="btn btn-light btn-sm" (click)="goBack()">Back</button>
+      </div>
+    </div>
+
+    <div class="card-body" *ngIf="loading">
+      <div class="text-muted">Loading hospitalization...</div>
+    </div>
+
+    <div class="card-body" *ngIf="!loading">
+      <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+      <div *ngIf="message" class="alert alert-info">{{ message }}</div>
+
+      <div class="row g-4" *ngIf="hospitalization">
+        <div class="col-xl-4">
+          <div class="panel-block">
+            <h6>Hospitalization Summary</h6>
+            <div class="line"><span>Reason</span><strong>{{ hospitalization.reason }}</strong></div>
+            <div class="line"><span>Patient</span><strong>{{ hospitalization.patientId }}</strong></div>
+            <div class="line"><span>Consultation</span><strong>{{ hospitalization.consultationId }}</strong></div>
+            <div class="line"><span>Created</span><strong>{{ hospitalization.createdAt | date:'short' }}</strong></div>
+            <div class="line"><span>Updated</span><strong>{{ hospitalization.updatedAt | date:'short' }}</strong></div>
+          </div>
+
+          <div class="panel-block mt-3" *ngIf="canAddTasks">
+            <h6>Add Task</h6>
+            <label class="form-label">Type</label>
+            <select class="form-select" [(ngModel)]="taskDraft.type">
+              <option *ngFor="let type of taskTypes" [value]="type">{{ type }}</option>
+            </select>
+
+            <label class="form-label mt-2">Title</label>
+            <input class="form-control" [(ngModel)]="taskDraft.title" placeholder="Daily monitoring" />
+
+            <label class="form-label mt-2">Instructions</label>
+            <textarea class="form-control" rows="3" [(ngModel)]="taskDraft.instructions"></textarea>
+
+            <label class="form-label mt-2">Measurement Kind</label>
+            <select class="form-select" [(ngModel)]="taskDraft.measurementKind">
+              <option *ngFor="let kind of measurementKinds" [value]="kind">{{ kind }}</option>
+            </select>
+
+            <label class="form-label mt-2">Expected Unit</label>
+            <input class="form-control" [(ngModel)]="taskDraft.expectedUnit" placeholder="kg, bpm, mmHg" />
+
+            <label class="form-label mt-2">Display Order</label>
+            <input class="form-control" type="number" [(ngModel)]="taskDraft.displayOrder" />
+
+            <button class="btn btn-primary btn-sm mt-3" (click)="addTask()">Add Task</button>
+          </div>
+        </div>
+
+        <div class="col-xl-8">
+          <div class="panel-block">
+            <h6>Care Tasks</h6>
+            <div *ngIf="tasks.length === 0" class="text-muted">No tasks yet.</div>
+
+            <div class="task-item" *ngFor="let task of tasks">
+              <div class="task-head">
+                <div>
+                  <strong>{{ task.title }}</strong>
+                  <div class="text-muted small">{{ task.type }} • {{ task.measurementKind }} • Order {{ task.displayOrder }}</div>
+                </div>
+                <span class="badge" [ngClass]="taskStatusClass(task.status)">{{ task.status }}</span>
+              </div>
+
+              <div class="task-details" *ngIf="task.instructions">{{ task.instructions }}</div>
+              <div class="task-details small text-muted" *ngIf="task.expectedUnit">Expected unit: {{ task.expectedUnit }}</div>
+
+              <div class="task-form" *ngIf="canUpdateTasks">
+                <div class="row g-2">
+                  <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select form-select-sm" [(ngModel)]="taskForm(task).status">
+                      <option *ngFor="let status of taskStatuses" [value]="status">{{ status }}</option>
+                    </select>
+                  </div>
+                  <div class="col-md-9">
+                    <label class="form-label">Note</label>
+                    <input class="form-control form-control-sm" [(ngModel)]="taskForm(task).note" placeholder="Execution note" />
+                  </div>
+                  <div class="col-md-4" *ngIf="task.measurementKind === 'NUMERIC'">
+                    <label class="form-label">Numeric Value</label>
+                    <input class="form-control form-control-sm" type="number" [(ngModel)]="taskForm(task).numericValue" />
+                  </div>
+                  <div class="col-md-4" *ngIf="task.measurementKind === 'TEXT'">
+                    <label class="form-label">Text Value</label>
+                    <input class="form-control form-control-sm" [(ngModel)]="taskForm(task).textValue" />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Unit</label>
+                    <input class="form-control form-control-sm" [(ngModel)]="taskForm(task).unit" placeholder="kg, bpm, mmHg" />
+                  </div>
+                </div>
+
+                <button class="btn btn-outline-primary btn-sm mt-2" (click)="updateTask(task)">Update Task</button>
+              </div>
+
+              <div class="executions mt-3" *ngIf="task.executions && task.executions.length > 0">
+                <div class="text-muted small mb-1">Executions</div>
+                <div class="execution-item" *ngFor="let execution of task.executions">
+                  <div class="d-flex justify-content-between gap-2">
+                    <strong>{{ execution.status }}</strong>
+                    <small class="text-muted">{{ execution.recordedAt | date:'short' }}</small>
+                  </div>
+                  <div class="small text-muted">{{ execution.nurseUsername }} • {{ execution.nurseKeycloakId }}</div>
+                  <div class="small">{{ execution.note || 'No note' }}</div>
+                  <div class="small text-muted" *ngIf="execution.numericValue !== null && execution.numericValue !== undefined">Numeric: {{ execution.numericValue }} {{ execution.unit || task.expectedUnit || '' }}</div>
+                  <div class="small text-muted" *ngIf="execution.textValue">Text: {{ execution.textValue }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

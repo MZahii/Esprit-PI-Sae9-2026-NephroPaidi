@@ -1,0 +1,94 @@
+.ops-dossier-detail {
+  .panel-block {
+    border: 1px solid #e9eef5;
+    border-radius: 14px;
+    padding: 14px;
+    background: #fff;
+  }
+
+  .panel-block h6 {
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .line {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 13px;
+    color: #475569;
+    padding: 6px 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .line:last-child {
+    border-bottom: none;
+  }
+
+  .entry-item {
+    border: 1px solid #e9eef5;
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    background: #fff;
+  }
+
+  .entry-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .entry-details {
+    margin-top: 8px;
+    color: #334155;
+    font-size: 13px;
+  }
+
+  .sign-box {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+  }
+
+  .task-item {
+    border: 1px solid #e9eef5;
+    border-radius: 12px;
+    padding: 12px;
+    margin-top: 12px;
+    background: #fff;
+  }
+
+  .task-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .task-details {
+    margin-top: 8px;
+    color: #334155;
+    font-size: 13px;
+  }
+
+  .task-form {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .executions {
+    margin-top: 12px;
+  }
+
+  .execution-item {
+    border: 1px solid #eef2f7;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    background: #fafcff;
+  }
+}

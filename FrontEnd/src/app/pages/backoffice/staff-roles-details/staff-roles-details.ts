@@ -7,7 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
 
-type StaffRole = 'DOCTOR' | 'NURSE' | 'SURGEON' | 'PHARMACIST' | 'RECEPTIONIST';
+type StaffRole = 'DOCTOR' | 'NURSE' | 'SURGEON' | 'PHARMACIST' | 'RECEPTIONIST' | 'LAB_AGENT';
 type AccountStatus = 'PENDING_CONTRACT' | 'ACTIVE' | 'INACTIVE';
 
 interface UserRow {
@@ -50,7 +50,7 @@ export class StaffRolesDetails implements OnInit, OnDestroy {
   pageSize = 10;
   readonly pageSizeOptions = [5, 10, 20, 50];
 
-  readonly staffRoles: StaffRole[] = ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST'];
+  readonly staffRoles: StaffRole[] = ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST', 'LAB_AGENT'];
   allStaff: UserRow[] = [];
   allStaffForStats: UserRow[] = [];
   totalElements = 0;

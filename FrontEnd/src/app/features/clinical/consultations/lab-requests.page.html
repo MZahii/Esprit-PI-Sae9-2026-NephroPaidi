@@ -103,7 +103,7 @@
           </div>
 
           <div
-            *ngFor="let row of filteredRows"
+            *ngFor="let row of pagedFilteredRows"
             class="consultation-row"
             [class.selected]="selectedConsultationId === row.consultation?.id"
             (click)="selectConsultation(row)"
@@ -131,6 +131,27 @@
                   {{ row.labRequests.length }} request{{ row.labRequests.length === 1 ? '' : 's' }}
                 </span>
               </div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 p-3 border-top" *ngIf="filteredRows.length">
+            <small class="text-muted">
+              Showing {{ fromItem }}-{{ toItem }} of {{ filteredRows.length }} consultations
+            </small>
+
+            <div class="d-flex align-items-center gap-1">
+              <button class="btn btn-light btn-sm" (click)="previousPage()" [disabled]="page <= 1">Prev</button>
+
+              <button
+                class="btn btn-sm"
+                *ngFor="let p of pageNumbers"
+                [ngClass]="page === p ? 'btn-primary' : 'btn-light'"
+                (click)="goToPage(p)"
+              >
+                {{ p }}
+              </button>
+
+              <button class="btn btn-light btn-sm" (click)="nextPage()" [disabled]="page >= totalPages">Next</button>
             </div>
           </div>
         </div>
@@ -210,6 +231,15 @@
             <button class="btn btn-success" (click)="saveRequests()" [disabled]="saving">
               {{ saving ? 'Saving...' : 'Save Lab Requests' }}
             </button>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap mt-3 pt-3 border-top">
+            <a class="btn btn-link btn-sm" routerLink="/backoffice/consultations">
+              <i class="feather-list"></i> All Consultations
+            </a>
+            <a class="btn btn-link btn-sm" routerLink="/backoffice/doctor/today">
+              <i class="feather-calendar"></i> Today Appointments
+            </a>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ package tn.esprit.spring.Administrationservice.service;
 
 import tn.esprit.spring.Administrationservice.dto.response.AuditLogResponse;
 import tn.esprit.spring.Administrationservice.dto.response.NotificationResponse;
+import tn.esprit.spring.Administrationservice.entity.Notification;
 
 import java.util.List;
 
@@ -28,4 +29,6 @@ public interface ObservabilityService {
      * @return List of audit log responses
      */
     List<AuditLogResponse> getContractAuditTimeline();
+
+    Notification createNotification(String type, String title, String message, Long targetUserId);
 }

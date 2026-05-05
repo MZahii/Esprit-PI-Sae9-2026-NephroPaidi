@@ -1,22 +1,85 @@
+.surgical-management-page {
+  .card-header {
+    padding: 0.9rem 1.1rem;
+  }
+
+  .card-body {
+    padding: 1rem 1.1rem;
+  }
+}
+
 .empty-state {
   padding: 1rem 0;
   color: #6c757d;
   text-align: center;
 }
 
+.compact-form {
+  .form-label {
+    margin-bottom: 0.35rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #344054;
+  }
+
+  .form-control,
+  .form-select {
+    min-height: 40px;
+    font-size: 0.9rem;
+  }
+
+  .small,
+  small {
+    line-height: 1.35;
+  }
+}
+
+.compact-alert {
+  padding: 0.7rem 0.85rem;
+}
+
 .section-title {
-  margin: 0 0 0.75rem;
-  font-size: 0.9rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.82rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em;
   color: #0d6efd;
+}
+
+.compact-workflow {
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+}
+
+.workflow-card {
+  padding: 0.75rem 0.85rem;
+}
+
+.surgical-stats {
+  .card {
+    margin-bottom: 0;
+  }
+}
+
+.stat-card {
+  padding: 0.85rem 1rem;
+
+  .small {
+    margin-bottom: 0.2rem;
+  }
+
+  .fs-4 {
+    font-size: 1.8rem !important;
+    line-height: 1.1;
+  }
 }
 
 .urgency-badge {
   background: #e9ecef;
   color: #495057;
   font-weight: 600;
+  padding: 0.35rem 0.55rem;
 
   &.urgent {
     background: #ffe3e3;
@@ -27,6 +90,8 @@
 .table td,
 .table th {
   vertical-align: middle;
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
 }
 
 .surgical-table {
@@ -58,11 +123,25 @@
 
   .actions-col,
   .actions-cell {
-    min-width: 230px;
+    min-width: 250px;
   }
 }
 
 .status-select {
   min-width: 155px;
   font-size: 0.85rem;
+}
+
+.action-stack {
+  .btn {
+    min-width: 94px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .surgical-management-page {
+    .stretch-full {
+      height: auto;
+    }
+  }
 }

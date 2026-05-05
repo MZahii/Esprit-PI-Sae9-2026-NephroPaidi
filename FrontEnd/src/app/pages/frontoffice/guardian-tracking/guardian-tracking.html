@@ -1,103 +1,240 @@
 <section class="section guardian-tracking">
   <div class="container">
-    <div class="header-row">
-      <div>
-        <h2>Child Care Journey</h2>
-        <p>Track dialysis and intervention progress in one place.</p>
-      </div>
-      <button type="button" class="btn btn-sm btn-outline-primary" (click)="loadTrackingData()">
-        Refresh
-      </button>
-    </div>
-
-    <div *ngIf="errorMessage" class="alert alert-danger mt-3">{{ errorMessage }}</div>
-    <div *ngIf="loading" class="empty-state">Loading child tracking data...</div>
-
-    <div *ngIf="!loading">
-      <div class="card tracking-card mb-4">
-        <div class="card-body">
-          <label class="form-label">Child Profile (Demo selector)</label>
-          <select class="form-select" [(ngModel)]="selectedChildKey">
-            <option *ngFor="let child of childOptions" [value]="child.key">
-              {{ child.label }} {{ child.patientId ? ('| ' + child.patientId) : '' }}
-            </option>
-          </select>
-          <small class="text-muted d-block mt-2">
-            Temporary selector for demo until Guardian-to-Patient mapping is integrated.
-          </small>
+    <div class="tracking-shell">
+      <div class="tracking-topbar">
+        <div>
+          <span class="tracking-badge">Guardian Care Dashboard</span>
+          <h1>Child Tracking</h1>
+          <p>
+            Follow the care journey, upcoming sessions, recent outcomes and recovery alerts
+            in one calm view.
+          </p>
         </div>
+
+        <button type="button" class="btn refresh-btn" (click)="loadTrackingData()">
+          Refresh Data
+        </button>
       </div>
 
-      <div class="row g-3 mb-4">
-        <div class="col-lg-6">
-          <div class="card tracking-card h-100">
-            <div class="card-body">
-              <h5>Global Status</h5>
-              <span class="status-pill" [ngClass]="globalStatusTone">
-                {{ statusLabel(globalStatus) }}
-              </span>
-              <p class="mt-3 mb-1"><strong>Next Step:</strong></p>
-              <p class="mb-0">{{ nextStepLabel }}</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-6">
-          <div class="card tracking-card h-100">
-            <div class="card-body">
-              <h5>Dialysis Snapshot</h5>
-              <p class="mb-1"><strong>Active Plan:</strong> {{ activeDialysisPlan ? statusLabel(activeDialysisPlan.status) : '-' }}</p>
-              <p class="mb-1"><strong>Type:</strong> {{ activeDialysisPlan?.dialysisType || '-' }}</p>
-              <p class="mb-1"><strong>Frequency:</strong> {{ activeDialysisPlan?.sessionsPerWeek || '-' }}/week, {{ activeDialysisPlan?.sessionDurationMinutes || '-' }} min</p>
-              <p class="mb-1"><strong>Next Session:</strong> {{ nextSession ? formatDateTime(nextSession.sessionDate) : '-' }}</p>
-              <p class="mb-0"><strong>Latest Outcome:</strong> {{ latestOutcome ? (latestOutcome.validated ? 'Validated' : 'Pending validation') : '-' }}</p>
-            </div>
-          </div>
+      <div *ngIf="errorMessage" class="alert alert-danger tracking-alert">{{ errorMessage }}</div>
+      <div *ngIf="loading" class="tracking-empty loading-state">Loading child tracking data...</div>
+
+      <div *ngIf="!loading && !hasChildData" class="tracking-empty">
+        <h3>No child profile is linked yet</h3>
+        <p>
+          This page becomes useful as soon as guardian-to-child mapping is integrated and
+          care data is available for your account.
+        </p>
+        <div class="empty-actions">
+          <a routerLink="/frontoffice/home" class="btn btn-primary">Back to Home</a>
+          <a routerLink="/contact" class="btn btn-outline-primary">Contact Support</a>
         </div>
       </div>
 
-      <div class="row g-3 mb-4">
-        <div class="col-lg-6">
-          <div class="card tracking-card h-100">
-            <div class="card-body">
-              <h5>Intervention Snapshot</h5>
-              <p class="mb-1"><strong>Status:</strong> {{ latestSurgicalCase ? statusLabel(latestSurgicalCase.status) : '-' }}</p>
-              <p class="mb-1"><strong>Type:</strong> {{ latestSurgicalCase?.surgeryType || '-' }}</p>
-              <p class="mb-1"><strong>Procedure:</strong> {{ latestSurgicalCase?.procedureName || '-' }}</p>
-              <p class="mb-0"><strong>Scheduled:</strong> {{ latestSurgicalCase ? formatDate(latestSurgicalCase.scheduledDate) + ' ' + (latestSurgicalCase.scheduledStartTime || '') : '-' }}</p>
+      <ng-container *ngIf="!loading && hasChildData">
+        <div class="hero-card">
+          <div class="hero-copy">
+            <span class="hero-kicker">Selected child</span>
+            <h2>{{ selectedChildLabel }}</h2>
+            <p>{{ overviewDescription }}</p>
+
+            <div class="hero-meta">
+              <div class="meta-item">
+                <span class="meta-label">Reference</span>
+                <strong>{{ selectedChildReference }}</strong>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Current care state</span>
+                <strong>{{ overviewTitle }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-side">
+            <ng-container *ngIf="hasMultipleChildren; else singleChildBlock">
+              <label class="form-label">Child profile</label>
+              <select class="form-select" [(ngModel)]="selectedChildKey">
+                <option *ngFor="let child of childOptions" [value]="child.key">
+                  {{ child.label }} {{ child.patientId ? ('| ' + child.patientId) : '' }}
+                </option>
+              </select>
+              <small class="text-muted d-block mt-2">
+                Only children linked to this guardian account are available here.
+              </small>
+            </ng-container>
+
+            <ng-template #singleChildBlock>
+              <label class="form-label">Linked child</label>
+              <div class="single-child-chip">
+                <strong>{{ selectedChildLabel }}</strong>
+                <span>{{ selectedChildReference }}</span>
+              </div>
+            </ng-template>
+
+            <div class="hero-status" [ngClass]="globalStatusTone">
+              <span class="status-caption">Current status</span>
+              <strong>{{ statusLabel(globalStatus) }}</strong>
             </div>
           </div>
         </div>
-        <div class="col-lg-6">
-          <div class="card tracking-card h-100">
-            <div class="card-body">
-              <h5>Care Alerts</h5>
-              <p class="mb-1"><strong>Total Care Tasks:</strong> {{ selectedCareTasks.length }}</p>
-              <p class="mb-3"><strong>Open Tasks:</strong> {{ openCareTasksCount }}</p>
-              <a routerLink="/contact" class="btn btn-sm btn-outline-primary">Contact Care Team</a>
-            </div>
-          </div>
+
+        <div class="metrics-grid">
+          <article class="metric-card" *ngFor="let metric of metrics" [ngClass]="metric.tone">
+            <span class="metric-label">{{ metric.label }}</span>
+            <strong class="metric-value">{{ metric.value }}</strong>
+          </article>
         </div>
-      </div>
 
-      <div class="card tracking-card">
-        <div class="card-body">
-          <h5 class="mb-3">Timeline</h5>
-          <div *ngIf="timeline.length === 0" class="empty-state">No events found for selected child.</div>
-
-          <div class="timeline" *ngIf="timeline.length > 0">
-            <div class="timeline-item" *ngFor="let event of timeline">
-              <div class="timeline-dot" [ngClass]="event.tone"></div>
-              <div class="timeline-content">
-                <div class="timeline-head">
-                  <strong>{{ event.title }}</strong>
-                  <small>{{ event.when ? (event.when | date: 'yyyy-MM-dd HH:mm') : 'No timestamp' }}</small>
+        <div class="row g-4">
+          <div class="col-xl-8">
+            <div class="info-card overview-card">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Overview</span>
+                  <h3>{{ overviewTitle }}</h3>
                 </div>
-                <p class="mb-0">{{ event.detail }}</p>
+                <span class="status-pill" [ngClass]="globalStatusTone">
+                  {{ statusLabel(globalStatus) }}
+                </span>
+              </div>
+
+              <p class="section-text">{{ nextStepLabel }}</p>
+
+              <div class="overview-grid">
+                <div class="overview-panel">
+                  <span class="panel-label">Active dialysis plan</span>
+                  <strong>{{ activeDialysisPlan ? statusLabel(activeDialysisPlan.status) : 'No active plan' }}</strong>
+                  <p>
+                    {{ activeDialysisPlan?.dialysisType || '-' }}
+                    <span *ngIf="activeDialysisPlan">
+                      | {{ activeDialysisPlan.sessionsPerWeek || '-' }}/week
+                    </span>
+                  </p>
+                </div>
+
+                <div class="overview-panel">
+                  <span class="panel-label">Next dialysis session</span>
+                  <strong>{{ nextSession ? formatDateTime(nextSession.sessionDate) : 'No future session' }}</strong>
+                  <p *ngIf="nextSession">{{ nextSession.notes || 'Session generated from the active plan.' }}</p>
+                  <p *ngIf="!nextSession">No upcoming dialysis session is currently visible.</p>
+                </div>
+
+                <div class="overview-panel">
+                  <span class="panel-label">Latest intervention</span>
+                  <strong>{{ latestSurgicalCase ? statusLabel(latestSurgicalCase.status) : 'No surgical case' }}</strong>
+                  <p>
+                    {{ latestSurgicalCase?.surgeryType || '-' }}
+                    <span *ngIf="latestSurgicalCase">
+                      | {{ latestSurgicalCase.procedureName || '-' }}
+                    </span>
+                  </p>
+                </div>
+
+                <div class="overview-panel">
+                  <span class="panel-label">Latest dialysis outcome</span>
+                  <strong>{{ latestOutcome ? (latestOutcome.validated ? 'Validated' : 'Pending validation') : 'No outcome yet' }}</strong>
+                  <p>{{ latestOutcomeSummary }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-card timeline-card">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Timeline</span>
+                  <h3>Recent care journey</h3>
+                </div>
+                <span class="timeline-count">{{ timeline.length }} event(s)</span>
+              </div>
+
+              <div *ngIf="timelinePreview.length === 0" class="tracking-empty compact">
+                No events found for the selected child.
+              </div>
+
+              <div class="timeline" *ngIf="timelinePreview.length > 0">
+                <div class="timeline-item" *ngFor="let event of timelinePreview">
+                  <div class="timeline-dot" [ngClass]="event.tone"></div>
+                  <div class="timeline-content">
+                    <div class="timeline-head">
+                      <strong>{{ event.title }}</strong>
+                      <small>{{ event.when ? (event.when | date: 'yyyy-MM-dd HH:mm') : 'No timestamp' }}</small>
+                    </div>
+                    <p>{{ event.detail }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="hiddenTimelineCount > 0" class="timeline-more">
+                {{ hiddenTimelineCount }} older event(s) are hidden for readability.
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xl-4">
+            <div class="info-card alerts-card">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Alerts</span>
+                  <h3>What needs attention</h3>
+                </div>
+              </div>
+
+              <div *ngIf="careAlerts.length === 0" class="calm-state">
+                No urgent alert is visible right now for this child.
+              </div>
+
+              <ul *ngIf="careAlerts.length > 0" class="attention-list">
+                <li *ngFor="let alert of careAlerts">{{ alert }}</li>
+              </ul>
+            </div>
+
+            <div class="info-card actions-card">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Recommended actions</span>
+                  <h3>Next guardian steps</h3>
+                </div>
+              </div>
+
+              <ul class="action-list">
+                <li *ngFor="let action of recommendedActions">{{ action }}</li>
+              </ul>
+
+              <div class="quick-actions">
+                <a routerLink="/frontoffice/messages" class="btn btn-primary">Open Messages</a>
+                <a routerLink="/frontoffice/appointments" class="btn btn-outline-primary">View Appointments</a>
+                <a routerLink="/contact" class="btn btn-outline-secondary">Contact Care Team</a>
+              </div>
+            </div>
+
+            <div class="info-card workflow-card">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Clinical summary</span>
+                  <h3>Current pathway</h3>
+                </div>
+              </div>
+
+              <div class="summary-line">
+                <span>Dialysis plans</span>
+                <strong>{{ selectedDialysisPlans.length }}</strong>
+              </div>
+              <div class="summary-line">
+                <span>Dialysis sessions</span>
+                <strong>{{ selectedSessions.length }}</strong>
+              </div>
+              <div class="summary-line">
+                <span>Surgical cases</span>
+                <strong>{{ selectedSurgicalCases.length }}</strong>
+              </div>
+              <div class="summary-line">
+                <span>Open care tasks</span>
+                <strong>{{ openCareTasksCount }}</strong>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </ng-container>
     </div>
   </div>
 </section>

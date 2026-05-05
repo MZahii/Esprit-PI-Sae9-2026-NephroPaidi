@@ -11,6 +11,10 @@ import tn.esprit.spring.userservice.dto.request.UpdateGuardianProfileRequest;
 import tn.esprit.spring.userservice.dto.request.UpdateHrProfileRequest;
 import tn.esprit.spring.userservice.dto.request.StaffSearchRequest;
 import tn.esprit.spring.userservice.dto.request.UpdateStaffProfileRequest;
+import tn.esprit.spring.userservice.dto.request.UpdateMyProfileRequest;
+import tn.esprit.spring.userservice.dto.request.UpdateMyPreferencesRequest;
+import tn.esprit.spring.userservice.dto.request.ChangeMyPasswordRequest;
+import tn.esprit.spring.userservice.dto.response.MyAccountSettingsResponse;
 import tn.esprit.spring.userservice.dto.response.StaffSearchResponse;
 import tn.esprit.spring.userservice.dto.response.UserAuditLogResponse;
 import tn.esprit.spring.userservice.dto.response.UserResponse;
@@ -74,6 +78,11 @@ public class UserController {
         return userService.getGuardians();
     }
 
+    @GetMapping("/public/doctors")
+    public List<UserResponse> getPublicDoctors() {
+        return userService.getDoctors();
+    }
+
     @PostMapping("/staff/search")
     public StaffSearchResponse searchStaff(@RequestBody StaffSearchRequest request) {
         return userService.searchStaff(request);
@@ -87,6 +96,37 @@ public class UserController {
     @GetMapping("/audit")
     public List<UserAuditLogResponse> getAllUserAuditLogs() {
         return userService.getAllUserAuditLogs();
+    }
+
+    @GetMapping("/me/settings")
+    public MyAccountSettingsResponse getMySettings(
+            @RequestHeader(value = "Authorization", required = false) String authorization
+    ) {
+        return userService.getMySettings(authorization);
+    }
+
+    @PatchMapping("/me/profile")
+    public MyAccountSettingsResponse updateMyProfile(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @Valid @RequestBody UpdateMyProfileRequest request
+    ) {
+        return userService.updateMyProfile(authorization, request);
+    }
+
+    @PatchMapping("/me/preferences")
+    public MyAccountSettingsResponse updateMyPreferences(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @Valid @RequestBody UpdateMyPreferencesRequest request
+    ) {
+        return userService.updateMyPreferences(authorization, request);
+    }
+
+    @PostMapping("/me/change-password")
+    public void changeMyPassword(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @Valid @RequestBody ChangeMyPasswordRequest request
+    ) {
+        userService.changeMyPassword(authorization, request);
     }
 
     @PostMapping("/guardian")

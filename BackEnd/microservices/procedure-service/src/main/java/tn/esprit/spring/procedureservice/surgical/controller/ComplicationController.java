@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tn.esprit.spring.procedureservice.shared.mapper.SurgicalCaseMapper;
-import tn.esprit.spring.procedureservice.surgical.dto.request.AddObservationRequest;
+import tn.esprit.spring.procedureservice.surgical.dto.request.CreateComplicationRequest;
 import tn.esprit.spring.procedureservice.surgical.dto.request.UpdateComplicationRequest;
 import tn.esprit.spring.procedureservice.surgical.dto.response.ComplicationResponse;
 import tn.esprit.spring.procedureservice.surgical.service.ComplicationService;
@@ -25,7 +25,7 @@ public class ComplicationController {
     }
 
     @PostMapping
-    public ComplicationResponse create(@Valid @RequestBody AddObservationRequest request) {
+    public ComplicationResponse create(@Valid @RequestBody CreateComplicationRequest request) {
         return SurgicalCaseMapper.toResponse(service.create(request));
     }
 

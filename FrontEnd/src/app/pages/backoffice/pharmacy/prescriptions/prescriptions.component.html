@@ -311,6 +311,9 @@
           <span class="text-muted small ms-2">Select batch and quantity for each medication — stock will be deducted automatically</span>
         </div>
         <div class="d-flex gap-2 mt-3 flex-wrap">
+          <button class="phx-btn phx-btn-sm phx-btn-indigo" (click)="openDoseVerify()" [disabled]="saving()">
+            <i class="bi bi-robot"></i> Verify Pediatric Dose
+          </button>
           <button class="phx-btn phx-btn-sm phx-btn-success" (click)="openDispenseModal()" [disabled]="saving()">
             <i class="bi bi-capsule-pill"></i>
             Dispense Medications
@@ -409,6 +412,76 @@
         {{ dispenseSubmitting() ? 'Dispensing…' : 'Confirm & Deduct Stock' }}
       </button>
     </div>
+  </div>
+</div>
+
+<!-- ── Pediatric Dose Verification Modal ─────────────────────────────── -->
+<div class="phx-overlay" *ngIf="showDoseVerify" (click)="showDoseVerify=false"></div>
+<div class="phx-modal phx-modal-md" *ngIf="showDoseVerify">
+  <div class="phx-modal-header" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)">
+    <div>
+      <div class="phx-modal-title"><i class="bi bi-robot me-2"></i>AI Pediatric Dose Verification</div>
+      <div style="font-size:11px;opacity:.8">Powered by CRISP-DM trained model</div>
+    </div>
+    <button class="phx-modal-close" (click)="showDoseVerify=false"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="phx-modal-body">
+    <div class="text-muted small mb-3">
+      <i class="bi bi-info-circle me-1"></i>
+      Dose ratio and dose/kg are computed automatically — fill in all fields.
+    </div>
+    <div class="row g-3">
+      <div class="col-6">
+        <label class="phx-label">Patient Age (years) <span class="text-danger">*</span></label>
+        <input type="number" class="phx-input" [(ngModel)]="doseVerifyForm.age_years" min="0" max="18" placeholder="e.g. 8">
+      </div>
+      <div class="col-6">
+        <label class="phx-label">Patient Weight (kg) <span class="text-danger">*</span></label>
+        <input type="number" class="phx-input" [(ngModel)]="doseVerifyForm.weight_kg" min="1" placeholder="e.g. 25">
+      </div>
+      <div class="col-6">
+        <label class="phx-label">Prescribed Dose (mg) <span class="text-danger">*</span></label>
+        <input type="number" class="phx-input" [(ngModel)]="doseVerifyForm.prescribed_dose_mg" min="0" placeholder="e.g. 250">
+      </div>
+      <div class="col-6">
+        <label class="phx-label">Recommended Dose (mg) <span class="text-danger">*</span></label>
+        <input type="number" class="phx-input" [(ngModel)]="doseVerifyForm.recommended_dose_mg" min="0" placeholder="e.g. 200">
+      </div>
+      <div class="col-6">
+        <label class="phx-label">Frequency (per day) <span class="text-danger">*</span></label>
+        <input type="number" class="phx-input" [(ngModel)]="doseVerifyForm.frequency_per_day" min="1" max="10" placeholder="e.g. 3">
+      </div>
+    </div>
+
+    <div *ngIf="doseVerifyError()" class="phx-alert phx-alert-danger mt-3">
+      <i class="bi bi-exclamation-circle me-1"></i>{{ doseVerifyError() }}
+    </div>
+
+    <!-- Result -->
+    <div *ngIf="doseVerifyResult" class="mt-4 p-3 rounded-3 border text-center" style="background:#f8fafc">
+      <div class="fw-700 fs-5 mb-1" [ngClass]="doseResultClass(doseVerifyResult.prediction)">
+        <i class="bi me-2" [ngClass]="doseResultIcon(doseVerifyResult.prediction)"></i>
+        {{ doseVerifyResult.prediction }}
+      </div>
+      <div class="text-muted small">Confidence: {{ (doseVerifyResult.confidence * 100) | number:'1.1-1' }}%</div>
+      <div *ngIf="doseVerifyResult.prediction === 'OVERDOSE'" class="text-danger small mt-1">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>Prescribed dose exceeds recommended — review before dispensing.
+      </div>
+      <div *ngIf="doseVerifyResult.prediction === 'UNDERDOSE'" class="text-warning small mt-1">
+        <i class="bi bi-arrow-down-circle-fill me-1"></i>Prescribed dose is below recommended — may be insufficient.
+      </div>
+      <div *ngIf="doseVerifyResult.prediction === 'SAFE'" class="text-success small mt-1">
+        <i class="bi bi-check-circle-fill me-1"></i>Dose is within the safe range for this patient.
+      </div>
+    </div>
+  </div>
+  <div class="phx-modal-footer">
+    <button class="phx-btn phx-btn-ghost" (click)="showDoseVerify=false">Close</button>
+    <button class="phx-btn phx-btn-indigo" (click)="submitDoseVerify()" [disabled]="doseVerifying()">
+      <span *ngIf="doseVerifying()" class="phx-spin me-1"></span>
+      <i *ngIf="!doseVerifying()" class="bi bi-robot me-1"></i>
+      {{ doseVerifying() ? 'Verifying…' : 'Run AI Verification' }}
+    </button>
   </div>
 </div>
 

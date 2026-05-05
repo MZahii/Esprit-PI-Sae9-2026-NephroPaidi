@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthStorageService } from '../../../core/auth/auth-storage.service';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
+import { DocumentExportService } from '../../../core/services/document-export.service';
 
 interface ContractRow {
   id: number;
@@ -39,7 +40,8 @@ export class MyContractComponent implements OnInit {
     private authStorage: AuthStorageService,
     private http: HttpClient,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
+    private documentExportService: DocumentExportService
   ) {}
 
   ngOnInit(): void {
@@ -71,6 +73,14 @@ export class MyContractComponent implements OnInit {
     return 'badge-default';
   }
 
+  printContract(): void {
+    this.documentExportService.printDocument(this.buildExportConfig());
+  }
+
+  exportContractPdf(): void {
+    this.documentExportService.exportPdf(this.buildExportConfig());
+  }
+
   private async loadMyContracts(): Promise<void> {
     this.loading = true;
     this.errorMessage = '';
@@ -95,5 +105,46 @@ export class MyContractComponent implements OnInit {
       this.loading = false;
       this.cdr.detectChanges();
     }
+  }
+
+  private buildExportConfig() {
+    const user = this.authStorage.getUser();
+    const generatedBy = user
+      ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || user.username || 'System'
+      : 'System';
+
+    return {
+      title: 'My Contract Details',
+      subtitle: 'Personal contract document snapshot',
+      generatedBy,
+      summary: [
+        { label: 'Total Contracts', value: this.contracts.length },
+        { label: 'Role', value: this.role || '-' },
+        { label: 'User', value: generatedBy }
+      ],
+      columns: [
+        { key: 'contractReference', label: 'Reference' },
+        { key: 'contractType', label: 'Type' },
+        { key: 'status', label: 'Status' },
+        { key: 'jobTitle', label: 'Job Title' },
+        { key: 'department', label: 'Department' },
+        { key: 'startDate', label: 'Start Date' },
+        { key: 'endDate', label: 'End Date' },
+        { key: 'hoursPerWeek', label: 'Hours/Week' },
+        { key: 'salary', label: 'Salary' }
+      ],
+      rows: this.contracts.map((contract) => ({
+        contractReference: contract.contractReference || '-',
+        contractType: contract.contractType,
+        status: contract.status,
+        jobTitle: contract.jobTitle || '-',
+        department: contract.department || '-',
+        startDate: contract.startDate || '-',
+        endDate: contract.endDate || '-',
+        hoursPerWeek: contract.hoursPerWeek ?? '-',
+        salary: `${contract.salary ?? '-'} ${contract.currency || 'TND'}`
+      })),
+      emptyText: 'No contract found for the current account.'
+    };
   }
 }

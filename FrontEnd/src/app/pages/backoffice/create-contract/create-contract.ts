@@ -59,17 +59,6 @@ export class CreateContract implements OnInit {
   selectedAccountLabel = 'Staff Account';
 
   readonly contractTypes: ContractType[] = ['CDI', 'CDD', 'INTERNSHIP', 'PART_TIME', 'TEMPORARY'];
-  readonly hrJobTitleOptions: string[] = ['HR Manager', 'Manager Assistant'];
-  readonly staffJobTitleOptions: string[] = [
-    'Pediatric Nephrologist',
-    'Nurse',
-    'Surgeon',
-    'Pharmacist',
-    'Receptionist',
-    'Administrative Officer'
-  ];
-  readonly hrDepartmentOptions: string[] = ['Human Resources', 'Administration'];
-  readonly staffDepartmentOptions: string[] = ['Medical', 'Nursing', 'Surgery', 'Pharmacy', 'Reception'];
   readonly hoursPerWeekOptionsByType: Record<ContractType, number[]> = {
     CDI: [35, 40, 45],
     CDD: [30, 35, 40],
@@ -173,12 +162,14 @@ export class CreateContract implements OnInit {
     return this.hoursPerWeekOptionsByType[this.form.contractType] ?? [];
   }
 
-  get jobTitleOptions(): string[] {
-    return this.isAdmin ? this.hrJobTitleOptions : this.staffJobTitleOptions;
+  get fixedJobTitle(): string {
+    const selectedUser = this.staffUsers.find((user) => user.id === Number(this.form.staffUserId));
+    return this.resolveRoleDescriptor(selectedUser?.role ?? '').jobTitle;
   }
 
-  get departmentOptions(): string[] {
-    return this.isAdmin ? this.hrDepartmentOptions : this.staffDepartmentOptions;
+  get fixedDepartment(): string {
+    const selectedUser = this.staffUsers.find((user) => user.id === Number(this.form.staffUserId));
+    return this.resolveRoleDescriptor(selectedUser?.role ?? '').department;
   }
 
   fullName(user: UserRow): string {
@@ -213,7 +204,7 @@ export class CreateContract implements OnInit {
 
       const allowedRoles = this.isAdmin
         ? ['HR']
-        : ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST'];
+        : ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST', 'LAB_AGENT'];
 
       const contractUsers = users.filter((user) => allowedRoles.includes(user.role));
       const availableUsers = contractUsers.filter(user => !usersWithRunningContract.has(user.id));
@@ -232,6 +223,7 @@ export class CreateContract implements OnInit {
           this.staffUsers = [selected, ...this.staffUsers];
         }
       }
+      this.syncFixedRoleFields();
       this.cdr.detectChanges();
     } catch (error: unknown) {
       const err = error as { error?: { message?: string }; message?: string };
@@ -268,12 +260,9 @@ export class CreateContract implements OnInit {
       this.showError('Please select a contract type.');
       return;
     }
-    if (!this.form.jobTitle.trim()) {
-      this.showError('Please select a job title.');
-      return;
-    }
-    if (!this.form.department.trim()) {
-      this.showError('Please select a department.');
+    this.syncFixedRoleFields();
+    if (!this.form.jobTitle.trim() || !this.form.department.trim()) {
+      this.showError('Job title and department are fixed by the selected staff role.');
       return;
     }
     if (!this.form.startDate || !this.form.endDate) {
@@ -380,8 +369,7 @@ export class CreateContract implements OnInit {
       this.form.staffUserId = contract.staffUserId;
       this.form.contractReference = contract.contractReference ?? '';
       this.form.contractType = contract.contractType ?? '';
-      this.form.jobTitle = contract.jobTitle ?? '';
-      this.form.department = contract.department ?? '';
+      this.syncFixedRoleFields();
       this.form.startDate = contract.startDate ?? '';
       this.form.endDate = contract.endDate ?? '';
       this.form.salary = contract.salary ?? '';
@@ -396,5 +384,42 @@ export class CreateContract implements OnInit {
           : 'Failed to load contract for editing.'
       );
     }
+  }
+
+  private syncFixedRoleFields(): void {
+    const selectedUser = this.staffUsers.find((user) => user.id === Number(this.form.staffUserId));
+    if (!selectedUser) {
+      this.form.jobTitle = '';
+      this.form.department = '';
+      return;
+    }
+    const descriptor = this.resolveRoleDescriptor(selectedUser.role);
+    this.form.jobTitle = descriptor.jobTitle;
+    this.form.department = descriptor.department;
+  }
+
+  private resolveRoleDescriptor(role: string): { jobTitle: string; department: string } {
+    switch (role) {
+      case 'HR':
+        return { jobTitle: 'HR Manager', department: 'Human Resources' };
+      case 'DOCTOR':
+        return { jobTitle: 'Doctor', department: 'Medical' };
+      case 'NURSE':
+        return { jobTitle: 'Nurse', department: 'Nursing' };
+      case 'SURGEON':
+        return { jobTitle: 'Surgeon', department: 'Surgery' };
+      case 'PHARMACIST':
+        return { jobTitle: 'Pharmacist', department: 'Pharmacy' };
+      case 'RECEPTIONIST':
+        return { jobTitle: 'Receptionist', department: 'Reception' };
+      case 'LAB_AGENT':
+        return { jobTitle: 'Lab Agent', department: 'Laboratory' };
+      default:
+        return { jobTitle: '', department: '' };
+    }
+  }
+
+  onStaffUserChange(): void {
+    this.syncFixedRoleFields();
   }
 }

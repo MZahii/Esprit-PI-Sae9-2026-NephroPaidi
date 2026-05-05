@@ -59,6 +59,27 @@
     border-bottom: none;
   }
 
+  .trend-list {
+    border-top: 1px solid #eef2f7;
+    padding-top: 10px;
+  }
+
+  .trend-title {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  .trend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 4px 0;
+    color: #475569;
+  }
+
   .diagnosis-item,
   .lab-item,
   .prescription-item {
@@ -74,5 +95,16 @@
     border-radius: 12px;
     padding: 12px;
     background: #f8fbff;
+  }
+
+  .adherence-summary {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: #475569;
+    background: #f8fbff;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    padding: 10px 12px;
   }
 }

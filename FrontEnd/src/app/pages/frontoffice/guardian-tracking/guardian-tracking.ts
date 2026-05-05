@@ -11,6 +11,10 @@ import {
   ProcedureApiService,
   SurgicalCase
 } from '../../../core/services/procedure-api.service';
+import {
+  GuardianPatientProfile,
+  GuardianPatientsService
+} from '../../../features/administrative/api/guardian-patients.service';
 
 type StatusTone = 'success' | 'warning' | 'danger' | 'neutral';
 
@@ -27,6 +31,12 @@ type ChildOption = {
   patientId: string;
 };
 
+type TrackingMetric = {
+  label: string;
+  value: string;
+  tone: StatusTone;
+};
+
 @Component({
   selector: 'app-guardian-tracking',
   standalone: true,
@@ -37,6 +47,7 @@ type ChildOption = {
 export class GuardianTrackingComponent implements OnInit {
   loading = false;
   errorMessage = '';
+  linkedPatients: GuardianPatientProfile[] = [];
 
   plans: DialysisPlan[] = [];
   sessions: DialysisSession[] = [];
@@ -47,7 +58,10 @@ export class GuardianTrackingComponent implements OnInit {
   childOptions: ChildOption[] = [];
   selectedChildKey = '';
 
-  constructor(private procedureApi: ProcedureApiService) {}
+  constructor(
+    private procedureApi: ProcedureApiService,
+    private guardianPatients: GuardianPatientsService
+  ) {}
 
   ngOnInit(): void {
     this.loadTrackingData();
@@ -55,6 +69,33 @@ export class GuardianTrackingComponent implements OnInit {
 
   get selectedChild(): ChildOption | undefined {
     return this.childOptions.find((child) => child.key === this.selectedChildKey);
+  }
+
+  get selectedLinkedPatient(): GuardianPatientProfile | undefined {
+    if (!this.selectedChild) {
+      return undefined;
+    }
+    return this.linkedPatients.find((patient) => this.makeChildKey(String(patient.id), patient.firstName, patient.lastName) === this.selectedChild!.key);
+  }
+
+  get hasChildData(): boolean {
+    return this.childOptions.length > 0;
+  }
+
+  get selectedChildLabel(): string {
+    return this.selectedChild?.label || 'Child profile';
+  }
+
+  get selectedChildReference(): string {
+    return this.selectedLinkedPatient ? `PAT-${this.selectedLinkedPatient.id}` : (this.selectedChild?.patientId || 'Not available');
+  }
+
+  get childrenCount(): number {
+    return this.childOptions.length;
+  }
+
+  get hasMultipleChildren(): boolean {
+    return this.childOptions.length > 1;
   }
 
   get selectedDialysisPlans(): DialysisPlan[] {
@@ -117,16 +158,19 @@ export class GuardianTrackingComponent implements OnInit {
   }
 
   get globalStatus(): string {
-    if (!this.latestSurgicalCase) {
-      return 'NO_SURGICAL_CASE';
+    if (this.latestSurgicalCase) {
+      return this.latestSurgicalCase.status || 'UNKNOWN';
     }
-    return this.latestSurgicalCase.status || 'UNKNOWN';
+    if (this.activeDialysisPlan) {
+      return this.activeDialysisPlan.status || 'UNKNOWN';
+    }
+    return 'NO_ACTIVE_CARE';
   }
 
   get globalStatusTone(): StatusTone {
     const status = this.globalStatus;
-    if (status === 'READY_FOR_INTERVENTION' || status === 'POSTOP_STABLE' || status === 'DONE') return 'success';
-    if (status === 'IN_PROGRESS' || status === 'OPEN') return 'warning';
+    if (status === 'READY_FOR_INTERVENTION' || status === 'POSTOP_STABLE' || status === 'DONE' || status === 'COMPLETED') return 'success';
+    if (status === 'IN_PROGRESS' || status === 'OPEN' || status === 'PLANNED') return 'warning';
     if (status === 'BLOCKED_PREOP' || status === 'POSTOP_UNSTABLE' || status === 'CANCELLED') return 'danger';
     return 'neutral';
   }
@@ -147,9 +191,126 @@ export class GuardianTrackingComponent implements OnInit {
         return 'Case locked, intensive monitoring in progress.';
       case 'DONE':
         return 'Case closed. Continue long-term follow-up.';
+      case 'PLANNED':
+        return 'Dialysis care is planned. Review the next scheduled session.';
+      case 'COMPLETED':
+        return 'Active dialysis cycle is completed. Follow future medical guidance.';
       default:
         return 'No active medical workflow yet.';
     }
+  }
+
+  get overviewTitle(): string {
+    switch (this.globalStatusTone) {
+      case 'danger':
+        return 'Clinical attention required';
+      case 'warning':
+        return 'Follow-up in progress';
+      case 'success':
+        return 'Care pathway is stable';
+      default:
+        return 'No active procedure right now';
+    }
+  }
+
+  get overviewDescription(): string {
+    if (this.globalStatus === 'NO_ACTIVE_CARE') {
+      return 'No dialysis or surgical workflow has been recorded yet for the selected child.';
+    }
+    if (this.globalStatus === 'POSTOP_UNSTABLE' || this.globalStatus === 'BLOCKED_PREOP') {
+      return 'The medical team currently needs close monitoring or corrective action before the pathway can continue.';
+    }
+    if (this.nextSession) {
+      return `Next dialysis session planned for ${this.formatDateTime(this.nextSession.sessionDate)}.`;
+    }
+    if (this.latestSurgicalCase) {
+      return `Latest intervention workflow is ${this.statusLabel(this.latestSurgicalCase.status)}.`;
+    }
+    return this.nextStepLabel;
+  }
+
+  get metrics(): TrackingMetric[] {
+    return [
+      {
+        label: 'Linked children',
+        value: String(this.childrenCount),
+        tone: 'neutral'
+      },
+      {
+        label: 'Dialysis plans',
+        value: String(this.selectedDialysisPlans.length),
+        tone: this.activeDialysisPlan ? 'success' : 'neutral'
+      },
+      {
+        label: 'Upcoming sessions',
+        value: this.nextSession ? '1 scheduled' : 'None',
+        tone: this.nextSession ? 'warning' : 'neutral'
+      },
+      {
+        label: 'Open care tasks',
+        value: String(this.openCareTasksCount),
+        tone: this.openCareTasksCount > 0 ? 'danger' : 'success'
+      }
+    ];
+  }
+
+  get latestOutcomeSummary(): string {
+    if (!this.latestOutcome) {
+      return 'No outcome recorded yet.';
+    }
+    if (this.latestOutcome.summary) {
+      return this.latestOutcome.summary;
+    }
+    return this.latestOutcome.validated ? 'Latest outcome validated.' : 'Latest outcome pending validation.';
+  }
+
+  get careAlerts(): string[] {
+    const alerts: string[] = [];
+
+    if (this.globalStatus === 'BLOCKED_PREOP') {
+      alerts.push('Pre-op validation is blocked. Medical follow-up is needed before intervention can proceed.');
+    }
+    if (this.globalStatus === 'POSTOP_UNSTABLE') {
+      alerts.push('Post-operative monitoring is unstable. Keep direct contact with the clinical team.');
+    }
+    if (this.openCareTasksCount > 0) {
+      alerts.push(`${this.openCareTasksCount} care task(s) remain open for clinical follow-up.`);
+    }
+    if (this.activeDialysisPlan && !this.nextSession && this.activeDialysisPlan.status !== 'COMPLETED' && this.activeDialysisPlan.status !== 'ARCHIVED') {
+      alerts.push('No upcoming dialysis session is currently visible for the active plan.');
+    }
+    if (this.latestOutcome && !this.latestOutcome.validated) {
+      alerts.push('The latest dialysis outcome is still pending validation.');
+    }
+
+    return alerts;
+  }
+
+  get recommendedActions(): string[] {
+    const actions: string[] = [];
+
+    if (this.nextSession) {
+      actions.push(`Prepare for the next dialysis session on ${this.formatDateTime(this.nextSession.sessionDate)}.`);
+    }
+    if (this.latestSurgicalCase?.status === 'READY_FOR_INTERVENTION') {
+      actions.push('Confirm the intervention schedule with the care team if anything changed.');
+    }
+    if (this.latestSurgicalCase?.status === 'DONE') {
+      actions.push('Continue long-term recovery follow-up and review future consultations.');
+    }
+    if (actions.length === 0) {
+      actions.push('Use messages or appointments to stay aligned with the medical team.');
+    }
+
+    return actions;
+  }
+
+  get timelinePreview(): TimelineEvent[] {
+    return this.timeline.slice(0, 8);
+  }
+
+  get hiddenTimelineCount(): number {
+    return Math.max(this.timeline.length - this.timelinePreview.length, 0);
   }
 
   get openCareTasksCount(): number {
@@ -222,9 +383,11 @@ export class GuardianTrackingComponent implements OnInit {
       sessions: this.procedureApi.getDialysisSessions(),
       outcomes: this.procedureApi.getDialysisOutcomes(),
       surgicalCases: this.procedureApi.getSurgicalCases(),
-      careTasks: this.procedureApi.getCareTasks()
+      careTasks: this.procedureApi.getCareTasks(),
+      linkedPatients: this.guardianPatients.getGuardianPatients()
     }).subscribe({
       next: (result) => {
+        this.linkedPatients = result.linkedPatients ?? [];
         this.plans = result.plans ?? [];
         this.sessions = result.sessions ?? [];
         this.outcomes = result.outcomes ?? [];
@@ -235,7 +398,7 @@ export class GuardianTrackingComponent implements OnInit {
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
         this.loading = false;
-        this.errorMessage = err?.error?.message || err?.message || 'Failed to load guardian tracking data.';
+        this.errorMessage = this.formatApiError(err);
       }
     });
   }
@@ -246,12 +409,15 @@ export class GuardianTrackingComponent implements OnInit {
       OPEN: 'Open',
       READY_FOR_INTERVENTION: 'Ready For Intervention',
       BLOCKED_PREOP: 'Blocked Pre-Op',
-      IN_PROGRESS: 'Intervention In Progress',
+      IN_PROGRESS: 'In Progress',
       POSTOP_STABLE: 'Post-Op Stable',
       POSTOP_UNSTABLE: 'Post-Op Unstable',
       DONE: 'Completed',
       CANCELLED: 'Cancelled',
-      PLANNED: 'Planned'
+      PLANNED: 'Planned',
+      COMPLETED: 'Completed',
+      ARCHIVED: 'Archived',
+      NO_ACTIVE_CARE: 'No Active Care'
     };
     return map[status] ?? status;
   }
@@ -269,37 +435,43 @@ export class GuardianTrackingComponent implements OnInit {
   private buildChildOptions(): void {
     const map = new Map<string, ChildOption>();
 
-    for (const plan of this.plans) {
-      const key = this.makeChildKey(plan.patientId, plan.firstName, plan.lastName);
-      if (!map.has(key)) {
-        map.set(key, {
-          key,
-          label: `${plan.firstName || '-'} ${plan.lastName || ''}`.trim(),
-          patientId: plan.patientId || ''
-        });
-      }
+    for (const patient of this.linkedPatients) {
+      const key = this.makeChildKey(String(patient.id), patient.firstName, patient.lastName);
+      map.set(key, {
+        key,
+        label: `${patient.firstName || '-'} ${patient.lastName || ''}`.trim(),
+        patientId: String(patient.id)
+      });
     }
 
-    for (const sCase of this.surgicalCases) {
-      const key = this.makeChildKey(sCase.patientId, sCase.firstName, sCase.lastName);
-      if (!map.has(key)) {
-        map.set(key, {
-          key,
-          label: `${sCase.firstName || '-'} ${sCase.lastName || ''}`.trim(),
-          patientId: sCase.patientId || ''
-        });
-      }
+    this.childOptions = [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
+    if (this.childOptions.length === 0) {
+      this.selectedChildKey = '';
+      return;
     }
 
-    this.childOptions = [...map.values()];
-    if (this.childOptions.length > 0 && !this.selectedChildKey) {
+    const stillValid = this.childOptions.some((child) => child.key === this.selectedChildKey);
+    if (!this.selectedChildKey || !stillValid) {
       this.selectedChildKey = this.childOptions[0].key;
     }
   }
 
   private matchesChild(patientId: string | null | undefined, firstName: string | null | undefined, lastName: string | null | undefined): boolean {
     if (!this.selectedChild) return false;
-    return this.makeChildKey(patientId, firstName, lastName) === this.selectedChild.key;
+    const directKey = this.makeChildKey(patientId, firstName, lastName);
+    if (directKey === this.selectedChild.key) {
+      return true;
+    }
+
+    const selectedPatient = this.selectedLinkedPatient;
+    if (!selectedPatient) {
+      return false;
+    }
+
+    const selectedFullName = `${selectedPatient.firstName ?? ''} ${selectedPatient.lastName ?? ''}`.trim().toLowerCase();
+    const candidateFullName = `${firstName ?? ''} ${lastName ?? ''}`.trim().toLowerCase();
+
+    return selectedFullName.length > 0 && selectedFullName === candidateFullName;
   }
 
   private makeChildKey(patientId: string | null | undefined, firstName: string | null | undefined, lastName: string | null | undefined): string {
@@ -331,5 +503,16 @@ export class GuardianTrackingComponent implements OnInit {
   private dateWeight(date: string | null | undefined, time: string | null | undefined): number {
     const parsed = this.parseDateTime(date, time);
     return parsed ? parsed.getTime() : 0;
+  }
+
+  private formatApiError(err: { error?: { message?: string }; message?: string }): string {
+    const message = err?.error?.message || err?.message || '';
+    if (message.includes('403')) {
+      return 'Guardian tracking is not accessible with the current account permissions.';
+    }
+    if (message.includes('503') || message.includes('Service Unavailable')) {
+      return 'Tracking data is temporarily unavailable. Please retry after the care services reconnect.';
+    }
+    return message || 'Failed to load guardian tracking data.';
   }
 }

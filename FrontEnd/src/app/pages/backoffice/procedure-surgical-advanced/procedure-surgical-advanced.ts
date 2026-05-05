@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { catchError, forkJoin, of } from 'rxjs';
 import {
   CareTask,
   Complication,
@@ -23,6 +24,7 @@ export class ProcedureSurgicalAdvancedComponent implements OnInit {
   saving = false;
   errorMessage = '';
   successMessage = '';
+  partialLoadWarnings: string[] = [];
 
   surgicalCases: SurgicalCase[] = [];
   preOps: PreOpAssessment[] = [];
@@ -141,64 +143,74 @@ export class ProcedureSurgicalAdvancedComponent implements OnInit {
   loadAll(): void {
     this.loading = true;
     this.errorMessage = '';
+    this.partialLoadWarnings = [];
 
     this.procedureApi.getSurgicalCases().subscribe({
       next: (cases) => {
         this.surgicalCases = cases ?? [];
-        if (!this.selectedCaseId && this.surgicalCases.length > 0) {
-          this.selectedCaseId = String(this.surgicalCases[0].id);
-        }
-        this.loadObservations();
+        this.syncSelectedCase();
+        this.loadWorkflowData();
         this.refreshView();
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
         this.loading = false;
-        this.errorMessage = err?.error?.message || err?.message || 'Failed to load surgical cases.';
+        this.errorMessage = this.formatCasesLoadError(err);
         this.refreshView();
       }
     });
   }
 
-  loadObservations(): void {
-    this.procedureApi.getPreOpAssessments().subscribe({
-      next: (preOps) => {
+  onSelectedCaseChange(value: string): void {
+    this.selectedCaseId = value;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.partialLoadWarnings = [];
+    this.cancelComplicationEdit();
+    this.cancelCareTaskEdit();
+    this.refreshView();
+  }
+
+  loadWorkflowData(): void {
+    const warnings: string[] = [];
+
+    forkJoin({
+      preOps: this.procedureApi.getPreOpAssessments().pipe(
+        catchError((err: { error?: { message?: string }; message?: string }) => {
+          warnings.push(this.describePartialLoadFailure('pre-op history', err));
+          return of([]);
+        })
+      ),
+      postOps: this.procedureApi.getPostOpObservations().pipe(
+        catchError((err: { error?: { message?: string }; message?: string }) => {
+          warnings.push(this.describePartialLoadFailure('post-op history', err));
+          return of([]);
+        })
+      ),
+      complications: this.procedureApi.getComplications().pipe(
+        catchError((err: { error?: { message?: string }; message?: string }) => {
+          warnings.push(this.describePartialLoadFailure('complications', err));
+          return of([]);
+        })
+      ),
+      careTasks: this.procedureApi.getCareTasks().pipe(
+        catchError((err: { error?: { message?: string }; message?: string }) => {
+          warnings.push(this.describePartialLoadFailure('care tasks', err));
+          return of([]);
+        })
+      )
+    }).subscribe({
+      next: ({ preOps, postOps, complications, careTasks }) => {
         this.preOps = preOps ?? [];
-        this.procedureApi.getPostOpObservations().subscribe({
-          next: (postOps) => {
-            this.postOps = postOps ?? [];
-            this.procedureApi.getComplications().subscribe({
-              next: (complications) => {
-                this.complications = complications ?? [];
-                this.procedureApi.getCareTasks().subscribe({
-                  next: (careTasks) => {
-                    this.careTasks = careTasks ?? [];
-                    this.loading = false;
-                    this.refreshView();
-                  },
-                  error: (err: { error?: { message?: string }; message?: string }) => {
-                    this.loading = false;
-                    this.errorMessage = err?.error?.message || err?.message || 'Failed to load care tasks.';
-                    this.refreshView();
-                  }
-                });
-              },
-              error: (err: { error?: { message?: string }; message?: string }) => {
-                this.loading = false;
-                this.errorMessage = err?.error?.message || err?.message || 'Failed to load complications.';
-                this.refreshView();
-              }
-            });
-          },
-          error: (err: { error?: { message?: string }; message?: string }) => {
-            this.loading = false;
-            this.errorMessage = err?.error?.message || err?.message || 'Failed to load post-op observations.';
-            this.refreshView();
-          }
-        });
-      },
-      error: (err: { error?: { message?: string }; message?: string }) => {
+        this.postOps = postOps ?? [];
+        this.complications = complications ?? [];
+        this.careTasks = careTasks ?? [];
+        this.partialLoadWarnings = warnings;
         this.loading = false;
-        this.errorMessage = err?.error?.message || err?.message || 'Failed to load pre-op assessments.';
+        this.refreshView();
+      },
+      error: () => {
+        this.loading = false;
+        this.errorMessage = 'Failed to load surgical workflow.';
         this.refreshView();
       }
     });
@@ -354,6 +366,7 @@ export class ProcedureSurgicalAdvancedComponent implements OnInit {
     const surgicalCaseId = Number(this.selectedCaseId);
     if (!surgicalCaseId || Number.isNaN(surgicalCaseId)) {
       this.errorMessage = 'Please select a surgical case.';
+      this.refreshView();
       return;
     }
 
@@ -389,6 +402,7 @@ export class ProcedureSurgicalAdvancedComponent implements OnInit {
     const surgicalCaseId = Number(this.selectedCaseId);
     if (!surgicalCaseId || Number.isNaN(surgicalCaseId)) {
       this.errorMessage = 'Please select a surgical case.';
+      this.refreshView();
       return;
     }
 
@@ -421,6 +435,38 @@ export class ProcedureSurgicalAdvancedComponent implements OnInit {
   }
 
   private refreshView(): void {
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
+  }
+
+  private syncSelectedCase(): void {
+    if (this.surgicalCases.length === 0) {
+      this.selectedCaseId = '';
+      return;
+    }
+
+    const selectedId = Number(this.selectedCaseId);
+    const stillExists = this.surgicalCases.some((item) => item.id === selectedId);
+    if (!this.selectedCaseId || Number.isNaN(selectedId) || !stillExists) {
+      this.selectedCaseId = String(this.surgicalCases[0].id);
+    }
+  }
+
+  private formatCasesLoadError(err: { error?: { message?: string }; message?: string }): string {
+    const message = err?.error?.message || err?.message || '';
+    if (message.includes('503') || message.includes('Service Unavailable')) {
+      return 'Procedure service is temporarily unavailable. Verify procedure-service and the API Gateway, then retry.';
+    }
+    return message || 'Failed to load surgical cases.';
+  }
+
+  private describePartialLoadFailure(
+    section: string,
+    err: { error?: { message?: string }; message?: string }
+  ): string {
+    const message = err?.error?.message || err?.message || 'Temporary error.';
+    if (message.includes('503') || message.includes('Service Unavailable')) {
+      return `Unable to load ${section}: procedure-service is unavailable.`;
+    }
+    return `Unable to load ${section}: ${message}`;
   }
 }

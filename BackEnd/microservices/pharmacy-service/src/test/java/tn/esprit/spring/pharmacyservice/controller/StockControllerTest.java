@@ -53,7 +53,7 @@ class StockControllerTest {
     @WithMockUser(roles = "PHARMACIST")
     void getAllStock_pharmacist_returns200() throws Exception {
         StockDTO s = StockDTO.builder().stockId(1L).batchId(10L).quantityAvailable(50).build();
-        given(stockService.getAllStock()).willReturn(List.of(s));
+                given(stockService.getAllStock(null)).willReturn(List.of(s));
 
         mvc.perform(get("/api/stock"))
                 .andExpect(status().isOk())
@@ -71,7 +71,7 @@ class StockControllerTest {
     @Test @DisplayName("GET /api/stock — 200 with GUARDIAN role (allowed by @PreAuthorize)")
     @WithMockUser(roles = "GUARDIAN")
     void getAllStock_guardian_returns200() throws Exception {
-        given(stockService.getAllStock()).willReturn(List.of());
+                given(stockService.getAllStock(null)).willReturn(List.of());
         mvc.perform(get("/api/stock"))
                 .andExpect(status().isOk());
     }

@@ -28,11 +28,9 @@ public class ObservabilityServiceImpl implements ObservabilityService {
         List<Notification> notifications;
 
         if (userId != null) {
-            // Get notifications for specific user
-            notifications = notificationRepository.findByTargetUserId(userId);
+            notifications = notificationRepository.findTop100ByTargetUserIdOrTargetUserIdIsNullOrderByCreatedAtDesc(userId);
         } else {
-            // Get all notifications
-            notifications = notificationRepository.findAll();
+            notifications = notificationRepository.findTop100ByOrderByCreatedAtDesc();
         }
 
         return notifications.stream()
@@ -57,5 +55,16 @@ public class ObservabilityServiceImpl implements ObservabilityService {
         // For now, return empty list as placeholder
         // When implemented, this should fetch audit logs from DomainEventLog or similar
         return List.of();
+    }
+
+    @Override
+    public Notification createNotification(String type, String title, String message, Long targetUserId) {
+        return notificationRepository.save(Notification.builder()
+                .type(type)
+                .title(title)
+                .message(message)
+                .targetUserId(targetUserId)
+                .read(false)
+                .build());
     }
 }

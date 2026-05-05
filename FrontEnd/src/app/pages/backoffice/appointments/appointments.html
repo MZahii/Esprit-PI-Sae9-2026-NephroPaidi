@@ -32,8 +32,10 @@
           </div>
 
           <div class="patient-filter mb-3">
-            <label class="form-label">Search Patient</label>
+            <label class="form-label" for="appointmentsPatientFilterSearch">Search Patient</label>
             <input
+              id="appointmentsPatientFilterSearch"
+              name="appointmentsPatientFilterSearch"
               class="form-control"
               placeholder="Type patient name or id..."
               [(ngModel)]="patientFilterSearch"
@@ -74,7 +76,8 @@
           </div>
 
           <div class="filters mb-3">
-            <select class="form-control" [(ngModel)]="filters.status">
+            <label class="visually-hidden" for="appointmentsStatusFilter">Status</label>
+            <select id="appointmentsStatusFilter" name="appointmentsStatusFilter" class="form-control" [(ngModel)]="filters.status">
               <option value="ALL">All Status</option>
               <option value="SCHEDULED">SCHEDULED</option>
               <option value="CONFIRMED">CONFIRMED</option>
@@ -82,7 +85,8 @@
               <option value="NO_SHOW">NO_SHOW</option>
             </select>
 
-            <select class="form-control" [(ngModel)]="filters.doctorId">
+            <label class="visually-hidden" for="appointmentsDoctorFilter">Doctor</label>
+            <select id="appointmentsDoctorFilter" name="appointmentsDoctorFilter" class="form-control" [(ngModel)]="filters.doctorId">
               <option value="">All Doctors</option>
               <option *ngFor="let d of doctors" [value]="d.keycloakId">
                 {{ getDoctorLabel(d.keycloakId) }}
@@ -166,8 +170,10 @@
       </div>
       <div class="modal-body">
         <div class="modal-section">
-          <label class="form-label">Find Patient</label>
+          <label class="form-label" for="createPatientSearch">Find Patient</label>
           <input
+            id="createPatientSearch"
+            name="createPatientSearch"
             class="form-control"
             placeholder="Search by name, id, blood type, allergies..."
             [(ngModel)]="patientSearch"
@@ -209,8 +215,10 @@
 
         <div class="row g-3 mt-3">
           <div class="col-md-6">
-            <label class="form-label">Scheduled At</label>
+            <label class="form-label" for="createScheduledAt">Scheduled At</label>
             <input
+              id="createScheduledAt"
+              name="createScheduledAt"
               type="datetime-local"
               class="form-control"
               [min]="minScheduledAt"
@@ -220,8 +228,10 @@
             <small class="text-danger d-block mt-2" *ngIf="scheduledAtError">{{ scheduledAtError }}</small>
           </div>
           <div class="col-md-6">
-            <label class="form-label">Duration (min)</label>
+            <label class="form-label" for="createDurationMinutes">Duration (min)</label>
             <input
+              id="createDurationMinutes"
+              name="createDurationMinutes"
               type="number"
               min="10"
               max="180"
@@ -234,8 +244,10 @@
         </div>
 
         <div class="modal-section mt-3">
-          <label class="form-label">Find Doctor</label>
+          <label class="form-label" for="createDoctorSearch">Find Doctor</label>
           <input
+            id="createDoctorSearch"
+            name="createDoctorSearch"
             class="form-control"
             placeholder="Search by name, email, or keycloak id..."
             [(ngModel)]="doctorSearch"
@@ -307,8 +319,8 @@
         </div>
 
         <div class="modal-section mt-3">
-          <label class="form-label">Reason</label>
-          <input type="text" class="form-control" [(ngModel)]="createForm.reason" />
+          <label class="form-label" for="createReason">Reason</label>
+          <input id="createReason" name="createReason" type="text" class="form-control" [(ngModel)]="createForm.reason" />
         </div>
       </div>
       <div class="modal-footer">
@@ -344,16 +356,16 @@
           <div class="form-control-plaintext">{{ getDoctorLabel(editForm.doctorId) }}</div>
         </div>
         <div class="mb-3">
-          <label class="form-label">Scheduled At</label>
-          <input type="datetime-local" class="form-control" [(ngModel)]="editForm.scheduledAt" />
+          <label class="form-label" for="editScheduledAt">Scheduled At</label>
+          <input id="editScheduledAt" name="editScheduledAt" type="datetime-local" class="form-control" [(ngModel)]="editForm.scheduledAt" />
         </div>
         <div class="mb-3">
-          <label class="form-label">Duration (min)</label>
-          <input type="number" min="10" class="form-control" [(ngModel)]="editForm.durationMinutes" />
+          <label class="form-label" for="editDurationMinutes">Duration (min)</label>
+          <input id="editDurationMinutes" name="editDurationMinutes" type="number" min="10" class="form-control" [(ngModel)]="editForm.durationMinutes" />
         </div>
         <div class="mb-3">
-          <label class="form-label">Status</label>
-          <select class="form-select" [(ngModel)]="editForm.status">
+          <label class="form-label" for="editStatus">Status</label>
+          <select id="editStatus" name="editStatus" class="form-select" [(ngModel)]="editForm.status">
             <option value="SCHEDULED">SCHEDULED</option>
             <option value="CONFIRMED">CONFIRMED</option>
             <option value="CANCELLED">CANCELLED</option>
@@ -361,8 +373,8 @@
           </select>
         </div>
         <div class="mb-3">
-          <label class="form-label">Reason</label>
-          <input type="text" class="form-control" [(ngModel)]="editForm.reason" />
+          <label class="form-label" for="editReason">Reason</label>
+          <input id="editReason" name="editReason" type="text" class="form-control" [(ngModel)]="editForm.reason" />
         </div>
       </div>
       <div class="modal-footer">
@@ -383,8 +395,8 @@
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
       <div class="modal-body">
-        <label class="form-label">Cancellation reason</label>
-        <textarea class="form-control" rows="3" [(ngModel)]="cancelForm.reason"></textarea>
+        <label class="form-label" for="cancelReason">Cancellation reason</label>
+        <textarea id="cancelReason" name="cancelReason" class="form-control" rows="3" [(ngModel)]="cancelForm.reason"></textarea>
       </div>
       <div class="modal-footer">
         <button class="btn btn-light" (click)="closeModals()">Close</button>

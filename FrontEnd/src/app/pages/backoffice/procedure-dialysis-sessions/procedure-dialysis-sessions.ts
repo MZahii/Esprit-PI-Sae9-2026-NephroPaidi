@@ -72,7 +72,7 @@ export class ProcedureDialysisSessionsComponent implements OnInit {
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
         this.loading = false;
-        this.errorMessage = err?.error?.message || err?.message || 'Failed to load dialysis plans.';
+        this.errorMessage = this.formatApiError(err, 'Failed to load dialysis plans.');
         this.refreshView();
       }
     });
@@ -87,7 +87,7 @@ export class ProcedureDialysisSessionsComponent implements OnInit {
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
         this.loading = false;
-        this.errorMessage = err?.error?.message || err?.message || 'Failed to load dialysis sessions.';
+        this.errorMessage = this.formatApiError(err, 'Failed to load dialysis sessions.');
         this.refreshView();
       }
     });
@@ -102,6 +102,13 @@ export class ProcedureDialysisSessionsComponent implements OnInit {
     const planId = Number(this.selectedPlanId);
     if (!planId || Number.isNaN(planId)) {
       this.errorMessage = 'Please select a dialysis plan.';
+      this.refreshView();
+      return;
+    }
+
+    if (this.selectedPlan && ['CANCELLED', 'ARCHIVED'].includes(this.selectedPlan.status)) {
+      this.errorMessage = 'Sessions can only be generated for active dialysis plans.';
+      this.refreshView();
       return;
     }
 
@@ -118,13 +125,24 @@ export class ProcedureDialysisSessionsComponent implements OnInit {
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
         this.saving = false;
-        this.errorMessage = err?.error?.message || err?.message || 'Failed to generate sessions from plan.';
+        this.errorMessage = this.formatApiError(err, 'Failed to generate sessions from plan.');
         this.refreshView();
       }
     });
   }
 
   private refreshView(): void {
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
+  }
+
+  private formatApiError(
+    err: { error?: { message?: string }; message?: string },
+    fallback: string
+  ): string {
+    const message = err?.error?.message || err?.message || '';
+    if (message.includes('503') || message.includes('Service Unavailable')) {
+      return 'Procedure service is temporarily unavailable. Verify procedure-service and the API Gateway, then retry.';
+    }
+    return message || fallback;
   }
 }

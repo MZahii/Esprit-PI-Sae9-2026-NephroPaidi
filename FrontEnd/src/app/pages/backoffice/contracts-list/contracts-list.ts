@@ -7,6 +7,7 @@ import { firstValueFrom, forkJoin, Subscription } from 'rxjs';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
 import { AuthStorageService } from '../../../core/auth/auth-storage.service';
+import { DocumentExportService } from '../../../core/services/document-export.service';
 
 type ContractStatus = 'ACTIVE' | 'SUSPENDED' | 'ENDED' | 'EXPIRED';
 type ContractType = 'CDI' | 'CDD' | 'INTERNSHIP' | 'PART_TIME' | 'TEMPORARY';
@@ -56,7 +57,7 @@ export class ContractsList implements OnInit, OnDestroy {
 
   searchTerm = '';
   statusFilter: ContractStatus | 'ALL' = 'ALL';
-  roleFilter: 'ALL' | 'HR' | 'DOCTOR' | 'NURSE' | 'SURGEON' | 'PHARMACIST' | 'RECEPTIONIST' = 'ALL';
+  roleFilter: 'ALL' | 'HR' | 'DOCTOR' | 'NURSE' | 'SURGEON' | 'PHARMACIST' | 'RECEPTIONIST' | 'LAB_AGENT' = 'ALL';
   pageSize = 10;
   currentPage = 1;
   sortField: 'name' | 'startDate' | 'endDate' = 'name';
@@ -73,7 +74,8 @@ export class ContractsList implements OnInit, OnDestroy {
     private http: HttpClient,
     private route: ActivatedRoute,
     private authStorage: AuthStorageService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private documentExportService: DocumentExportService
   ) {}
 
   ngOnInit(): void {
@@ -277,6 +279,14 @@ export class ContractsList implements OnInit, OnDestroy {
     return `conic-gradient(${color} 0deg ${angle}deg, #e2e8f0 ${angle}deg 360deg)`;
   }
 
+  printContracts(): void {
+    this.documentExportService.printDocument(this.buildExportConfig());
+  }
+
+  exportContractsPdf(): void {
+    this.documentExportService.exportPdf(this.buildExportConfig());
+  }
+
   async loadContracts(): Promise<void> {
     this.loading = true;
     this.errorMessage = '';
@@ -296,7 +306,7 @@ export class ContractsList implements OnInit, OnDestroy {
       const contracts = Array.isArray(response?.contracts) ? response.contracts : [];
 
       this.staffUsers = users.filter((user) =>
-        ['HR', 'DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST'].includes(user.role)
+        ['HR', 'DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST', 'LAB_AGENT'].includes(user.role)
       );
       this.staffMap = {};
       this.staffUsers.forEach((user) => {
@@ -438,5 +448,48 @@ export class ContractsList implements OnInit, OnDestroy {
       staff?.accountStatus ?? ''
     ]
       .map((value) => String(value).toLowerCase());
+  }
+
+  private buildExportConfig() {
+    const user = this.authStorage.getUser();
+    const generatedBy = user
+      ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || user.username || 'System'
+      : 'System';
+
+    return {
+      title: this.contractListTitle,
+      subtitle: this.contractScope === 'HR'
+        ? 'HR contract governance report'
+        : 'Staff contract governance report',
+      generatedBy,
+      summary: [
+        { label: 'Total Contracts', value: this.totalContracts },
+        { label: 'Active', value: this.activeContracts },
+        { label: 'Suspended', value: this.suspendedContracts },
+        { label: 'Ended/Expired', value: this.endedContracts },
+        { label: 'Archived', value: this.archivedContracts }
+      ],
+      columns: [
+        { key: 'staff', label: 'Account' },
+        { key: 'role', label: 'Role' },
+        { key: 'reference', label: 'Reference' },
+        { key: 'type', label: 'Type' },
+        { key: 'state', label: 'Contract Status' },
+        { key: 'access', label: 'Account Access' },
+        { key: 'startDate', label: 'Start Date' },
+        { key: 'endDate', label: 'End Date' }
+      ],
+      rows: this.sortedContracts.map((contract) => ({
+        staff: this.staffDisplay(contract),
+        role: this.staffRole(contract),
+        reference: contract.contractReference || '-',
+        type: contract.contractType,
+        state: this.contractStateLabel(contract),
+        access: this.accountAccessStatus(contract) === 'USER_ACTIVE' ? 'USER ACTIVE' : 'USER INACTIVE',
+        startDate: contract.startDate,
+        endDate: contract.endDate
+      })),
+      emptyText: 'No contracts match the selected filters.'
+    };
   }
 }

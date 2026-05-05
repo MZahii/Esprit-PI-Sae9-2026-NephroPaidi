@@ -62,7 +62,7 @@ class SupplierControllerTest {
     void getAll_200() throws Exception {
         SupplierDTO s = SupplierDTO.builder()
                 .supplierId(1L).name("PharmaCo").contactInfo("pharma@co.com").isActive(true).build();
-        given(supplierService.getAllSuppliers()).willReturn(List.of(s));
+        given(supplierService.getAllSuppliers(null, null)).willReturn(List.of(s));
 
         mvc.perform(get("/api/suppliers"))
                 .andExpect(status().isOk())

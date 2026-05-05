@@ -6,6 +6,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
+import { AuthStorageService } from '../../../core/auth/auth-storage.service';
+import { DocumentExportService } from '../../../core/services/document-export.service';
 
 interface UserRow {
   id: number;
@@ -50,6 +52,19 @@ interface LogDiffInfo {
   parsed: boolean;
 }
 
+interface UserLogGroup {
+  key: string;
+  userId: number;
+  fullName: string;
+  role: string;
+  actorSet: string[];
+  totalLogs: number;
+  latestAt: string;
+  accountLogs: number;
+  contractLogs: number;
+  entries: UnifiedLog[];
+}
+
 @Component({
   selector: 'app-logs',
   standalone: true,
@@ -65,12 +80,15 @@ export class LogsComponent implements OnInit {
   logs: UnifiedLog[] = [];
   private diffCache = new Map<string, LogDiffInfo>();
   currentPage = 1;
-  pageSize = 10;
-  readonly pageSizeOptions = [10, 20, 50];
+  pageSize = 8;
+  readonly pageSizeOptions = [5, 8, 12, 20];
+  expandedGroups = new Set<string>();
 
   constructor(
     private http: HttpClient,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private authStorage: AuthStorageService,
+    private documentExportService: DocumentExportService
   ) {}
 
   ngOnInit(): void {
@@ -86,16 +104,67 @@ export class LogsComponent implements OnInit {
     });
   }
 
-  get paginatedLogs(): UnifiedLog[] {
+  get groupedLogs(): UserLogGroup[] {
+    const map = new Map<string, UserLogGroup>();
+    for (const log of this.filteredLogs) {
+      const key = `${log.userId}-${log.role}-${log.fullName}`;
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, {
+          key,
+          userId: log.userId,
+          fullName: log.fullName,
+          role: log.role,
+          actorSet: log.actor ? [log.actor] : [],
+          totalLogs: 1,
+          latestAt: log.createdAt,
+          accountLogs: log.source === 'ACCOUNT' ? 1 : 0,
+          contractLogs: log.source === 'CONTRACT' ? 1 : 0,
+          entries: [log]
+        });
+      } else {
+        existing.totalLogs++;
+        if (new Date(log.createdAt).getTime() > new Date(existing.latestAt).getTime()) {
+          existing.latestAt = log.createdAt;
+        }
+        if (log.source === 'ACCOUNT') existing.accountLogs++;
+        if (log.source === 'CONTRACT') existing.contractLogs++;
+        if (log.actor && !existing.actorSet.includes(log.actor)) {
+          existing.actorSet.push(log.actor);
+        }
+        existing.entries.push(log);
+      }
+    }
+    return Array.from(map.values())
+      .map((group) => ({
+        ...group,
+        entries: group.entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      }))
+      .sort((a, b) => new Date(b.latestAt).getTime() - new Date(a.latestAt).getTime());
+  }
+
+  get paginatedGroups(): UserLogGroup[] {
     if (this.currentPage > this.totalPages) {
       this.currentPage = this.totalPages;
     }
     const start = (this.currentPage - 1) * this.pageSize;
-    return this.filteredLogs.slice(start, start + this.pageSize);
+    return this.groupedLogs.slice(start, start + this.pageSize);
+  }
+
+  isGroupExpanded(groupKey: string): boolean {
+    return this.expandedGroups.has(groupKey);
+  }
+
+  toggleGroup(groupKey: string): void {
+    if (this.expandedGroups.has(groupKey)) {
+      this.expandedGroups.delete(groupKey);
+    } else {
+      this.expandedGroups.add(groupKey);
+    }
   }
 
   get totalPages(): number {
-    return Math.max(1, Math.ceil(this.filteredLogs.length / this.pageSize));
+    return Math.max(1, Math.ceil(this.groupedLogs.length / this.pageSize));
   }
 
   get pageNumbers(): number[] {
@@ -103,12 +172,12 @@ export class LogsComponent implements OnInit {
   }
 
   get rangeStart(): number {
-    if (this.filteredLogs.length === 0) return 0;
+    if (this.groupedLogs.length === 0) return 0;
     return (this.currentPage - 1) * this.pageSize + 1;
   }
 
   get rangeEnd(): number {
-    return Math.min(this.currentPage * this.pageSize, this.filteredLogs.length);
+    return Math.min(this.currentPage * this.pageSize, this.groupedLogs.length);
   }
 
   onFiltersChanged(): void {
@@ -133,38 +202,35 @@ export class LogsComponent implements OnInit {
   }
 
   printLogs(): void {
-    window.print();
+    const config = this.buildExportConfig();
+    this.documentExportService.printDocument(config);
   }
 
   downloadPdf(): void {
-    const content = `
-      <html>
-        <head><title>Audit Logs</title></head>
-        <body>
-          <h2>Audit Logs</h2>
-          <p>Export Date: ${new Date().toISOString()}</p>
-          <table border="1" cellspacing="0" cellpadding="6">
-            <tr><th>Date</th><th>Source</th><th>User</th><th>Role</th><th>Action</th><th>Actor</th></tr>
-            ${this.filteredLogs.map(log => `
-              <tr>
-                <td>${log.createdAt}</td>
-                <td>${log.source}</td>
-                <td>${log.fullName}</td>
-                <td>${log.role}</td>
-                <td>${log.action}</td>
-                <td>${log.actor}</td>
-              </tr>
-            `).join('')}
-          </table>
-        </body>
-      </html>
-    `;
-    const popup = window.open('', '_blank');
-    if (!popup) return;
-    popup.document.write(content);
-    popup.document.close();
-    popup.focus();
-    popup.print();
+    const config = this.buildExportConfig();
+    this.documentExportService.exportPdf(config);
+  }
+
+  printUserLogs(group: UserLogGroup, event?: Event): void {
+    event?.stopPropagation();
+    this.documentExportService.printDocument(this.buildUserExportConfig(group));
+  }
+
+  exportUserPdf(group: UserLogGroup, event?: Event): void {
+    event?.stopPropagation();
+    this.documentExportService.exportPdf(this.buildUserExportConfig(group));
+  }
+
+  sourceClass(source: UnifiedLog['source']): string {
+    return source === 'ACCOUNT' ? 'source-account' : 'source-contract';
+  }
+
+  actionClass(action: string): string {
+    const normalized = (action || '').toLowerCase();
+    if (normalized.includes('password') || normalized.includes('status')) return 'action-security';
+    if (normalized.includes('create') || normalized.includes('restore')) return 'action-positive';
+    if (normalized.includes('delete') || normalized.includes('archive') || normalized.includes('suspend') || normalized.includes('end')) return 'action-negative';
+    return 'action-neutral';
   }
 
   getChangedFields(log: UnifiedLog): LogDiffRow[] {
@@ -274,6 +340,8 @@ export class LogsComponent implements OnInit {
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       this.diffCache.clear();
       this.currentPage = 1;
+      this.expandedGroups.clear();
+      this.groupedLogs.slice(0, 3).forEach((group) => this.expandedGroups.add(group.key));
     } catch (error: unknown) {
       const err = error as { error?: { message?: string }; message?: string };
       this.errorMessage = err?.error?.message || err?.message || 'Failed to load audit logs.';
@@ -356,5 +424,95 @@ export class LogsComponent implements OnInit {
       log.oldValue ?? '',
       log.newValue ?? ''
     ].map((value) => String(value).toLowerCase());
+  }
+
+  get accountSourceCount(): number {
+    return this.filteredLogs.filter((log) => log.source === 'ACCOUNT').length;
+  }
+
+  get contractSourceCount(): number {
+    return this.filteredLogs.filter((log) => log.source === 'CONTRACT').length;
+  }
+
+  get uniqueActorsCount(): number {
+    return new Set(this.filteredLogs.map((log) => log.actor).filter(Boolean)).size;
+  }
+
+  private buildExportConfig() {
+    const currentUser = this.authStorage.getUser();
+    const generatedBy = currentUser
+      ? `${currentUser.firstName ?? ''} ${currentUser.lastName ?? ''}`.trim() || currentUser.username || 'System'
+      : 'System';
+
+    return {
+      title: 'Audit Logs Report',
+      subtitle: 'Unified account and contract timeline',
+      generatedBy,
+      summary: [
+        { label: 'Total Logs', value: this.filteredLogs.length },
+        { label: 'Account Logs', value: this.accountSourceCount },
+        { label: 'Contract Logs', value: this.contractSourceCount },
+        { label: 'Unique Actors', value: this.uniqueActorsCount }
+      ],
+      columns: [
+        { key: 'createdAt', label: 'Date / Time' },
+        { key: 'source', label: 'Source' },
+        { key: 'fullName', label: 'User' },
+        { key: 'role', label: 'Role' },
+        { key: 'action', label: 'Action' },
+        { key: 'actor', label: 'Actor' }
+      ],
+      rows: this.filteredLogs.map((log) => ({
+        createdAt: new Date(log.createdAt).toLocaleString(),
+        source: log.source,
+        fullName: log.fullName,
+        role: log.role,
+        action: log.action,
+        actor: log.actor
+      })),
+      emptyText: 'No logs match the selected filters.'
+    };
+  }
+
+  private buildUserExportConfig(group: UserLogGroup) {
+    const currentUser = this.authStorage.getUser();
+    const generatedBy = currentUser
+      ? `${currentUser.firstName ?? ''} ${currentUser.lastName ?? ''}`.trim() || currentUser.username || 'System'
+      : 'System';
+
+    return {
+      title: `User Audit Report · ${group.fullName}`,
+      subtitle: `Detailed timeline for ${group.role} account`,
+      generatedBy,
+      summary: [
+        { label: 'User', value: group.fullName },
+        { label: 'Role', value: group.role },
+        { label: 'Total Events', value: group.totalLogs },
+        { label: 'Account Events', value: group.accountLogs },
+        { label: 'Contract Events', value: group.contractLogs },
+        { label: 'Latest Event', value: new Date(group.latestAt).toLocaleString() }
+      ],
+      columns: [
+        { key: 'createdAt', label: 'Date / Time' },
+        { key: 'source', label: 'Source' },
+        { key: 'action', label: 'Action' },
+        { key: 'actor', label: 'Actor' },
+        { key: 'details', label: 'Details' }
+      ],
+      rows: group.entries.map((log) => {
+        const diffs = this.getChangedFields(log);
+        const details = diffs.length
+          ? diffs.map((d) => `${d.field}: ${d.oldValue} -> ${d.newValue}`).join(' | ')
+          : (this.hasRawDetails(log) ? `Old: ${this.getRawOld(log)} | New: ${this.getRawNew(log)}` : 'No field changes');
+        return {
+          createdAt: new Date(log.createdAt).toLocaleString(),
+          source: log.source,
+          action: log.action,
+          actor: log.actor,
+          details
+        };
+      }),
+      emptyText: 'No events found for this user.'
+    };
   }
 }

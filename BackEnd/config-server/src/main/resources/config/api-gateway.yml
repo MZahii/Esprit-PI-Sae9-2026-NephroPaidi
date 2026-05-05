@@ -39,11 +39,23 @@ spring:
               predicates:
                 - Path=/api/patients/**,/api/contracts/**,/api/observability/**
 
+            # Administration Service - Hospital structure, resources and staff assignments
+            # These controllers are exposed without /api prefix in administration-service,
+            # so we rewrite /api/<segment> -> /<segment> at the gateway.
+            - id: administration-service-structure-api
+              uri: lb://administration-service
+              predicates:
+                - Path=/api/hospital-structure/**,/api/hospital-resources/**,/api/staff-assignments/**
+              filters:
+                - RewritePath=/api/?(.*), /$1
+
             # Clinical Service - Audit logs
             - id: clinical-service-api
               uri: lb://clinical-service
               predicates:
                 - Path=/api/clinical/**
+              filters:
+                - RewritePath=/api/clinical/?(?<segment>.*), /clinical/$\{segment}
 
             # Communication Service - Guardian/staff messaging and appointment requests
             - id: communication-service-api
@@ -70,6 +82,8 @@ spring:
               uri: lb://ops-service
               predicates:
                 - Path=/api/ops/**
+              filters:
+                - RewritePath=/api/ops/?(.*), /api/$1
 
             # AI Service - Pediatric dosing verification
             - id: ai-service-api

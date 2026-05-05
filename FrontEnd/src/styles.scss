@@ -12,3 +12,18 @@ body {
 * {
   box-sizing: border-box;
 }
+
+body.np-theme-dark {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+body.np-theme-dark .card {
+  background-color: #111827;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+body.np-theme-dark .text-muted {
+  color: #94a3b8 !important;
+}

@@ -7,6 +7,7 @@ import { PharmacyService } from '../../../../core/services/pharmacy.service';
 import { PharmacyRealtimeService } from '../../../../core/services/pharmacy-realtime.service';
 import { PharmacyPrescription, DispenseRequest } from '../../../../core/models/pharmacy.models';
 import { AuthStorageService } from '../../../../core/auth/auth-storage.service';
+import { AiService, DoseVerificationRequest, DoseVerificationResponse } from '../../../../core/services/ai.service';
 
 interface DispenseItem { med: any; batchId: number | null; quantity: number; }
 interface BatchOption  { batchId: number; label: string; maxQty: number; medicationName: string; }
@@ -21,7 +22,15 @@ export class PrescriptionsComponent implements OnInit, OnDestroy {
   private svc = inject(PharmacyService);
   private auth = inject(AuthStorageService);
   private realtime = inject(PharmacyRealtimeService);
+  private aiSvc = inject(AiService);
   private sub = new Subscription();
+
+  // Pediatric dose verification
+  showDoseVerify = false;
+  doseVerifyForm: Partial<DoseVerificationRequest> = {};
+  doseVerifyResult: DoseVerificationResponse | null = null;
+  doseVerifying = signal(false);
+  doseVerifyError = signal('');
 
   prescriptions = signal<PharmacyPrescription[]>([]);
   filtered = signal<PharmacyPrescription[]>([]);
@@ -243,6 +252,52 @@ export class PrescriptionsComponent implements OnInit, OnDestroy {
         this.dispenseSubmitting.set(false);
       }
     });
+  }
+
+  openDoseVerify() {
+    const meds = this.parseMedications(this.selectedPrescription?.medicationsJson);
+    const firstMed = meds[0];
+    this.doseVerifyForm = {
+      age_years:           undefined,
+      weight_kg:           undefined,
+      prescribed_dose_mg:  firstMed?.dosage || undefined,
+      recommended_dose_mg: undefined,
+      frequency_per_day:   firstMed?.frequency || undefined,
+    };
+    this.doseVerifyResult = null;
+    this.doseVerifyError.set('');
+    this.showDoseVerify = true;
+  }
+
+  submitDoseVerify() {
+    const f = this.doseVerifyForm;
+    if (!f.age_years || !f.weight_kg || !f.prescribed_dose_mg || !f.recommended_dose_mg || !f.frequency_per_day) {
+      this.doseVerifyError.set('All fields are required.'); return;
+    }
+    this.doseVerifyError.set('');
+    this.doseVerifying.set(true);
+    this.aiSvc.verifyPediatricDose(f as DoseVerificationRequest).subscribe({
+      next: r => { this.doseVerifyResult = r; this.doseVerifying.set(false); },
+      error: e => { this.doseVerifyError.set(e?.error?.detail || 'Verification failed'); this.doseVerifying.set(false); }
+    });
+  }
+
+  doseResultClass(prediction: string): string {
+    switch (prediction) {
+      case 'SAFE':      return 'text-success';
+      case 'OVERDOSE':  return 'text-danger';
+      case 'UNDERDOSE': return 'text-warning';
+      default:          return '';
+    }
+  }
+
+  doseResultIcon(prediction: string): string {
+    switch (prediction) {
+      case 'SAFE':      return 'bi-check-circle-fill';
+      case 'OVERDOSE':  return 'bi-exclamation-triangle-fill';
+      case 'UNDERDOSE': return 'bi-arrow-down-circle-fill';
+      default:          return 'bi-circle';
+    }
   }
 
   private showToast(msg: string, ok = true) {

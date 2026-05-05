@@ -39,4 +39,6 @@ public class CreateHrAccountRequest {
 
     @NotNull(message = "Sex is required")
     private Sex sex;
+
+    private String avatarUrl;
 }

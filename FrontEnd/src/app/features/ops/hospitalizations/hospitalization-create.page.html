@@ -1,0 +1,107 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Create Hospitalization Workflow</h5>
+    </div>
+
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Home</a></li>
+      <li class="breadcrumb-item"><a routerLink="/backoffice/consultations">Consultations</a></li>
+      <li class="breadcrumb-item">Hospitalization</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="card stretch stretch-full">
+        <div class="card-header">
+          <h5 class="card-title">Context</h5>
+        </div>
+        <div class="card-body">
+          <div class="info-line">
+            <span>Consultation</span>
+            <strong>{{ consultationId || 'Not linked' }}</strong>
+          </div>
+          <div class="info-line">
+            <span>Patient ID</span>
+            <strong>{{ patientId || '-' }}</strong>
+          </div>
+          <div class="text-muted small mt-3">
+            Build the nurse task list here so the operational follow-up can start without changing the consultation logic.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card stretch stretch-full">
+        <div class="card-header">
+          <h5 class="card-title">Hospitalization Request</h5>
+        </div>
+        <div class="card-body">
+          <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+          <div *ngIf="success" class="alert alert-success">{{ success }}</div>
+
+          <div class="mb-3">
+            <label class="form-label">Reason for hospitalization</label>
+            <textarea
+              class="form-control"
+              rows="4"
+              [(ngModel)]="form.reason"
+              placeholder="Describe why the patient should be hospitalized and what the nurse team should monitor."
+            ></textarea>
+          </div>
+
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h6 class="mb-0">Care Task List</h6>
+            <button type="button" class="btn btn-light btn-sm" (click)="addTask()">Add task</button>
+          </div>
+
+          <div *ngIf="tasks.length === 0" class="text-muted">No task added yet.</div>
+
+          <div class="task-card" *ngFor="let task of tasks; let i = index">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-4">
+                <label class="form-label">Task type</label>
+                <select class="form-select" [(ngModel)]="task.type">
+                  <option *ngFor="let option of taskTypeOptions" [ngValue]="option">{{ option }}</option>
+                </select>
+              </div>
+              <div class="col-md-5">
+                <label class="form-label">Task title</label>
+                <input class="form-control" [(ngModel)]="task.title" placeholder="Ex: Check temperature" />
+              </div>
+              <div class="col-md-3">
+                <button type="button" class="btn btn-outline-danger w-100" (click)="removeTask(task.localId)">Remove</button>
+              </div>
+
+              <div class="col-md-7">
+                <label class="form-label">Instructions</label>
+                <input class="form-control" [(ngModel)]="task.instructions" placeholder="What should the nurse do or look for?" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Value type</label>
+                <select class="form-select" [(ngModel)]="task.measurementKind">
+                  <option *ngFor="let option of measurementKindOptions" [ngValue]="option">{{ option }}</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Unit</label>
+                <input class="form-control" [(ngModel)]="task.expectedUnit" placeholder="kg, °C..." />
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 mt-4">
+            <a class="btn btn-light" [routerLink]="['/backoffice/consultations', consultationId || '']">Cancel</a>
+            <button type="button" class="btn btn-primary" [disabled]="saving" (click)="submit()">
+              {{ saving ? 'Creating...' : 'Create hospitalization workflow' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

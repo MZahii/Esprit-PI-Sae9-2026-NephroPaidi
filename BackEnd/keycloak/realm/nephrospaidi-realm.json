@@ -5,6 +5,7 @@
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
+  "verifyEmail": true,
   "editUsernameAllowed": false,
 
   "roles": {
@@ -16,6 +17,7 @@
       { "name": "NURSE" },
       { "name": "SURGEON" },
       { "name": "PHARMACIST" },
+      { "name": "LAB_AGENT" },
       { "name": "GUARDIAN" }
     ]
   },

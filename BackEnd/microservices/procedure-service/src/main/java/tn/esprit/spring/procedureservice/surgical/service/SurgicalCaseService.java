@@ -2,6 +2,7 @@ package tn.esprit.spring.procedureservice.surgical.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Service;
 import tn.esprit.spring.procedureservice.notification.service.ResendEmailService;
@@ -27,6 +28,18 @@ public class SurgicalCaseService {
         "DONE",
         "CANCELLED",
         "ARCHIVED"
+    );
+    private static final Set<String> ALLOWED_OFFER_STATUSES = Set.of("PENDING", "ACCEPTED", "REJECTED");
+    private static final Map<String, Set<String>> ALLOWED_STATUS_TRANSITIONS = Map.of(
+        "OPEN", Set.of("OPEN", "READY_FOR_INTERVENTION", "BLOCKED_PREOP", "CANCELLED"),
+        "READY_FOR_INTERVENTION", Set.of("READY_FOR_INTERVENTION", "IN_PROGRESS", "CANCELLED"),
+        "IN_PROGRESS", Set.of("IN_PROGRESS", "POSTOP_STABLE", "POSTOP_UNSTABLE", "DONE", "CANCELLED"),
+        "POSTOP_STABLE", Set.of("POSTOP_STABLE", "DONE", "ARCHIVED"),
+        "POSTOP_UNSTABLE", Set.of("POSTOP_UNSTABLE", "ARCHIVED"),
+        "BLOCKED_PREOP", Set.of("BLOCKED_PREOP", "ARCHIVED"),
+        "DONE", Set.of("DONE", "ARCHIVED"),
+        "CANCELLED", Set.of("CANCELLED", "ARCHIVED"),
+        "ARCHIVED", Set.of("ARCHIVED")
     );
 
     private final SurgicalCaseRepository repository;
@@ -65,7 +78,7 @@ public class SurgicalCaseService {
         surgicalCase.setScheduledStartTime(request.scheduledStartTime());
         surgicalCase.setEstimatedDurationMinutes(request.estimatedDurationMinutes());
         surgicalCase.setOperatingRoom(request.operatingRoom());
-        surgicalCase.setStatus(request.status());
+        surgicalCase.setStatus("OPEN");
         surgicalCase.setOfferStatus("PENDING");
         SurgicalCase saved = repository.save(surgicalCase);
         resendEmailService.sendSurgicalCaseCreatedNotification(saved);
@@ -89,13 +102,19 @@ public class SurgicalCaseService {
             throw new BusinessException("Cannot start surgery: latest Pre-Op decision is BLOCKED.");
         }
 
+        validateStatusTransition(surgicalCase.getStatus(), requestedStatus);
+
         surgicalCase.setStatus(requestedStatus);
         return repository.save(surgicalCase);
     }
 
     public SurgicalCase decideOffer(Long id, DecideTransplantOfferRequest request) {
         SurgicalCase surgicalCase = getById(id);
-        surgicalCase.setOfferStatus(request.offerStatus());
+        String offerStatus = normalizeStatus(request.offerStatus());
+        if (!ALLOWED_OFFER_STATUSES.contains(offerStatus)) {
+            throw new BusinessException("Invalid transplant offer status: " + offerStatus);
+        }
+        surgicalCase.setOfferStatus(offerStatus);
         return repository.save(surgicalCase);
     }
 
@@ -145,6 +164,15 @@ public class SurgicalCaseService {
 
     private boolean isLockedStatus(String status) {
         return "BLOCKED_PREOP".equals(status) || "POSTOP_UNSTABLE".equals(status);
+    }
+
+    private void validateStatusTransition(String currentStatus, String requestedStatus) {
+        Set<String> allowedTargets = ALLOWED_STATUS_TRANSITIONS.getOrDefault(currentStatus, Set.of(currentStatus));
+        if (!allowedTargets.contains(requestedStatus)) {
+            throw new BusinessException(
+                "Invalid transition from " + currentStatus + " to " + requestedStatus + "."
+            );
+        }
     }
 
     private boolean parseBooleanFlag(String notes, String key) {

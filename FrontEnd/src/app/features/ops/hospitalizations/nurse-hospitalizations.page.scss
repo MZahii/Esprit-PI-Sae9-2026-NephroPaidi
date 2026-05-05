@@ -1,0 +1,22 @@
+.summary-card {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background: #fff;
+}
+
+.summary-card.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.task-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #fff;
+}

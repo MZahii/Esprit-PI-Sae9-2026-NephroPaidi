@@ -6,6 +6,12 @@ import { AuthStorageService } from './auth-storage.service';
 
 let sessionRedirectScheduled = false;
 
+function isPublicApiRequest(url: string): boolean {
+  return (
+    url.includes('/api/users/public/doctors')
+  );
+}
+
 function mapFriendlyMessage(status: number): string {
   switch (status) {
     case 0:
@@ -24,11 +30,21 @@ function mapFriendlyMessage(status: number): string {
 }
 
 function buildFriendlyError(error: HttpErrorResponse): HttpErrorResponse {
-  const friendlyMessage = mapFriendlyMessage(error.status);
   const payload = error?.error;
+  const backendMessage =
+    payload && typeof payload === 'object'
+      ? (payload as Record<string, unknown>)['message']
+      : undefined;
+  const shouldKeepBackendMessage =
+    typeof backendMessage === 'string' &&
+    backendMessage.trim().length > 0 &&
+    [400, 404, 409, 422].includes(error.status);
+  const resolvedMessage = shouldKeepBackendMessage
+    ? backendMessage as string
+    : mapFriendlyMessage(error.status);
   const normalizedPayload = payload && typeof payload === 'object'
-    ? { ...(payload as Record<string, unknown>), message: friendlyMessage }
-    : { message: friendlyMessage };
+    ? { ...(payload as Record<string, unknown>), message: resolvedMessage }
+    : { message: resolvedMessage };
 
   return new HttpErrorResponse({
     error: normalizedPayload,
@@ -50,8 +66,14 @@ export const authSessionInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401) {
+      if (
+        error.status === 401
+        && !isLoginRequest
+        && !isPublicApiRequest(req.url)
+        && authStorage.isAuthenticated()
+      ) {
         authStorage.clear();
+        authStorage.setPostLoginRedirect(router.url);
         if (!sessionRedirectScheduled && router.url !== '/login') {
           sessionRedirectScheduled = true;
           setTimeout(() => {

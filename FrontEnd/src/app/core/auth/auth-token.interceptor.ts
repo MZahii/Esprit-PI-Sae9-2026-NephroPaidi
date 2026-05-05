@@ -1,7 +1,9 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { catchError, from, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthStorageService } from './auth-storage.service';
+import { getValidToken } from './keycloak.service';
 
 export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
   const authStorage = inject(AuthStorageService);
@@ -13,16 +15,28 @@ export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
-  const token = authStorage.getAccessToken();
-  if (!token || !token.trim()) {
+  const storedToken = authStorage.getAccessToken();
+  if (!storedToken || !storedToken.trim()) {
     return next(req);
   }
 
-  const authReq = req.clone({
-    setHeaders: {
-      Authorization: `Bearer ${token}`
-    }
-  });
+  return from(getValidToken()).pipe(
+    catchError(() => {
+      return throwError(() => new HttpErrorResponse({
+        error: { message: 'Your session has expired. Please login again.' },
+        status: 401,
+        statusText: 'Unauthorized',
+        url: req.url
+      }));
+    }),
+    switchMap((token) => {
+      const authReq = req.clone({
+        setHeaders: {
+          Authorization: `Bearer ${token}`
+        }
+      });
 
-  return next(authReq);
+      return next(authReq);
+    })
+  );
 };

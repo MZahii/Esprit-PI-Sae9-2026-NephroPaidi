@@ -126,7 +126,30 @@ export class ProcedureApiService {
     return this.http.post<DialysisPlan>(`${this.baseUrl}/api/procedures/dialysis/plans`, payload);
   }
 
-  updateDialysisPlan(id: number, payload: { status: string }): Observable<DialysisPlan> {
+  downloadDialysisPlanSummaryPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/api/procedures/dialysis/plans/${id}/summary-pdf`, {
+      responseType: 'blob'
+    });
+  }
+
+  updateDialysisPlan(id: number, payload: {
+    firstName: string;
+    lastName: string;
+    doctorId: string;
+    dialysisType: string;
+    sessionsPerWeek: number;
+    sessionDurationMinutes: number;
+    startDate: string;
+    endDate?: string | null;
+    daysOfWeek: string;
+    bloodFlowRate?: number | null;
+    dialysateFlowRate?: number | null;
+    ultrafiltrationGoal?: number | null;
+    dialysisCenterId?: string | null;
+    roomNumber?: string | null;
+    machineId?: string | null;
+    status: string;
+  }): Observable<DialysisPlan> {
     return this.http.put<DialysisPlan>(`${this.baseUrl}/api/procedures/dialysis/plans/${id}`, payload);
   }
 
@@ -217,6 +240,12 @@ export class ProcedureApiService {
     status: string;
   }): Observable<SurgicalCase> {
     return this.http.post<SurgicalCase>(`${this.baseUrl}/api/procedures/surgical/cases`, payload);
+  }
+
+  downloadSurgicalCaseSummaryPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/api/procedures/surgical/cases/${id}/summary-pdf`, {
+      responseType: 'blob'
+    });
   }
 
   updateSurgicalCase(id: number, payload: { status: string }): Observable<SurgicalCase> {

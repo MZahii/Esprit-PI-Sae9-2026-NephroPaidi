@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tn.esprit.spring.procedureservice.shared.mapper.SurgicalCaseMapper;
-import tn.esprit.spring.procedureservice.surgical.dto.request.AddObservationRequest;
+import tn.esprit.spring.procedureservice.surgical.dto.request.CreateCareTaskRequest;
 import tn.esprit.spring.procedureservice.surgical.dto.request.UpdateCareTaskRequest;
 import tn.esprit.spring.procedureservice.surgical.dto.response.CareTaskResponse;
 import tn.esprit.spring.procedureservice.surgical.service.CareTasksService;
@@ -25,7 +25,7 @@ public class CareTaskController {
     }
 
     @PostMapping
-    public CareTaskResponse create(@Valid @RequestBody AddObservationRequest request) {
+    public CareTaskResponse create(@Valid @RequestBody CreateCareTaskRequest request) {
         return SurgicalCaseMapper.toResponse(service.create(request));
     }
 

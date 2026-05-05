@@ -42,6 +42,7 @@ services:
       - "8761:8761"
 
   api-gateway:
+    profiles: ["container-gateway"]
     build:
       context: ./api-gateway
     container_name: nephro-api-gateway

@@ -44,6 +44,7 @@ public class StaffContractServiceImpl implements StaffContractService {
             "SURGEON",
             "PHARMACIST",
             "RECEPTIONIST",
+            "LAB_AGENT",
             "HR"
     );
 
@@ -380,6 +381,7 @@ public class StaffContractServiceImpl implements StaffContractService {
             case "SURGEON" -> "surg";
             case "PHARMACIST" -> "pharm";
             case "RECEPTIONIST" -> "recp";
+            case "LAB_AGENT" -> "lab";
             case "HR" -> "hr";
             default -> "staff";
         };

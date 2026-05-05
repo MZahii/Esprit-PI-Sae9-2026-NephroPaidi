@@ -1,4 +1,4 @@
-import {
+﻿import {
   AfterViewInit,
   Component,
   HostListener,
@@ -82,6 +82,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
   notifications: HeaderNotification[] = [];
   unreadCount = 0;
   hasNewNotificationPulse = false;
+  notificationsEnabled = true;
 
   private notificationsTimer?: ReturnType<typeof setInterval>;
   private lastNotificationId?: number;
@@ -94,6 +95,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     clinic: false,
     pharmacy: false,
     procedures: false,
+    ops: false,
     communication: false,
     appointments: false,
     doctorClinical: false
@@ -205,16 +207,12 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   private buildNavigationItems(): BackofficeNavItem[] {
-    const dashboardRoute = (this.isAdmin || this.isHr)
-      ? '/backoffice/user-admin'
-      : '/backoffice/dashboard';
-
     const items: BackofficeNavItem[] = [
       {
         key: 'dashboard',
         label: 'Dashboard',
         icon: 'feather-airplay',
-        route: dashboardRoute,
+        route: '/backoffice/dashboard',
         exact: true
       }
     ];
@@ -267,11 +265,6 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
         label: 'Accounts',
         icon: 'feather-users',
         children: [
-          {
-            label: 'Create Internal User',
-            route: '/backoffice/create-internal-user',
-            implemented: true
-          },
           {
             label: 'Create Staff Account',
             route: '/backoffice/create-staff',
@@ -326,25 +319,43 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
           label: 'Clinic Resources',
           icon: 'feather-grid',
           children: [
-            {
-              label: 'Resources List',
-              implemented: false,
-              note: 'Coming soon'
-            },
-            ...(this.isHr
+            ...(this.isAdmin
               ? [
                 {
-                  label: 'Create Clinic Resource',
-                  implemented: false,
-                  note: 'Coming soon'
+                  label: 'Hospital Structure',
+                  route: '/backoffice/hospital-structure',
+                  implemented: true
+                } as BackofficeNavChild,
+                {
+                  label: 'Office Assignments',
+                  route: '/backoffice/office-assignments',
+                  implemented: true
                 } as BackofficeNavChild
               ]
               : []),
-            {
-              label: 'Rooms / Beds / Dialysis Machines',
-              implemented: false,
-              note: 'Coming soon'
-            }
+            ...(this.isHr
+              ? [
+                {
+                  label: 'Equipment Inventory',
+                  route: '/backoffice/equipment-inventory',
+                  implemented: true
+                } as BackofficeNavChild
+              ]
+              : []),
+            ...(this.isHr
+              ? [
+                {
+                  label: 'Equipment Placement',
+                  route: '/backoffice/equipment-placement',
+                  implemented: true
+                } as BackofficeNavChild,
+                {
+                  label: 'Staff Placements',
+                  route: '/backoffice/staff-placements',
+                  implemented: true
+                } as BackofficeNavChild
+              ]
+              : [])
           ]
         }
       );
@@ -425,14 +436,31 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
             route: '/backoffice/pharmacy/stock',
             implemented: true
           },
-          {
-            label: 'Suppliers',
-            route: '/backoffice/pharmacy/suppliers',
-            implemented: true
-          },
+          ...(this.isPharmacist || this.isAdmin
+            ? [{
+                label: 'Suppliers',
+                route: '/backoffice/pharmacy/suppliers',
+                implemented: true
+              } as BackofficeNavChild]
+            : []),
           {
             label: 'Dispensations',
             route: '/backoffice/pharmacy/dispensations',
+            implemented: true
+          }
+        ]
+      });
+    }
+
+    if (this.isNurse) {
+      items.push({
+        key: 'ops',
+        label: 'OPS Workflow',
+        icon: 'feather-clipboard',
+        children: [
+          {
+            label: 'Hospitalizations',
+            route: '/backoffice/nurse/hospitalizations',
             implemented: true
           }
         ]
@@ -446,17 +474,12 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
         icon: 'feather-calendar',
         children: [
           {
-            label: 'Appointments Board',
+            label: 'Appointments',
             route: '/backoffice/appointments',
             implemented: true
           },
           {
-            label: 'Clinical Appointments',
-            route: '/backoffice/appointments-clinical',
-            implemented: true
-          },
-          {
-            label: 'Appointment Requests',
+            label: 'Requests',
             route: '/backoffice/appointments/requests',
             implemented: true
           }
@@ -478,11 +501,6 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
           {
             label: 'Consultations',
             route: '/backoffice/consultations',
-            implemented: true
-          },
-          {
-            label: 'Lab Requests',
-            route: '/backoffice/consultations/lab-requests',
             implemented: true
           }
         ]
@@ -543,6 +561,8 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
       BACKOFFICE_STYLES,
       BACKOFFICE_SCRIPTS
     );
+    this.applyPreferences(this.authStorage.getPreferences());
+    await this.loadAccountPreferences();
 
     this.navSub = this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
@@ -554,10 +574,12 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
         }, 120);
       });
 
-    await this.loadNotifications(true);
-    this.notificationsTimer = setInterval(() => {
-      this.loadNotifications();
-    }, this.notificationsPollMs);
+    if (this.notificationsEnabled) {
+      await this.loadNotifications(true);
+      this.notificationsTimer = setInterval(() => {
+        this.loadNotifications();
+      }, this.notificationsPollMs);
+    }
   }
 
   ngAfterViewInit(): void {
@@ -618,6 +640,9 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   async toggleNotifications(event: MouseEvent): Promise<void> {
+    if (!this.notificationsEnabled) {
+      return;
+    }
     event.stopPropagation();
     this.userMenuOpen = false;
     this.notificationsOpen = !this.notificationsOpen;
@@ -657,6 +682,11 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   private async loadNotifications(initial = false): Promise<void> {
+    if (!this.notificationsEnabled) {
+      this.notifications = [];
+      this.unreadCount = 0;
+      return;
+    }
     if (this.loadingNotifications) return;
     this.loadingNotifications = true;
     try {
@@ -701,5 +731,31 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
   async onLogout(): Promise<void> {
     this.userMenuOpen = false;
     await logout();
+  }
+
+  private async loadAccountPreferences(): Promise<void> {
+    try {
+      const token = await getValidToken();
+      const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+      const response = await firstValueFrom(this.http.get<any>(`${environment.apiBaseUrl}/api/users/me/settings`, { headers }));
+      const preferences = {
+        theme: String(response?.theme ?? 'light'),
+        preferredLanguage: String(response?.preferredLanguage ?? 'en'),
+        notificationsEnabled: response?.notificationsEnabled !== false
+      };
+      this.authStorage.setPreferences(preferences);
+      this.applyPreferences(preferences);
+    } catch {
+      // Keep locally cached preferences when settings endpoint is unavailable.
+    }
+  }
+
+  private applyPreferences(preferences: { theme: string; preferredLanguage: string; notificationsEnabled: boolean }): void {
+    const theme = preferences.theme || 'light';
+    const language = preferences.preferredLanguage || 'en';
+    this.notificationsEnabled = preferences.notificationsEnabled !== false;
+    document.documentElement.setAttribute('lang', language);
+    document.documentElement.setAttribute('data-theme-preference', theme);
+    document.body.classList.toggle('np-theme-dark', theme === 'dark');
   }
 }

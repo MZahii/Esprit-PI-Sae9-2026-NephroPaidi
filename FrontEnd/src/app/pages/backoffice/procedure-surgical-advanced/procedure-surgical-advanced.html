@@ -14,12 +14,15 @@
 <div class="main-content">
   <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="alert alert-success mb-3">{{ successMessage }}</div>
+  <div *ngIf="partialLoadWarnings.length" class="alert alert-warning mb-3">
+    <div *ngFor="let warning of partialLoadWarnings">{{ warning }}</div>
+  </div>
   <div *ngIf="loading" class="empty-state">Loading surgical workflow...</div>
 
   <div class="card mb-4" *ngIf="!loading">
     <div class="card-body">
       <label class="form-label">Selected Surgical Case</label>
-      <select class="form-select" [(ngModel)]="selectedCaseId">
+      <select class="form-select" [ngModel]="selectedCaseId" (ngModelChange)="onSelectedCaseChange($event)">
         <option *ngFor="let c of surgicalCases" [value]="c.id">
           {{ c.firstName || '-' }} {{ c.lastName || '' }} | {{ c.status }}
         </option>

@@ -5,6 +5,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import tn.esprit.spring.communicationservice.client.UserServiceClientFeign;
 import tn.esprit.spring.communicationservice.integration.dto.UserSummary;
 
@@ -19,7 +21,8 @@ public class UserDirectoryClient {
     private final UserServiceClientFeign userServiceClientFeign;
 
     public UserSummary resolveGuardian(String jwtSub, String preferredUsername) {
-        List<UserSummary> guardians = tryLoadGuardians();
+        String token = currentAuthorizationHeader();
+        List<UserSummary> guardians = tryLoadGuardians(token);
 
         if (guardians == null || guardians.isEmpty()) {
             throw new ResponseStatusException(HttpStatusCode.valueOf(404), "No guardian users found in user-service");
@@ -33,12 +36,13 @@ public class UserDirectoryClient {
     }
 
     public List<UserSummary> loadDoctors() {
+        String token = currentAuthorizationHeader();
         try {
-            return userServiceClientFeign.getDoctors(null);
+            return userServiceClientFeign.getDoctors(token);
         } catch (ResponseStatusException ex) {
             if (HttpStatus.NOT_FOUND.equals(ex.getStatusCode())) {
                 try {
-                    return userServiceClientFeign.getDoctorsAlt(null);
+                    return userServiceClientFeign.getDoctorsAlt(token);
                 } catch (ResponseStatusException altEx) {
                     throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Failed to load doctors from user-service");
                 }
@@ -47,13 +51,13 @@ public class UserDirectoryClient {
         }
     }
 
-    private List<UserSummary> tryLoadGuardians() {
+    private List<UserSummary> tryLoadGuardians(String token) {
         try {
-            return userServiceClientFeign.getGuardians(null);
+            return userServiceClientFeign.getGuardians(token);
         } catch (ResponseStatusException ex) {
             if (HttpStatus.NOT_FOUND.equals(ex.getStatusCode())) {
                 try {
-                    return userServiceClientFeign.getGuardiansAlt(null);
+                    return userServiceClientFeign.getGuardiansAlt(token);
                 } catch (ResponseStatusException altEx) {
                     throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Failed to load guardians from user-service");
                 }
@@ -63,14 +67,14 @@ public class UserDirectoryClient {
     }
 
     private List<UserSummary> fetchGuardians(String endpoint) {
-        return tryLoadGuardians();
+        return tryLoadGuardians(currentAuthorizationHeader());
     }
 
     private List<UserSummary> fetchUsers(String endpoint, String label) {
         if (endpoint.contains("doctors")) {
             return loadDoctors();
         }
-        return tryLoadGuardians();
+        return tryLoadGuardians(currentAuthorizationHeader());
     }
 
     private boolean isMatch(UserSummary user, String jwtSub, String preferredUsername) {
@@ -87,5 +91,19 @@ public class UserDirectoryClient {
         }
 
         return left.trim().toLowerCase(Locale.ROOT).equals(right.trim().toLowerCase(Locale.ROOT));
+    }
+
+    private String currentAuthorizationHeader() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null || attributes.getRequest() == null) {
+            return null;
+        }
+
+        String authorization = attributes.getRequest().getHeader("Authorization");
+        if (authorization == null || authorization.isBlank()) {
+            return null;
+        }
+
+        return authorization.trim();
     }
 }

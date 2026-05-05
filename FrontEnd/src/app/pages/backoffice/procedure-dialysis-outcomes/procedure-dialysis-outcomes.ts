@@ -81,14 +81,14 @@ export class ProcedureDialysisOutcomesComponent implements OnInit {
           },
           error: (err: { error?: { message?: string }; message?: string }) => {
             this.loading = false;
-            this.errorMessage = err?.error?.message || err?.message || 'Failed to load dialysis plans.';
+            this.errorMessage = this.formatApiError(err, 'Failed to load dialysis plans.');
             this.refreshView();
           }
         });
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
         this.loading = false;
-        this.errorMessage = err?.error?.message || err?.message || 'Failed to load dialysis sessions.';
+        this.errorMessage = this.formatApiError(err, 'Failed to load dialysis sessions.');
         this.refreshView();
       }
     });
@@ -111,7 +111,7 @@ export class ProcedureDialysisOutcomesComponent implements OnInit {
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
         this.loading = false;
-        this.errorMessage = err?.error?.message || err?.message || 'Failed to load dialysis outcomes.';
+        this.errorMessage = this.formatApiError(err, 'Failed to load dialysis outcomes.');
         this.refreshView();
       }
     });
@@ -122,6 +122,7 @@ export class ProcedureDialysisOutcomesComponent implements OnInit {
 
     if (!sessionId || Number.isNaN(sessionId)) {
       this.errorMessage = 'Session is required.';
+      this.refreshView();
       return;
     }
 
@@ -138,7 +139,7 @@ export class ProcedureDialysisOutcomesComponent implements OnInit {
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
         this.saving = false;
-        this.errorMessage = err?.error?.message || err?.message || 'Failed to create dialysis outcome.';
+        this.errorMessage = this.formatApiError(err, 'Failed to create dialysis outcome.');
         this.refreshView();
       }
     });
@@ -147,6 +148,12 @@ export class ProcedureDialysisOutcomesComponent implements OnInit {
   validateOutcome(outcome: DialysisOutcome): void {
     const validated = this.editValidated[outcome.id] ?? false;
     const summary = (this.editSummary[outcome.id] ?? '').trim();
+
+    if (validated && summary.length < 5) {
+      this.errorMessage = 'Validated outcomes require a summary of at least 5 characters.';
+      this.refreshView();
+      return;
+    }
 
     this.errorMessage = '';
     this.successMessage = '';
@@ -158,13 +165,24 @@ export class ProcedureDialysisOutcomesComponent implements OnInit {
         this.loadOutcomes();
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
-        this.errorMessage = err?.error?.message || err?.message || 'Failed to validate dialysis outcome.';
+        this.errorMessage = this.formatApiError(err, 'Failed to validate dialysis outcome.');
         this.refreshView();
       }
     });
   }
 
   private refreshView(): void {
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
+  }
+
+  private formatApiError(
+    err: { error?: { message?: string }; message?: string },
+    fallback: string
+  ): string {
+    const message = err?.error?.message || err?.message || '';
+    if (message.includes('503') || message.includes('Service Unavailable')) {
+      return 'Procedure service is temporarily unavailable. Verify procedure-service and the API Gateway, then retry.';
+    }
+    return message || fallback;
   }
 }

@@ -14,6 +14,7 @@ import tn.esprit.spring.procedureservice.dialysis.domain.entity.DialysisPlan;
 import tn.esprit.spring.procedureservice.dialysis.domain.entity.DialysisSession;
 import tn.esprit.spring.procedureservice.dialysis.dto.request.CreateDialysisSessionRequest;
 import tn.esprit.spring.procedureservice.dialysis.repository.DialysisSessionRepository;
+import tn.esprit.spring.procedureservice.shared.exception.BusinessException;
 import tn.esprit.spring.procedureservice.shared.exception.NotFoundException;
 
 @Service
@@ -58,6 +59,10 @@ public class DialysisSessionService {
 
     public List<DialysisSession> generateFromPlan(Long planId) {
         DialysisPlan plan = planService.getById(planId);
+        String status = plan.getStatus() == null ? "" : plan.getStatus().trim().toUpperCase(Locale.ROOT);
+        if ("CANCELLED".equals(status) || "ARCHIVED".equals(status)) {
+            throw new BusinessException("Cannot generate sessions for a " + status + " dialysis plan.");
+        }
 
         LocalDate startDate = plan.getStartDate() != null ? plan.getStartDate() : LocalDate.now();
         LocalDate endDate = plan.getEndDate() != null ? plan.getEndDate() : startDate.plusWeeks(4).minusDays(1);

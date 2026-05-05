@@ -8,7 +8,7 @@ import { getValidToken } from '../../../core/auth/keycloak.service';
 import { AuthStorageService } from '../../../core/auth/auth-storage.service';
 import { environment } from '../../../../environments/environment';
 
-type StaffRole = 'DOCTOR' | 'NURSE' | 'SURGEON' | 'PHARMACIST' | 'RECEPTIONIST';
+type StaffRole = 'DOCTOR' | 'NURSE' | 'SURGEON' | 'PHARMACIST' | 'RECEPTIONIST' | 'LAB_AGENT';
 type AccountStatus = 'PENDING_CONTRACT' | 'ACTIVE' | 'INACTIVE';
 type AccessFilter = 'ALL' | 'ENABLED' | 'DISABLED';
 type ArchiveFilter = 'ALL' | 'LIVE' | 'ARCHIVED';
@@ -90,7 +90,7 @@ export class StaffList implements OnInit, OnDestroy {
   allContracts: ContractRow[] = [];
   contractsByStaffId: Record<number, ContractRow[]> = {};
 
-  readonly staffRoles: StaffRole[] = ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST'];
+  readonly staffRoles: StaffRole[] = ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST', 'LAB_AGENT'];
   readonly pageSizeOptions: number[] = [5, 10, 20];
   private refreshTimer?: ReturnType<typeof setInterval>;
 

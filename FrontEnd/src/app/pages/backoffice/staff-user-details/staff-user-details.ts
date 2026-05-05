@@ -21,6 +21,7 @@ interface UserRow {
   role: string;
   accountStatus: string;
   enabled: boolean;
+  avatarUrl?: string;
   deleted?: boolean;
 }
 
@@ -61,7 +62,7 @@ interface LogDiffInfo {
   parsed: boolean;
 }
 
-type StaffRole = 'DOCTOR' | 'NURSE' | 'SURGEON' | 'PHARMACIST' | 'RECEPTIONIST';
+type StaffRole = 'DOCTOR' | 'NURSE' | 'SURGEON' | 'PHARMACIST' | 'RECEPTIONIST' | 'LAB_AGENT';
 type Sex = 'MALE' | 'FEMALE';
 type ContractType = 'CDI' | 'CDD' | 'INTERNSHIP' | 'PART_TIME' | 'TEMPORARY';
 
@@ -100,7 +101,8 @@ export class StaffUserDetails implements OnInit {
     phone: '',
     dateOfBirth: '',
     sex: 'MALE' as Sex,
-    role: 'DOCTOR' as StaffRole
+    role: 'DOCTOR' as StaffRole,
+    avatarUrl: ''
   };
 
   contractForm = {
@@ -114,20 +116,9 @@ export class StaffUserDetails implements OnInit {
     notes: ''
   };
 
-  readonly staffRoles: StaffRole[] = ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST'];
+  readonly staffRoles: StaffRole[] = ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST', 'LAB_AGENT'];
   readonly sexOptions: Sex[] = ['MALE', 'FEMALE'];
   readonly contractTypeOptions: ContractType[] = ['CDI', 'CDD', 'INTERNSHIP', 'PART_TIME', 'TEMPORARY'];
-  readonly hrJobTitleOptions: string[] = ['HR Manager', 'Manager Assistant'];
-  readonly staffJobTitleOptions: string[] = [
-    'Pediatric Nephrologist',
-    'Nurse',
-    'Surgeon',
-    'Pharmacist',
-    'Receptionist',
-    'Administrative Officer'
-  ];
-  readonly hrDepartmentOptions: string[] = ['Human Resources', 'Administration'];
-  readonly staffDepartmentOptions: string[] = ['Medical', 'Nursing', 'Surgery', 'Pharmacy', 'Reception'];
   readonly hoursPerWeekOptionsByType: Record<ContractType, number[]> = {
     CDI: [35, 40, 45],
     CDD: [30, 35, 40],
@@ -227,14 +218,14 @@ export class StaffUserDetails implements OnInit {
     return this.role === 'ADMIN' && this.user?.role === 'HR';
   }
 
-  get contractJobTitleOptions(): string[] {
-    if (!this.canManageContracts || !this.user) return [];
-    return this.user.role === 'HR' ? this.hrJobTitleOptions : this.staffJobTitleOptions;
+  get fixedContractJobTitle(): string {
+    if (!this.user) return '';
+    return this.resolveRoleDescriptor(this.user.role).jobTitle;
   }
 
-  get contractDepartmentOptions(): string[] {
-    if (!this.canManageContracts || !this.user) return [];
-    return this.user.role === 'HR' ? this.hrDepartmentOptions : this.staffDepartmentOptions;
+  get fixedContractDepartment(): string {
+    if (!this.user) return '';
+    return this.resolveRoleDescriptor(this.user.role).department;
   }
 
   get hoursPerWeekOptions(): number[] {
@@ -274,7 +265,8 @@ export class StaffUserDetails implements OnInit {
       phone: this.user.phone ?? '',
       dateOfBirth: this.user.dateOfBirth ?? '',
       sex: (this.user.sex as Sex) || 'MALE',
-      role: (this.user.role as StaffRole) || 'DOCTOR'
+      role: (this.user.role as StaffRole) || 'DOCTOR',
+      avatarUrl: this.user.avatarUrl ?? ''
     };
   }
 
@@ -289,8 +281,8 @@ export class StaffUserDetails implements OnInit {
     this.errorMessage = '';
     this.contractForm = {
       contractType: contract.contractType as ContractType,
-      jobTitle: contract.jobTitle ?? '',
-      department: contract.department ?? '',
+      jobTitle: this.fixedContractJobTitle,
+      department: this.fixedContractDepartment,
       startDate: contract.startDate ?? '',
       endDate: contract.endDate ?? '',
       salary: Number(contract.salary ?? 0),
@@ -335,7 +327,8 @@ export class StaffUserDetails implements OnInit {
             lastName,
             email,
             dateOfBirth,
-            sex: this.profileForm.sex
+            sex: this.profileForm.sex,
+            avatarUrl: this.profileForm.avatarUrl.trim() || null
           }
         : {
             firstName,
@@ -344,7 +337,8 @@ export class StaffUserDetails implements OnInit {
             phone: this.user.phone || null,
             dateOfBirth,
             sex: this.profileForm.sex,
-            role: this.user.role
+            role: this.user.role,
+            avatarUrl: this.profileForm.avatarUrl.trim() || null
           };
       const endpoint = isHrAccount
         ? `${environment.apiBaseUrl}/api/users/hr/${this.user.id}`
@@ -376,11 +370,9 @@ export class StaffUserDetails implements OnInit {
     this.successMessage = '';
     this.errorMessage = '';
     try {
-      if (!this.contractJobTitleOptions.includes(this.contractForm.jobTitle)) {
-        throw new Error('Invalid job title.');
-      }
-      if (!this.contractDepartmentOptions.includes(this.contractForm.department)) {
-        throw new Error('Invalid department.');
+      this.syncContractRoleFields();
+      if (!this.contractForm.jobTitle || !this.contractForm.department) {
+        throw new Error('Contract role metadata could not be resolved.');
       }
       if (this.contractForm.hoursPerWeek === '' || !this.hoursPerWeekOptions.includes(Number(this.contractForm.hoursPerWeek))) {
         throw new Error('Please select valid hours/week based on contract type.');
@@ -432,6 +424,38 @@ export class StaffUserDetails implements OnInit {
     if (this.contractForm.hoursPerWeek === '') return;
     if (!this.hoursPerWeekOptions.includes(Number(this.contractForm.hoursPerWeek))) {
       this.contractForm.hoursPerWeek = '';
+    }
+  }
+
+  private syncContractRoleFields(): void {
+    if (!this.user) {
+      this.contractForm.jobTitle = '';
+      this.contractForm.department = '';
+      return;
+    }
+    const descriptor = this.resolveRoleDescriptor(this.user.role);
+    this.contractForm.jobTitle = descriptor.jobTitle;
+    this.contractForm.department = descriptor.department;
+  }
+
+  private resolveRoleDescriptor(role: string): { jobTitle: string; department: string } {
+    switch (role) {
+      case 'HR':
+        return { jobTitle: 'HR Manager', department: 'Human Resources' };
+      case 'DOCTOR':
+        return { jobTitle: 'Doctor', department: 'Medical' };
+      case 'NURSE':
+        return { jobTitle: 'Nurse', department: 'Nursing' };
+      case 'SURGEON':
+        return { jobTitle: 'Surgeon', department: 'Surgery' };
+      case 'PHARMACIST':
+        return { jobTitle: 'Pharmacist', department: 'Pharmacy' };
+      case 'RECEPTIONIST':
+        return { jobTitle: 'Receptionist', department: 'Reception' };
+      case 'LAB_AGENT':
+        return { jobTitle: 'Lab Agent', department: 'Laboratory' };
+      default:
+        return { jobTitle: '', department: '' };
     }
   }
 

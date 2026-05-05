@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AppointmentsApiService, AppointmentRequestItem, AppointmentStatus } from '../../../core/services/appointments-api.service';
@@ -16,6 +16,7 @@ import { Subscription, finalize } from 'rxjs';
 export class FrontofficeAppointmentsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private redirectTimer?: ReturnType<typeof setTimeout>;
+  private bootstrapTimer?: ReturnType<typeof setTimeout>;
   private querySub?: Subscription;
 
   loading = true;
@@ -55,22 +56,28 @@ export class FrontofficeAppointmentsComponent implements OnInit {
     private appointmentsApi: AppointmentsApiService,
     private communicationApi: CommunicationApiService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
-    this.querySub = this.route.queryParamMap.subscribe(params => {
-      if (params.get('created') === '1') {
+    if (this.route.snapshot.queryParamMap.get('created') === '1') {
+      setTimeout(() => this.runInView(() => {
         this.successMessage = 'Request submitted successfully! You will receive confirmation within 24 hours.';
-      }
-    });
-    this.loadPatients();
+      }));
+    }
+
+    this.bootstrapTimer = setTimeout(() => this.loadPatients(), 0);
   }
 
   ngOnDestroy(): void {
     this.querySub?.unsubscribe();
     if (this.redirectTimer) {
       clearTimeout(this.redirectTimer);
+    }
+    if (this.bootstrapTimer) {
+      clearTimeout(this.bootstrapTimer);
     }
   }
 
@@ -176,41 +183,92 @@ export class FrontofficeAppointmentsComponent implements OnInit {
     this.hasPatientLink = true;
     this.communicationApi.getMyPatients().pipe(
       finalize(() => {
-        this.loadingPatients = false;
+        this.runInView(() => {
+          this.loadingPatients = false;
+        });
       })
     ).subscribe({
       next: (patients) => {
-        this.patients = patients;
+        this.runInView(() => {
+          this.patients = patients;
 
-        if (patients.length === 0) {
-          this.hasPatientLink = false;
-          this.items = [];
-          this.errorMessage = this.noLinkMessage;
-          this.loading = false;
-          return;
-        }
+          if (patients.length === 0) {
+            this.hasPatientLink = false;
+            this.items = [];
+            this.errorMessage = this.noLinkMessage;
+            this.loading = false;
+            return;
+          }
 
-        if (patients.length === 1) {
-          this.form.patchValue({ patientId: patients[0].patientId });
-          this.form.controls.patientId.clearValidators();
-          this.form.controls.patientId.updateValueAndValidity({ emitEvent: false });
-        } else if (patients.length > 1) {
-          this.form.controls.patientId.setValidators([Validators.required]);
-          this.form.controls.patientId.updateValueAndValidity({ emitEvent: false });
-        }
+          if (patients.length === 1) {
+            this.form.patchValue({ patientId: patients[0].patientId });
+            this.form.controls.patientId.clearValidators();
+            this.form.controls.patientId.updateValueAndValidity({ emitEvent: false });
+          } else if (patients.length > 1) {
+            this.form.controls.patientId.setValidators([Validators.required]);
+            this.form.controls.patientId.updateValueAndValidity({ emitEvent: false });
+          }
+        });
 
         this.load();
       },
       error: (err) => {
-        if (err?.status === 403) {
+        // Fallback: still allow guardian to view/request using patient IDs present in existing requests.
+        this.loadRequestsAsPatientFallback(err);
+      }
+    });
+  }
+
+  private loadRequestsAsPatientFallback(originalError: any): void {
+    this.loading = true;
+    this.appointmentsApi.getMyRequests().pipe(
+      finalize(() => {
+        this.runInView(() => {
+          this.loading = false;
+          this.loadingPatients = false;
+        });
+      })
+    ).subscribe({
+      next: (items) => {
+        this.runInView(() => {
+          this.items = [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+          const uniquePatientIds = Array.from(new Set((items || []).map(item => Number(item.patientId)).filter((id) => Number.isFinite(id) && id > 0)));
+          this.patients = uniquePatientIds.map((id) => ({
+            patientId: id,
+            fullName: `Patient #${id}`,
+            dob: '-'
+          }));
+
+          if (this.patients.length === 1) {
+            this.form.patchValue({ patientId: this.patients[0].patientId });
+            this.form.controls.patientId.clearValidators();
+            this.form.controls.patientId.updateValueAndValidity({ emitEvent: false });
+            this.hasPatientLink = true;
+            this.errorMessage = originalError?.status === 403 ? this.noLinkMessage : 'Unable to load linked patients. Existing requests are still visible.';
+            return;
+          }
+
+          if (this.patients.length > 1) {
+            this.form.controls.patientId.setValidators([Validators.required]);
+            this.form.controls.patientId.updateValueAndValidity({ emitEvent: false });
+            this.hasPatientLink = true;
+            this.errorMessage = 'Unable to load linked patient profiles. Please select patient by ID from existing requests.';
+            return;
+          }
+
+          this.hasPatientLink = false;
+          this.items = [];
+          this.errorMessage = this.noLinkMessage;
+        });
+      },
+      error: (fallbackErr) => {
+        this.runInView(() => {
           this.hasPatientLink = false;
           this.patients = [];
           this.items = [];
-          this.errorMessage = this.noLinkMessage;
-          this.loading = false;
-          return;
-        }
-        this.errorMessage = err?.error?.message || 'Unable to load linked patients.';
+          this.errorMessage = fallbackErr?.error?.message || originalError?.error?.message || 'Unable to load linked patients.';
+        });
       }
     });
   }
@@ -228,21 +286,27 @@ export class FrontofficeAppointmentsComponent implements OnInit {
 
     this.appointmentsApi.getMyRequests().pipe(
       finalize(() => {
-        this.loading = false;
+        this.runInView(() => {
+          this.loading = false;
+        });
       })
     ).subscribe({
       next: (items) => {
-        this.items = [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        this.page = 1;
+        this.runInView(() => {
+          this.items = [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          this.page = 1;
+        });
       },
       error: (err) => {
-        if (err?.status === 403) {
-          this.hasPatientLink = false;
-          this.items = [];
-          this.errorMessage = this.noLinkMessage;
-          return;
-        }
-        this.errorMessage = err?.error?.message || 'Failed to load appointments.';
+        this.runInView(() => {
+          if (err?.status === 403) {
+            this.hasPatientLink = false;
+            this.items = [];
+            this.errorMessage = this.noLinkMessage;
+            return;
+          }
+          this.errorMessage = err?.error?.message || 'Failed to load appointments.';
+        });
       }
     });
   }
@@ -280,15 +344,17 @@ export class FrontofficeAppointmentsComponent implements OnInit {
       })
     ).subscribe({
       next: () => {
-        this.successMessage = 'Request submitted successfully! You will receive confirmation within 24 hours.';
-        this.form.patchValue({ requestedDate: '', preferredTimeSlot: 'NO_PREFERENCE', appointmentType: 'CONSULTATION', reason: '' });
-        this.redirectTimer = setTimeout(() => {
-          void this.router.navigate(['/frontoffice/appointments'], { queryParams: { created: '1' } });
-          this.load();
-        }, 1500);
+        this.runInView(() => {
+          this.successMessage = 'Request submitted successfully! You will receive confirmation within 24 hours.';
+          this.form.patchValue({ requestedDate: '', preferredTimeSlot: 'NO_PREFERENCE', appointmentType: 'CONSULTATION', reason: '' });
+        });
+        void this.router.navigate(['/frontoffice/schedule/appointments'], { queryParams: { created: '1' } });
+        this.load();
       },
       error: (err) => {
-        this.errorMessage = err?.error?.message || 'Failed to create request.';
+        this.runInView(() => {
+          this.errorMessage = err?.error?.message || 'Failed to create request.';
+        });
       }
     });
   }
@@ -305,10 +371,23 @@ export class FrontofficeAppointmentsComponent implements OnInit {
       })
     ).subscribe({
       next: () => {
-        this.successMessage = 'Appointment request cancelled.';
+        this.runInView(() => {
+          this.successMessage = 'Appointment request cancelled.';
+        });
         this.load();
       },
-      error: (err) => this.errorMessage = err?.error?.message || 'Cancel failed.'
+      error: (err) => {
+        this.runInView(() => {
+          this.errorMessage = err?.error?.message || 'Cancel failed.';
+        });
+      }
     });
   };
+
+  private runInView(update: () => void): void {
+    this.ngZone.run(() => {
+      update();
+      this.cdr.detectChanges();
+    });
+  }
 }

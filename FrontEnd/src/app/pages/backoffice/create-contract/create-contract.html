@@ -35,6 +35,7 @@
                   class="form-control"
                   name="staffUserId"
                   [(ngModel)]="form.staffUserId"
+                  (ngModelChange)="onStaffUserChange()"
                   required
                   [disabled]="loadingStaff"
                 >
@@ -69,18 +70,12 @@
 
               <div class="col-md-6 mb-3">
                 <label class="form-label fw-semibold">Job Title</label>
-                <select class="form-control" name="jobTitle" [(ngModel)]="form.jobTitle" required>
-                  <option value="" disabled>Select job title</option>
-                  <option *ngFor="let title of jobTitleOptions" [value]="title">{{ title }}</option>
-                </select>
+                <input class="form-control" name="jobTitle" [value]="fixedJobTitle" readonly />
               </div>
 
               <div class="col-md-6 mb-3">
                 <label class="form-label fw-semibold">Department</label>
-                <select class="form-control" name="department" [(ngModel)]="form.department" required>
-                  <option value="" disabled>Select department</option>
-                  <option *ngFor="let dep of departmentOptions" [value]="dep">{{ dep }}</option>
-                </select>
+                <input class="form-control" name="department" [value]="fixedDepartment" readonly />
               </div>
 
               <div class="col-md-6 mb-3">

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize, of, switchMap } from 'rxjs';
@@ -35,7 +35,9 @@ export class CommunicationListComponent implements OnInit {
 
   constructor(
     private communicationApi: CommunicationApiService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
@@ -177,30 +179,45 @@ export class CommunicationListComponent implements OnInit {
       switchMap((patients) => {
         const hasLink = patients.length > 0 && patients.some(patient => !!patient.patientId);
         if (!hasLink) {
-          this.hasPatientLink = false;
-          this.items = [];
-          this.errorMessage = this.noLinkMessage;
+          this.runInView(() => {
+            this.hasPatientLink = false;
+            this.items = [];
+            this.errorMessage = this.noLinkMessage;
+          });
           return of<FollowUpMessage[] | null>(null);
         }
         return this.communicationApi.getMyMessages();
       }),
       finalize(() => {
-        this.loading = false;
+        this.runInView(() => {
+          this.loading = false;
+        });
       })
     ).subscribe({
       next: (items) => {
-        this.items = items ?? [];
-        this.page = 1;
+        this.runInView(() => {
+          this.items = items ?? [];
+          this.page = 1;
+        });
       },
       error: (err) => {
-        if (err?.status === 403) {
-          this.hasPatientLink = false;
-          this.items = [];
-          this.errorMessage = this.noLinkMessage;
-          return;
-        }
-        this.errorMessage = err?.error?.message || 'Failed to load messages.';
+        this.runInView(() => {
+          if (err?.status === 403) {
+            this.hasPatientLink = false;
+            this.items = [];
+            this.errorMessage = this.noLinkMessage;
+            return;
+          }
+          this.errorMessage = err?.error?.message || 'Failed to load messages.';
+        });
       }
+    });
+  }
+
+  private runInView(update: () => void): void {
+    this.ngZone.run(() => {
+      update();
+      this.cdr.detectChanges();
     });
   }
 }

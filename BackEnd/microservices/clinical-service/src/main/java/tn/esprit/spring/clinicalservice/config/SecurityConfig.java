@@ -38,6 +38,7 @@ public class SecurityConfig {
                 .requestMatchers(mvcMatcherBuilder.pattern("/swagger-ui/**")).permitAll()
                 .requestMatchers(mvcMatcherBuilder.pattern("/v3/api-docs/**")).permitAll()
                 .requestMatchers(mvcMatcherBuilder.pattern("/clinical/audit/**")).hasAnyRole("ADMIN", "PLATFORM_ADMIN")
+                .requestMatchers(mvcMatcherBuilder.pattern("/api/clinical/audit/**")).hasAnyRole("ADMIN", "PLATFORM_ADMIN")
                 .requestMatchers(mvcMatcherBuilder.pattern("/clinical/guardian/**")).hasRole("GUARDIAN")
                 .requestMatchers(mvcMatcherBuilder.pattern(HttpMethod.GET, "/clinical/appointments/**")).hasAnyRole("DOCTOR", "RECEPTIONIST", "GUARDIAN")
                 .requestMatchers(mvcMatcherBuilder.pattern(HttpMethod.POST, "/clinical/appointments/{id}/start-consultation")).hasRole("DOCTOR")

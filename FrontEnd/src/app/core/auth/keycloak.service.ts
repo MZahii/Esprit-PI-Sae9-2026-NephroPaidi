@@ -23,6 +23,7 @@ const APP_ROLE_PRIORITY = [
   'SURGEON',
   'PHARMACIST',
   'RECEPTIONIST',
+  'LAB_AGENT',
   'GUARDIAN'
 ] as const;
 
@@ -164,11 +165,6 @@ export function hasAnyRole(expectedRoles: string[]): boolean {
 export function getLandingRouteByRole(): string {
   const roles = getUserRoles();
   const backofficeRoles = APP_ROLE_PRIORITY.filter((role) => role !== 'GUARDIAN');
-
-  if (roles.includes('ADMIN') || roles.includes('HR')) {
-    return '/backoffice/user-admin';
-  }
-
   if (roles.some((role) => backofficeRoles.includes(role as typeof backofficeRoles[number]))) {
     return '/backoffice/dashboard';
   }

@@ -74,7 +74,7 @@ export class ProcedureDialysisPrescriptionsComponent implements OnInit {
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
         this.loading = false;
-        this.errorMessage = err?.error?.message || err?.message || 'Failed to load dialysis plans.';
+        this.errorMessage = this.formatApiError(err, 'Failed to load dialysis plans.');
         this.refreshView();
       }
     });
@@ -93,7 +93,7 @@ export class ProcedureDialysisPrescriptionsComponent implements OnInit {
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
         this.loading = false;
-        this.errorMessage = err?.error?.message || err?.message || 'Failed to load dialysis prescriptions.';
+        this.errorMessage = this.formatApiError(err, 'Failed to load dialysis prescriptions.');
         this.refreshView();
       }
     });
@@ -105,11 +105,20 @@ export class ProcedureDialysisPrescriptionsComponent implements OnInit {
 
     if (!planId || Number.isNaN(planId)) {
       this.errorMessage = 'Plan is required.';
+      this.refreshView();
       return;
     }
 
-    if (!details) {
-      this.errorMessage = 'Prescription details are required.';
+    if (details.length < 5) {
+      this.errorMessage = 'Prescription details must contain at least 5 characters.';
+      this.refreshView();
+      return;
+    }
+
+    const selectedPlan = this.plans.find((plan) => plan.id === planId);
+    if (selectedPlan?.status === 'ARCHIVED') {
+      this.errorMessage = 'Cannot create a prescription for an archived dialysis plan.';
+      this.refreshView();
       return;
     }
 
@@ -127,7 +136,7 @@ export class ProcedureDialysisPrescriptionsComponent implements OnInit {
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
         this.saving = false;
-        this.errorMessage = err?.error?.message || err?.message || 'Failed to create dialysis prescription.';
+        this.errorMessage = this.formatApiError(err, 'Failed to create dialysis prescription.');
         this.refreshView();
       }
     });
@@ -136,8 +145,9 @@ export class ProcedureDialysisPrescriptionsComponent implements OnInit {
   updatePrescription(prescription: DialysisPrescription): void {
     const details = (this.editDetails[prescription.id] ?? '').trim();
 
-    if (!details) {
-      this.errorMessage = 'Prescription details are required.';
+    if (details.length < 5) {
+      this.errorMessage = 'Prescription details must contain at least 5 characters.';
+      this.refreshView();
       return;
     }
 
@@ -151,13 +161,24 @@ export class ProcedureDialysisPrescriptionsComponent implements OnInit {
         this.loadPrescriptions();
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
-        this.errorMessage = err?.error?.message || err?.message || 'Failed to update dialysis prescription.';
+        this.errorMessage = this.formatApiError(err, 'Failed to update dialysis prescription.');
         this.refreshView();
       }
     });
   }
 
   private refreshView(): void {
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
+  }
+
+  private formatApiError(
+    err: { error?: { message?: string }; message?: string },
+    fallback: string
+  ): string {
+    const message = err?.error?.message || err?.message || '';
+    if (message.includes('503') || message.includes('Service Unavailable')) {
+      return 'Procedure service is temporarily unavailable. Verify procedure-service and the API Gateway, then retry.';
+    }
+    return message || fallback;
   }
 }

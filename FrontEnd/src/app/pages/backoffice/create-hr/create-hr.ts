@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
@@ -208,21 +208,38 @@ export class CreateHr {
         this.router.navigate(['/backoffice/hr-list']);
       }, 1500);
     } catch (error: unknown) {
-      const err = error as { error?: { validationErrors?: Record<string, string>; message?: string; error?: string }; message?: string };
-      if (err?.error?.validationErrors) {
-        this.showError(Object.values(err.error.validationErrors).join(' | '));
-      } else {
-        this.showError(
-          err?.error?.message ||
-          err?.error?.error ||
-          err?.message ||
-          (error instanceof Error ? error.message : 'Authentication problem. Please login again.')
-        );
-      }
+      this.showError(this.resolveApiError(error));
       this.cdr.detectChanges();
     } finally {
       this.loading = false;
       this.cdr.detectChanges();
+    }
+  }
+
+  private resolveApiError(error: unknown): string {
+    const fallback = 'Authentication problem. Please login again.';
+    const err = error as HttpErrorResponse;
+
+    if (!err) {
+      return fallback;
+    }
+
+    const body = typeof err.error === 'string'
+      ? this.tryParseJson(err.error)
+      : err.error;
+
+    if (body?.validationErrors && typeof body.validationErrors === 'object') {
+      return Object.values(body.validationErrors).join(' | ');
+    }
+
+    return body?.message || body?.error || err.message || fallback;
+  }
+
+  private tryParseJson(value: string): any {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return { message: value };
     }
   }
 }
