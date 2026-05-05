@@ -1,0 +1,575 @@
+<div class="phx-page">
+
+  <!-- ── Page Header ─────────────────────────────────────────────────────── -->
+  <div class="phx-header">
+    <div class="phx-header-left">
+      <div class="phx-header-icon" style="background:linear-gradient(135deg,#7c3aed,#6d28d9)">
+        <i class="bi bi-file-medical"></i>
+      </div>
+      <div>
+        <h4 class="phx-title">Pharmacy Prescriptions</h4>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item"><a routerLink="/backoffice/pharmacy/medications">Pharmacy</a></li>
+            <li class="breadcrumb-item active">Prescriptions</li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a routerLink="/backoffice/pharmacy/stock" class="phx-btn phx-btn-ghost phx-btn-sm">
+        <i class="bi bi-archive"></i> Medication Stock
+      </a>
+      <button class="phx-btn phx-btn-ghost phx-btn-sm" (click)="load()">
+        <i class="bi bi-arrow-clockwise"></i> Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Stat Cards ──────────────────────────────────────────────────────── -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+      <div class="phx-stat-card phx-stat-purple">
+        <div class="phx-stat-icon"><i class="bi bi-file-medical"></i></div>
+        <div class="phx-stat-body">
+          <div class="phx-stat-value">{{ prescriptions().length }}</div>
+          <div class="phx-stat-label">Total Prescriptions</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="phx-stat-card phx-stat-amber">
+        <div class="phx-stat-icon"><i class="bi bi-hourglass-split"></i></div>
+        <div class="phx-stat-body">
+          <div class="phx-stat-value">{{ countByStatus('PENDING') }}</div>
+          <div class="phx-stat-label">Pending</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="phx-stat-card phx-stat-blue">
+        <div class="phx-stat-icon"><i class="bi bi-gear-wide-connected"></i></div>
+        <div class="phx-stat-body">
+          <div class="phx-stat-value">{{ countByStatus('PROCESSING') }}</div>
+          <div class="phx-stat-label">Processing</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="phx-stat-card phx-stat-green">
+        <div class="phx-stat-icon"><i class="bi bi-check-circle"></i></div>
+        <div class="phx-stat-body">
+          <div class="phx-stat-value">{{ countByStatus('DISPENSED') }}</div>
+          <div class="phx-stat-label">Dispensed</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Status Filter Tabs ──────────────────────────────────────────────── -->
+  <div class="d-flex gap-2 mb-3 flex-wrap">
+    <button *ngFor="let s of statusOptions"
+      (click)="setFilter(s)"
+      [class]="'phx-tab-btn ' + (filterStatus === s ? 'phx-tab-active' : '')">
+      {{ s === 'ALL' ? 'All' : s | titlecase }}
+    </button>
+  </div>
+
+  <!-- ── Loading ─────────────────────────────────────────────────────────── -->
+  <div class="phx-loader" *ngIf="loading()">
+    <div class="spinner-border text-primary"></div>
+    <span>Loading prescriptions...</span>
+  </div>
+
+  <!-- ── Table Card ──────────────────────────────────────────────────────── -->
+  <div class="phx-card" *ngIf="!loading()">
+    <div class="phx-card-header">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-list-ul" style="color:#7c3aed"></i>
+        <span class="fw-700">Prescription List</span>
+      </div>
+      <span class="phx-badge phx-badge-purple">{{ filtered().length }} record(s)</span>
+    </div>
+    <div class="table-responsive">
+      <table class="phx-table">
+        <thead>
+          <tr>
+            <th style="width:50px">#</th>
+            <th>Patient</th>
+            <th>Doctor</th>
+            <th>Urgency</th>
+            <th>Status</th>
+            <th>Verified</th>
+            <th>Received</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of filtered()" [class.phx-row-stat]="p.urgency === 'STAT'" [class.phx-row-urgent]="p.urgency === 'URGENT'">
+            <td class="text-muted small fw-600">{{ p.id }}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="phx-dot bg-purple"></div>
+                <span class="fw-700">{{ p.patientName || ('Patient #' + p.patientId) }}</span>
+              </div>
+            </td>
+            <td class="text-muted small">{{ p.doctorName || '—' }}</td>
+            <td>
+              <span class="phx-pill" [ngClass]="urgencyPillClass(p.urgency)">
+                <i class="bi me-1" [ngClass]="urgencyIcon(p.urgency)"></i>{{ p.urgency || 'ROUTINE' }}
+              </span>
+            </td>
+            <td>
+              <span class="phx-pill" [ngClass]="statusPillClass(p.status)">
+                <i class="bi me-1" [ngClass]="statusIcon(p.status)"></i>{{ p.status }}
+              </span>
+            </td>
+            <td class="text-center">
+              <i *ngIf="p.verifiedBy" class="bi bi-patch-check-fill text-success" style="font-size:16px" [title]="'Verified by ' + p.verifiedBy"></i>
+              <i *ngIf="!p.verifiedBy && p.status === 'PENDING'" class="bi bi-exclamation-circle text-warning" style="font-size:16px" title="Awaiting pharmacist verification"></i>
+            </td>
+            <td class="text-muted small" style="white-space:nowrap">{{ p.receivedAt | date:'dd/MM HH:mm' }}</td>
+            <td class="text-center">
+              <button class="phx-btn phx-btn-sm phx-btn-purple" (click)="openDetail(p)">
+                <i class="bi bi-eye-fill"></i> View
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filtered().length === 0">
+            <td colspan="7" class="phx-empty">
+              <i class="bi bi-file-medical"></i>
+              <p>No prescriptions found for the selected status.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Prescription Detail Modal ───────────────────────────────────────── -->
+<div class="phx-overlay" *ngIf="showDetail" (click)="showDetail=false"></div>
+<div class="phx-modal" [class.phx-modal-open]="showDetail">
+  <div class="phx-modal-dialog phx-modal-lg">
+    <div class="phx-modal-header" style="background:linear-gradient(135deg,#7c3aed,#6d28d9)">
+      <div class="d-flex align-items-center gap-2 text-white">
+        <i class="bi bi-file-medical fs-5"></i>
+        <div>
+          <h5 class="mb-0">Prescription #{{ selectedPrescription?.id }}</h5>
+          <div style="font-size:11px;opacity:.8">{{ selectedPrescription?.patientName }}</div>
+        </div>
+      </div>
+      <button class="phx-close-btn" (click)="showDetail=false"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="phx-modal-body" *ngIf="selectedPrescription">
+
+      <!-- STAT/URGENT Banner -->
+      <div class="phx-urgency-banner phx-urgency-stat" *ngIf="selectedPrescription.urgency === 'STAT'">
+        <i class="bi bi-lightning-fill"></i>
+        <strong>STAT — Immediate dispensing required</strong>
+        <span class="ms-2 opacity-75">Life-threatening or time-critical situation</span>
+      </div>
+      <div class="phx-urgency-banner phx-urgency-urgent" *ngIf="selectedPrescription.urgency === 'URGENT'">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <strong>URGENT — Priority dispensing required</strong>
+        <span class="ms-2 opacity-75">Target: within 2 hours</span>
+      </div>
+
+      <!-- Meta info grid -->
+      <div class="row g-2 mb-3">
+        <div class="col-md-4">
+          <div class="phx-info-box">
+            <div class="phx-info-label"><i class="bi bi-person-fill me-1"></i>Patient</div>
+            <div class="phx-info-value fw-700">{{ selectedPrescription.patientName || ('ID ' + selectedPrescription.patientId) }}</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="phx-info-box">
+            <div class="phx-info-label"><i class="bi bi-person-badge me-1"></i>Prescribing Doctor</div>
+            <div class="phx-info-value fw-700">{{ selectedPrescription.doctorName || '—' }}</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="phx-info-box">
+            <div class="phx-info-label"><i class="bi bi-calendar2 me-1"></i>Received</div>
+            <div class="phx-info-value">{{ selectedPrescription.receivedAt | date:'dd/MM/yyyy HH:mm' }}</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="phx-info-box">
+            <div class="phx-info-label"><i class="bi bi-lightning me-1"></i>Urgency</div>
+            <div class="phx-info-value">
+              <span class="phx-pill" [ngClass]="urgencyPillClass(selectedPrescription.urgency)">
+                <i class="bi me-1" [ngClass]="urgencyIcon(selectedPrescription.urgency)"></i>{{ selectedPrescription.urgency || 'ROUTINE' }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="phx-info-box">
+            <div class="phx-info-label"><i class="bi bi-circle-fill me-1"></i>Status</div>
+            <div class="phx-info-value">
+              <span class="phx-pill" [ngClass]="statusPillClass(selectedPrescription.status)">
+                <i class="bi me-1" [ngClass]="statusIcon(selectedPrescription.status)"></i>{{ selectedPrescription.status }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4" *ngIf="selectedPrescription.verifiedBy">
+          <div class="phx-info-box phx-info-verified">
+            <div class="phx-info-label"><i class="bi bi-patch-check-fill me-1"></i>Verified By</div>
+            <div class="phx-info-value fw-700">{{ selectedPrescription.verifiedBy }}
+              <span class="text-muted small d-block">{{ selectedPrescription.verifiedAt | date:'dd/MM HH:mm' }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-12" *ngIf="selectedPrescription.notes">
+          <div class="phx-info-box">
+            <div class="phx-info-label"><i class="bi bi-chat-text me-1"></i>Clinical Notes</div>
+            <div class="phx-info-value">{{ selectedPrescription.notes }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Medications list -->
+      <div class="phx-section-box phx-section-purple mb-3">
+        <div class="phx-section-label"><i class="bi bi-capsule-pill"></i> Prescribed Medications</div>
+        <div class="table-responsive">
+          <table class="phx-table">
+            <thead>
+              <tr>
+                <th>Medication</th>
+                <th>Dosage / Strength</th>
+                <th>Route</th>
+                <th>Frequency</th>
+                <th>Duration</th>
+                <th>Instructions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let med of parseMedications(selectedPrescription.medicationsJson)">
+                <td class="fw-700">{{ med.name || med.medicationName || '—' }}</td>
+                <td>{{ med.dosage || med.strength || '—' }}</td>
+                <td class="text-muted small">{{ med.route || '—' }}</td>
+                <td>{{ med.frequency || '—' }}</td>
+                <td class="text-muted small">{{ med.duration || '—' }}</td>
+                <td class="text-muted small">{{ med.instructions || med.notes || '—' }}</td>
+              </tr>
+              <tr *ngIf="parseMedications(selectedPrescription.medicationsJson).length === 0">
+                <td colspan="6" class="phx-empty" style="padding:20px">
+                  <i class="bi bi-capsule-pill"></i>
+                  <p>No structured medication data — check with prescribing doctor.</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Step 1: Pharmacist Verification (allergy & dose check) -->
+      <div class="phx-workflow-step phx-step-verify"
+           *ngIf="selectedPrescription.status === 'PENDING' && !selectedPrescription.verifiedBy">
+        <div class="phx-step-header">
+          <span class="phx-step-num">1</span>
+          <span class="fw-700">Pharmacist Verification</span>
+          <span class="text-muted small ms-2">Check allergies, contraindications, and dosage appropriateness</span>
+        </div>
+        <div class="d-flex gap-2 mt-3 flex-wrap">
+          <button class="phx-btn phx-btn-sm phx-btn-success" (click)="verifyPrescription(true)" [disabled]="saving()">
+            <span *ngIf="saving()" class="phx-spin me-1"></span>
+            <i *ngIf="!saving()" class="bi bi-patch-check-fill"></i>
+            Verify — No Contraindications
+          </button>
+          <button class="phx-btn phx-btn-sm phx-btn-danger" (click)="updateStatus('CANCELLED')" [disabled]="saving()">
+            <i class="bi bi-x-circle-fill"></i> Reject — Contraindication Found
+          </button>
+        </div>
+        <div class="phx-verify-checklist mt-3">
+          <div class="phx-check-item"><i class="bi bi-check2-square"></i> Review patient allergy history before confirming</div>
+          <div class="phx-check-item"><i class="bi bi-check2-square"></i> Verify dose is appropriate for renal function (GFR/CrCl)</div>
+          <div class="phx-check-item"><i class="bi bi-check2-square"></i> Check for drug-drug interactions with current medication list</div>
+        </div>
+      </div>
+
+      <!-- Verification confirmed banner -->
+      <div class="phx-verified-banner" *ngIf="selectedPrescription.verifiedBy">
+        <i class="bi bi-patch-check-fill"></i>
+        Verified by <strong>{{ selectedPrescription.verifiedBy }}</strong> on {{ selectedPrescription.verifiedAt | date:'dd/MM/yyyy HH:mm' }}
+        <span *ngIf="selectedPrescription.allergyConfirmed" class="ms-2 phx-allergy-ok">
+          <i class="bi bi-shield-check"></i> No allergies — safe to dispense
+        </span>
+      </div>
+
+      <!-- Step 2: Dispensing actions -->
+      <div class="phx-workflow-step phx-step-dispense"
+           *ngIf="selectedPrescription.status === 'PROCESSING'">
+        <div class="phx-step-header">
+          <span class="phx-step-num">2</span>
+          <span class="fw-700">Dispensing</span>
+          <span class="text-muted small ms-2">Select batch and quantity for each medication — stock will be deducted automatically</span>
+        </div>
+        <div class="d-flex gap-2 mt-3 flex-wrap">
+          <button class="phx-btn phx-btn-sm phx-btn-success" (click)="openDispenseModal()" [disabled]="saving()">
+            <i class="bi bi-capsule-pill"></i>
+            Dispense Medications
+          </button>
+          <button class="phx-btn phx-btn-sm phx-btn-danger" (click)="updateStatus('CANCELLED')" [disabled]="saving()">
+            <i class="bi bi-x-circle"></i> Cancel
+          </button>
+        </div>
+      </div>
+
+      <!-- Completed state -->
+      <div class="phx-dispensed-banner" *ngIf="selectedPrescription.status === 'DISPENSED'">
+        <i class="bi bi-check-circle-fill"></i>
+        Dispensed on {{ selectedPrescription.processedAt | date:'dd/MM/yyyy HH:mm' }} by <strong>{{ selectedPrescription.processedBy }}</strong>
+      </div>
+
+    </div>
+    <div class="phx-modal-footer">
+      <button class="phx-btn phx-btn-ghost" (click)="showDetail=false">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Dispense Modal ────────────────────────────────────────────────────── -->
+<div class="phx-overlay" *ngIf="showDispenseModal" (click)="showDispenseModal=false"></div>
+<div class="phx-modal" [class.phx-modal-open]="showDispenseModal">
+  <div class="phx-modal-dialog phx-modal-lg">
+    <div class="phx-modal-header" style="background:linear-gradient(135deg,#16a34a,#15803d)">
+      <div class="d-flex align-items-center gap-2 text-white">
+        <i class="bi bi-capsule-pill fs-5"></i>
+        <div>
+          <h5 class="mb-0">Dispense Medications</h5>
+          <div style="font-size:11px;opacity:.8">Prescription #{{ selectedPrescription?.id }} — {{ selectedPrescription?.patientName }}</div>
+        </div>
+      </div>
+      <button class="phx-close-btn" (click)="showDispenseModal=false"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="phx-modal-body">
+
+      <!-- Loading stock -->
+      <div class="phx-loader" *ngIf="dispenseStockLoading()">
+        <div class="spinner-border text-success spinner-border-sm"></div>
+        <span>Loading available stock…</span>
+      </div>
+
+      <div *ngIf="!dispenseStockLoading()">
+
+        <!-- No stock at all -->
+        <div *ngIf="batchOptions.length === 0" class="phx-empty" style="padding:24px">
+          <i class="bi bi-exclamation-triangle text-warning"></i>
+          <p>No stock available. Add inventory in Medication Stock before dispensing.</p>
+        </div>
+
+        <!-- One row per prescribed medication -->
+        <div *ngFor="let item of dispenseItems; let i = index" class="phx-dispense-row">
+          <div class="phx-dispense-med-label">
+            <i class="bi bi-capsule-pill text-success"></i>
+            <span class="fw-700">{{ item.med.name || item.med.medicationName || 'Medication ' + (i + 1) }}</span>
+            <span class="text-muted small" *ngIf="item.med.dosage"> · {{ item.med.dosage }}</span>
+            <span class="text-muted small" *ngIf="item.med.frequency"> · {{ item.med.frequency }}</span>
+            <span class="text-muted small" *ngIf="item.med.duration"> · {{ item.med.duration }}</span>
+          </div>
+          <div class="row g-2 mt-1">
+            <div class="col-md-8">
+              <label class="phx-field-label">Batch <span class="text-danger">*</span></label>
+              <select class="phx-input" [(ngModel)]="item.batchId">
+                <option [ngValue]="null" disabled>Select batch…</option>
+                <option *ngFor="let b of batchOptionsForMed(item.med.name || item.med.medicationName)" [ngValue]="b.batchId">
+                  {{ b.label }}
+                </option>
+              </select>
+              <div *ngIf="batchOptionsForMed(item.med.name || item.med.medicationName).length === 0 && !dispenseStockLoading()"
+                   class="text-danger small mt-1">
+                <i class="bi bi-exclamation-circle"></i> No stock — add inventory in Medication Stock first
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="phx-field-label">Quantity <span class="text-danger">*</span></label>
+              <input type="number" class="phx-input" [(ngModel)]="item.quantity" min="1"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-danger small mt-3" *ngIf="dispenseError">
+          <i class="bi bi-exclamation-circle-fill me-1"></i>{{ dispenseError }}
+        </div>
+      </div>
+
+    </div>
+    <div class="phx-modal-footer">
+      <button class="phx-btn phx-btn-ghost" (click)="showDispenseModal=false">Cancel</button>
+      <button class="phx-btn phx-btn-success" (click)="submitDispense()"
+              [disabled]="dispenseSubmitting() || dispenseStockLoading() || batchOptions.length === 0">
+        <span *ngIf="dispenseSubmitting()" class="phx-spin me-1"></span>
+        <i *ngIf="!dispenseSubmitting()" class="bi bi-check-circle-fill"></i>
+        {{ dispenseSubmitting() ? 'Dispensing…' : 'Confirm & Deduct Stock' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ────────────────────────────────────────────────────────────── -->
+<div class="phx-toast" [class.phx-toast-show]="toast()"
+  [class.phx-toast-success]="toastOk()" [class.phx-toast-error]="!toastOk()">
+  <i class="bi" [class.bi-check-circle-fill]="toastOk()" [class.bi-x-circle-fill]="!toastOk()"></i>
+  {{ toast() }}
+</div>
+
+<!-- ── Shared Styles ─────────────────────────────────────────────────────── -->
+<style>
+@keyframes fadeSlideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes toastIn { 0% { opacity:0; transform:translateY(16px) scale(.95); } 70% { transform:translateY(-3px) scale(1.01); } 100% { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes pageEnter   { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes headerSlide { from { opacity:0; transform:translateX(-18px); } to { opacity:1; transform:translateX(0); } }
+@keyframes statPop     { from { opacity:0; transform:translateY(16px) scale(.92); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes numPop      { from { opacity:0; transform:scale(.6); } to { opacity:1; transform:scale(1); } }
+@keyframes rowIn       { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+@keyframes overlayIn   { to { background:rgba(15,23,42,.45); backdrop-filter:blur(3px); } }
+
+:root { --phx-primary:#7c3aed; }
+
+.phx-page { padding:0; background:transparent; min-height:auto; animation:pageEnter .45s cubic-bezier(.22,1,.36,1) both; }
+.phx-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; border:1px solid #dbe7f5; border-radius:16px; background:linear-gradient(130deg,#f7fbff 0%,#f5f3ff 100%); padding:18px 20px; animation:headerSlide .4s cubic-bezier(.22,1,.36,1) .05s both; }
+.phx-header-left { display:flex; align-items:center; gap:16px; }
+.phx-header-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; transition:transform .3s cubic-bezier(.34,1.56,.64,1); }
+.phx-header-icon:hover { transform:rotate(-6deg) scale(1.12); }
+.phx-title { font-size:22px; font-weight:800; color:#1e293b; margin:0; }
+
+.phx-btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:8px; font-weight:600; font-size:13.5px; border:none; cursor:pointer; transition:transform .2s, opacity .15s; }
+.phx-btn:not(:disabled):hover { transform:translateY(-2px); }
+.phx-btn:not(:disabled):active { transform:translateY(0) scale(.97); }
+.phx-btn:disabled { opacity:.5; cursor:not-allowed; transform:none !important; }
+.phx-btn-sm { padding:6px 13px; font-size:12.5px; }
+.phx-btn-purple  { background:#7c3aed !important; color:#fff !important; }
+.phx-btn-success { background:#16a34a !important; color:#fff !important; }
+.phx-btn-warning { background:#f59e0b !important; color:#fff !important; }
+.phx-btn-danger  { background:#dc2626 !important; color:#fff !important; }
+.phx-btn-ghost   { background:#f8fafc !important; border:1px solid #e2e8f0 !important; color:#334155 !important; }
+.phx-spin { display:inline-block; width:13px; height:13px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; }
+
+.phx-card { background:#fff; border-radius:16px; border:1px solid #dbe7f5; box-shadow:none; overflow:hidden; margin-bottom:20px; animation:fadeSlideIn .4s ease .1s both; }
+.phx-card:hover { box-shadow:0 8px 30px rgba(0,0,0,.09); transform:translateY(-2px); transition:transform .25s ease, box-shadow .25s ease; }
+.phx-card-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #e3edf9; background:#f8fbff; }
+.fw-700 { font-weight:700; } .fw-600 { font-weight:600; }
+
+.phx-badge { padding:4px 12px; border-radius:999px; font-size:12px; font-weight:700; }
+.phx-badge-purple { background:#ede9fe; color:#6d28d9; }
+.phx-pill { display:inline-block; padding:4px 11px; border-radius:999px; font-size:12px; font-weight:700; }
+.phx-pill-pending    { background:#fef3c7; color:#92400e; }
+.phx-pill-processing { background:#dbeafe; color:#1d4ed8; }
+.phx-pill-dispensed  { background:#dcfce7; color:#15803d; }
+.phx-pill-cancelled  { background:#fee2e2; color:#dc2626; }
+.phx-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.bg-purple { background:#7c3aed; }
+
+.phx-table { width:100%; border-collapse:collapse; }
+.phx-table thead tr { background:#fafbff; }
+.phx-table th { padding:12px 16px; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#64748b; border-bottom:1px solid #f1f5f9; white-space:nowrap; }
+.phx-table td { padding:14px 16px; border-bottom:1px solid #f8fafc; font-size:13.5px; color:#334155; }
+.phx-table tbody tr:last-child td { border-bottom:none; }
+.phx-table tbody tr { animation:rowIn .25s ease both; }
+.phx-table tbody tr:nth-child(1){animation-delay:.04s}.phx-table tbody tr:nth-child(2){animation-delay:.08s}.phx-table tbody tr:nth-child(3){animation-delay:.12s}.phx-table tbody tr:nth-child(n+4){animation-delay:.16s}
+.phx-table tbody tr:hover td { background:#f5f3ff !important; }
+
+.phx-empty { text-align:center; padding:48px 20px; color:#94a3b8; }
+.phx-empty i { font-size:40px; display:block; margin-bottom:12px; opacity:.4; }
+.phx-empty p { margin:0; font-size:14px; }
+.phx-loader { display:flex; align-items:center; gap:12px; justify-content:center; padding:60px; color:#64748b; }
+
+.phx-tab-btn { padding:7px 18px; border-radius:8px; font-weight:600; font-size:13px; border:1px solid #e2e8f0; background:#f8fafc; color:#64748b; cursor:pointer; transition:all .15s; }
+.phx-tab-btn:hover { background:#ede9fe; color:#6d28d9; border-color:#ddd6fe; }
+.phx-tab-active { background:#7c3aed !important; color:#fff !important; border-color:#7c3aed !important; }
+
+.phx-overlay { position:fixed; inset:0; z-index:1040; background:rgba(15,23,42,0); backdrop-filter:blur(0px); animation:overlayIn .25s ease forwards; }
+.phx-modal { position:fixed; inset:0; z-index:1050; display:flex; align-items:center; justify-content:center; pointer-events:none; opacity:0; transition:opacity .25s ease; }
+.phx-modal.phx-modal-open { pointer-events:auto; opacity:1; }
+.phx-modal-dialog { background:#fff; border-radius:20px; width:100%; max-width:520px; box-shadow:0 24px 80px rgba(0,0,0,.22); overflow:hidden; transform:translateY(-16px) scale(.97); transition:transform .3s cubic-bezier(.34,1.56,.64,1); }
+.phx-modal-open .phx-modal-dialog { transform:translateY(0) scale(1); }
+.phx-modal-lg { max-width:780px; }
+.phx-modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px; }
+.phx-modal-body { padding:24px; max-height:70vh; overflow-y:auto; }
+.phx-modal-footer { display:flex; justify-content:flex-end; gap:10px; padding:16px 24px; border-top:1px solid #f1f5f9; background:#fafbff; }
+.phx-close-btn { background:rgba(255,255,255,.2); border:none; color:#fff; width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; transition:background .15s, transform .15s; }
+.phx-close-btn:hover { background:rgba(255,255,255,.35); transform:scale(1.1); }
+
+.phx-info-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; }
+.phx-info-label { font-size:11.5px; font-weight:600; color:#64748b; margin-bottom:4px; }
+.phx-info-value { font-size:14px; color:#1e293b; }
+
+.phx-section-box { border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+.phx-section-purple { background:#f5f3ff; border:1px solid #ddd6fe; }
+.phx-section-label { font-size:12.5px; font-weight:700; color:#6d28d9; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+.phx-section-action { background:#f8fafc; border:1px solid #e2e8f0; }
+.phx-section-action .phx-section-label { color:#334155; }
+
+.phx-stat-card { border-radius:14px; padding:16px 18px; display:flex; align-items:center; gap:14px; border:1.5px solid transparent; transition:transform .2s ease, box-shadow .2s ease; animation:statPop .45s cubic-bezier(.34,1.56,.64,1) both; }
+.phx-stat-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,.1); }
+.phx-stat-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.phx-stat-body { flex:1; }
+.phx-stat-value { font-size:26px; font-weight:800; line-height:1; animation:numPop .5s cubic-bezier(.34,1.56,.64,1) .3s both; }
+.phx-stat-label { font-size:12px; font-weight:600; margin-top:4px; opacity:.7; }
+.phx-stat-purple { background:linear-gradient(135deg,#f5f3ff,#ede9fe); border-color:#ddd6fe; }
+.phx-stat-purple .phx-stat-icon { background:#7c3aed; color:#fff; }
+.phx-stat-purple .phx-stat-value { color:#6d28d9; }
+.phx-stat-amber  { background:linear-gradient(135deg,#fffbeb,#fef3c7); border-color:#fde68a; }
+.phx-stat-amber  .phx-stat-icon { background:#f59e0b; color:#fff; }
+.phx-stat-amber  .phx-stat-value { color:#d97706; }
+.phx-stat-blue   { background:linear-gradient(135deg,#eff6ff,#dbeafe); border-color:#bfdbfe; }
+.phx-stat-blue   .phx-stat-icon { background:#2563eb; color:#fff; }
+.phx-stat-blue   .phx-stat-value { color:#1d4ed8; }
+.phx-stat-green  { background:linear-gradient(135deg,#f0fdf4,#dcfce7); border-color:#bbf7d0; }
+.phx-stat-green  .phx-stat-icon { background:#16a34a; color:#fff; }
+.phx-stat-green  .phx-stat-value { color:#15803d; }
+
+.phx-toast { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; align-items:center; gap:10px; padding:14px 20px; border-radius:14px; font-weight:600; font-size:14px; color:#fff; box-shadow:0 8px 30px rgba(0,0,0,.18); opacity:0; pointer-events:none; transform:translateY(16px) scale(.95); transition:opacity .2s ease, transform .2s ease; }
+.phx-toast.phx-toast-show { opacity:1; pointer-events:auto; transform:translateY(0) scale(1); animation:toastIn .4s cubic-bezier(.34,1.56,.64,1) forwards; }
+.phx-toast-success { background:linear-gradient(135deg,#16a34a,#15803d); }
+.phx-toast-error   { background:linear-gradient(135deg,#ef4444,#dc2626); }
+
+/* Urgency pills */
+.phx-pill-stat    { background:#fef2f2; color:#b91c1c; border:1.5px solid #fca5a5; }
+.phx-pill-urgent  { background:#fffbeb; color:#b45309; border:1.5px solid #fcd34d; }
+.phx-pill-routine { background:#f0fdf4; color:#15803d; border:1.5px solid #86efac; }
+
+/* Table row urgency highlights */
+.phx-row-stat  td { background:#fff5f5 !important; }
+.phx-row-urgent td { background:#fffbeb !important; }
+
+/* Verified info box */
+.phx-info-verified { background:#f0fdf4; border-color:#86efac; }
+
+/* Urgency banners */
+.phx-urgency-banner { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; font-size:13.5px; margin-bottom:16px; }
+.phx-urgency-stat   { background:#fef2f2; border:1.5px solid #fca5a5; color:#b91c1c; }
+.phx-urgency-urgent { background:#fffbeb; border:1.5px solid #fcd34d; color:#b45309; }
+
+/* Workflow steps */
+.phx-workflow-step { border-radius:12px; padding:16px 18px; margin-top:12px; margin-bottom:8px; }
+.phx-step-verify  { background:#eff6ff; border:1.5px solid #bfdbfe; }
+.phx-step-dispense { background:#f0fdf4; border:1.5px solid #86efac; }
+.phx-step-header { display:flex; align-items:center; gap:10px; }
+.phx-step-num { width:24px; height:24px; border-radius:50%; background:#2563eb; color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.phx-step-dispense .phx-step-num { background:#16a34a; }
+
+/* Checklist */
+.phx-verify-checklist { display:flex; flex-direction:column; gap:5px; }
+.phx-check-item { display:flex; align-items:center; gap:7px; font-size:12.5px; color:#1e40af; }
+.phx-check-item i { color:#3b82f6; font-size:14px; }
+
+/* Verified banner */
+.phx-verified-banner { display:flex; align-items:center; gap:10px; padding:11px 16px; border-radius:10px; background:#f0fdf4; border:1.5px solid #86efac; color:#15803d; font-size:13.5px; margin-top:12px; margin-bottom:8px; }
+.phx-allergy-ok { display:inline-flex; align-items:center; gap:5px; background:#dcfce7; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+
+/* Dispensed banner */
+.phx-dispensed-banner { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; background:#dcfce7; border:1.5px solid #86efac; color:#15803d; font-size:13.5px; font-weight:600; margin-top:12px; }
+
+/* Dispense modal rows */
+.phx-dispense-row { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px; margin-bottom:10px; }
+.phx-dispense-med-label { display:flex; align-items:center; gap:8px; font-size:13.5px; }
+.phx-field-label { font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px; display:block; }
+</style>

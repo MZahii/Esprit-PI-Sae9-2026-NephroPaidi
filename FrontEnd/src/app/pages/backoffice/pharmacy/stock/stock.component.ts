@@ -5,6 +5,9 @@ import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { PharmacyService } from '../../../../core/services/pharmacy.service';
 import { Stock, DispenseRequest, Batch, Medication, SmartDispenseRequest, SmartDispenseResponse, TransferStockRequest, TransferStockResponse } from '../../../../core/models/pharmacy.models';
+import { hasAnyRole } from '../../../../core/auth/keycloak.service';
+import { AuthStorageService } from '../../../../core/auth/auth-storage.service';
+import { ClinicalApiService, DoctorSearchResult } from '../../../../core/services/clinical-api.service';
 
 @Component({
   selector: 'app-stock',
@@ -13,7 +16,10 @@ import { Stock, DispenseRequest, Batch, Medication, SmartDispenseRequest, SmartD
   templateUrl: './stock.component.html'
 })
 export class StockComponent implements OnInit {
-  private svc = inject(PharmacyService);
+  private svc     = inject(PharmacyService);
+  private auth    = inject(AuthStorageService);
+  private apiSvc  = inject(ClinicalApiService);
+  private readonly canManagePharmacy = hasAnyRole(['PHARMACIST']);
 
   stocks = signal<Stock[]>([]);
   lowStock = signal<Stock[]>([]);
@@ -22,11 +28,18 @@ export class StockComponent implements OnInit {
   activeTab = signal<'all' | 'low' | 'out' | 'expired'>('all');
   loading = signal(false);
 
-  batchMedicationMap: Record<number, string> = {};
+  batchMedicationMap: Record<number, Medication> = {};
   batchNumberMap:     Record<number, string> = {};
 
   showDispense = false;
   dispenseForm: Partial<DispenseRequest> = {};
+
+  // Role-based staff picker for dispensing
+  readonly dispenseRoles = ['DOCTOR', 'NURSE', 'PHARMACIST', 'ADMIN'];
+  dispenseRole = '';
+  dispenseStaff = signal<DoctorSearchResult[]>([]);
+  dispenseStaffLoading = signal(false);
+  dispenseStaffError = signal('');
 
   // Init modal state
   showInit = false;
@@ -72,6 +85,8 @@ export class StockComponent implements OnInit {
   toast = signal('');
   toastOk = signal(true);
 
+  pendingRxCount = signal(0);
+
   ngOnInit() { this.loadAll(); }
 
   loadAll() {
@@ -81,7 +96,12 @@ export class StockComponent implements OnInit {
     this.svc.getAllStock().subscribe({ next: d => { this.stocks.set(d); this.loading.set(false); } });
     this.svc.getLowStock(10).subscribe({ next: d => this.lowStock.set(d) });
     this.svc.getOutOfStock().subscribe({ next: d => this.outOfStock.set(d) });
-    this.svc.getExpiredBatches().subscribe({ next: d => this.expiredBatches.set(d) });
+    this.svc.getPrescriptionsByStatus('PROCESSING').subscribe({ next: d => this.pendingRxCount.set(d.length), error: () => {} });
+    if (this.canManagePharmacy) {
+      this.svc.getExpiredBatches().subscribe({ next: d => this.expiredBatches.set(d) });
+    } else {
+      this.expiredBatches.set([]);
+    }
     this.loadBatchMedicationMap();
   }
 
@@ -90,12 +110,12 @@ export class StockComponent implements OnInit {
       if (medications.length === 0) return;
       const calls = medications.map(m => this.svc.getBatches(m.medicationId!));
       forkJoin(calls).subscribe({ next: batchArrays => {
-        const medMap:    Record<number, string> = {};
-        const numMap:    Record<number, string> = {};
+        const medMap: Record<number, Medication> = {};
+        const numMap: Record<number, string>     = {};
         batchArrays.forEach((batches, i) => {
           batches.forEach(b => {
             if (b.batchId != null) {
-              medMap[b.batchId] = medications[i].name;
+              medMap[b.batchId] = medications[i];
               numMap[b.batchId] = b.batchNumber;
             }
           });
@@ -106,11 +126,29 @@ export class StockComponent implements OnInit {
     }});
   }
 
+  medName(batchId: number): string {
+    return this.batchMedicationMap[batchId]?.name || `Batch #${batchId}`;
+  }
+
+  medDetail(batchId: number): string {
+    const m = this.batchMedicationMap[batchId];
+    if (!m) return '';
+    const parts: string[] = [];
+    if (m.form)     parts.push(m.form.charAt(0).toUpperCase() + m.form.slice(1).toLowerCase());
+    if (m.strength) parts.push(m.strength);
+    if (m.unit && m.unit !== m.form) parts.push(m.unit);
+    return parts.join(' · ');
+  }
+
   /** Label for a stock entry in a dropdown */
   stockLabel(s: Stock): string {
-    const med = this.batchMedicationMap[s.batchId] || `Batch #${s.batchId}`;
-    const num = this.batchNumberMap[s.batchId]     ? ` — ${this.batchNumberMap[s.batchId]}` : '';
+    const med = this.medName(s.batchId);
+    const num = this.batchNumberMap[s.batchId] ? ` — ${this.batchNumberMap[s.batchId]}` : '';
     return `${med}${num} (${s.quantityAvailable} available)`;
+  }
+
+  get currentUsername(): string {
+    return this.auth.getUser()?.username || this.auth.getUser()?.firstName || 'pharmacist';
   }
 
   get sourceAvailableQty(): number {
@@ -134,9 +172,17 @@ export class StockComponent implements OnInit {
     if (!this.initSelectedMedId) return;
     this.initBatchesLoading.set(true);
     this.svc.getBatches(this.initSelectedMedId).subscribe({
-      next: d => { this.initBatches.set(d); this.initBatchesLoading.set(false); },
+      next: d => { this.initBatches.set(d.filter(b => !b.expired)); this.initBatchesLoading.set(false); },
       error: () => this.initBatchesLoading.set(false)
     });
+  }
+
+  get expiredBatchIdSet(): Set<number> {
+    return new Set(this.expiredBatches().map(b => b.batchId!).filter(id => id != null));
+  }
+
+  get dispensableStocks(): Stock[] {
+    return this.stocks().filter(s => !this.expiredBatchIdSet.has(s.batchId));
   }
 
   get currentList(): Stock[] {
@@ -149,6 +195,39 @@ export class StockComponent implements OnInit {
     if (s.quantityAvailable === 0) return 'out';
     if (s.quantityAvailable <= 10) return 'low';
     return 'ok';
+  }
+
+  openDispenseModal(batchId: number) {
+    this.dispenseForm = { batchId, quantity: 1, dispensedBy: '' };
+    this.dispenseRole = '';
+    this.dispenseStaff.set([]);
+    this.dispenseError.set('');
+    this.dispenseStaffError.set('');
+    this.showDispense = true;
+  }
+
+  onDispenseRoleChange() {
+    this.dispenseForm.dispensedBy = '';
+    this.dispenseStaff.set([]);
+    this.dispenseStaffError.set('');
+    if (!this.dispenseRole) return;
+    this.dispenseStaffLoading.set(true);
+    this.apiSvc.listStaffByRoles([this.dispenseRole], 100).subscribe({
+      next: (staff) => {
+        this.dispenseStaff.set(staff);
+        this.dispenseStaffLoading.set(false);
+        if (staff.length === 0) this.dispenseStaffError.set(`No ${this.dispenseRole.toLowerCase()} accounts found.`);
+      },
+      error: (e: any) => {
+        this.dispenseStaffLoading.set(false);
+        this.dispenseStaffError.set(e?.error?.message || e?.message || `Failed to load staff (${e?.status ?? 'network error'})`);
+      }
+    });
+  }
+
+  staffDisplayName(s: DoctorSearchResult): string {
+    const name = [s.firstName, s.lastName].filter(Boolean).join(' ').trim();
+    return name || s.username || s.email || '';
   }
 
   dispense() {
@@ -193,7 +272,7 @@ export class StockComponent implements OnInit {
   }
 
   openSmartDispense() {
-    this.smartDispenseForm = { quantity: 1 };
+    this.smartDispenseForm = { quantity: 1, dispensedBy: this.currentUsername };
     this.smartDispenseResult = null;
     this.smartDispenseError.set('');
     this.showSmartDispense = true;

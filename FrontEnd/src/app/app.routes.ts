@@ -7,8 +7,6 @@ import { FrontofficeLayoutComponent } from './layouts/frontoffice-layout/frontof
 import { Dashboard } from './pages/backoffice/dashboard/dashboard';
 import { CreateHr } from './pages/backoffice/create-hr/create-hr';
 import { CreateStaff } from './pages/backoffice/create-staff/create-staff';
-import { CreateInternalUser } from './pages/backoffice/create-internal-user/create-internal-user';
-import { UserAdminDashboard } from './pages/backoffice/user-admin-dashboard/user-admin-dashboard';
 import { StaffList } from './pages/backoffice/staff-list/staff-list';
 import { StaffUserDetails } from './pages/backoffice/staff-user-details/staff-user-details';
 import { HrList } from './pages/backoffice/hr-list/hr-list';
@@ -36,6 +34,12 @@ import { ProcedureDialysisPrescriptionsComponent } from './pages/backoffice/proc
 import { ProcedureDialysisSessionsComponent } from './pages/backoffice/procedure-dialysis-sessions/procedure-dialysis-sessions';
 import { ProcedureSurgicalComponent } from './pages/backoffice/procedure-surgical/procedure-surgical';
 import { ProcedureSurgicalAdvancedComponent } from './pages/backoffice/procedure-surgical-advanced/procedure-surgical-advanced';
+import { HospitalStructureComponent } from './pages/backoffice/hospital-structure/hospital-structure';
+import { EquipmentInventoryComponent } from './pages/backoffice/equipment-inventory/equipment-inventory';
+import { EquipmentPlacementComponent } from './pages/backoffice/equipment-placement/equipment-placement';
+import { OfficeAssignmentsComponent } from './pages/backoffice/office-assignments/office-assignments';
+import { StaffPlacementsComponent } from './pages/backoffice/staff-placements/staff-placements';
+import { AccountSettingsComponent } from './pages/backoffice/account-settings/account-settings';
 import { GuardianTrackingComponent } from './pages/frontoffice/guardian-tracking/guardian-tracking';
 import { FrontofficePharmacyComponent } from './pages/frontoffice/frontoffice-pharmacy/frontoffice-pharmacy.component';
 import { CommunicationListComponent } from './pages/frontoffice/communication-list/communication-list';
@@ -50,11 +54,15 @@ import { ConsultationWorkspacePage } from './features/clinical/consultations/con
 import { LabRequestsPage } from './features/clinical/consultations/lab-requests.page';
 import { ReceptionistAppointmentsPage } from './features/clinical/appointments/receptionist-appointments.page';
 import { DoctorTodayAppointmentsPage } from './features/clinical/appointments/doctor-today-appointments.page';
+import { HospitalizationCreatePage } from './features/ops/hospitalizations/hospitalization-create.page';
+import { HospitalizationReviewPage } from './features/ops/hospitalizations/hospitalization-review.page';
+import { NurseHospitalizationsPage } from './features/ops/hospitalizations/nurse-hospitalizations.page';
 import { CalendarPage } from './frontoffice/pages/calendar/calendar.page';
 import { ConsultationsPage as GuardianConsultationsPage } from './frontoffice/pages/consultations/consultations.page';
 import { ConsultationDetailsPage as GuardianConsultationDetailsPage } from './frontoffice/pages/consultation-details/consultation-details.page';
 import { ProfilePage } from './frontoffice/pages/profile/profile.page';
 import { MessagesPage } from './frontoffice/pages/messages/messages.page';
+import { SchedulePage } from './frontoffice/pages/schedule/schedule.page';
 
 import { HomePageComponent } from './pages/public/home-page/home-page';
 import { AboutPageComponent } from './pages/public/about-page/about-page';
@@ -68,6 +76,7 @@ import { Login } from './pages/public/login/login';
 
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
+import { passwordChangeGuard } from './core/guards/password-change.guard';
 
 export const routes: Routes = [
   // ================= PUBLIC WEBSITE =================
@@ -91,19 +100,13 @@ export const routes: Routes = [
   {
     path: 'backoffice',
     component: BackofficeLayoutComponent,
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, roleGuard, passwordChangeGuard],
     data: {
-      roles: ['ADMIN', 'HR', 'DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST']
+      roles: ['ADMIN', 'HR', 'DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST', 'LAB_AGENT']
     },
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'dashboard', component: Dashboard },
-      {
-        path: 'user-admin',
-        component: UserAdminDashboard,
-        canActivate: [roleGuard],
-        data: { roles: ['ADMIN', 'HR'] }
-      },
       {
         path: 'create-hr',
         component: CreateHr,
@@ -115,12 +118,6 @@ export const routes: Routes = [
         component: HrList,
         canActivate: [roleGuard],
         data: { roles: ['ADMIN'] }
-      },
-      {
-        path: 'create-internal-user',
-        component: CreateInternalUser,
-        canActivate: [roleGuard],
-        data: { roles: ['HR'] }
       },
       {
         path: 'create-staff',
@@ -220,10 +217,14 @@ export const routes: Routes = [
       },
       {
         path: 'appointments-clinical',
-        component: ReceptionistAppointmentsPage,
-        canActivate: [roleGuard],
-        data: { roles: ['RECEPTIONIST'] }
+        pathMatch: 'full',
+        redirectTo: 'appointments'
       },
+      // ================== DOCTOR CLINICAL WORKSPACE ==================
+      // Canonical entry for doctors: /backoffice/doctor → redirects to /backoffice/doctor/today
+      // From there, doctors can drill into consultations, lab-requests, and specific consultation details/workspaces.
+      // All navigation preserves filters and page context via returnUrl query params (Step 6).
+      // ===============================================================
       {
         path: 'doctor',
         pathMatch: 'full',
@@ -266,10 +267,28 @@ export const routes: Routes = [
         data: { roles: ['DOCTOR'] }
       },
       {
+        path: 'consultations/:id/hospitalization/new',
+        component: HospitalizationCreatePage,
+        canActivate: [roleGuard],
+        data: { roles: ['DOCTOR'] }
+      },
+      {
+        path: 'hospitalizations/:id',
+        component: HospitalizationReviewPage,
+        canActivate: [roleGuard],
+        data: { roles: ['DOCTOR', 'NURSE'] }
+      },
+      {
+        path: 'nurse/hospitalizations',
+        component: NurseHospitalizationsPage,
+        canActivate: [roleGuard],
+        data: { roles: ['NURSE'] }
+      },
+      {
         path: 'my-contract',
         component: MyContractComponent,
         canActivate: [roleGuard],
-        data: { roles: ['HR', 'DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST'] }
+        data: { roles: ['HR', 'DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST', 'LAB_AGENT'] }
       },
       {
         path: 'logs',
@@ -325,7 +344,43 @@ export const routes: Routes = [
           import('./pages/backoffice/pharmacy/pharmacy.routes')
             .then((m) => m.PHARMACY_ROUTES),
         canActivate: [roleGuard],
-        data: { roles: ['PHARMACIST', 'ADMIN', 'NURSE'] }
+        data: { roles: ['PHARMACIST'] }
+      },
+      {
+        path: 'hospital-structure',
+        component: HospitalStructureComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] }
+      },
+      {
+        path: 'equipment-inventory',
+        component: EquipmentInventoryComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['HR'] }
+      },
+      {
+        path: 'equipment-placement',
+        component: EquipmentPlacementComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['HR'] }
+      },
+      {
+        path: 'office-assignments',
+        component: OfficeAssignmentsComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] }
+      },
+      {
+        path: 'staff-placements',
+        component: StaffPlacementsComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['HR'] }
+      },
+      {
+        path: 'account-settings',
+        component: AccountSettingsComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN', 'HR', 'DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST', 'LAB_AGENT'] }
       }
     ]
   },
@@ -339,14 +394,23 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'home' },
       { path: 'home', component: FrontofficeHomeComponent },
-      { path: 'calendar', component: CalendarPage },
+      {
+        path: 'schedule',
+        component: SchedulePage,
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'appointments' },
+          { path: 'appointments', component: FrontofficeAppointmentsComponent },
+          { path: 'calendar', component: CalendarPage }
+        ]
+      },
+      { path: 'calendar', pathMatch: 'full', redirectTo: 'schedule/calendar' },
       { path: 'consultations', component: GuardianConsultationsPage },
       { path: 'consultations/:id', component: GuardianConsultationDetailsPage },
       { path: 'messages', component: MessagesPage },
       { path: 'communication', component: CommunicationListComponent },
       { path: 'communication/new', component: CommunicationNewComponent },
       { path: 'communication/:id', component: CommunicationThreadComponent },
-      { path: 'appointments', component: FrontofficeAppointmentsComponent },
+      { path: 'appointments', pathMatch: 'full', redirectTo: 'schedule/appointments' },
       { path: 'profile', component: ProfilePage },
       { path: 'profile-legacy', component: FrontofficeProfileComponent },
       { path: 'patients/:id', component: FrontofficePatientDetailsComponent },

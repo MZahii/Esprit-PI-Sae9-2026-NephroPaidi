@@ -295,9 +295,10 @@
             <div class="tab-pane" [class.active]="activeTab === 'prescriptions'">
               <div class="d-flex align-items-center justify-content-between mb-2">
                 <h6 class="mb-0">Prescriptions</h6>
-                <button class="btn btn-light btn-sm" (click)="addPrescription()">Add</button>
+                <button class="btn btn-light btn-sm" (click)="addPrescription()">+ Add</button>
               </div>
-              <div *ngIf="draft.prescriptions.length === 0" class="text-muted">No prescriptions added.</div>
+
+              <div *ngIf="draft.prescriptions.length === 0" class="text-muted small mb-3">No medications added yet.</div>
               <div class="prescription-item" *ngFor="let item of draft.prescriptions; let i = index">
                 <div class="row g-2 align-items-end">
                   <div class="col-md-3">
@@ -321,7 +322,7 @@
                     <input type="number" class="form-control" [(ngModel)]="item.doseMgPerKg" />
                   </div>
                   <div class="col-md-1">
-                    <button class="btn btn-outline-danger w-100" (click)="removePrescription(i)">Remove</button>
+                    <button class="btn btn-outline-danger w-100" (click)="removePrescription(i)">✕</button>
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">Min mg/kg/day</label>
@@ -333,10 +334,11 @@
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Notes</label>
-                    <input class="form-control" [(ngModel)]="item.note" placeholder="Notes" />
+                    <input class="form-control" [(ngModel)]="item.note" placeholder="e.g. take with food, renal dose" />
                   </div>
                 </div>
               </div>
+
             </div>
           </div>
 

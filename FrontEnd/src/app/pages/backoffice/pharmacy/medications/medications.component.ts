@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PharmacyService } from '../../../../core/services/pharmacy.service';
 import { Medication, Batch, ReorderAlert } from '../../../../core/models/pharmacy.models';
+import { hasAnyRole } from '../../../../core/auth/keycloak.service';
 
 @Component({
   selector: 'app-medications',
@@ -12,6 +13,7 @@ import { Medication, Batch, ReorderAlert } from '../../../../core/models/pharmac
 })
 export class MedicationsComponent implements OnInit {
   private svc = inject(PharmacyService);
+  private readonly canManagePharmacy = hasAnyRole(['PHARMACIST']);
 
   medications = signal<Medication[]>([]);
   reorderAlerts = signal<ReorderAlert[]>([]);
@@ -39,7 +41,12 @@ export class MedicationsComponent implements OnInit {
 
   today = new Date().toISOString().split('T')[0];
 
-  ngOnInit() { this.load(); this.loadReorderAlerts(); }
+  ngOnInit() {
+    this.load();
+    if (this.canManagePharmacy) {
+      this.loadReorderAlerts();
+    }
+  }
 
   load() {
     this.loading.set(true);
@@ -50,6 +57,10 @@ export class MedicationsComponent implements OnInit {
   }
 
   loadReorderAlerts() {
+    if (!this.canManagePharmacy) {
+      this.reorderAlerts.set([]);
+      return;
+    }
     this.svc.getReorderNeeded().subscribe({
       next: d => this.reorderAlerts.set(d),
       error: () => {}
@@ -69,7 +80,11 @@ export class MedicationsComponent implements OnInit {
 
   openAdd() {
     this.editMode = false;
-    this.currentMed = { name: '', form: 'tablet', pediatricDosage: '', minimumStock: null };
+    this.currentMed = {
+      name: '', genericName: '', form: 'tablet', strength: '', unit: 'tablet',
+      therapeuticClass: '', standardDosage: '', renalDoseAdjustment: false,
+      storageConditions: 'ROOM_TEMPERATURE', controlledSubstance: false, minimumStock: null
+    };
     this.nameError.set('');
     this.showModal = true;
   }

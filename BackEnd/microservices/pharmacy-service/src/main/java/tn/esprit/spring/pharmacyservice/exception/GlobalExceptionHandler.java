@@ -7,6 +7,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -36,6 +37,12 @@ public class GlobalExceptionHandler {
             IllegalStateException ex, WebRequest request) {
         log.error("IllegalStateException: {}", ex.getMessage(), ex);
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNoResource(
+            NoResourceFoundException ex, WebRequest request) {
+        return buildErrorResponse(HttpStatus.NOT_FOUND, "Endpoint not found: " + ex.getMessage());
     }
 
     @ExceptionHandler(AccessDeniedException.class)

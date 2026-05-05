@@ -7,7 +7,7 @@
         <i class="bi bi-archive-fill"></i>
       </div>
       <div>
-        <h4 class="phx-title">Stock Management</h4>
+        <h4 class="phx-title"> Medication Stock </h4>
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
@@ -17,8 +17,15 @@
       </div>
     </div>
     <div class="d-flex gap-2">
+      <a routerLink="/backoffice/pharmacy/prescriptions" class="phx-btn phx-btn-ghost phx-btn-sm" style="position:relative">
+        <i class="bi bi-file-medical"></i> Prescriptions
+        <span *ngIf="pendingRxCount() > 0"
+              style="position:absolute;top:-6px;right:-6px;background:#dc2626;color:#fff;border-radius:999px;font-size:10px;font-weight:700;min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;padding:0 4px">
+          {{ pendingRxCount() }}
+        </span>
+      </a>
       <a routerLink="/backoffice/pharmacy/dispensations" class="phx-btn phx-btn-ghost phx-btn-sm">
-        <i class="bi bi-clock-history"></i> Dispensation History
+        <i class="bi bi-clock-history"></i> History
       </a>
       <button class="phx-btn phx-btn-sm phx-btn-teal" (click)="openSmartDispense()">
         <i class="bi bi-magic"></i> Smart Dispense
@@ -76,6 +83,20 @@
     </div>
   </div>
 
+  <!-- ── Pending Prescriptions Notice ─────────────────────────────────── -->
+  <a routerLink="/backoffice/pharmacy/prescriptions"
+     *ngIf="pendingRxCount() > 0"
+     class="phx-rx-notice mb-3 d-flex align-items-center gap-3 text-decoration-none">
+    <div class="phx-rx-notice-icon">
+      <i class="bi bi-file-medical-fill"></i>
+    </div>
+    <div class="flex-1">
+      <div class="fw-700" style="color:#7c3aed">{{ pendingRxCount() }} prescription(s) awaiting dispensing</div>
+      <div class="small" style="color:#6d28d9;opacity:.8">Click to open Prescriptions and select batches → stock will be deducted automatically</div>
+    </div>
+    <i class="bi bi-arrow-right-circle-fill ms-auto" style="font-size:20px;color:#7c3aed;opacity:.7"></i>
+  </a>
+
   <!-- ── Alerts ──────────────────────────────────────────────────────────── -->
   <div class="phx-alert phx-alert-danger mb-3"
     *ngIf="outOfStock().length > 0 && !alertOutDismissed">
@@ -131,7 +152,12 @@
         <tbody>
           <tr *ngFor="let b of expiredBatches()" class="phx-row-danger">
             <td class="text-muted small">{{ b.batchId }}</td>
-            <td class="fw-700">{{ batchMedicationMap[b.batchId!] || '—' }}</td>
+            <td>
+              <div class="fw-700">{{ batchMedicationMap[b.batchId!]?.name || '—' }}</div>
+              <div class="small text-muted" *ngIf="batchMedicationMap[b.batchId!]?.strength">
+                {{ batchMedicationMap[b.batchId!]?.form | titlecase }} · {{ batchMedicationMap[b.batchId!]?.strength }}
+              </div>
+            </td>
             <td class="font-monospace small">{{ b.batchNumber }}</td>
             <td class="small text-muted">{{ b.manufactureDate | date:'dd/MM/yyyy' }}</td>
             <td><span class="fw-700 text-danger">{{ b.expirationDate | date:'dd/MM/yyyy' }}</span></td>
@@ -157,8 +183,8 @@
       <table class="phx-table">
         <thead>
           <tr>
-            <th>Stock ID</th>
             <th>Medication</th>
+            <th>Form / Strength</th>
             <th>Quantity Available</th>
             <th>Level</th>
             <th>Actions</th>
@@ -168,8 +194,48 @@
           <tr *ngFor="let s of currentList"
             [class.phx-row-danger]="stockLevel(s)==='out'"
             [class.phx-row-warning]="stockLevel(s)==='low'">
-            <td class="text-muted small">{{ s.stockId }}</td>
-            <td class="fw-700">{{ batchMedicationMap[s.batchId] || ('Batch #' + s.batchId) }}</td>
+            <td>
+              <div class="d-flex align-items-start gap-2">
+                <div class="phx-dot"
+                  [class.bg-success]="stockLevel(s)==='ok'"
+                  [class.bg-warning]="stockLevel(s)==='low'"
+                  [class.bg-danger]="stockLevel(s)==='out'"
+                  style="margin-top:5px"></div>
+                <div>
+                  <div class="fw-700">{{ medName(s.batchId) }}</div>
+                  <div class="text-muted small font-italic"
+                    *ngIf="batchMedicationMap[s.batchId]?.genericName">
+                    {{ batchMedicationMap[s.batchId]?.genericName }}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="phx-pill phx-pill-indigo me-1" *ngIf="batchMedicationMap[s.batchId]?.form">
+                {{ batchMedicationMap[s.batchId]?.form | titlecase }}
+              </span>
+              <span class="text-muted small">{{ batchMedicationMap[s.batchId]?.strength }}</span>
+            </td>
+            <td class="text-center">
+              <span class="phx-med-flag phx-flag-renal"
+                title="Renal dose adjustment required"
+                *ngIf="batchMedicationMap[s.batchId]?.renalDoseAdjustment">
+                <i class="bi bi-kidney"></i>
+              </span>
+              <span class="phx-med-flag phx-flag-controlled"
+                title="Controlled substance"
+                *ngIf="batchMedicationMap[s.batchId]?.controlledSubstance">
+                <i class="bi bi-shield-lock-fill"></i>
+              </span>
+              <span class="phx-med-flag phx-flag-cold"
+                title="Refrigerated 2–8 °C"
+                *ngIf="batchMedicationMap[s.batchId]?.storageConditions === 'REFRIGERATED_2_8'">
+                <i class="bi bi-snow"></i>
+              </span>
+            </td>
+            <td class="font-monospace small text-muted">
+              {{ batchNumberMap[s.batchId] || ('Batch #' + s.batchId) }}
+            </td>
             <td>
               <div class="phx-qty-row">
                 <div class="phx-qty-bar-wrap">
@@ -193,23 +259,30 @@
             </td>
             <td>
               <div class="d-flex gap-2 flex-wrap">
-                <button class="phx-btn phx-btn-sm phx-btn-ghost"
-                  (click)="showAdjust=true; adjustBatchId=s.batchId; adjustDelta=0; adjustReason=''">
-                  <i class="bi bi-sliders"></i> Adjust
-                </button>
-                <button class="phx-btn phx-btn-sm phx-btn-indigo"
-                  (click)="openTransfer(s.batchId)">
-                  <i class="bi bi-arrow-left-right"></i> Transfer
-                </button>
-                <button class="phx-btn phx-btn-sm phx-btn-primary"
-                  (click)="showDispense=true; dispenseForm={batchId: s.batchId, quantity: 1}; dispenseError.set('')">
-                  <i class="bi bi-send"></i> Dispense
-                </button>
+                <ng-container *ngIf="!expiredBatchIdSet.has(s.batchId); else expiredBadge">
+                  <button class="phx-btn phx-btn-sm phx-btn-ghost"
+                    (click)="showAdjust=true; adjustBatchId=s.batchId; adjustDelta=0; adjustReason=''">
+                    <i class="bi bi-sliders"></i> Adjust
+                  </button>
+                  <button class="phx-btn phx-btn-sm phx-btn-indigo"
+                    (click)="openTransfer(s.batchId)">
+                    <i class="bi bi-arrow-left-right"></i> Transfer
+                  </button>
+                  <button class="phx-btn phx-btn-sm phx-btn-primary"
+                    (click)="openDispenseModal(s.batchId)">
+                    <i class="bi bi-send"></i> Dispense
+                  </button>
+                </ng-container>
+                <ng-template #expiredBadge>
+                  <span class="phx-pill phx-pill-danger">
+                    <i class="bi bi-calendar-x me-1"></i>Expired
+                  </span>
+                </ng-template>
               </div>
             </td>
           </tr>
           <tr *ngIf="currentList.length === 0">
-            <td colspan="5" class="phx-empty">
+            <td colspan="7" class="phx-empty">
               <i class="bi bi-inbox"></i>
               <p>No entries in this category</p>
             </td>
@@ -232,19 +305,23 @@
       <button class="phx-close-btn" (click)="showDispense=false"><i class="bi bi-x-lg"></i></button>
     </div>
     <div class="phx-modal-body">
-      <!-- Show selected medication info if coming from table row -->
+      <!-- Selected medication info -->
       <div class="phx-info-box mb-3" *ngIf="dispenseForm.batchId && batchMedicationMap[dispenseForm.batchId]">
         <i class="bi bi-capsule-pill text-primary"></i>
         <div>
-          <div class="fw-700">{{ batchMedicationMap[dispenseForm.batchId] }}</div>
-          <div class="small text-muted font-monospace" *ngIf="batchNumberMap[dispenseForm.batchId]">{{ batchNumberMap[dispenseForm.batchId] }}</div>
+          <div class="fw-700">{{ batchMedicationMap[dispenseForm.batchId]?.name }}</div>
+          <div class="small text-muted">
+            {{ batchMedicationMap[dispenseForm.batchId]?.form | titlecase }}
+            <span *ngIf="batchMedicationMap[dispenseForm.batchId]?.strength"> · {{ batchMedicationMap[dispenseForm.batchId]?.strength }}</span>
+          </div>
+          <div class="small font-monospace text-muted" *ngIf="batchNumberMap[dispenseForm.batchId]">{{ batchNumberMap[dispenseForm.batchId] }}</div>
         </div>
       </div>
       <div class="phx-field">
         <label>Batch <span class="text-danger">*</span></label>
         <select class="phx-input" [(ngModel)]="dispenseForm.batchId" (ngModelChange)="dispenseError.set('')">
           <option [ngValue]="undefined" disabled>Select a batch…</option>
-          <option *ngFor="let s of stocks()" [ngValue]="s.batchId" [disabled]="s.quantityAvailable === 0">
+          <option *ngFor="let s of dispensableStocks" [ngValue]="s.batchId" [disabled]="s.quantityAvailable === 0">
             {{ stockLabel(s) }}
           </option>
         </select>
@@ -258,11 +335,45 @@
           <i class="bi bi-exclamation-circle-fill"></i> {{ dispenseError() }}
         </div>
       </div>
+      <div class="phx-field-row">
+        <div class="phx-field">
+          <label>Patient Name</label>
+          <input class="phx-input" [(ngModel)]="dispenseForm.patientName" placeholder="e.g. John Doe"/>
+        </div>
+        <div class="phx-field">
+          <label>Prescription ID</label>
+          <input type="number" class="phx-input" [(ngModel)]="dispenseForm.prescriptionId" placeholder="Optional"/>
+        </div>
+      </div>
+      <div class="phx-field-row">
+        <div class="phx-field">
+          <label>Staff Role <span class="text-danger">*</span></label>
+          <select class="phx-input" [(ngModel)]="dispenseRole" (ngModelChange)="onDispenseRoleChange()">
+            <option value="" disabled>Select role…</option>
+            <option *ngFor="let r of dispenseRoles" [value]="r">{{ r | titlecase }}</option>
+          </select>
+        </div>
+        <div class="phx-field">
+          <label>Dispensed To / By <span class="text-danger">*</span></label>
+          <select class="phx-input" [(ngModel)]="dispenseForm.dispensedBy"
+                  [disabled]="!dispenseRole || dispenseStaffLoading()">
+            <option value="" disabled>
+              {{ dispenseStaffLoading() ? 'Loading…' : (dispenseRole ? 'Select person…' : 'Select role first') }}
+            </option>
+            <option *ngFor="let s of dispenseStaff()" [value]="staffDisplayName(s)">
+              {{ staffDisplayName(s) }}
+            </option>
+          </select>
+          <div *ngIf="dispenseStaffError()" class="text-danger small mt-1">
+            <i class="bi bi-exclamation-circle me-1"></i>{{ dispenseStaffError() }}
+          </div>
+        </div>
+      </div>
     </div>
     <div class="phx-modal-footer">
       <button class="phx-btn phx-btn-ghost" (click)="showDispense=false">Cancel</button>
       <button class="phx-btn phx-btn-primary" (click)="dispense()"
-        [disabled]="!dispenseForm.batchId || !dispenseForm.quantity || dispensing()">
+        [disabled]="!dispenseForm.batchId || !dispenseForm.quantity || !dispenseForm.dispensedBy || dispensing()">
         <span *ngIf="dispensing()" class="phx-spin me-1"></span>
         <i *ngIf="!dispensing()" class="bi bi-send"></i>
         {{ dispensing() ? 'Dispensing…' : 'Confirm Dispense' }}
@@ -431,7 +542,8 @@
           <select class="phx-input" [(ngModel)]="smartDispenseForm.medicationId" (ngModelChange)="smartDispenseError.set('')">
             <option [ngValue]="undefined" disabled>Select a medication...</option>
             <option *ngFor="let m of smartMedications()" [ngValue]="m.medicationId">
-              {{ m.name }} — {{ m.form | titlecase }}
+              {{ m.name }}{{ m.strength ? ' ' + m.strength : '' }} — {{ m.form | titlecase }}
+              <ng-container *ngIf="m.renalDoseAdjustment"> ⚠ Renal</ng-container>
             </option>
           </select>
         </div>
@@ -439,6 +551,21 @@
           <label>Quantity <span class="text-danger">*</span></label>
           <input type="number" class="phx-input" [(ngModel)]="smartDispenseForm.quantity" min="1"
                  (ngModelChange)="smartDispenseError.set('')"/>
+        </div>
+        <div class="phx-field-row">
+          <div class="phx-field">
+            <label>Patient Name</label>
+            <input class="phx-input" [(ngModel)]="smartDispenseForm.patientName" placeholder="e.g. John Doe"/>
+          </div>
+          <div class="phx-field">
+            <label>Prescription ID</label>
+            <input type="number" class="phx-input" [(ngModel)]="smartDispenseForm.prescriptionId" placeholder="Optional"/>
+          </div>
+        </div>
+        <div class="phx-field">
+          <label>Dispensed By <span class="text-danger">*</span></label>
+          <input class="phx-input" [(ngModel)]="smartDispenseForm.dispensedBy"/>
+          <div class="phx-hint"><i class="bi bi-person-badge me-1"></i>Auto-filled from your account</div>
         </div>
       </div>
     </div>
@@ -587,8 +714,8 @@
 }
 
 /* ── Layout ───────────────────────────────────────────────────────────────── */
-.phx-page { padding:24px; background:#f8fafc; min-height:100vh; }
-.phx-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; }
+.phx-page { padding:0; background:transparent; min-height:auto; }
+.phx-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; border:1px solid #dbe7f5; border-radius:16px; background:linear-gradient(130deg,#f7fbff 0%,#eef4ff 100%); padding:18px 20px; }
 .phx-header-left { display:flex; align-items:center; gap:16px; }
 .phx-header-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; }
 .phx-title { font-size:22px; font-weight:800; color:#1e293b; margin:0; }
@@ -604,13 +731,13 @@
 .phx-btn:not(:disabled):hover  { transform:translateY(-2px); }
 .phx-btn:not(:disabled):active { transform:translateY(0) scale(.97); }
 .phx-btn-sm { padding:6px 13px; font-size:12.5px; border-radius:8px; }
-.phx-btn-primary { background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; box-shadow:0 4px 14px rgba(79,70,229,.3); }
-.phx-btn-primary:not(:disabled):hover { box-shadow:0 8px 20px rgba(79,70,229,.4); }
+.phx-btn-primary { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; box-shadow:0 4px 14px rgba(37,99,235,.3); }
+.phx-btn-primary:not(:disabled):hover { box-shadow:0 8px 20px rgba(37,99,235,.4); }
 .phx-btn-warning { background:linear-gradient(135deg,#d97706,#b45309); color:#fff; box-shadow:0 4px 12px rgba(217,119,6,.3); }
 .phx-btn-warning:not(:disabled):hover { box-shadow:0 8px 18px rgba(217,119,6,.4); }
 .phx-btn-teal    { background:linear-gradient(135deg,#0d9488,#0f766e); color:#fff; box-shadow:0 4px 12px rgba(13,148,136,.3); }
 .phx-btn-teal:not(:disabled):hover { box-shadow:0 8px 18px rgba(13,148,136,.4); }
-.phx-btn-indigo  { background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; box-shadow:0 4px 12px rgba(79,70,229,.25); }
+.phx-btn-indigo  { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; box-shadow:0 4px 12px rgba(37,99,235,.25); }
 .phx-btn-ghost { background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0; box-shadow:none; }
 .phx-btn-ghost:not(:disabled):hover { background:#e2e8f0; box-shadow:none; }
 .phx-btn:disabled { opacity:.5; cursor:not-allowed; transform:none !important; }
@@ -650,6 +777,9 @@
 .phx-alert-warning { background:#fffbeb; border:1px solid #fde68a; color:#854d0e; }
 .phx-alert-close { background:none; border:none; cursor:pointer; margin-left:auto; opacity:.6; font-size:13px; color:inherit; transition:opacity .15s; }
 .phx-alert-close:hover { opacity:1; }
+.phx-rx-notice { background:linear-gradient(135deg,#f5f3ff,#ede9fe); border:1.5px solid #c4b5fd; border-radius:14px; padding:14px 18px; cursor:pointer; transition:transform .2s, box-shadow .2s; }
+.phx-rx-notice:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(124,58,237,.15); }
+.phx-rx-notice-icon { width:40px; height:40px; border-radius:12px; background:#7c3aed; color:#fff; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
 
 /* ── Tabs ───────────────────────────────────────────────────────────────── */
 .phx-tabs { display:flex; gap:4px; background:#f1f5f9; border-radius:12px; padding:4px; }
@@ -742,7 +872,7 @@
   font-size:14px; outline:none; background:#fff;
   transition:border-color .2s ease, box-shadow .2s ease, transform .1s ease;
 }
-.phx-input:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.1); }
+.phx-input:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
 .phx-input:disabled { background:#f8fafc; cursor:not-allowed; }
 .phx-input-error { border-color:#ef4444 !important; box-shadow:0 0 0 3px rgba(239,68,68,.1) !important; }
 .phx-field-error { margin-top:5px; font-size:12px; font-weight:600; color:#ef4444; display:flex; align-items:center; gap:4px; animation:fadeSlideIn .2s ease; }
@@ -826,4 +956,56 @@
 .phx-btn:not(:disabled):hover { transform:translateY(-3px) scale(1.02); }
 
 .phx-input:focus { transform:scale(1.005); }
+
+/* ── Medication flags (matching medications page) ───────────────────────── */
+.phx-med-flag { display:inline-flex; align-items:center; gap:3px; padding:3px 7px; border-radius:6px; font-size:11px; font-weight:700; margin:1px; }
+.phx-flag-renal      { background:#ffe4e6; color:#be123c; }
+.phx-flag-controlled { background:#fef3c7; color:#92400e; }
+.phx-flag-cold       { background:#e0f2fe; color:#0369a1; }
+
+/* ── Dot indicator ──────────────────────────────────────────────────────── */
+.phx-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+/* ── Two-column field row ───────────────────────────────────────────────── */
+.phx-field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+/* Sync with shared backoffice visual language (User/Clinical) */
+.phx-btn,
+.phx-btn-sm {
+  border-radius: 8px;
+  box-shadow: none !important;
+}
+
+.phx-btn-primary,
+.phx-btn-indigo,
+.phx-btn-teal {
+  background: #2563eb !important;
+  color: #fff !important;
+}
+
+.phx-btn-warning {
+  background: #f59e0b !important;
+  color: #fff !important;
+}
+
+.phx-btn-danger {
+  background: #dc2626 !important;
+  color: #fff !important;
+}
+
+.phx-btn-ghost {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+.phx-card {
+  border: 1px solid #dbe7f5;
+  box-shadow: none;
+}
+
+.phx-card-header {
+  background: #f8fbff;
+  border-bottom-color: #e3edf9;
+}
 </style>

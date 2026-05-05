@@ -10,9 +10,8 @@
         <h4 class="phx-title">Dispensation History</h4>
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
-            <li class="breadcrumb-item"><a routerLink="/backoffice/pharmacy/stock">Stock</a></li>
-            <li class="breadcrumb-item active">Dispensations</li>
+            <li class="breadcrumb-item"><a routerLink="/backoffice/pharmacy/dashboard">Pharmacy</a></li>
+            <li class="breadcrumb-item active">Dispensation History</li>
           </ol>
         </nav>
       </div>
@@ -30,18 +29,16 @@
 
   <!-- ── Stat Cards ──────────────────────────────────────────────────────── -->
   <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
       <div class="phx-stat-card phx-stat-indigo">
         <div class="phx-stat-icon"><i class="bi bi-send-fill"></i></div>
         <div class="phx-stat-body">
           <div class="phx-stat-value">{{ logs().length }}</div>
-          <div class="phx-stat-label">
-            {{ isToday() ? 'Dispensations today' : 'Dispensations on ' + selectedDate }}
-          </div>
+          <div class="phx-stat-label">{{ isToday() ? 'Dispensations today' : 'Records on date' }}</div>
         </div>
       </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
       <div class="phx-stat-card phx-stat-green">
         <div class="phx-stat-icon"><i class="bi bi-boxes"></i></div>
         <div class="phx-stat-body">
@@ -50,12 +47,21 @@
         </div>
       </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
       <div class="phx-stat-card phx-stat-cyan">
-        <div class="phx-stat-icon"><i class="bi bi-layers-fill"></i></div>
+        <div class="phx-stat-icon"><i class="bi bi-capsule-pill"></i></div>
         <div class="phx-stat-body">
-          <div class="phx-stat-value">{{ distinctBatches }}</div>
-          <div class="phx-stat-label">Distinct batches used</div>
+          <div class="phx-stat-value">{{ distinctMedications }}</div>
+          <div class="phx-stat-label">Distinct medications</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="phx-stat-card phx-stat-purple">
+        <div class="phx-stat-icon"><i class="bi bi-people-fill"></i></div>
+        <div class="phx-stat-body">
+          <div class="phx-stat-value">{{ distinctPatients }}</div>
+          <div class="phx-stat-label">Patients served</div>
         </div>
       </div>
     </div>
@@ -65,7 +71,7 @@
   <div class="phx-card" *ngIf="loading()">
     <div class="phx-empty">
       <div class="spinner-border text-primary mb-2"></div>
-      <p>Loading dispensations...</p>
+      <p>Loading dispensation records...</p>
     </div>
   </div>
 
@@ -75,13 +81,13 @@
     <span>No dispensations recorded for <strong>{{ selectedDate }}</strong>.</span>
   </div>
 
-  <!-- ── Table ───────────────────────────────────────────────────────────── -->
+  <!-- ── Audit Trail Table ───────────────────────────────────────────────── -->
   <div class="phx-card" *ngIf="!loading() && logs().length > 0">
     <div class="phx-card-header">
       <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-list-ul" style="color:#059669"></i>
+        <i class="bi bi-journal-medical" style="color:#059669"></i>
         <span class="fw-700">
-          {{ isToday() ? "Today's dispensations" : 'Dispensations — ' + selectedDate }}
+          {{ isToday() ? "Today's dispensation audit trail" : 'Dispensations — ' + selectedDate }}
         </span>
       </div>
       <span class="phx-badge phx-badge-green">{{ logs().length }} records</span>
@@ -92,8 +98,11 @@
           <tr>
             <th style="width:50px">#</th>
             <th>Medication</th>
-            <th>Batch Number</th>
-            <th>Qty Dispensed</th>
+            <th>Batch Lot</th>
+            <th>Qty</th>
+            <th>Patient</th>
+            <th>Dispensed By</th>
+            <th>Prescription</th>
             <th>Time</th>
           </tr>
         </thead>
@@ -103,14 +112,32 @@
             <td>
               <div class="d-flex align-items-center gap-2">
                 <div class="phx-dot bg-success"></div>
-                <span class="fw-700">{{ batchMedicationMap[l.batchId] || '—' }}</span>
+                <span class="fw-700">{{ l.medicationName || '—' }}</span>
               </div>
             </td>
-            <td class="font-monospace small text-muted">{{ batchNumberMap[l.batchId] || ('Batch #' + l.batchId) }}</td>
+            <td class="font-monospace small text-muted">{{ l.batchNumber || ('Batch #' + l.batchId) }}</td>
             <td>
               <span class="phx-qty-badge">
-                <i class="bi bi-box-seam"></i> {{ l.quantity }} units
+                <i class="bi bi-box-seam"></i> {{ l.quantity }}
               </span>
+            </td>
+            <td>
+              <span *ngIf="l.patientName" class="phx-patient-cell">
+                <i class="bi bi-person-fill"></i> {{ l.patientName }}
+              </span>
+              <span *ngIf="!l.patientName" class="text-muted small">—</span>
+            </td>
+            <td>
+              <span *ngIf="l.dispensedBy" class="phx-pharmacist-cell">
+                <i class="bi bi-person-badge-fill"></i> {{ l.dispensedBy }}
+              </span>
+              <span *ngIf="!l.dispensedBy" class="text-muted small">—</span>
+            </td>
+            <td>
+              <a *ngIf="l.prescriptionId"
+                 routerLink="/backoffice/pharmacy/prescriptions"
+                 class="phx-link-rx">#{{ l.prescriptionId }}</a>
+              <span *ngIf="!l.prescriptionId" class="text-muted small">Manual</span>
             </td>
             <td>
               <span class="phx-time">
@@ -125,83 +152,62 @@
 </div>
 
 <style>
-.phx-page { padding:24px; background:#f8fafc; min-height:100vh; }
-.phx-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
+.phx-page { padding:0; background:transparent; min-height:auto; }
+.phx-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:12px; border:1px solid #dbe7f5; border-radius:16px; background:linear-gradient(130deg,#f7fbff 0%,#eef4ff 100%); padding:18px 20px; }
 .phx-header-left { display:flex; align-items:center; gap:16px; }
 .phx-header-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; flex-shrink:0; }
 .phx-title { font-size:22px; font-weight:800; color:#1e293b; margin:0; }
-.phx-btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:10px; font-weight:600; font-size:13.5px; border:none; cursor:pointer; transition:all .2s; }
-.phx-btn-sm { padding:8px 14px; font-size:13px; border-radius:9px; }
-.phx-btn-primary { background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; box-shadow:0 4px 14px rgba(79,70,229,.3); }
+.phx-btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:8px; font-weight:600; font-size:13.5px; border:none; cursor:pointer; transition:all .2s; box-shadow:none !important; }
+.phx-btn-sm { padding:8px 14px; font-size:13px; }
+.phx-btn-primary { background:#2563eb !important; color:#fff !important; }
 .phx-date-wrap { position:relative; display:flex; align-items:center; }
 .phx-date-wrap i { position:absolute; left:12px; color:#64748b; font-size:14px; pointer-events:none; }
 .phx-date-input { padding:8px 12px 8px 34px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:13.5px; outline:none; background:#fff; }
-.phx-date-input:focus { border-color:#4f46e5; }
-.phx-stat-card { background:#fff; border-radius:16px; padding:20px; display:flex; align-items:center; gap:16px; box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04); border:1px solid #f1f5f9; }
+.phx-date-input:focus { border-color:#2563eb; }
+
+.phx-stat-card { background:#fff; border-radius:16px; padding:20px; display:flex; align-items:center; gap:16px; border:1px solid #dbe7f5; box-shadow:none; }
 .phx-stat-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
 .phx-stat-value { font-size:28px; font-weight:800; line-height:1; }
 .phx-stat-label { font-size:12px; color:#64748b; font-weight:600; margin-top:3px; }
-.phx-stat-indigo .phx-stat-icon { background:#ede9fe; color:#4f46e5; } .phx-stat-indigo .phx-stat-value { color:#4f46e5; }
-.phx-stat-green .phx-stat-icon { background:#dcfce7; color:#16a34a; } .phx-stat-green .phx-stat-value { color:#16a34a; }
-.phx-stat-cyan .phx-stat-icon { background:#cffafe; color:#0891b2; } .phx-stat-cyan .phx-stat-value { color:#0891b2; }
-.phx-card { background:#fff; border-radius:16px; box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04); border:1px solid #f1f5f9; overflow:hidden; margin-bottom:20px; }
-.phx-card-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #f1f5f9; background:#fafbff; }
+.phx-stat-indigo .phx-stat-icon { background:#dbeafe; color:#1d4ed8; } .phx-stat-indigo .phx-stat-value { color:#1d4ed8; }
+.phx-stat-green  .phx-stat-icon { background:#dcfce7; color:#16a34a; } .phx-stat-green  .phx-stat-value { color:#16a34a; }
+.phx-stat-cyan   .phx-stat-icon { background:#cffafe; color:#0891b2; } .phx-stat-cyan   .phx-stat-value { color:#0891b2; }
+.phx-stat-purple .phx-stat-icon { background:#ede9fe; color:#7c3aed; } .phx-stat-purple .phx-stat-value { color:#7c3aed; }
+
+.phx-card { background:#fff; border-radius:16px; border:1px solid #dbe7f5; overflow:hidden; margin-bottom:20px; box-shadow:none; }
+.phx-card-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #e3edf9; background:#f8fbff; }
 .fw-700 { font-weight:700; } .fw-600 { font-weight:600; }
 .phx-badge { padding:4px 12px; border-radius:999px; font-size:12px; font-weight:700; }
 .phx-badge-green { background:#dcfce7; color:#16a34a; }
 .phx-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
 .phx-table { width:100%; border-collapse:collapse; }
-.phx-table thead tr { background:#fafbff; }
-.phx-table th { padding:12px 16px; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#64748b; border-bottom:1px solid #f1f5f9; }
-.phx-table td { padding:14px 16px; border-bottom:1px solid #f8fafc; font-size:13.5px; color:#334155; }
-.phx-table tbody tr:hover { background:#fafbff; }
+.phx-table thead tr { background:#f8fbff; }
+.phx-table th { padding:12px 16px; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#64748b; border-bottom:1px solid #e3edf9; white-space:nowrap; }
+.phx-table td { padding:13px 16px; border-bottom:1px solid #f8fafc; font-size:13.5px; color:#334155; vertical-align:middle; }
+.phx-table tbody tr:hover { background:#f5f9ff; }
 .phx-table tbody tr:last-child td { border-bottom:none; }
-.phx-qty-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px; background:#dcfce7; color:#16a34a; font-size:13px; font-weight:700; }
+
+.phx-qty-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 11px; border-radius:999px; background:#dcfce7; color:#16a34a; font-size:13px; font-weight:700; }
 .phx-time { color:#64748b; font-size:13px; font-weight:600; }
+
+.phx-patient-cell { display:inline-flex; align-items:center; gap:5px; font-weight:600; color:#334155; font-size:13px; }
+.phx-pharmacist-cell { display:inline-flex; align-items:center; gap:5px; font-weight:600; color:#1d4ed8; font-size:13px; }
+
+.phx-link-rx { display:inline-flex; align-items:center; padding:3px 9px; border-radius:6px; background:#ede9fe; color:#7c3aed; font-size:12px; font-weight:700; text-decoration:none; }
+.phx-link-rx:hover { background:#ddd6fe; }
+
 .phx-empty { text-align:center; padding:48px 20px; color:#94a3b8; }
 .phx-empty i { font-size:36px; display:block; margin-bottom:10px; }
 .phx-empty p { margin:0; font-size:14px; }
 .phx-info-box { display:flex; align-items:flex-start; gap:10px; padding:14px 18px; border-radius:12px; background:#eff6ff; border:1px solid #bfdbfe; font-size:13.5px; color:#1e40af; margin-bottom:16px; }
 
-/* ── Extra animations ────────────────────────────────────────────────────── */
-@keyframes pageEnter   { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
-@keyframes headerSlide { from { opacity:0; transform:translateX(-18px); } to { opacity:1; transform:translateX(0); } }
-@keyframes rowIn       { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
-@keyframes cardPop     { from { opacity:0; transform:translateY(10px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
-@keyframes badgePop    { from { opacity:0; transform:scale(.7); } to { opacity:1; transform:scale(1); } }
-@keyframes infoSlide   { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
-
+@keyframes pageEnter { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes rowIn     { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
 .phx-page   { animation:pageEnter .45s cubic-bezier(.22,1,.36,1) both; }
-.phx-header { animation:headerSlide .4s cubic-bezier(.22,1,.36,1) .05s both; }
-.phx-header-icon { transition:transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease; }
-.phx-header-icon:hover { transform:rotate(-6deg) scale(1.12); box-shadow:0 6px 20px rgba(5,150,105,.35); }
-
-/* Info box */
-.phx-info-box { animation:infoSlide .35s ease .1s both; }
-
-/* Cards */
-.phx-card { animation:cardPop .4s cubic-bezier(.34,1.56,.64,1) .1s both; }
-.phx-card:hover { box-shadow:0 8px 30px rgba(0,0,0,.09) !important; transform:translateY(-2px); transition:transform .25s ease, box-shadow .25s ease; }
-
-/* Badges */
-.phx-badge { animation:badgePop .3s cubic-bezier(.34,1.56,.64,1) .2s both; }
-.phx-qty-badge { animation:badgePop .3s cubic-bezier(.34,1.56,.64,1) .25s both; }
-
-/* Table rows stagger */
 .phx-table tbody tr { animation:rowIn .25s ease both; }
-.phx-table tbody tr:nth-child(1)  { animation-delay:.04s; }
-.phx-table tbody tr:nth-child(2)  { animation-delay:.08s; }
-.phx-table tbody tr:nth-child(3)  { animation-delay:.12s; }
-.phx-table tbody tr:nth-child(4)  { animation-delay:.16s; }
-.phx-table tbody tr:nth-child(5)  { animation-delay:.20s; }
-.phx-table tbody tr:nth-child(6)  { animation-delay:.24s; }
-.phx-table tbody tr:nth-child(7)  { animation-delay:.28s; }
-.phx-table tbody tr:nth-child(8)  { animation-delay:.32s; }
-.phx-table tbody tr:nth-child(n+9){ animation-delay:.36s; }
-
-/* Interaction micro-animations */
-.phx-btn { transition:transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease; }
-.phx-btn:not(:disabled):hover { transform:translateY(-3px) scale(1.02); }
-.phx-btn:not(:disabled):active { transform:translateY(0) scale(.98); }
-.phx-input:focus { transform:scale(1.005); transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+.phx-table tbody tr:nth-child(1) { animation-delay:.04s; }
+.phx-table tbody tr:nth-child(2) { animation-delay:.08s; }
+.phx-table tbody tr:nth-child(3) { animation-delay:.12s; }
+.phx-table tbody tr:nth-child(n+4){ animation-delay:.16s; }
 </style>

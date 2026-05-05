@@ -38,17 +38,51 @@ public class GatewaySecurityConfig {
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .pathMatchers("/api/auth/login").permitAll()
                         .pathMatchers("/api/auth/refresh").permitAll()
+                        .pathMatchers("/api/auth/resend-verification").permitAll()
+                        .pathMatchers("/swagger/**", "/v3/api-docs/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/users/public/doctors").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/core-ops/health", "/api/core-ops/rabbitmq/health").permitAll()
                         .pathMatchers("/ops/**").permitAll()
                         .pathMatchers("/actuator/**").permitAll()
 
                         .pathMatchers(HttpMethod.POST, "/api/users/hr").hasRole("ADMIN")
-                        .pathMatchers(HttpMethod.POST, "/api/users/staff/search").hasAnyRole("ADMIN", "HR", "RECEPTIONIST")
+                        .pathMatchers(HttpMethod.POST, "/api/users/staff/search").hasAnyRole("ADMIN", "HR", "RECEPTIONIST", "SURGEON", "PHARMACIST", "DOCTOR", "NURSE")
                         .pathMatchers(HttpMethod.PATCH, "/api/users/hr/**").hasRole("ADMIN")
                         .pathMatchers(HttpMethod.POST, "/api/users/internal").hasRole("HR")
                         .pathMatchers(HttpMethod.POST, "/api/users/staff").hasRole("HR")
                         .pathMatchers(HttpMethod.PATCH, "/api/users/staff/**").hasRole("HR")
                         .pathMatchers(HttpMethod.POST, "/api/users/guardian").hasRole("RECEPTIONIST")
                         .pathMatchers(HttpMethod.PATCH, "/api/users/guardian/**").hasAnyRole("ADMIN", "RECEPTIONIST")
+                        .pathMatchers(HttpMethod.GET, "/api/users/me/**").hasAnyRole(
+                                "ADMIN",
+                                "HR",
+                                "DOCTOR",
+                                "NURSE",
+                                "SURGEON",
+                                "PHARMACIST",
+                                "RECEPTIONIST",
+                                "LAB_AGENT"
+                        )
+                        .pathMatchers(HttpMethod.PATCH, "/api/users/me/**").hasAnyRole(
+                                "ADMIN",
+                                "HR",
+                                "DOCTOR",
+                                "NURSE",
+                                "SURGEON",
+                                "PHARMACIST",
+                                "RECEPTIONIST",
+                                "LAB_AGENT"
+                        )
+                        .pathMatchers(HttpMethod.POST, "/api/users/me/**").hasAnyRole(
+                                "ADMIN",
+                                "HR",
+                                "DOCTOR",
+                                "NURSE",
+                                "SURGEON",
+                                "PHARMACIST",
+                                "RECEPTIONIST",
+                                "LAB_AGENT"
+                        )
                         .pathMatchers(HttpMethod.GET, "/api/users/audit").hasRole("ADMIN")
                         .pathMatchers(HttpMethod.GET, "/api/users/*/audit").hasAnyRole("ADMIN", "HR")
                         .pathMatchers(HttpMethod.PATCH, "/api/users/*/soft-delete").hasAnyRole("ADMIN", "HR")
@@ -67,13 +101,44 @@ public class GatewaySecurityConfig {
                                 "SURGEON",
                                 "PHARMACIST",
                                 "RECEPTIONIST",
+                                "LAB_AGENT",
                                 "GUARDIAN"
                         )
                         .pathMatchers(HttpMethod.GET, "/api/contracts/alerts/action-required").hasAnyRole("ADMIN", "HR", "RECEPTIONIST")
                         .pathMatchers(HttpMethod.GET, "/api/contracts/**").hasAnyRole("ADMIN", "HR")
                         .pathMatchers(HttpMethod.GET, "/api/observability/contracts/timeline").hasRole("ADMIN")
-                        .pathMatchers(HttpMethod.GET, "/api/observability/**").hasAnyRole("ADMIN", "HR", "RECEPTIONIST", "DOCTOR", "NURSE", "SURGEON", "PHARMACIST", "GUARDIAN")
-                        .pathMatchers(HttpMethod.PATCH, "/api/observability/**").hasAnyRole("ADMIN", "HR", "RECEPTIONIST", "DOCTOR", "NURSE", "SURGEON", "PHARMACIST", "GUARDIAN")
+                        .pathMatchers(HttpMethod.GET, "/api/observability/**").hasAnyRole("ADMIN", "HR", "RECEPTIONIST", "DOCTOR", "NURSE", "SURGEON", "PHARMACIST", "LAB_AGENT", "GUARDIAN")
+                        .pathMatchers(HttpMethod.PATCH, "/api/observability/**").hasAnyRole("ADMIN", "HR", "RECEPTIONIST", "DOCTOR", "NURSE", "SURGEON", "PHARMACIST", "LAB_AGENT", "GUARDIAN")
+                        .pathMatchers(HttpMethod.POST, "/api/hospital-structure/floors/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.PUT, "/api/hospital-structure/floors/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.DELETE, "/api/hospital-structure/floors/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.POST, "/api/hospital-structure/workspaces/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.PUT, "/api/hospital-structure/workspaces/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.DELETE, "/api/hospital-structure/workspaces/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.PATCH, "/api/hospital-structure/workspaces/*/capacity").hasRole("HR")
+                        .pathMatchers(HttpMethod.PATCH, "/api/hospital-structure/workspaces/*/resources/manual").hasRole("HR")
+                        .pathMatchers(HttpMethod.GET, "/api/hospital-structure/workspaces/*/resources/assignable").hasRole("HR")
+                        .pathMatchers(HttpMethod.POST, "/api/hospital-structure/workspaces/*/assignments").hasAnyRole("ADMIN", "HR")
+                        .pathMatchers(HttpMethod.PATCH, "/api/hospital-structure/assignments/**").hasAnyRole("ADMIN", "HR")
+                        .pathMatchers(HttpMethod.POST, "/api/hospital-resources/**").hasRole("HR")
+                        .pathMatchers(HttpMethod.PATCH, "/api/hospital-resources/**").hasRole("HR")
+                        .pathMatchers(HttpMethod.PUT, "/api/hospital-resources/**").hasRole("HR")
+                        .pathMatchers(HttpMethod.DELETE, "/api/hospital-resources/**").hasRole("HR")
+                        .pathMatchers(HttpMethod.GET, "/api/hospital-resources/**").hasAnyRole("ADMIN", "HR")
+                        .pathMatchers(HttpMethod.POST, "/api/staff-assignments/**").hasAnyRole("ADMIN", "HR")
+                        .pathMatchers(HttpMethod.PATCH, "/api/staff-assignments/**").hasAnyRole("ADMIN", "HR")
+                        .pathMatchers(HttpMethod.DELETE, "/api/staff-assignments/**").hasAnyRole("ADMIN", "HR")
+                        .pathMatchers(HttpMethod.GET, "/api/staff-assignments/**").hasAnyRole("ADMIN", "HR")
+                        .pathMatchers(HttpMethod.GET, "/api/hospital-structure/**").hasAnyRole(
+                                "ADMIN",
+                                "HR",
+                                "DOCTOR",
+                                "NURSE",
+                                "SURGEON",
+                                "PHARMACIST",
+                                "RECEPTIONIST",
+                                "LAB_AGENT"
+                        )
                         .pathMatchers(HttpMethod.POST, "/api/patients/**").hasRole("RECEPTIONIST")
                         .pathMatchers(HttpMethod.GET, "/api/patients/**").hasAnyRole(
                                 "ADMIN",
@@ -83,6 +148,7 @@ public class GatewaySecurityConfig {
                                 "NURSE",
                                 "SURGEON",
                                 "PHARMACIST",
+                                "LAB_AGENT",
                                 "GUARDIAN"
                         ).pathMatchers(HttpMethod.GET, "/api/pharmacy/**").hasAnyRole(
                                 "ADMIN",

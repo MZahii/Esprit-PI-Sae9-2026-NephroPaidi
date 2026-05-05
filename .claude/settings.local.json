@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose -f docker-compose.full.yml up --build -d frontend)",
+      "Bash(find C:\\\\\\\\Nephro\\\\\\\\Esprit-PI-Sae9-2026-NephroPaidi/BackEnd -type f -name \"*.java\")",
+      "Bash(grep -E \"\\\\.java$\")",
+      "Bash(docker-compose -f docker-compose.full.yml up -d --build frontend)",
+      "Bash(docker build *)",
+      "Bash(docker-compose -f docker-compose.full.yml up -d --build pharmacy-service)"
+    ]
+  }
+}

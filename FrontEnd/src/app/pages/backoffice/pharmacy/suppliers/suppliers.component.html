@@ -197,7 +197,7 @@
                       #{{ o.orderId }}
                     </button>
                   </td>
-                  <td class="fw-700">{{ medicationMap()[o.medicationId] || '#' + o.medicationId }}</td>
+                  <td class="fw-700">{{ o.itemName || (o.medicationId ? medicationMap()[o.medicationId] : null) || '#' + (o.itemId ?? o.medicationId) }}</td>
                   <td class="fw-600">{{ o.orderedQuantity }}</td>
                   <td class="small text-muted">{{ o.orderDate | date:'dd/MM/yyyy' }}</td>
                   <td>
@@ -358,7 +358,7 @@
       <div class="phx-detail-grid">
         <div class="phx-detail-row">
           <span class="phx-detail-label">Medication</span>
-          <span class="phx-detail-val fw-700">{{ medicationMap()[detailOrder.medicationId] || '#' + detailOrder.medicationId }}</span>
+          <span class="phx-detail-val fw-700">{{ detailOrder.itemName || (detailOrder.medicationId ? medicationMap()[detailOrder.medicationId] : null) || '#' + (detailOrder.itemId ?? detailOrder.medicationId) }}</span>
         </div>
         <div class="phx-detail-row">
           <span class="phx-detail-label">Quantity Ordered</span>
