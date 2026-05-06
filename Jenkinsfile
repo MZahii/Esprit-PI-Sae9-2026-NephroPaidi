@@ -36,9 +36,14 @@ pipeline {
 
     stage('Frontend Install + Build') {
       steps {
-        dir('FrontEnd') {
-          sh 'npm ci'
-          sh 'npm run build'
+        script {
+          def nodeHome = tool(name: 'node20', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation')
+          withEnv(["PATH+NODE=${nodeHome}/bin"]) {
+            dir('FrontEnd') {
+              sh 'npm ci'
+              sh 'npm run build'
+            }
+          }
         }
       }
     }
@@ -48,8 +53,13 @@ pipeline {
         expression { return params.RUN_FRONTEND_TESTS }
       }
       steps {
-        dir('FrontEnd') {
-          sh 'npm run test -- --watch=false --browsers=ChromeHeadless'
+        script {
+          def nodeHome = tool(name: 'node20', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation')
+          withEnv(["PATH+NODE=${nodeHome}/bin"]) {
+            dir('FrontEnd') {
+              sh 'npm run test -- --watch=false --browsers=ChromeHeadless'
+            }
+          }
         }
       }
     }
