@@ -27,7 +27,11 @@ pipeline {
     stage('Backend Build + Tests') {
       steps {
         dir('BackEnd') {
-          sh './mvnw -B -ntp clean verify'
+          sh '''
+            sed -i 's/\r$//' mvnw
+            chmod +x mvnw
+            ./mvnw -B -ntp clean verify
+          '''
         }
       }
     }
