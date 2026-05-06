@@ -3,5 +3,5 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-EXPOSE 8091
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8091"]
+EXPOSE 8093
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8093"]

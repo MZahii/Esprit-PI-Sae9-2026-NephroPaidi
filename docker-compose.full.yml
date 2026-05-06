@@ -108,7 +108,7 @@ services:
       COMMUNICATION_SERVICE_URI: http://communication-service:8085
       PROCEDURE_SERVICE_URI: http://procedure-service:8089
       PHARMACY_SERVICE_URI: http://pharmacy-service:8088
-      AI_PHARMACY_SERVICE_URI: http://ai-pharmacy-service:8091
+      AI_PHARMACY_SERVICE_URI: http://ai-pharmacy-service:8093
       OPS_SERVICE_URI: http://ops-service:8082
       CORE_OPS_SERVICE_URI: http://core-ops-service:8086
       EGFR_ML_SERVICE_URI: http://egfr-ml-service:8092
@@ -371,9 +371,9 @@ services:
     container_name: nephro-ai-pharmacy-service
     restart: unless-stopped
     ports:
-      - "8093:8091"
+      - "8093:8093"
     healthcheck:
-      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8091/health').read()"]
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8093/health').read()"]
       interval: 30s
       timeout: 10s
       retries: 5
