@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -80,12 +81,13 @@ public class LabRequestController {
     @GetMapping("/consultation/{consultationId}/results/latest/download")
     public ResponseEntity<ByteArrayResource> downloadLatestLabResultForConsultation(@PathVariable UUID consultationId) throws IOException {
         LabResult result = labRequestService.getLatestLabResultForConsultation(consultationId);
-        Path path = resolveStoredFilePath(result);
-        if (!Files.exists(path)) {
-            return ResponseEntity.notFound().build();
+        byte[] bytes = resolveStoredFileBytes(result);
+        if (bytes == null || bytes.length == 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.GONE,
+                    "Lab source file is unavailable in shared storage for this environment."
+            );
         }
-
-        byte[] bytes = Files.readAllBytes(path);
         String contentType = result.getContentType();
         MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
         if (contentType != null && !contentType.isBlank()) {
@@ -97,7 +99,7 @@ public class LabRequestController {
         }
 
         ContentDisposition disposition = ContentDisposition.inline()
-                .filename(result.getFileName() != null ? result.getFileName() : path.getFileName().toString())
+                .filename(resolveDownloadFileName(result))
                 .build();
 
         return ResponseEntity.ok()
@@ -105,6 +107,34 @@ public class LabRequestController {
                 .contentLength(bytes.length)
                 .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                 .body(new ByteArrayResource(bytes));
+    }
+
+    private String resolveDownloadFileName(LabResult result) {
+        if (result.getFileName() != null && !result.getFileName().isBlank()) {
+            return result.getFileName();
+        }
+
+        Path storedPath = result.getFilePath() != null && !result.getFilePath().isBlank()
+                ? Paths.get(result.getFilePath()).normalize()
+                : null;
+        if (storedPath != null && storedPath.getFileName() != null) {
+            return storedPath.getFileName().toString();
+        }
+
+        return "lab-result.bin";
+    }
+
+    private byte[] resolveStoredFileBytes(LabResult result) throws IOException {
+        if (result.getFileData() != null && result.getFileData().length > 0) {
+            return result.getFileData();
+        }
+
+        Path path = resolveStoredFilePath(result);
+        if (Files.exists(path)) {
+            return Files.readAllBytes(path);
+        }
+
+        return null;
     }
 
     private Path resolveStoredFilePath(LabResult result) {

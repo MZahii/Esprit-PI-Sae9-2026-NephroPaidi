@@ -205,7 +205,7 @@ export class ClinicalApiService {
     return this.listStaffByRoles(['SURGEON'], limit);
   }
 
-  private listStaffByRoles(roles: string[], limit: number): Observable<DoctorSearchResult[]> {
+  listStaffByRoles(roles: string[], limit = 100): Observable<DoctorSearchResult[]> {
     const payload = {
       query: '',
       roles,

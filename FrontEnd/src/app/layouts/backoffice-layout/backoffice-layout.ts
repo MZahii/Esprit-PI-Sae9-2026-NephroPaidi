@@ -187,9 +187,14 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
   get roleBadgeClass(): string {
     if (this.isAdmin) return 'bg-soft-primary text-primary';
     if (this.isHr) return 'bg-soft-warning text-warning';
+    if (this.isPharmacist) return 'bg-soft-info text-info';
     if (this.isSurgeon) return 'bg-soft-success text-success';
     if (this.isLabAgent) return 'bg-soft-info text-info';
     return 'bg-soft-secondary text-muted';
+  }
+
+  get homeRoute(): string {
+    return this.isPharmacist ? '/backoffice/pharmacy/dashboard' : '/backoffice/dashboard';
   }
 
   get headerTitle(): string {
@@ -207,6 +212,10 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
 
     if (this.isLabAgent) {
       return 'Lab Agent Workspace';
+    }
+
+    if (this.isPharmacist) {
+      return 'Pharmacy Workspace';
     }
 
     return 'Backoffice Dashboard';
@@ -229,6 +238,10 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
       return 'Receive lab orders, upload result files, and monitor AI-assisted clinical analysis.';
     }
 
+    if (this.isPharmacist) {
+      return 'Manage prescriptions, stock movements, suppliers, and dispensing operations.';
+    }
+
     return 'Manage your backoffice workspace.';
   }
 
@@ -238,7 +251,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
         key: 'dashboard',
         label: 'Dashboard',
         icon: 'feather-airplay',
-        route: '/backoffice/dashboard',
+        route: this.isPharmacist ? '/backoffice/pharmacy/dashboard' : '/backoffice/dashboard',
         exact: true
       }
     ];
@@ -463,6 +476,11 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
         icon: 'feather-package',
         children: [
           {
+            label: 'Prescriptions',
+            route: '/backoffice/pharmacy/prescriptions',
+            implemented: true
+          },
+          {
             label: 'Medications',
             route: '/backoffice/pharmacy/medications',
             implemented: true
@@ -472,6 +490,33 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
             route: '/backoffice/pharmacy/stock',
             implemented: true
           },
+          {
+            label: 'Dispensations',
+            route: '/backoffice/pharmacy/dispensations',
+            implemented: true
+          },
+          {
+            label: 'Movements',
+            route: '/backoffice/pharmacy/movements',
+            implemented: true
+          },
+          {
+            label: 'Alerts',
+            route: '/backoffice/pharmacy/alerts',
+            implemented: true
+          },
+          ...(this.isPharmacist || this.isAdmin
+            ? [{
+                label: 'Equipment',
+                route: '/backoffice/pharmacy/equipment',
+                implemented: true
+              } as BackofficeNavChild,
+              {
+                label: 'Dialysis Stock',
+                route: '/backoffice/pharmacy/dialysis-stock',
+                implemented: true
+              } as BackofficeNavChild]
+            : []),
           ...(this.isPharmacist || this.isAdmin
             ? [{
                 label: 'Suppliers',
@@ -479,11 +524,6 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
                 implemented: true
               } as BackofficeNavChild]
             : []),
-          {
-            label: 'Dispensations',
-            route: '/backoffice/pharmacy/dispensations',
-            implemented: true
-          }
         ]
       });
     }

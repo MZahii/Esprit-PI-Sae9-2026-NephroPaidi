@@ -4,7 +4,7 @@ import {
   OnInit
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthStorageService } from '../../../core/auth/auth-storage.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom, forkJoin } from 'rxjs';
@@ -145,6 +145,7 @@ export class Dashboard implements AfterViewInit, OnInit {
 
   constructor(
     private authStorage: AuthStorageService,
+    private router: Router,
     private http: HttpClient
   ) {}
 
@@ -174,6 +175,10 @@ export class Dashboard implements AfterViewInit, OnInit {
 
   get isNurse(): boolean {
     return this.role === 'NURSE';
+  }
+
+  get isPharmacist(): boolean {
+    return this.role === 'PHARMACIST';
   }
 
   get displayName(): string {
@@ -496,6 +501,11 @@ export class Dashboard implements AfterViewInit, OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    if (this.isPharmacist) {
+      await this.router.navigateByUrl('/backoffice/pharmacy/dashboard');
+      return;
+    }
+
     await this.loadGlobalStats();
   }
 

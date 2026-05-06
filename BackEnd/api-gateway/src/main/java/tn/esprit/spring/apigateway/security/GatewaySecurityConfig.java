@@ -47,7 +47,7 @@ public class GatewaySecurityConfig {
                         .pathMatchers("/actuator/**").permitAll()
 
                         .pathMatchers(HttpMethod.POST, "/api/users/hr").hasRole("ADMIN")
-                        .pathMatchers(HttpMethod.POST, "/api/users/staff/search").hasAnyRole("ADMIN", "HR", "RECEPTIONIST", "SURGEON")
+                        .pathMatchers(HttpMethod.POST, "/api/users/staff/search").hasAnyRole("ADMIN", "HR", "RECEPTIONIST", "SURGEON", "PHARMACIST", "DOCTOR", "NURSE")
                         .pathMatchers(HttpMethod.PATCH, "/api/users/hr/**").hasRole("ADMIN")
                         .pathMatchers(HttpMethod.POST, "/api/users/internal").hasRole("HR")
                         .pathMatchers(HttpMethod.POST, "/api/users/staff").hasRole("HR")
@@ -161,6 +161,10 @@ public class GatewaySecurityConfig {
                                 "PHARMACIST",
                                 "GUARDIAN"
                         )
+                        .pathMatchers(HttpMethod.POST, "/api/ai/**").hasAnyRole(
+                                "PHARMACIST"
+                        )
+                        .pathMatchers(HttpMethod.GET, "/api/ai/health").permitAll()
 
                         .anyExchange().authenticated()
                 )

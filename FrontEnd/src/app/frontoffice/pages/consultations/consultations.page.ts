@@ -106,6 +106,20 @@ export class ConsultationsPage implements OnInit {
     return 'badge bg-warning text-dark';
   }
 
+  consultationTitle(item: any): string {
+    const formattedDate = this.formatConsultationDate(item?.dateTime, 'longDate');
+    return formattedDate ? `Consultation on ${formattedDate}` : 'Consultation record';
+  }
+
+  formatConsultationDate(value: any, format: 'longDate' | 'medium' = 'medium'): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat('en-US', format === 'longDate'
+      ? { year: 'numeric', month: 'short', day: 'numeric' }
+      : { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
+    ).format(date);
+  }
+
   private mapAppointmentsToConsultations(appointments: any[], patientId: number): any[] {
     return (appointments || []).map((appt) => ({
       id: appt.consultationId || `APPT-${appt.id}`,

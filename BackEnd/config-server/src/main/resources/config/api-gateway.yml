@@ -99,6 +99,14 @@ spring:
               filters:
                 - RewritePath=/api/egfr-ml/?(.*), /$1
 
+            # AI Pharmacy Service - Pediatric dosing verification
+            - id: ai-pharmacy-service-api
+              uri: ${AI_PHARMACY_SERVICE_URI:http://ai-pharmacy-service:8091}
+              predicates:
+                - Path=/api/ai/**
+              filters:
+                - RewritePath=/api/ai/?(.*), /$1
+
   security:
     oauth2:
       resourceserver:

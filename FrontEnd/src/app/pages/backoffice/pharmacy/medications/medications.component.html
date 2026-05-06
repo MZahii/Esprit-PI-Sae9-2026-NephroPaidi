@@ -17,9 +17,6 @@
       </div>
     </div>
     <div class="d-flex gap-2">
-      <button class="phx-btn phx-btn-alert" (click)="openAlertModal()">
-        <i class="bi bi-envelope-fill"></i> Send Stock Alert
-      </button>
       <button class="phx-btn phx-btn-primary" (click)="openAdd()">
         <i class="bi bi-plus-lg"></i> Add Medication
       </button>
@@ -85,10 +82,11 @@
       <table class="phx-table">
         <thead>
           <tr>
-            <th style="width:60px">#</th>
-            <th>Name</th>
-            <th style="width:130px">Form</th>
-            <th>Pediatric Dosage</th>
+            <th style="width:50px">#</th>
+            <th>Brand / Generic Name</th>
+            <th>Form / Strength</th>
+            <th>Therapeutic Class</th>
+            <th class="text-center">Flags</th>
             <th style="width:210px" class="text-center">Actions</th>
           </tr>
         </thead>
@@ -96,15 +94,30 @@
           <tr *ngFor="let med of medications()">
             <td class="text-muted small fw-600">{{ med.medicationId }}</td>
             <td>
-              <div class="d-flex align-items-center gap-2">
-                <div class="phx-dot bg-primary"></div>
-                <span class="fw-700">{{ med.name }}</span>
+              <div class="d-flex align-items-start gap-2">
+                <div class="phx-dot bg-primary" style="margin-top:5px"></div>
+                <div>
+                  <div class="fw-700">{{ med.name }}</div>
+                  <div class="text-muted small font-italic" *ngIf="med.genericName">{{ med.genericName }}</div>
+                </div>
               </div>
             </td>
             <td>
-              <span class="phx-pill phx-pill-indigo">{{ med.form | titlecase }}</span>
+              <span class="phx-pill phx-pill-indigo me-1">{{ med.form | titlecase }}</span>
+              <span class="text-muted small" *ngIf="med.strength">{{ med.strength }}</span>
             </td>
-            <td class="text-muted small font-monospace">{{ med.pediatricDosage || '—' }}</td>
+            <td class="small text-muted">{{ med.therapeuticClass || '—' }}</td>
+            <td class="text-center">
+              <span class="phx-med-flag phx-flag-renal" title="Renal dose adjustment required" *ngIf="med.renalDoseAdjustment">
+                <i class="bi bi-kidney"></i> Renal
+              </span>
+              <span class="phx-med-flag phx-flag-controlled" title="Controlled substance" *ngIf="med.controlledSubstance">
+                <i class="bi bi-shield-lock-fill"></i> Rx
+              </span>
+              <span class="phx-med-flag phx-flag-cold" title="Refrigerated storage required" *ngIf="med.storageConditions === 'REFRIGERATED_2_8'">
+                <i class="bi bi-snow"></i> 2–8°C
+              </span>
+            </td>
             <td class="text-center">
               <button class="phx-btn phx-btn-sm phx-btn-info me-1" (click)="openBatches(med)">
                 <i class="bi bi-box-seam"></i> Batches
@@ -141,35 +154,143 @@
       <button class="phx-close-btn" (click)="showModal=false"><i class="bi bi-x-lg"></i></button>
     </div>
     <div class="phx-modal-body">
-      <div class="phx-field">
-        <label>Name <span class="text-danger">*</span></label>
-        <input class="phx-input" [ngModel]="currentMed.name"
-               (ngModelChange)="onNameChange($event)"
-               placeholder="e.g. Furosemide"
-               [class.phx-input-error]="nameError()"/>
-        <div class="phx-field-error" *ngIf="nameError()">
-          <i class="bi bi-exclamation-circle-fill"></i> {{ nameError() }}
+
+      <!-- Section: Identity -->
+      <div class="phx-form-section-label"><i class="bi bi-capsule-pill"></i> Drug Identity</div>
+      <div class="row g-2 mb-1">
+        <div class="col-md-6">
+          <div class="phx-field mb-0">
+            <label>Brand / Trade Name <span class="text-danger">*</span></label>
+            <input class="phx-input" [ngModel]="currentMed.name"
+                   (ngModelChange)="onNameChange($event)"
+                   placeholder="e.g. Lasix"
+                   [class.phx-input-error]="nameError()"/>
+            <div class="phx-field-error" *ngIf="nameError()">
+              <i class="bi bi-exclamation-circle-fill"></i> {{ nameError() }}
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="phx-field mb-0">
+            <label>Generic Name (INN)</label>
+            <input class="phx-input" [(ngModel)]="currentMed.genericName" placeholder="e.g. Furosemide"/>
+          </div>
         </div>
       </div>
-      <div class="phx-field">
-        <label>Form</label>
-        <select class="phx-input" [(ngModel)]="currentMed.form">
-          <option value="tablet">Tablet</option>
-          <option value="capsule">Capsule</option>
-          <option value="syrup">Syrup</option>
-          <option value="injection">Injection</option>
-          <option value="drops">Drops</option>
-          <option value="cream">Cream</option>
-          <option value="powder">Powder</option>
-        </select>
+
+      <div class="row g-2 mb-1 mt-2">
+        <div class="col-md-4">
+          <div class="phx-field mb-0">
+            <label>Form</label>
+            <select class="phx-input" [(ngModel)]="currentMed.form">
+              <option value="tablet">Tablet</option>
+              <option value="capsule">Capsule</option>
+              <option value="solution">Solution</option>
+              <option value="injection">Injection (IV/IM/SC)</option>
+              <option value="syrup">Oral Syrup</option>
+              <option value="drops">Drops</option>
+              <option value="cream">Cream / Ointment</option>
+              <option value="powder">Powder</option>
+              <option value="patch">Transdermal Patch</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="phx-field mb-0">
+            <label>Strength / Concentration</label>
+            <input class="phx-input" [(ngModel)]="currentMed.strength" placeholder="e.g. 40 mg, 5 mg/mL"/>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="phx-field mb-0">
+            <label>Dispensing Unit</label>
+            <select class="phx-input" [(ngModel)]="currentMed.unit">
+              <option value="tablet">Tablet</option>
+              <option value="capsule">Capsule</option>
+              <option value="mL">mL</option>
+              <option value="unit">Unit (IU)</option>
+              <option value="sachet">Sachet</option>
+              <option value="patch">Patch</option>
+              <option value="vial">Vial</option>
+              <option value="ampoule">Ampoule</option>
+            </select>
+          </div>
+        </div>
       </div>
-      <div class="phx-field">
-        <label>Pediatric Dosage</label>
-        <input class="phx-input" [(ngModel)]="currentMed.pediatricDosage" placeholder="e.g. 1mg/kg"/>
+
+      <!-- Section: Clinical -->
+      <div class="phx-form-section-label mt-3"><i class="bi bi-heart-pulse"></i> Clinical Information</div>
+      <div class="row g-2 mb-1">
+        <div class="col-md-6">
+          <div class="phx-field mb-0">
+            <label>Therapeutic Class</label>
+            <select class="phx-input" [(ngModel)]="currentMed.therapeuticClass">
+              <option value="">— Select class —</option>
+              <option value="Diuretic">Diuretic</option>
+              <option value="Antihypertensive">Antihypertensive</option>
+              <option value="ACE Inhibitor">ACE Inhibitor</option>
+              <option value="ARB">ARB (Angiotensin II Receptor Blocker)</option>
+              <option value="Immunosuppressant">Immunosuppressant</option>
+              <option value="Phosphate Binder">Phosphate Binder</option>
+              <option value="ESA">Erythropoiesis-Stimulating Agent (ESA)</option>
+              <option value="Iron Supplement">Iron Supplement (IV/Oral)</option>
+              <option value="Vitamin D Analog">Vitamin D Analog</option>
+              <option value="Anticoagulant">Anticoagulant / Heparin</option>
+              <option value="Antibiotic">Antibiotic</option>
+              <option value="Antidiabetic">Antidiabetic</option>
+              <option value="Analgesic">Analgesic</option>
+              <option value="Antiemetic">Antiemetic</option>
+              <option value="Corticosteroid">Corticosteroid</option>
+              <option value="Electrolyte">Electrolyte Supplement</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="phx-field mb-0">
+            <label>Standard Dose Reference</label>
+            <input class="phx-input" [(ngModel)]="currentMed.standardDosage" placeholder="e.g. 40 mg once daily"/>
+          </div>
+        </div>
       </div>
+
+      <!-- Section: Safety Flags -->
+      <div class="phx-form-section-label mt-3"><i class="bi bi-shield-exclamation"></i> Safety Flags</div>
+      <div class="row g-2 mb-1">
+        <div class="col-md-4">
+          <div class="phx-field mb-0">
+            <label>Storage Conditions</label>
+            <select class="phx-input" [(ngModel)]="currentMed.storageConditions">
+              <option value="ROOM_TEMPERATURE">Room Temperature (15–25°C)</option>
+              <option value="REFRIGERATED_2_8">Refrigerated (2–8°C)</option>
+              <option value="FROZEN">Frozen (≤ −15°C)</option>
+              <option value="LIGHT_PROTECTED">Light Protected</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-4 d-flex align-items-center gap-2 pt-4">
+          <div class="phx-toggle-field">
+            <input type="checkbox" id="renalCheck" [(ngModel)]="currentMed.renalDoseAdjustment"/>
+            <label for="renalCheck" class="phx-toggle-label">
+              <i class="bi bi-kidney text-warning"></i> Renal dose adjustment required
+            </label>
+          </div>
+        </div>
+        <div class="col-md-4 d-flex align-items-center gap-2 pt-4">
+          <div class="phx-toggle-field">
+            <input type="checkbox" id="controlledCheck" [(ngModel)]="currentMed.controlledSubstance"/>
+            <label for="controlledCheck" class="phx-toggle-label">
+              <i class="bi bi-shield-lock-fill text-danger"></i> Controlled substance
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Stock -->
+      <div class="phx-form-section-label mt-3"><i class="bi bi-boxes"></i> Stock Management</div>
       <div class="phx-field">
         <label>Minimum Stock Threshold
-          <span class="phx-hint-inline">(optional — triggers reorder alert)</span>
+          <span class="phx-hint-inline">(triggers reorder alert when stock falls below this)</span>
         </label>
         <input type="number" class="phx-input" [(ngModel)]="currentMed.minimumStock"
                min="0" placeholder="e.g. 50"/>
@@ -458,6 +579,20 @@
 .phx-reorder-toggle { margin-left:auto; font-size:12px; font-weight:700; display:flex; align-items:center; gap:4px; }
 .phx-reorder-panel { background:#fff; border-radius:12px; border:1px solid #fecaca; margin-bottom:20px; overflow:hidden; }
 .phx-pill-danger { background:#fee2e2; color:#dc2626; }
+
+/* Medical flags */
+.phx-med-flag { display:inline-flex; align-items:center; gap:3px; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; margin:1px; }
+.phx-flag-renal { background:#fef3c7; color:#92400e; }
+.phx-flag-controlled { background:#fee2e2; color:#b91c1c; }
+.phx-flag-cold { background:#dbeafe; color:#1d4ed8; }
+
+/* Form section label */
+.phx-form-section-label { font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:.6px; margin-bottom:10px; margin-top:4px; display:flex; align-items:center; gap:6px; border-bottom:1px solid #f1f5f9; padding-bottom:6px; }
+
+/* Toggle field */
+.phx-toggle-field { display:flex; align-items:center; gap:8px; }
+.phx-toggle-field input[type=checkbox] { width:16px; height:16px; cursor:pointer; accent-color:#2563eb; }
+.phx-toggle-label { font-size:13px; font-weight:600; color:#374151; cursor:pointer; display:flex; align-items:center; gap:5px; margin:0; }
 
 /* Section box */
 .phx-section-box { border-radius:12px; padding:18px; margin-bottom:4px; }

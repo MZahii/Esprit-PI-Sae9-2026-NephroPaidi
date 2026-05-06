@@ -13,7 +13,7 @@ import { hasAnyRole } from '../../../../core/auth/keycloak.service';
 })
 export class MedicationsComponent implements OnInit {
   private svc = inject(PharmacyService);
-  private readonly canManagePharmacy = hasAnyRole(['PHARMACIST', 'ADMIN']);
+  private readonly canManagePharmacy = hasAnyRole(['PHARMACIST']);
 
   medications = signal<Medication[]>([]);
   reorderAlerts = signal<ReorderAlert[]>([]);
@@ -80,7 +80,11 @@ export class MedicationsComponent implements OnInit {
 
   openAdd() {
     this.editMode = false;
-    this.currentMed = { name: '', form: 'tablet', pediatricDosage: '', minimumStock: null };
+    this.currentMed = {
+      name: '', genericName: '', form: 'tablet', strength: '', unit: 'tablet',
+      therapeuticClass: '', standardDosage: '', renalDoseAdjustment: false,
+      storageConditions: 'ROOM_TEMPERATURE', controlledSubstance: false, minimumStock: null
+    };
     this.nameError.set('');
     this.showModal = true;
   }

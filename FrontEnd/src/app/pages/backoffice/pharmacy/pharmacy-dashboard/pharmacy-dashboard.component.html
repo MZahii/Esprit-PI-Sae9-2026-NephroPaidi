@@ -1,0 +1,492 @@
+<div class="phx-page">
+
+  <!-- ── Page Header ─────────────────────────────────────────────────────── -->
+  <div class="phx-header">
+    <div class="phx-header-left">
+      <div class="phx-header-icon" style="background:linear-gradient(135deg,#2563eb,#1d4ed8)">
+        <i class="bi bi-grid-3x3-gap-fill"></i>
+      </div>
+      <div>
+        <h4 class="phx-title">Pharmacy Dashboard</h4>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Backoffice</a></li>
+            <li class="breadcrumb-item active">Pharmacy Overview</li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <span class="phx-live-badge" *ngIf="realtimeConnected()">
+        <span class="phx-live-dot"></span> Live
+      </span>
+      <button class="phx-btn phx-btn-ghost phx-btn-sm" (click)="loadAll()">
+        <i class="bi bi-arrow-clockwise"></i> Refresh
+      </button>
+      <a routerLink="/backoffice/pharmacy/alerts" class="phx-btn phx-btn-alert phx-btn-sm" *ngIf="totalAlerts > 0">
+        <i class="bi bi-bell-fill"></i> {{ totalAlerts }} Alert(s)
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Global Alert Banner ─────────────────────────────────────────────── -->
+  <div class="phx-alert-banner" *ngIf="totalAlerts > 0">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <div>
+      <strong>{{ totalAlerts }} stock alert(s) require your attention</strong>
+      <span class="ms-2 text-muted small">
+        {{ reorderAlerts().length }} medication · {{ lowEquipment.length }} equipment · {{ lowDialysis.length }} dialysis
+      </span>
+    </div>
+    <a routerLink="/backoffice/pharmacy/alerts" class="phx-alert-link">View all alerts →</a>
+  </div>
+
+  <!-- ── Stat Cards Row 1 (Stock Overview) ──────────────────────────────── -->
+  <div class="phx-section-title">
+    <i class="bi bi-boxes me-1"></i> Stock Overview
+  </div>
+  <div class="row g-3 mb-2">
+    <div class="col-6 col-xl-4">
+      <a routerLink="/backoffice/pharmacy/medications" class="phx-stat-link">
+        <div class="phx-stat-card phx-stat-blue">
+          <div class="phx-stat-icon"><i class="bi bi-capsule-pill"></i></div>
+          <div class="phx-stat-body">
+            <div class="phx-stat-value">
+              <span *ngIf="!loadingMeds()">{{ medications().length }}</span>
+              <span *ngIf="loadingMeds()" class="phx-spin-dark-sm"></span>
+            </div>
+            <div class="phx-stat-label">Medications</div>
+            <div class="phx-stat-sub text-danger" *ngIf="reorderAlerts().length > 0">
+              <i class="bi bi-exclamation-circle-fill me-1"></i>{{ reorderAlerts().length }} below min stock
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-xl-4">
+      <a routerLink="/backoffice/pharmacy/equipment" class="phx-stat-link">
+        <div class="phx-stat-card" [class]="lowEquipment.length > 0 ? 'phx-stat-amber' : 'phx-stat-blue'">
+          <div class="phx-stat-icon"><i class="bi bi-tools"></i></div>
+          <div class="phx-stat-body">
+            <div class="phx-stat-value">
+              <span *ngIf="!loadingEquip()">{{ equipmentItems().length }}</span>
+              <span *ngIf="loadingEquip()" class="phx-spin-dark-sm"></span>
+            </div>
+            <div class="phx-stat-label">Equipment Items</div>
+            <div class="phx-stat-sub text-warning" *ngIf="lowEquipment.length > 0">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ lowEquipment.length }} low stock
+            </div>
+            <div class="phx-stat-sub text-success" *ngIf="lowEquipment.length === 0 && !loadingEquip()">
+              <i class="bi bi-check-circle-fill me-1"></i>All levels OK
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-xl-4">
+      <a routerLink="/backoffice/pharmacy/dialysis-stock" class="phx-stat-link">
+        <div class="phx-stat-card" [class]="lowDialysis.length > 0 ? 'phx-stat-amber' : 'phx-stat-teal'">
+          <div class="phx-stat-icon"><i class="bi bi-droplet-half"></i></div>
+          <div class="phx-stat-body">
+            <div class="phx-stat-value">
+              <span *ngIf="!loadingDial()">{{ dialysisItems().length }}</span>
+              <span *ngIf="loadingDial()" class="phx-spin-dark-sm"></span>
+            </div>
+            <div class="phx-stat-label">Dialysis Items</div>
+            <div class="phx-stat-sub text-warning" *ngIf="lowDialysis.length > 0">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ lowDialysis.length }} low stock
+            </div>
+            <div class="phx-stat-sub text-success" *ngIf="lowDialysis.length === 0 && !loadingDial()">
+              <i class="bi bi-check-circle-fill me-1"></i>All levels OK
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Stat Cards Row 2 (Workflow) ─────────────────────────────────────── -->
+  <div class="phx-section-title mt-3">
+    <i class="bi bi-diagram-3 me-1"></i> Workflow Activity
+  </div>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-xl-4">
+      <a routerLink="/backoffice/pharmacy/prescriptions" class="phx-stat-link">
+        <div class="phx-stat-card" [class]="pendingPrescriptions.length > 0 ? 'phx-stat-amber' : 'phx-stat-purple'">
+          <div class="phx-stat-icon"><i class="bi bi-file-medical"></i></div>
+          <div class="phx-stat-body">
+            <div class="phx-stat-value">
+              <span *ngIf="!loadingPrescr()">{{ pendingPrescriptions.length }}</span>
+              <span *ngIf="loadingPrescr()" class="phx-spin-dark-sm"></span>
+            </div>
+            <div class="phx-stat-label">Pending Prescriptions</div>
+            <div class="phx-stat-sub text-muted" *ngIf="!loadingPrescr()">
+              {{ prescriptions().length }} total received
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-xl-4">
+      <a routerLink="/backoffice/pharmacy/dispensations" class="phx-stat-link">
+        <div class="phx-stat-card phx-stat-green">
+          <div class="phx-stat-icon"><i class="bi bi-send-fill"></i></div>
+          <div class="phx-stat-body">
+            <div class="phx-stat-value">
+              <span *ngIf="!loadingDispens()">{{ todayDispensations().length }}</span>
+              <span *ngIf="loadingDispens()" class="phx-spin-dark-sm"></span>
+            </div>
+            <div class="phx-stat-label">Dispensations Today</div>
+            <div class="phx-stat-sub text-muted" *ngIf="!loadingDispens()">
+              {{ todayDispensations().length > 0 ? 'From medication batches' : 'No activity today' }}
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-xl-4">
+      <a routerLink="/backoffice/pharmacy/movements" class="phx-stat-link">
+        <div class="phx-stat-card phx-stat-indigo">
+          <div class="phx-stat-icon"><i class="bi bi-box-arrow-up-right"></i></div>
+          <div class="phx-stat-body">
+            <div class="phx-stat-value">
+              <span *ngIf="!loadingMovements()">{{ movements().length }}</span>
+              <span *ngIf="loadingMovements()" class="phx-spin-dark-sm"></span>
+            </div>
+            <div class="phx-stat-label">Total Outgoing Movements</div>
+            <div class="phx-stat-sub text-muted" *ngIf="!loadingMovements()">
+              Equipment &amp; Dialysis
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Main Content Grid ────────────────────────────────────────────────── -->
+  <div class="row g-4">
+
+    <!-- Pending Prescriptions Panel -->
+    <div class="col-lg-6">
+      <div class="phx-card h-100">
+        <div class="phx-card-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-file-medical" style="color:#7c3aed"></i>
+            <span class="fw-700">Pending Prescriptions</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="phx-badge phx-badge-purple" *ngIf="pendingPrescriptions.length > 0">{{ pendingPrescriptions.length }} new</span>
+            <a routerLink="/backoffice/pharmacy/prescriptions" class="phx-link-btn">View all →</a>
+          </div>
+        </div>
+        <div class="phx-card-body">
+          <div class="phx-loader-sm" *ngIf="loadingPrescr()">
+            <div class="spinner-border spinner-border-sm text-primary"></div> Loading...
+          </div>
+          <div class="phx-panel-empty" *ngIf="!loadingPrescr() && pendingPrescriptions.length === 0">
+            <i class="bi bi-check-circle-fill text-success"></i>
+            <span>No pending prescriptions</span>
+          </div>
+          <div class="phx-list-item" *ngFor="let p of pendingPrescriptions.slice(0, 5)">
+            <div class="phx-list-icon phx-list-icon-purple">
+              <i class="bi bi-file-medical-fill"></i>
+            </div>
+            <div class="phx-list-body">
+              <div class="fw-700 small">{{ p.patientName || ('Patient #' + p.patientId) }}</div>
+              <div class="text-muted" style="font-size:11.5px">
+                From Dr. {{ p.doctorName || p.doctorId }} · {{ p.receivedAt | date:'dd/MM HH:mm' }}
+              </div>
+            </div>
+            <span class="phx-pill phx-pill-pending">PENDING</span>
+          </div>
+          <div class="text-center pt-2" *ngIf="pendingPrescriptions.length > 5">
+            <a routerLink="/backoffice/pharmacy/prescriptions" class="phx-link-btn small">
+              +{{ pendingPrescriptions.length - 5 }} more →
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Outgoing Movements Panel -->
+    <div class="col-lg-6">
+      <div class="phx-card h-100">
+        <div class="phx-card-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-clock-history" style="color:#4f46e5"></i>
+            <span class="fw-700">Recent Outgoing Movements</span>
+          </div>
+          <a routerLink="/backoffice/pharmacy/movements" class="phx-link-btn">View all →</a>
+        </div>
+        <div class="phx-card-body">
+          <div class="phx-loader-sm" *ngIf="loadingMovements()">
+            <div class="spinner-border spinner-border-sm text-primary"></div> Loading...
+          </div>
+          <div class="phx-panel-empty" *ngIf="!loadingMovements() && recentMovements.length === 0">
+            <i class="bi bi-inbox"></i>
+            <span>No outgoing movements yet</span>
+          </div>
+          <div class="phx-list-item" *ngFor="let m of recentMovements">
+            <div class="phx-list-icon" [class]="m.stockType === 'EQUIPMENT' ? 'phx-list-icon-blue' : 'phx-list-icon-teal'">
+              <i class="bi" [class.bi-tools]="m.stockType==='EQUIPMENT'" [class.bi-droplet-half]="m.stockType==='DIALYSIS'"></i>
+            </div>
+            <div class="phx-list-body">
+              <div class="fw-700 small">{{ m.itemName }}</div>
+              <div class="text-muted" style="font-size:11.5px">
+                {{ m.requestedBy || 'Unknown' }} · {{ m.takenAt | date:'dd/MM HH:mm' }}
+              </div>
+            </div>
+            <span class="phx-pill phx-pill-danger">−{{ m.quantityTaken }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Stock Alerts Summary ─────────────────────────────────────────────── -->
+  <div class="row g-4 mt-1" *ngIf="totalAlerts > 0">
+    <div class="col-12">
+      <div class="phx-card phx-card-alert">
+        <div class="phx-card-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-bell-fill text-danger"></i>
+            <span class="fw-700 text-danger">Stock Alert Summary</span>
+          </div>
+          <a routerLink="/backoffice/pharmacy/alerts" class="phx-btn phx-btn-alert phx-btn-sm">
+            <i class="bi bi-eye-fill"></i> Manage Alerts
+          </a>
+        </div>
+        <div class="phx-card-body">
+          <div class="row g-3">
+            <div class="col-md-4" *ngIf="reorderAlerts().length > 0">
+              <div class="phx-alert-group">
+                <div class="phx-alert-group-title"><i class="bi bi-capsule-pill me-1"></i>Medications ({{ reorderAlerts().length }})</div>
+                <div class="phx-alert-row" *ngFor="let a of reorderAlerts().slice(0,3)">
+                  <span class="fw-700 small">{{ a.name }}</span>
+                  <span class="phx-pill phx-pill-danger ms-auto">−{{ a.deficit }}</span>
+                </div>
+                <div class="text-muted small mt-1" *ngIf="reorderAlerts().length > 3">+{{ reorderAlerts().length - 3 }} more</div>
+              </div>
+            </div>
+            <div class="col-md-4" *ngIf="lowEquipment.length > 0">
+              <div class="phx-alert-group">
+                <div class="phx-alert-group-title"><i class="bi bi-tools me-1"></i>Equipment ({{ lowEquipment.length }})</div>
+                <div class="phx-alert-row" *ngFor="let e of lowEquipment.slice(0,3)">
+                  <span class="fw-700 small">{{ e.name }}</span>
+                  <span class="phx-pill" [class.phx-pill-danger]="e.currentStock===0" [class.phx-pill-warning]="e.currentStock!==0">
+                    {{ e.currentStock === 0 ? 'OUT' : e.currentStock + ' ' + (e.unit || '') }}
+                  </span>
+                </div>
+                <div class="text-muted small mt-1" *ngIf="lowEquipment.length > 3">+{{ lowEquipment.length - 3 }} more</div>
+              </div>
+            </div>
+            <div class="col-md-4" *ngIf="lowDialysis.length > 0">
+              <div class="phx-alert-group">
+                <div class="phx-alert-group-title"><i class="bi bi-droplet-half me-1"></i>Dialysis ({{ lowDialysis.length }})</div>
+                <div class="phx-alert-row" *ngFor="let d of lowDialysis.slice(0,3)">
+                  <span class="fw-700 small">{{ d.name }}</span>
+                  <span class="phx-pill" [class.phx-pill-danger]="d.currentStock===0" [class.phx-pill-warning]="d.currentStock!==0">
+                    {{ d.currentStock === 0 ? 'OUT' : d.currentStock + ' ' + (d.unit || '') }}
+                  </span>
+                </div>
+                <div class="text-muted small mt-1" *ngIf="lowDialysis.length > 3">+{{ lowDialysis.length - 3 }} more</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Quick Actions ────────────────────────────────────────────────────── -->
+  <div class="phx-section-title mt-4">
+    <i class="bi bi-lightning-fill me-1"></i> Quick Actions
+  </div>
+  <div class="row g-3 mb-2">
+    <div class="col-6 col-md-4 col-xl-2">
+      <a routerLink="/backoffice/pharmacy/medications" class="phx-action-card">
+        <div class="phx-action-icon" style="background:linear-gradient(135deg,#2563eb,#1d4ed8)"><i class="bi bi-capsule-pill"></i></div>
+        <span>Medications</span>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <a routerLink="/backoffice/pharmacy/stock" class="phx-action-card">
+        <div class="phx-action-icon" style="background:linear-gradient(135deg,#0369a1,#0284c7)"><i class="bi bi-archive-fill"></i></div>
+        <span>Medication Stock</span>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <a routerLink="/backoffice/pharmacy/equipment" class="phx-action-card">
+        <div class="phx-action-icon" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)"><i class="bi bi-tools"></i></div>
+        <span>Equipment</span>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <a routerLink="/backoffice/pharmacy/dialysis-stock" class="phx-action-card">
+        <div class="phx-action-icon" style="background:linear-gradient(135deg,#0d9488,#0f766e)"><i class="bi bi-droplet-half"></i></div>
+        <span>Dialysis Stock</span>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <a routerLink="/backoffice/pharmacy/prescriptions" class="phx-action-card">
+        <div class="phx-action-icon" style="background:linear-gradient(135deg,#7c3aed,#6d28d9)"><i class="bi bi-file-medical"></i></div>
+        <span>Prescriptions</span>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <a routerLink="/backoffice/pharmacy/suppliers" class="phx-action-card">
+        <div class="phx-action-icon" style="background:linear-gradient(135deg,#059669,#047857)"><i class="bi bi-truck"></i></div>
+        <span>Suppliers</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Dispensation vs Movements explanation box -->
+  <div class="phx-info-guide mt-3">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="phx-guide-item">
+          <i class="bi bi-send-fill text-success"></i>
+          <div>
+            <div class="fw-700 small">Dispensation History</div>
+            <div class="text-muted" style="font-size:12px">Medications dispensed from batch stock (Smart Dispense). Tracks which batch, how many units.</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="phx-guide-item">
+          <i class="bi bi-box-arrow-up-right text-primary"></i>
+          <div>
+            <div class="fw-700 small">Outgoing Movements</div>
+            <div class="text-muted" style="font-size:12px">Equipment &amp; dialysis materials taken by staff. Tracks who took items, for what purpose.</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="phx-guide-item">
+          <i class="bi bi-file-medical text-purple"></i>
+          <div>
+            <div class="fw-700 small">Doctor Prescriptions</div>
+            <div class="text-muted" style="font-size:12px">Clinical prescriptions from doctors. Track the request → processing → dispensed workflow.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Shared Styles ─────────────────────────────────────────────────────── -->
+<style>
+@keyframes fadeSlideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+@keyframes pageEnter   { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes headerSlide { from { opacity:0; transform:translateX(-18px); } to { opacity:1; transform:translateX(0); } }
+@keyframes statPop     { from { opacity:0; transform:translateY(16px) scale(.92); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes numPop      { from { opacity:0; transform:scale(.6); } to { opacity:1; transform:scale(1); } }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+:root { --phx-primary:#2563eb; }
+
+.phx-page { padding:0; background:transparent; min-height:auto; animation:pageEnter .45s cubic-bezier(.22,1,.36,1) both; }
+.phx-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; border:1px solid #dbe7f5; border-radius:16px; background:linear-gradient(130deg,#f7fbff 0%,#eef4ff 100%); padding:18px 20px; animation:headerSlide .4s cubic-bezier(.22,1,.36,1) .05s both; }
+.phx-header-left { display:flex; align-items:center; gap:16px; }
+.phx-header-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; }
+.phx-title { font-size:22px; font-weight:800; color:#1e293b; margin:0; }
+
+.phx-btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:8px; font-weight:600; font-size:13.5px; border:none; cursor:pointer; transition:transform .2s; }
+.phx-btn:hover { transform:translateY(-2px); }
+.phx-btn-sm { padding:6px 13px; font-size:12.5px; }
+.phx-btn-alert { background:#dc2626 !important; color:#fff !important; }
+.phx-btn-ghost { background:#f8fafc !important; border:1px solid #e2e8f0 !important; color:#334155 !important; }
+
+/* Alert banner */
+.phx-alert-banner { display:flex; align-items:center; gap:12px; padding:12px 18px; background:linear-gradient(135deg,#fff5f5,#fee2e2); border:1px solid #fecaca; border-radius:12px; margin-bottom:20px; color:#991b1b; font-size:13.5px; }
+.phx-alert-link { margin-left:auto; font-weight:700; color:#dc2626; text-decoration:none; font-size:13px; white-space:nowrap; }
+.phx-alert-link:hover { text-decoration:underline; }
+
+/* Section titles */
+.phx-section-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#64748b; margin-bottom:10px; display:flex; align-items:center; }
+
+/* Stat cards */
+.phx-stat-link { text-decoration:none; display:block; }
+.phx-stat-card { border-radius:14px; padding:16px 18px; display:flex; align-items:flex-start; gap:14px; border:1.5px solid transparent; transition:transform .2s ease, box-shadow .2s ease; animation:statPop .45s cubic-bezier(.34,1.56,.64,1) both; }
+.phx-stat-link:hover .phx-stat-card { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,.1); }
+.phx-stat-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.phx-stat-body { flex:1; min-width:0; }
+.phx-stat-value { font-size:28px; font-weight:800; line-height:1; animation:numPop .5s cubic-bezier(.34,1.56,.64,1) .3s both; }
+.phx-stat-label { font-size:12px; font-weight:600; margin-top:3px; opacity:.7; }
+.phx-stat-sub { font-size:11px; font-weight:600; margin-top:4px; }
+.phx-stat-blue   { background:linear-gradient(135deg,#eff6ff,#dbeafe); border-color:#bfdbfe; }
+.phx-stat-blue   .phx-stat-icon { background:#2563eb; color:#fff; }
+.phx-stat-blue   .phx-stat-value { color:#1d4ed8; }
+.phx-stat-teal   { background:linear-gradient(135deg,#f0fdfa,#ccfbf1); border-color:#99f6e4; }
+.phx-stat-teal   .phx-stat-icon { background:#0d9488; color:#fff; }
+.phx-stat-teal   .phx-stat-value { color:#0f766e; }
+.phx-stat-amber  { background:linear-gradient(135deg,#fffbeb,#fef3c7); border-color:#fde68a; }
+.phx-stat-amber  .phx-stat-icon { background:#f59e0b; color:#fff; }
+.phx-stat-amber  .phx-stat-value { color:#d97706; }
+.phx-stat-green  { background:linear-gradient(135deg,#f0fdf4,#dcfce7); border-color:#bbf7d0; }
+.phx-stat-green  .phx-stat-icon { background:#16a34a; color:#fff; }
+.phx-stat-green  .phx-stat-value { color:#15803d; }
+.phx-stat-purple { background:linear-gradient(135deg,#f5f3ff,#ede9fe); border-color:#ddd6fe; }
+.phx-stat-purple .phx-stat-icon { background:#7c3aed; color:#fff; }
+.phx-stat-purple .phx-stat-value { color:#6d28d9; }
+.phx-stat-indigo { background:linear-gradient(135deg,#eef2ff,#e0e7ff); border-color:#c7d2fe; }
+.phx-stat-indigo .phx-stat-icon { background:#4f46e5; color:#fff; }
+.phx-stat-indigo .phx-stat-value { color:#4338ca; }
+
+/* Cards */
+.phx-card { background:#fff; border-radius:16px; border:1px solid #dbe7f5; box-shadow:none; overflow:hidden; margin-bottom:0; animation:fadeSlideIn .4s ease .1s both; }
+.phx-card-alert { border-color:#fecaca; background:#fff; }
+.phx-card-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid #f1f5f9; background:#fafbff; }
+.phx-card-body { padding:16px 18px; }
+.fw-700 { font-weight:700; }
+
+.phx-badge { padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+.phx-badge-purple { background:#ede9fe; color:#6d28d9; }
+.phx-pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+.phx-pill-pending    { background:#fef3c7; color:#92400e; }
+.phx-pill-danger     { background:#fee2e2; color:#dc2626; }
+.phx-pill-warning    { background:#fef3c7; color:#92400e; }
+.phx-pill-success    { background:#dcfce7; color:#15803d; }
+
+/* Link button */
+.phx-link-btn { font-size:12.5px; font-weight:600; color:#2563eb; text-decoration:none; }
+.phx-link-btn:hover { text-decoration:underline; }
+
+/* Panel list items */
+.phx-loader-sm { display:flex; align-items:center; gap:8px; padding:12px 0; color:#64748b; font-size:13px; }
+.phx-panel-empty { display:flex; align-items:center; gap:10px; padding:20px 0; color:#94a3b8; font-size:13px; justify-content:center; }
+.phx-list-item { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #f8fafc; }
+.phx-list-item:last-child { border-bottom:none; }
+.phx-list-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+.phx-list-icon-purple { background:#ede9fe; color:#7c3aed; }
+.phx-list-icon-blue   { background:#dbeafe; color:#2563eb; }
+.phx-list-icon-teal   { background:#ccfbf1; color:#0d9488; }
+.phx-list-body { flex:1; min-width:0; }
+
+/* Alert groups */
+.phx-alert-group { background:#fff5f5; border:1px solid #fecaca; border-radius:10px; padding:12px 14px; }
+.phx-alert-group-title { font-size:12px; font-weight:700; color:#dc2626; margin-bottom:8px; display:flex; align-items:center; }
+.phx-alert-row { display:flex; align-items:center; padding:4px 0; border-bottom:1px solid #fee2e2; }
+.phx-alert-row:last-child { border-bottom:none; }
+
+/* Quick action cards */
+.phx-action-card { display:flex; flex-direction:column; align-items:center; gap:10px; padding:18px 12px; border-radius:14px; border:1.5px solid #e2e8f0; background:#fff; text-decoration:none; color:#334155; font-size:12.5px; font-weight:600; text-align:center; transition:transform .2s ease, box-shadow .2s ease, border-color .2s; }
+.phx-action-card:hover { transform:translateY(-4px); box-shadow:0 8px 24px rgba(0,0,0,.1); border-color:#bfdbfe; color:#1d4ed8; }
+.phx-action-icon { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; color:#fff; }
+
+/* Info guide */
+.phx-info-guide { background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:16px 20px; }
+.phx-guide-item { display:flex; align-items:flex-start; gap:12px; }
+.phx-guide-item i { font-size:18px; margin-top:2px; flex-shrink:0; }
+.text-purple { color:#7c3aed; }
+
+/* Spinner */
+.phx-spin-dark-sm { display:inline-block; width:18px; height:18px; border:2px solid rgba(0,0,0,.15); border-top-color:#1e293b; border-radius:50%; animation:spin .6s linear infinite; }
+
+/* Realtime live badge */
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+.phx-live-badge { display:inline-flex; align-items:center; gap:5px; background:#dcfce7; color:#15803d; font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; border:1px solid #bbf7d0; }
+.phx-live-dot { width:7px; height:7px; background:#22c55e; border-radius:50%; animation:pulse 1.4s ease-in-out infinite; }
+</style>

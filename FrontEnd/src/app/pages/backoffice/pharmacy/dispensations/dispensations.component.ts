@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { PharmacyService } from '../../../../core/services/pharmacy.service';
 import { DispensationLog } from '../../../../core/models/pharmacy.models';
-import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-dispensations',
@@ -17,15 +16,9 @@ export class DispensationsComponent implements OnInit {
 
   logs = signal<DispensationLog[]>([]);
   loading = signal(false);
-  selectedDate = new Date().toISOString().split('T')[0]; // today yyyy-MM-dd
+  selectedDate = new Date().toISOString().split('T')[0];
 
-  batchMedicationMap: Record<number, string> = {};
-  batchNumberMap: Record<number, string> = {};
-
-  ngOnInit() {
-    this.loadMaps();
-    this.load();
-  }
+  ngOnInit() { this.load(); }
 
   load() {
     this.loading.set(true);
@@ -35,33 +28,16 @@ export class DispensationsComponent implements OnInit {
     });
   }
 
-  loadMaps() {
-    this.svc.getMedications().subscribe({ next: medications => {
-      if (medications.length === 0) return;
-      const calls = medications.map(m => this.svc.getBatches(m.medicationId!));
-      forkJoin(calls).subscribe({ next: batchArrays => {
-        const nameMap: Record<number, string> = {};
-        const numMap: Record<number, string> = {};
-        batchArrays.forEach((batches, i) => {
-          batches.forEach(b => {
-            if (b.batchId != null) {
-              nameMap[b.batchId] = medications[i].name;
-              numMap[b.batchId] = b.batchNumber;
-            }
-          });
-        });
-        this.batchMedicationMap = nameMap;
-        this.batchNumberMap = numMap;
-      }});
-    }});
-  }
-
   get totalDispensed(): number {
     return this.logs().reduce((sum, l) => sum + l.quantity, 0);
   }
 
-  get distinctBatches(): number {
-    return new Set(this.logs().map(l => l.batchId)).size;
+  get distinctMedications(): number {
+    return new Set(this.logs().map(l => l.medicationName).filter(Boolean)).size;
+  }
+
+  get distinctPatients(): number {
+    return new Set(this.logs().map(l => l.patientId).filter(Boolean)).size;
   }
 
   formatTime(dt: string): string {

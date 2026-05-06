@@ -183,6 +183,10 @@ export function hasAnyRole(expectedRoles: readonly string[]): boolean {
 
 export function getLandingRouteByRole(): string {
   const roles = getUserRoles();
+  if (roles.includes('PHARMACIST')) {
+    return '/backoffice/pharmacy/dashboard';
+  }
+
   if (roles.some((role) => STAFF_BACKOFFICE_ROLES.includes(role as typeof STAFF_BACKOFFICE_ROLES[number]))) {
     return '/backoffice/dashboard';
   }
