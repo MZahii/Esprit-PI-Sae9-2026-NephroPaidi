@@ -259,22 +259,7 @@ public class HospitalizationServiceImpl implements HospitalizationService {
     }
 
     private HospitalizationTaskResponse toTaskResponse(HospitalizationTask task) {
-        List<HospitalizationTaskExecutionResponse> executions = safeList(task.getExecutions()).stream()
-                .filter(Objects::nonNull)
-                .map(execution -> new HospitalizationTaskExecutionResponse(
-                        execution.getId(),
-                        execution.getActionPerformed(),
-                        execution.getStatus(),
-                        execution.getNurseKeycloakId(),
-                        execution.getNurseUsername(),
-                        execution.getNurseDisplayName(),
-                        execution.getNote(),
-                        execution.getNumericValue(),
-                        execution.getTextValue(),
-                        execution.getUnit(),
-                        execution.getRecordedAt()
-                ))
-                .toList();
+        List<HospitalizationTaskExecutionResponse> executions = getExecutionResponsesSafely(task);
 
         return new HospitalizationTaskResponse(
                 task.getId(),
@@ -295,6 +280,30 @@ public class HospitalizationServiceImpl implements HospitalizationService {
                 task.getLastUpdatedAt(),
                 executions
         );
+    }
+
+    private List<HospitalizationTaskExecutionResponse> getExecutionResponsesSafely(HospitalizationTask task) {
+        try {
+            return safeList(task.getExecutions()).stream()
+                    .filter(Objects::nonNull)
+                    .map(execution -> new HospitalizationTaskExecutionResponse(
+                            execution.getId(),
+                            execution.getActionPerformed(),
+                            execution.getStatus(),
+                            execution.getNurseKeycloakId(),
+                            execution.getNurseUsername(),
+                            execution.getNurseDisplayName(),
+                            execution.getNote(),
+                            execution.getNumericValue(),
+                            execution.getTextValue(),
+                            execution.getUnit(),
+                            execution.getRecordedAt()
+                    ))
+                    .toList();
+        } catch (RuntimeException ex) {
+            log.warn("Failed to map task executions for task {}. Returning task without execution history.", task.getId(), ex);
+            return List.of();
+        }
     }
 
     private <T> List<T> safeList(List<T> items) {

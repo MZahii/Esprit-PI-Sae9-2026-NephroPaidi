@@ -1,0 +1,19 @@
+﻿{
+  "Age_Months": 144,
+  "Age_Years": 12,
+  "Measure_Seq": 1,
+  "Height_cm": 145.0,
+  "Weight_kg": 35.0,
+  "Creatinine_Value": 0.9,
+  "Urea_Value": 24.0,
+  "Proteinuria_Value": 0.1,
+  "Systolic_BP": 105.0,
+  "Diastolic_BP": 65.0,
+  "Sodium_mmolL": 138.0,
+  "Potassium_mmolL": 4.2,
+  "Chloride_mmolL": 102.0,
+  "Bicarbonate_mmolL": 23.0,
+  "Hemoglobin_gdL": 12.0,
+  "Albumin_gdL": 4.0,
+  "eGFR_Calculated": 90.0
+}

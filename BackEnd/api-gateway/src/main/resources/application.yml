@@ -157,6 +157,14 @@ spring:
               filters:
                 - SetPath=/v3/api-docs
 
+            - id: egfr-ml-service-api-fallback
+              uri: ${EGFR_ML_SERVICE_URI:http://localhost:8092}
+              order: -100
+              predicates:
+                - Path=/api/egfr-ml/**
+              filters:
+                - RewritePath=/api/egfr-ml/?(.*), /$1
+
   security:
     oauth2:
       resourceserver:

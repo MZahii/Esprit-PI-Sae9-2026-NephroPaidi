@@ -10,7 +10,7 @@ import {
   OpsApiService
 } from '../../../core/services/ops-api.service';
 import { DrugSafetyService, DrugSafetySignal } from '../../../core/services/drug-safety.service';
-import { Subscription, catchError, interval, of } from 'rxjs';
+import { catchError, of } from 'rxjs';
 
 interface TaskDraftState {
   status: HospitalizationTaskStatus;
@@ -90,7 +90,6 @@ export class NurseHospitalizationsPage implements OnInit, OnDestroy {
   taskDrafts: Record<string, TaskDraftState> = {};
   safetySignal: DrugSafetySignal | null = null;
   loadingSafety = false;
-  private refreshSub?: Subscription;
 
   constructor(
     private opsApi: OpsApiService,
@@ -99,16 +98,10 @@ export class NurseHospitalizationsPage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadActiveHospitalizations();
-    this.refreshSub = interval(15000).subscribe(() => {
-      this.loadActiveHospitalizations();
-      if (this.selectedHospitalization?.id) {
-        this.openHospitalization(this.selectedHospitalization.id);
-      }
-    });
   }
 
   ngOnDestroy(): void {
-    this.refreshSub?.unsubscribe();
+    // No polling subscription to clean up.
   }
 
   refreshNow(): void {

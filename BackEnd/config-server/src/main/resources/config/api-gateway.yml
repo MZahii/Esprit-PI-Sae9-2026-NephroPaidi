@@ -91,6 +91,14 @@ spring:
               filters:
                 - RewritePath=/api/ops/?(.*), /api/$1
 
+            # eGFR ML Service - ML prediction endpoint namespace
+            - id: egfr-ml-service-api
+              uri: http://egfr-ml-service:8092
+              predicates:
+                - Path=/api/egfr-ml/**
+              filters:
+                - RewritePath=/api/egfr-ml/?(.*), /$1
+
   security:
     oauth2:
       resourceserver:

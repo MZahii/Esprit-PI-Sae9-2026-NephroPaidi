@@ -57,6 +57,20 @@ export interface ClinicalLabRequestPayload {
   notes?: string;
 }
 
+export interface EgfrMlRegressionResponse {
+  predicted_egfr_3_months: number;
+  predicted_egfr_6_months: number;
+  predicted_egfr_12_months: number;
+}
+
+export interface EgfrMlClassificationResponse {
+  rapid_decline_flag: number;
+  rapid_decline_probability: number;
+  confidence_score: number;
+  risk_label: 'LOW' | 'HIGH' | string;
+  threshold: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ClinicalApiService {
   private base = (window as any).__env?.API_BASE || 'http://localhost:8083';
@@ -381,6 +395,26 @@ export class ClinicalApiService {
     return this.http.get<ConsultationMetricsRequest>(
       `${this.base}/api/clinical/consultations/${id}/metrics`,
       { headers: this.doctorHeaders() }
+    );
+  }
+
+  predictEgfrRegression(payload: Record<string, unknown>): Observable<EgfrMlRegressionResponse> {
+    return this.http.post<EgfrMlRegressionResponse>(
+      `${this.base}/api/egfr-ml/predict/regression`,
+      payload,
+      { headers: this.doctorHeaders() }
+    );
+  }
+
+  predictEgfrClassification(
+    payload: Record<string, unknown>,
+    threshold = 0.5
+  ): Observable<EgfrMlClassificationResponse> {
+    const params = new HttpParams().set('threshold', String(threshold));
+    return this.http.post<EgfrMlClassificationResponse>(
+      `${this.base}/api/egfr-ml/predict/classification`,
+      payload,
+      { headers: this.doctorHeaders(), params }
     );
   }
 

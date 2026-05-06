@@ -1,3 +1,5 @@
+name: nephropaidi
+
 services:
   keycloak:
     platform: linux/amd64
@@ -108,6 +110,7 @@ services:
       PHARMACY_SERVICE_URI: http://pharmacy-service:8088
       OPS_SERVICE_URI: http://ops-service:8082
       CORE_OPS_SERVICE_URI: http://core-ops-service:8086
+      EGFR_ML_SERVICE_URI: http://egfr-ml-service:8092
     ports:
       - "8083:8083"
     depends_on:
@@ -330,6 +333,24 @@ services:
       - "8091:8091"
     healthcheck:
       test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8091/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    cpus: "0.50"
+    mem_limit: "512m"
+    networks:
+      - nephro-net
+
+  egfr-ml-service:
+    build:
+      context: ./BackEnd/microservices/egfr-ml-service
+    container_name: nephro-egfr-ml-service
+    restart: unless-stopped
+    ports:
+      - "8092:8092"
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8092/health').read()"]
       interval: 30s
       timeout: 10s
       retries: 5
