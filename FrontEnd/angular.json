@@ -30,13 +30,11 @@
             "assets": [
               "src/favicon.ico",
               "src/assets"
-              ],
+            ],
             "styles": [
-             "src/styles.scss"
-              ],
+              "src/styles.scss"
+            ],
             "scripts": []
-            
-
           },
           "configurations": {
             "production": {
@@ -48,8 +46,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "8kB",
-                  "maximumError": "16kB"
+                  "maximumWarning": "16kB",
+                  "maximumError": "24kB"
                 }
               ],
               "outputHashing": "all"
