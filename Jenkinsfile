@@ -74,8 +74,12 @@ pipeline {
       steps {
         withSonarQubeEnv('sonarqube') {
           sh '''
-            sonar-scanner \
-              -Dsonar.token=$SONAR_TOKEN
+            BackEnd/api-gateway/mvnw -B -ntp \
+              -f BackEnd/pom.xml \
+              org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+              -DskipTests \
+              -Dsonar.token=$SONAR_TOKEN \
+              -Dsonar.host.url=$SONAR_HOST_URL
           '''
         }
       }
