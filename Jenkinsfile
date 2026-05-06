@@ -26,13 +26,11 @@ pipeline {
 
     stage('Backend Build + Tests') {
       steps {
-        dir('BackEnd') {
-          sh '''
-            sed -i 's/\r$//' mvnw
-            chmod +x mvnw
-            ./mvnw -B -ntp clean verify
-          '''
-        }
+        sh '''
+          sed -i 's/\r$//' BackEnd/api-gateway/mvnw
+          chmod +x BackEnd/api-gateway/mvnw
+          BackEnd/api-gateway/mvnw -B -ntp -f BackEnd/pom.xml clean verify
+        '''
       }
     }
 
