@@ -23,6 +23,22 @@ interface SurgicalProcedureCatalogItem {
   procedures: string[];
 }
 
+interface SurgicalLabRequestItem {
+  test: string;
+  urgency: 'Routine' | 'Urgent' | 'STAT';
+  note?: string;
+  reason?: string;
+  source?: string;
+  requestContext?: string;
+  surgicalCaseId?: number | null;
+  consultationId?: string | null;
+  patientId?: string | null;
+  requestedByRole?: string;
+  requestedByActorId?: string | null;
+  requestedAt?: string;
+  status?: string;
+}
+
 @Component({
   selector: 'app-procedure-surgical',
   standalone: true,
@@ -172,7 +188,7 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
   readonly surgeryRequestStatuses = ['PENDING', 'PLANNED', 'REJECTED', 'CANCELLED'];
   editRequestStatus: Record<number, string> = {};
   selectedWorkspaceCaseId = '';
-  workspaceSection: 'overview' | 'patient' | 'referral' | 'planning' = 'overview';
+  workspaceSection: 'overview' | 'patient' | 'referral' | 'planning' | 'labs' = 'overview';
   patientLoading = false;
   patientError = '';
   availableSurgeons: DoctorSearchResult[] = [];
@@ -180,6 +196,17 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
   surgeonLoading = false;
   surgeonError = '';
   role = '';
+  workspaceLabRequests: SurgicalLabRequestItem[] = [];
+  workspaceLabRequestsLoading = false;
+  workspaceLabRequestsError = '';
+  workspaceLabRequestsSuccess = '';
+  labRequestSubmitting = false;
+  labRequestDraft = {
+    reason: '',
+    tests: [
+      { test: '', urgency: 'Routine' as 'Routine' | 'Urgent' | 'STAT', note: '' }
+    ]
+  };
 
   createForm = {
     patientId: '',
@@ -532,6 +559,22 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
     ];
   }
 
+  get selectedWorkspaceLabRequests(): SurgicalLabRequestItem[] {
+    const surgicalCase = this.selectedWorkspaceCase;
+    if (!surgicalCase) {
+      return [];
+    }
+    return this.workspaceLabRequests.filter((item) => Number(item.surgicalCaseId ?? 0) === surgicalCase.id);
+  }
+
+  get workspaceLabRequestsSummary(): string {
+    const count = this.selectedWorkspaceLabRequests.length;
+    if (count === 0) {
+      return 'No lab request linked to this surgical case.';
+    }
+    return `${count} lab request${count > 1 ? 's' : ''} linked to this surgical case.`;
+  }
+
   get generatedPatientReference(): string {
     if (this.selectedPatient?.id) {
       return `PAT-${this.selectedPatient.id}`;
@@ -571,6 +614,7 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
         }
 
         this.syncSelectedWorkspaceCase();
+        this.loadWorkspaceLabRequests();
         this.loading = false;
         this.refreshView();
       },
@@ -867,14 +911,119 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
   openWorkspace(surgicalCase: SurgicalCase): void {
     this.selectedWorkspaceCaseId = String(surgicalCase.id);
     this.workspaceSection = 'overview';
+    this.loadWorkspaceLabRequests();
     this.errorMessage = '';
     this.successMessage = `Workspace opened for ${surgicalCase.firstName} ${surgicalCase.lastName}.`;
     this.refreshView();
   }
 
-  setWorkspaceSection(section: 'overview' | 'patient' | 'referral' | 'planning'): void {
+  setWorkspaceSection(section: 'overview' | 'patient' | 'referral' | 'planning' | 'labs'): void {
     this.workspaceSection = section;
+    if (section === 'labs') {
+      this.loadWorkspaceLabRequests();
+    }
     this.refreshView();
+  }
+
+  onWorkspaceCaseSelectionChange(value: string): void {
+    this.selectedWorkspaceCaseId = value;
+    this.loadWorkspaceLabRequests();
+    this.refreshView();
+  }
+
+  addLabTestRequestLine(): void {
+    this.labRequestDraft.tests = [
+      ...this.labRequestDraft.tests,
+      { test: '', urgency: 'Routine', note: '' }
+    ];
+    this.refreshView();
+  }
+
+  removeLabTestRequestLine(index: number): void {
+    this.labRequestDraft.tests = this.labRequestDraft.tests.filter((_, i) => i !== index);
+    if (this.labRequestDraft.tests.length === 0) {
+      this.labRequestDraft.tests = [{ test: '', urgency: 'Routine', note: '' }];
+    }
+    this.refreshView();
+  }
+
+  submitWorkspaceLabRequests(): void {
+    const surgicalCase = this.selectedWorkspaceCase;
+    if (!surgicalCase?.consultationId) {
+      this.workspaceLabRequestsError = 'This surgical case is not linked to a consultation, so lab requests cannot be sent.';
+      this.workspaceLabRequestsSuccess = '';
+      this.refreshView();
+      return;
+    }
+
+    const reason = this.labRequestDraft.reason.trim();
+    if (reason.length < 8) {
+      this.workspaceLabRequestsError = 'Please provide a clear reason for the lab request.';
+      this.workspaceLabRequestsSuccess = '';
+      this.refreshView();
+      return;
+    }
+
+    const cleaned = this.labRequestDraft.tests
+      .map((item) => ({
+        test: item.test.trim(),
+        urgency: item.urgency,
+        note: item.note.trim()
+      }))
+      .filter((item) => item.test.length > 0);
+
+    if (cleaned.length === 0) {
+      this.workspaceLabRequestsError = 'Add at least one lab test before sending the request.';
+      this.workspaceLabRequestsSuccess = '';
+      this.refreshView();
+      return;
+    }
+
+    const actorId = this.authStorage.getUser()?.keycloakId ?? null;
+    const retainedRequests = this.workspaceLabRequests.filter(
+      (item) => Number(item.surgicalCaseId ?? 0) !== surgicalCase.id
+    );
+
+    const nextRequests: SurgicalLabRequestItem[] = cleaned.map((item) => ({
+      test: item.test,
+      urgency: item.urgency,
+      note: item.note,
+      reason,
+      source: 'SURGERY',
+      requestContext: 'PRE_OP',
+      surgicalCaseId: surgicalCase.id,
+      consultationId: surgicalCase.consultationId,
+      patientId: surgicalCase.patientId,
+      requestedByRole: 'SURGEON',
+      requestedByActorId: actorId,
+      requestedAt: new Date().toISOString(),
+      status: 'PENDING'
+    }));
+
+    this.labRequestSubmitting = true;
+    this.workspaceLabRequestsError = '';
+    this.workspaceLabRequestsSuccess = '';
+
+    this.clinicalApi.updateConsultationLabRequestsForWorkflow(
+      surgicalCase.consultationId,
+      JSON.stringify([...retainedRequests, ...nextRequests])
+    ).subscribe({
+      next: (response) => {
+        this.labRequestSubmitting = false;
+        this.workspaceLabRequests = this.parseWorkspaceLabRequests(response?.labRequests);
+        this.labRequestDraft = {
+          reason: '',
+          tests: [{ test: '', urgency: 'Routine', note: '' }]
+        };
+        this.workspaceLabRequestsSuccess = 'Lab request sent to the clinical/lab workflow.';
+        this.refreshView();
+      },
+      error: () => {
+        this.labRequestSubmitting = false;
+        this.workspaceLabRequestsError = 'Unable to send the lab request from this surgical case.';
+        this.refreshView();
+      }
+    });
   }
 
   archiveCase(surgicalCase: SurgicalCase): void {
@@ -1216,6 +1365,79 @@ export class ProcedureSurgicalComponent implements OnInit, OnDestroy {
       const nextCase = this.roleScopedCases.find((item) => item.status !== 'ARCHIVED' && item.status !== 'CANCELLED') ?? this.roleScopedCases[0];
       this.selectedWorkspaceCaseId = String(nextCase.id);
     }
+  }
+
+  private loadWorkspaceLabRequests(): void {
+    const surgicalCase = this.selectedWorkspaceCase;
+    if (!surgicalCase?.consultationId) {
+      this.workspaceLabRequests = [];
+      this.workspaceLabRequestsLoading = false;
+      this.workspaceLabRequestsError = '';
+      this.workspaceLabRequestsSuccess = '';
+      return;
+    }
+
+    this.workspaceLabRequestsLoading = true;
+    this.workspaceLabRequestsError = '';
+
+    this.clinicalApi.getConsultationLabRequests(surgicalCase.consultationId).subscribe({
+      next: (response) => {
+        this.workspaceLabRequests = this.parseWorkspaceLabRequests(response?.labRequests);
+        this.workspaceLabRequestsLoading = false;
+        this.refreshView();
+      },
+      error: () => {
+        this.workspaceLabRequests = [];
+        this.workspaceLabRequestsLoading = false;
+        this.workspaceLabRequestsError = 'Unable to load lab requests linked to this consultation.';
+        this.refreshView();
+      }
+    });
+  }
+
+  private parseWorkspaceLabRequests(raw: string | null | undefined): SurgicalLabRequestItem[] {
+    const source = String(raw ?? '').trim();
+    if (!source) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(source);
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed
+        .filter((item) => item && typeof item === 'object')
+        .map((item) => ({
+          test: String(item.test ?? '').trim(),
+          urgency: this.normalizeLabUrgency(String(item.urgency ?? 'Routine')),
+          note: String(item.note ?? '').trim(),
+          reason: String(item.reason ?? '').trim(),
+          source: String(item.source ?? '').trim(),
+          requestContext: String(item.requestContext ?? '').trim(),
+          surgicalCaseId: item.surgicalCaseId != null ? Number(item.surgicalCaseId) : null,
+          consultationId: item.consultationId != null ? String(item.consultationId) : null,
+          patientId: item.patientId != null ? String(item.patientId) : null,
+          requestedByRole: String(item.requestedByRole ?? '').trim(),
+          requestedByActorId: item.requestedByActorId != null ? String(item.requestedByActorId) : null,
+          requestedAt: String(item.requestedAt ?? '').trim(),
+          status: String(item.status ?? '').trim()
+        }))
+        .filter((item) => item.test.length > 0);
+    } catch {
+      return [];
+    }
+  }
+
+  private normalizeLabUrgency(value: string): 'Routine' | 'Urgent' | 'STAT' {
+    if (value === 'STAT') {
+      return 'STAT';
+    }
+    if (value === 'Urgent') {
+      return 'Urgent';
+    }
+    return 'Routine';
   }
 
   get roleScopedCases(): SurgicalCase[] {

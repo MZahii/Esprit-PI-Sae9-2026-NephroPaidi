@@ -1,0 +1,22 @@
+server:
+  port: 8091
+
+spring:
+  application:
+    name: ml-prediction-service
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+ml:
+  inference:
+    python-command: ${ML_PYTHON_COMMAND:python}
+    timeout-seconds: ${ML_INFERENCE_TIMEOUT_SECONDS:60}

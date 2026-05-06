@@ -19,11 +19,8 @@ import tn.esprit.spring.clinicalservice.consultation.service.ConsultationOutcome
 import tn.esprit.spring.clinicalservice.consultation.service.ConsultationService;
 import tn.esprit.spring.clinicalservice.security.DoctorIdResolver;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
-
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -155,8 +152,37 @@ public class ConsultationController {
             Authentication authentication,
             @RequestBody ConsultationOutcomeUpdateRequest request
     ) {
+        if (hasAnyRole(authentication, "ROLE_SURGEON", "ROLE_LAB_AGENT")) {
+            ConsultationLabRequestsResponse response = consultationOutcomeService.updateSharedLabRequests(
+                    id,
+                    request != null ? request.getContent() : null
+            );
+            return ResponseEntity.ok(ConsultationOutcomeResponse.builder()
+                    .consultationId(response.getConsultationId())
+                    .labRequests(response.getLabRequests())
+                    .updatedAt(response.getUpdatedAt())
+                    .build());
+        }
         UUID resolvedDoctorId = requireDoctorId(doctorId, authentication);
         return ResponseEntity.ok(consultationOutcomeService.updateLabRequests(id, resolvedDoctorId, request != null ? request.getContent() : null));
+    }
+
+    @GetMapping("/{id}/lab-requests")
+    public ResponseEntity<ConsultationLabRequestsResponse> getLabRequests(
+            @PathVariable UUID id,
+            @RequestHeader(value = "X-Doctor-Id", required = false) UUID doctorId,
+            Authentication authentication
+    ) {
+        if (hasAnyRole(authentication, "ROLE_SURGEON", "ROLE_LAB_AGENT")) {
+            return ResponseEntity.ok(consultationOutcomeService.getSharedLabRequests(id));
+        }
+        UUID resolvedDoctorId = requireDoctorId(doctorId, authentication);
+        ConsultationOutcomeResponse outcome = consultationOutcomeService.getOutcome(id, resolvedDoctorId);
+        return ResponseEntity.ok(ConsultationLabRequestsResponse.builder()
+                .consultationId(outcome.getConsultationId())
+                .labRequests(outcome.getLabRequests())
+                .updatedAt(outcome.getUpdatedAt())
+                .build());
     }
 
     @PostMapping("/{id}/treatment-plan")
@@ -256,6 +282,20 @@ public class ConsultationController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "doctorId is required");
         }
         return resolved;
+    }
+
+    private boolean hasAnyRole(Authentication authentication, String... roles) {
+        if (authentication == null || authentication.getAuthorities() == null) {
+            return false;
+        }
+        for (String role : roles) {
+            boolean found = authentication.getAuthorities().stream()
+                    .anyMatch(authority -> role.equals(authority.getAuthority()));
+            if (found) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // BACKOFFICE: List all consultations with filters (no doctor restriction for admin)

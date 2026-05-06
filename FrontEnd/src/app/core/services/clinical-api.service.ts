@@ -26,6 +26,12 @@ export interface ConsultationMetricsRequest {
   diastolicBpMmHg?: number;
 }
 
+export interface ConsultationLabRequestsResponse {
+  consultationId: string;
+  labRequests: string | null;
+  updatedAt?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ClinicalApiService {
   private base = (window as any).__env?.API_BASE || 'http://localhost:8083';
@@ -46,6 +52,16 @@ export class ClinicalApiService {
     const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
     if (doctorId) headers['X-Doctor-Id'] = doctorId;
+    return new HttpHeaders(headers);
+  }
+
+  private actorHeaders(): HttpHeaders {
+    const user = this.auth.getUser();
+    const actorId = user?.keycloakId;
+    const token = this.auth.getAccessToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (actorId) headers['X-Doctor-Id'] = actorId;
     return new HttpHeaders(headers);
   }
 
@@ -295,6 +311,21 @@ export class ClinicalApiService {
       `${this.base}/api/clinical/consultations/${id}/lab-requests`,
       { content },
       { headers: this.doctorHeaders() }
+    );
+  }
+
+  getConsultationLabRequests(id: string): Observable<ConsultationLabRequestsResponse> {
+    return this.http.get<ConsultationLabRequestsResponse>(
+      `${this.base}/api/clinical/consultations/${id}/lab-requests`,
+      { headers: this.actorHeaders() }
+    );
+  }
+
+  updateConsultationLabRequestsForWorkflow(id: string, content: string): Observable<ConsultationLabRequestsResponse> {
+    return this.http.post<ConsultationLabRequestsResponse>(
+      `${this.base}/api/clinical/consultations/${id}/lab-requests`,
+      { content },
+      { headers: this.actorHeaders() }
     );
   }
 

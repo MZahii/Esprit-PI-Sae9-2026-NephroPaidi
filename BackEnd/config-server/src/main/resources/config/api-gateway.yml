@@ -69,6 +69,14 @@ spring:
               predicates:
                 - Path=/api/procedures/**
 
+            # ML Prediction Service - Internal prediction engine
+            - id: ml-prediction-service-api
+              uri: lb://ml-prediction-service
+              predicates:
+                - Path=/api/ml/**
+              filters:
+                - RewritePath=/api/ml/?(.*), /api/$1
+
             # Pharmacy Service - Rewrite frontend path to service endpoints
             - id: pharmacy-service-api
               uri: lb://pharmacy-service

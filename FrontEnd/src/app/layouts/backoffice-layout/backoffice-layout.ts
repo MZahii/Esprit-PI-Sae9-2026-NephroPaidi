@@ -136,6 +136,10 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     return this.role === 'DOCTOR';
   }
 
+  get isLabAgent(): boolean {
+    return this.role === 'LAB_AGENT';
+  }
+
   get isSurgeon(): boolean {
     return this.role === 'SURGEON';
   }
@@ -487,20 +491,29 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
       });
     }
 
-    if (this.isDoctor) {
+    if (this.isDoctor || this.isLabAgent) {
       items.push({
         key: 'doctorClinical',
-        label: 'Clinical Workspace',
+        label: this.isLabAgent ? 'Lab Workflow' : 'Clinical Workspace',
         icon: 'feather-activity',
         children: [
+          ...(this.isDoctor
+            ? [
+              {
+                label: 'Today Appointments',
+                route: '/backoffice/doctor/today',
+                implemented: true
+              },
+              {
+                label: 'Consultations',
+                route: '/backoffice/consultations',
+                implemented: true
+              }
+            ]
+            : []),
           {
-            label: 'Today Appointments',
-            route: '/backoffice/doctor/today',
-            implemented: true
-          },
-          {
-            label: 'Consultations',
-            route: '/backoffice/consultations',
+            label: 'Lab Requests',
+            route: '/backoffice/consultations/lab-requests',
             implemented: true
           }
         ]

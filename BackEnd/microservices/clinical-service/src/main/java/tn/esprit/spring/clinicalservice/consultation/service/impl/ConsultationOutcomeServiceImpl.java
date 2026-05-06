@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tn.esprit.spring.clinicalservice.consultation.dto.ConsultationOutcomeResponse;
+import tn.esprit.spring.clinicalservice.consultation.dto.ConsultationLabRequestsResponse;
 import tn.esprit.spring.clinicalservice.consultation.entity.Consultation;
 import tn.esprit.spring.clinicalservice.consultation.entity.ConsultationOutcome;
 import tn.esprit.spring.clinicalservice.consultation.repository.ConsultationOutcomeRepository;
@@ -59,6 +60,13 @@ public class ConsultationOutcomeServiceImpl implements ConsultationOutcomeServic
     }
 
     @Override
+    public ConsultationLabRequestsResponse updateSharedLabRequests(UUID consultationId, String content) {
+        ConsultationOutcome outcome = getOrCreateSharedOutcome(consultationId);
+        outcome.setLabRequests(content);
+        return mapLabRequestsResponse(outcomeRepository.save(outcome));
+    }
+
+    @Override
     public ConsultationOutcomeResponse updateTreatmentPlan(UUID consultationId, UUID doctorId, String content) {
         ConsultationOutcome outcome = getOrCreateOutcome(consultationId, doctorId);
         String before = outcome.getTreatmentPlan();
@@ -83,8 +91,32 @@ public class ConsultationOutcomeServiceImpl implements ConsultationOutcomeServic
         return mapToResponse(outcome);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ConsultationLabRequestsResponse getSharedLabRequests(UUID consultationId) {
+        ensureConsultationExistsAndActive(consultationId);
+        ConsultationOutcome outcome = outcomeRepository.findByConsultationId(consultationId)
+                .orElse(null);
+        if (outcome == null) {
+            return ConsultationLabRequestsResponse.builder()
+                    .consultationId(consultationId)
+                    .labRequests(null)
+                    .updatedAt(null)
+                    .build();
+        }
+        return mapLabRequestsResponse(outcome);
+    }
+
     private ConsultationOutcome getOrCreateOutcome(UUID consultationId, UUID doctorId) {
         ensureOwnership(consultationId, doctorId);
+        return outcomeRepository.findByConsultationId(consultationId)
+                .orElseGet(() -> ConsultationOutcome.builder()
+                        .consultationId(consultationId)
+                        .build());
+    }
+
+    private ConsultationOutcome getOrCreateSharedOutcome(UUID consultationId) {
+        ensureConsultationExistsAndActive(consultationId);
         return outcomeRepository.findByConsultationId(consultationId)
                 .orElseGet(() -> ConsultationOutcome.builder()
                         .consultationId(consultationId)
@@ -102,6 +134,14 @@ public class ConsultationOutcomeServiceImpl implements ConsultationOutcomeServic
         }
     }
 
+    private void ensureConsultationExistsAndActive(UUID consultationId) {
+        Consultation consultation = consultationRepository.findById(consultationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Consultation not found"));
+        if (consultation.getStatus() == tn.esprit.spring.clinicalservice.consultation.entity.ConsultationStatus.ARCHIVED) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Consultation archived");
+        }
+    }
+
     private ConsultationOutcomeResponse mapToResponse(ConsultationOutcome outcome) {
         return ConsultationOutcomeResponse.builder()
                 .consultationId(outcome.getConsultationId())
@@ -110,6 +150,14 @@ public class ConsultationOutcomeServiceImpl implements ConsultationOutcomeServic
                 .prescriptions(outcome.getPrescriptions())
                 .labRequests(outcome.getLabRequests())
                 .treatmentPlan(outcome.getTreatmentPlan())
+                .updatedAt(outcome.getUpdatedAt())
+                .build();
+    }
+
+    private ConsultationLabRequestsResponse mapLabRequestsResponse(ConsultationOutcome outcome) {
+        return ConsultationLabRequestsResponse.builder()
+                .consultationId(outcome.getConsultationId())
+                .labRequests(outcome.getLabRequests())
                 .updatedAt(outcome.getUpdatedAt())
                 .build();
     }

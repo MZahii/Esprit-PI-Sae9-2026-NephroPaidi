@@ -382,6 +382,26 @@
   }
 }
 
+.lab-test-line {
+  padding: 0.85rem 0;
+  border-top: 1px solid #e9ecef;
+
+  &:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+  }
+}
+
+.lab-request-item {
+  padding: 0.9rem 0;
+  border-top: 1px solid #e9ecef;
+
+  &:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+  }
+}
+
 .check-dot {
   width: 14px;
   height: 14px;

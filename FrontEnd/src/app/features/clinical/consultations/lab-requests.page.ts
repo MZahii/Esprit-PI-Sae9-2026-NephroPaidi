@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { ClinicalApiService } from '../../../core/services/clinical-api.service';
+import { AuthStorageService } from '../../../core/auth/auth-storage.service';
 
 type ConsultationStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 type RequestStateFilter = 'ALL' | 'WITH_REQUESTS' | 'WITHOUT_REQUESTS';
@@ -14,6 +15,16 @@ interface LabRequestItem {
   test: string;
   urgency: LabUrgency;
   note?: string;
+  status?: string;
+  reason?: string;
+  source?: string;
+  requestContext?: string;
+  surgicalCaseId?: number | null;
+  consultationId?: string | null;
+  patientId?: string | null;
+  requestedByRole?: string;
+  requestedByActorId?: string | null;
+  requestedAt?: string;
 }
 
 interface ConsultationLabRow {
@@ -53,7 +64,10 @@ export class LabRequestsPage implements OnInit {
   readonly statuses: Array<ConsultationStatus | 'ALL'> = ['ALL', 'OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
   readonly urgencies: LabUrgency[] = ['Routine', 'Urgent', 'STAT'];
 
-  constructor(private api: ClinicalApiService) {}
+  constructor(
+    private api: ClinicalApiService,
+    private authStorage: AuthStorageService
+  ) {}
 
   ngOnInit(): void {
     this.loadRows();
@@ -128,10 +142,14 @@ export class LabRequestsPage implements OnInit {
     this.successMessage = '';
 
     const status = this.filters.status === 'ALL' ? undefined : this.filters.status;
-    this.api.listMyConsultations({
-      patientQuery: this.filters.patientQuery.trim() || undefined,
-      status
-    }).subscribe({
+    const consultationSource$ = this.isLabAgent
+      ? this.api.listAllConsultations({ status })
+      : this.api.listMyConsultations({
+          patientQuery: this.filters.patientQuery.trim() || undefined,
+          status
+        });
+
+    consultationSource$.subscribe({
       next: (consultations) => {
         const items = consultations ?? [];
         if (items.length === 0) {
@@ -145,7 +163,7 @@ export class LabRequestsPage implements OnInit {
 
         forkJoin(
           items.map((consultation) =>
-            this.api.getConsultationOutcome(String(consultation.id)).pipe(
+            this.api.getConsultationLabRequests(String(consultation.id)).pipe(
               map((outcome) => ({
                 consultation,
                 outcome,
@@ -249,7 +267,14 @@ export class LabRequestsPage implements OnInit {
       .map((item) => ({
         test: (item.test ?? '').trim(),
         urgency: item.urgency ?? 'Routine',
-        note: (item.note ?? '').trim()
+        note: (item.note ?? '').trim(),
+        reason: (item.reason ?? '').trim(),
+        source: (item.source ?? '').trim(),
+        requestContext: (item.requestContext ?? '').trim(),
+        surgicalCaseId: item.surgicalCaseId ?? null,
+        requestedByRole: (item.requestedByRole ?? '').trim(),
+        requestedAt: (item.requestedAt ?? '').trim(),
+        status: item.status ?? 'PENDING'
       }))
       .filter((item) => item.test.length > 0);
 
@@ -306,6 +331,10 @@ export class LabRequestsPage implements OnInit {
     return row.labRequests.map((item) => item.test).slice(0, 2).join(', ');
   }
 
+  get isLabAgent(): boolean {
+    return this.authStorage.getRole() === 'LAB_AGENT';
+  }
+
   private ensureSelectedRow(): void {
     const visible = this.filteredRows;
     const alreadySelected = visible.find((row) => row.consultation?.id === this.selectedConsultationId);
@@ -338,7 +367,8 @@ export class LabRequestsPage implements OnInit {
       String(row.consultation?.patientName ?? ''),
       String(row.consultation?.status ?? ''),
       ...row.labRequests.flatMap((item) => [item.test ?? '', item.note ?? '', item.urgency ?? ''])
-    ].map((value) => value.toLowerCase());
+    ].concat(...row.labRequests.flatMap((item) => [item.reason ?? '', item.source ?? '', String(item.surgicalCaseId ?? '')]))
+      .map((value) => value.toLowerCase());
   }
 
   private parseLabRequests(raw: string | null | undefined): LabRequestItem[] {
@@ -353,7 +383,17 @@ export class LabRequestsPage implements OnInit {
           .map((item) => ({
             test: String(item.test ?? '').trim(),
             urgency: this.normalizeUrgency(String(item.urgency ?? 'Routine')),
-            note: String(item.note ?? '').trim()
+            note: String(item.note ?? '').trim(),
+            reason: String(item.reason ?? '').trim(),
+            source: String(item.source ?? '').trim(),
+            requestContext: String(item.requestContext ?? '').trim(),
+            surgicalCaseId: item.surgicalCaseId != null ? Number(item.surgicalCaseId) : null,
+            consultationId: item.consultationId != null ? String(item.consultationId) : null,
+            patientId: item.patientId != null ? String(item.patientId) : null,
+            requestedByRole: String(item.requestedByRole ?? '').trim(),
+            requestedByActorId: item.requestedByActorId != null ? String(item.requestedByActorId) : null,
+            requestedAt: String(item.requestedAt ?? '').trim(),
+            status: String(item.status ?? '').trim()
           }))
           .filter((item) => item.test.length > 0);
       }
@@ -385,7 +425,21 @@ export class LabRequestsPage implements OnInit {
 
   private serializeLabRequests(items: LabRequestItem[]): string {
     if (!items.length) return '';
-    return JSON.stringify(items);
+    return JSON.stringify(items.map((item) => ({
+      test: item.test,
+      urgency: item.urgency,
+      note: item.note ?? '',
+      reason: item.reason ?? '',
+      source: item.source ?? '',
+      requestContext: item.requestContext ?? '',
+      surgicalCaseId: item.surgicalCaseId ?? null,
+      consultationId: item.consultationId ?? null,
+      patientId: item.patientId ?? null,
+      requestedByRole: item.requestedByRole ?? '',
+      requestedByActorId: item.requestedByActorId ?? null,
+      requestedAt: item.requestedAt ?? '',
+      status: item.status ?? 'PENDING'
+    })));
   }
 
   private normalizeUrgency(value: string): LabUrgency {

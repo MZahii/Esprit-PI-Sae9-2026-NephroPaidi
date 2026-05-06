@@ -469,7 +469,7 @@
             <h5 class="card-title mb-0">{{ workspaceTitle }}</h5>
             <div class="text-muted small">{{ workspaceSubtitle }}</div>
           </div>
-          <select class="form-select workspace-select" [ngModel]="selectedWorkspaceCaseId" (ngModelChange)="selectedWorkspaceCaseId = $event">
+          <select class="form-select workspace-select" [ngModel]="selectedWorkspaceCaseId" (ngModelChange)="onWorkspaceCaseSelectionChange($event)">
             <option *ngFor="let item of roleScopedCases" [value]="item.id">
               {{ item.firstName }} {{ item.lastName }} | {{ formatDateTime(item.scheduledDate, item.scheduledStartTime) }}
             </option>
@@ -494,6 +494,7 @@
             <button class="btn btn-light btn-sm" [class.active]="workspaceSection === 'patient'" (click)="setWorkspaceSection('patient')">Patient File</button>
             <button class="btn btn-light btn-sm" [class.active]="workspaceSection === 'referral'" (click)="setWorkspaceSection('referral')">Referral Context</button>
             <button class="btn btn-light btn-sm" [class.active]="workspaceSection === 'planning'" (click)="setWorkspaceSection('planning')">Planning</button>
+            <button class="btn btn-light btn-sm" *ngIf="isSurgeon" [class.active]="workspaceSection === 'labs'" (click)="setWorkspaceSection('labs')">Lab Tests</button>
           </div>
 
           <div class="row g-3" *ngIf="workspaceSection === 'overview'">
@@ -608,6 +609,87 @@
                     <div class="fw-semibold">{{ item.label }}</div>
                     <div class="text-muted small">{{ item.value }}</div>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3" *ngIf="isSurgeon && workspaceSection === 'labs'">
+            <div class="col-xl-5">
+              <div class="workspace-panel">
+                <div class="workspace-section-label">Request Lab Tests</div>
+                <div class="workspace-note mb-3">
+                  Order pre-operative tests from the surgical case. The request stays linked to the patient, consultation, and case.
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Clinical Reason</label>
+                  <textarea
+                    class="form-control"
+                    rows="3"
+                    [(ngModel)]="labRequestDraft.reason"
+                    placeholder="Explain why additional pre-op tests are required."
+                  ></textarea>
+                </div>
+
+                <div class="lab-test-line" *ngFor="let item of labRequestDraft.tests; let i = index">
+                  <div class="row g-2 align-items-end">
+                    <div class="col-12">
+                      <label class="form-label">Test</label>
+                      <input class="form-control" [(ngModel)]="item.test" placeholder="CBC, Coagulation Panel, Creatinine..." />
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Priority</label>
+                      <select class="form-select" [(ngModel)]="item.urgency">
+                        <option value="Routine">Routine</option>
+                        <option value="Urgent">Urgent</option>
+                        <option value="STAT">STAT</option>
+                      </select>
+                    </div>
+                    <div class="col-md-8">
+                      <label class="form-label">Test Note</label>
+                      <input class="form-control" [(ngModel)]="item.note" placeholder="Optional detail for this specific test" />
+                    </div>
+                    <div class="col-12 d-flex justify-content-end" *ngIf="labRequestDraft.tests.length > 1">
+                      <button type="button" class="btn btn-outline-danger btn-sm" (click)="removeLabTestRequestLine(i)">Remove Test</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap mt-3">
+                  <button type="button" class="btn btn-light btn-sm" (click)="addLabTestRequestLine()">Add Test</button>
+                  <button type="button" class="btn btn-primary btn-sm" (click)="submitWorkspaceLabRequests()" [disabled]="labRequestSubmitting">
+                    {{ labRequestSubmitting ? 'Sending...' : 'Request Lab Tests' }}
+                  </button>
+                </div>
+
+                <div class="text-danger small mt-2" *ngIf="workspaceLabRequestsError">{{ workspaceLabRequestsError }}</div>
+                <div class="text-success small mt-2" *ngIf="workspaceLabRequestsSuccess">{{ workspaceLabRequestsSuccess }}</div>
+              </div>
+            </div>
+
+            <div class="col-xl-7">
+              <div class="workspace-panel">
+                <div class="workspace-section-label">Linked Lab Requests</div>
+                <div class="workspace-note mb-3">{{ workspaceLabRequestsSummary }}</div>
+                <div *ngIf="workspaceLabRequestsLoading" class="text-muted small">Loading linked lab requests...</div>
+                <div *ngIf="!workspaceLabRequestsLoading && selectedWorkspaceLabRequests.length === 0" class="text-muted small">
+                  No lab request has been sent yet for this surgical case.
+                </div>
+
+                <div *ngFor="let item of selectedWorkspaceLabRequests" class="lab-request-item">
+                  <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                    <div class="fw-semibold">{{ item.test }}</div>
+                    <div class="d-flex gap-2 flex-wrap">
+                      <span class="badge urgency-badge" [class.urgent]="item.urgency === 'Urgent' || item.urgency === 'STAT'">{{ item.urgency }}</span>
+                      <span class="badge bg-soft-warning text-warning">{{ item.status || 'PENDING' }}</span>
+                    </div>
+                  </div>
+                  <div class="small text-muted mt-1">
+                    {{ item.requestContext || 'PRE_OP' }} | {{ item.requestedByRole || 'SURGEON' }} | {{ item.requestedAt ? (item.requestedAt | date:'short') : '-' }}
+                  </div>
+                  <div class="mt-2" *ngIf="item.reason"><strong>Reason:</strong> {{ item.reason }}</div>
+                  <div class="small text-muted mt-1" *ngIf="item.note">{{ item.note }}</div>
                 </div>
               </div>
             </div>
