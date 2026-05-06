@@ -80,7 +80,7 @@ services:
     environment:
       MODEL_PATH: model.joblib
     ports:
-      - "8091:8091"
+      - "8093:8091"
 
 volumes:
   keycloak_db:
