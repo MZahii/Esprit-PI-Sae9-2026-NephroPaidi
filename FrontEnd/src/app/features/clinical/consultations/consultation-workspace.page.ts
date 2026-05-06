@@ -1061,7 +1061,7 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
     if (this.patientAgeLabel !== '-') parts.push(this.patientAgeLabel);
     if (this.patientSexLabel !== '-') parts.push(this.patientSexLabel);
     if (this.patientProfile?.bloodType) parts.push(`Blood ${this.patientProfile.bloodType}`);
-    return parts.join(' â€¢ ') || 'Details pending';
+    return parts.join(' \u2022 ') || 'Details pending';
   }
 
   get patientAgeLabel(): string {
@@ -1241,7 +1241,7 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
       Number.isFinite(Number(this.draft.metrics.creatinineMgDl)) ? `Creatinine ${this.draft.metrics.creatinineMgDl} mg/dL` : '',
       this.egfrValue !== null ? `eGFR ${this.egfrValue} mL/min/1.73m2 (${this.egfrFormulaLabel})` : '',
       this.ckdStage && this.ckdStage !== 'N/A' ? `CKD ${this.ckdStage}` : ''
-    ].filter(Boolean).join(' â€¢ ');
+    ].filter(Boolean).join(' \u2022 ');
     const nextStep = this.adherenceUnlocked
       ? 'Hospitalization workflow has been opened for nurse follow-up.'
       : (this.draft.labRequests || []).some((item) => (item.test || '').trim().length > 0)
