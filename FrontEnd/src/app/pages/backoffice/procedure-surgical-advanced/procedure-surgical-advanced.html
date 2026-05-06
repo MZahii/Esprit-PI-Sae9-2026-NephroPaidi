@@ -63,6 +63,123 @@
           <button type="button" class="btn btn-primary btn-sm" (click)="submitPreOp()" [disabled]="saving">
             Validate Pre-Op Decision
           </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm ms-2"
+            (click)="runPreOpPrediction()"
+            [disabled]="predictionRunningPhase === 'PRE_OP'"
+          >
+            {{ predictionRunningPhase === 'PRE_OP' ? 'Running ML...' : 'Run ML Prediction' }}
+          </button>
+
+          <div class="prediction-panel mt-3" [ngClass]="'prediction-' + predictionTone(latestPreOpPrediction)">
+            <div class="prediction-panel-header">
+              <div>
+                <div class="prediction-eyebrow">Pre-Op Intelligence</div>
+                <div class="prediction-summary-text">{{ predictionSummary(latestPreOpPrediction, 'PRE_OP') }}</div>
+              </div>
+              <span class="prediction-risk-badge">{{ latestPreOpPrediction?.riskLevel || 'NOT RUN' }}</span>
+            </div>
+
+            <div class="prediction-score-row">
+              <div class="prediction-score-card">
+                <div class="prediction-score-label">Risk score</div>
+                <div class="prediction-score-value">{{ predictionScore(latestPreOpPrediction) }}%</div>
+                <div class="prediction-score-subtitle">
+                  {{ latestPreOpPrediction?.predictionLabel?.replaceAll('_', ' ') || 'No prediction yet' }}
+                </div>
+              </div>
+
+              <div class="prediction-metadata-card">
+                <div class="metadata-line">
+                  <span>Model</span>
+                  <strong>{{ latestPreOpPrediction?.modelVersion || '-' }}</strong>
+                </div>
+                <div class="metadata-line">
+                  <span>Generated</span>
+                  <strong>{{ predictionGeneratedAt(latestPreOpPrediction) }}</strong>
+                </div>
+                <div class="metadata-line">
+                  <span>Probability</span>
+                  <strong>{{ latestPreOpPrediction?.probability ? (latestPreOpPrediction?.probability | number:'1.2-2') : '-' }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="prediction-progress-track">
+              <div
+                class="prediction-progress-fill"
+                [style.width.%]="predictionScore(latestPreOpPrediction)"
+              ></div>
+            </div>
+
+            <div class="prediction-interpretation-grid">
+              <div class="interpretation-card">
+                <div class="prediction-section-title">Clinical interpretation</div>
+                <div class="interpretation-text">{{ clinicalInterpretation(latestPreOpPrediction, 'PRE_OP') }}</div>
+              </div>
+              <div class="interpretation-card">
+                <div class="prediction-section-title">Suggested workflow status</div>
+                <div class="workflow-state">{{ suggestedWorkflowStatus(latestPreOpPrediction, 'PRE_OP') }}</div>
+                <div class="workflow-support">Decision support strength: {{ decisionSupportStrength(latestPreOpPrediction) }}</div>
+              </div>
+            </div>
+
+            <div class="prediction-recommendation" *ngIf="latestPreOpPrediction?.recommendation">
+              <div class="prediction-section-title">Clinical recommendation</div>
+              <div>{{ latestPreOpPrediction?.recommendation }}</div>
+            </div>
+
+            <div class="prediction-factors" *ngIf="predictionExplanations(latestPreOpPrediction).length > 0">
+              <div class="prediction-section-title">Contributing factors</div>
+              <div class="factor-list">
+                <div class="factor-item" *ngFor="let factor of predictionExplanations(latestPreOpPrediction)">
+                  <span>{{ factor.key }}</span>
+                  <strong>{{ factor.value | number:'1.2-2' }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="prediction-model-context">
+              <div class="prediction-section-title">Model context</div>
+              <div class="model-context-grid">
+                <div class="model-context-item">
+                  <span>Model</span>
+                  <strong>{{ modelDisplayName(latestPreOpPrediction, 'PRE_OP') }}</strong>
+                </div>
+                <div class="model-context-item">
+                  <span>Technique</span>
+                  <strong>{{ modelTechnique(latestPreOpPrediction, 'PRE_OP') }}</strong>
+                </div>
+                <div class="model-context-item">
+                  <span>Version</span>
+                  <strong>{{ latestPreOpPrediction?.modelVersion || '-' }}</strong>
+                </div>
+                <div class="model-context-item">
+                  <span>Scope</span>
+                  <strong>Decision support only</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="prediction-support-note">
+              Decision support only. Final validation remains a clinical decision.
+            </div>
+          </div>
+
+          <div class="prediction-history-panel mt-3" *ngIf="predictionHistory('PRE_OP').length > 0">
+            <div class="prediction-section-title mb-2">Prediction History</div>
+            <div class="prediction-history-item" *ngFor="let item of predictionHistory('PRE_OP')">
+              <div>
+                <strong>{{ item.predictionLabel.replaceAll('_', ' ') }}</strong>
+                <div class="text-muted small">{{ predictionGeneratedAt(item) }}</div>
+              </div>
+              <div class="history-prediction-meta">
+                <span class="history-risk">{{ item.riskLevel }}</span>
+                <strong>{{ predictionScore(item) }}%</strong>
+              </div>
+            </div>
+          </div>
 
           <hr />
           <h6 class="mb-2">Pre-Op History (Selected Case)</h6>
@@ -120,6 +237,123 @@
           <button type="button" class="btn btn-primary btn-sm" (click)="submitPostOp()" [disabled]="saving">
             Save Post-Op Decision
           </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm ms-2"
+            (click)="runPostOpPrediction()"
+            [disabled]="predictionRunningPhase === 'POST_OP'"
+          >
+            {{ predictionRunningPhase === 'POST_OP' ? 'Running ML...' : 'Run ML Prediction' }}
+          </button>
+
+          <div class="prediction-panel mt-3" [ngClass]="'prediction-' + predictionTone(latestPostOpPrediction)">
+            <div class="prediction-panel-header">
+              <div>
+                <div class="prediction-eyebrow">Post-Op Intelligence</div>
+                <div class="prediction-summary-text">{{ predictionSummary(latestPostOpPrediction, 'POST_OP') }}</div>
+              </div>
+              <span class="prediction-risk-badge">{{ latestPostOpPrediction?.riskLevel || 'NOT RUN' }}</span>
+            </div>
+
+            <div class="prediction-score-row">
+              <div class="prediction-score-card">
+                <div class="prediction-score-label">Complication score</div>
+                <div class="prediction-score-value">{{ predictionScore(latestPostOpPrediction) }}%</div>
+                <div class="prediction-score-subtitle">
+                  {{ latestPostOpPrediction?.predictionLabel?.replaceAll('_', ' ') || 'No prediction yet' }}
+                </div>
+              </div>
+
+              <div class="prediction-metadata-card">
+                <div class="metadata-line">
+                  <span>Model</span>
+                  <strong>{{ latestPostOpPrediction?.modelVersion || '-' }}</strong>
+                </div>
+                <div class="metadata-line">
+                  <span>Generated</span>
+                  <strong>{{ predictionGeneratedAt(latestPostOpPrediction) }}</strong>
+                </div>
+                <div class="metadata-line">
+                  <span>Probability</span>
+                  <strong>{{ latestPostOpPrediction?.probability ? (latestPostOpPrediction?.probability | number:'1.2-2') : '-' }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="prediction-progress-track">
+              <div
+                class="prediction-progress-fill"
+                [style.width.%]="predictionScore(latestPostOpPrediction)"
+              ></div>
+            </div>
+
+            <div class="prediction-interpretation-grid">
+              <div class="interpretation-card">
+                <div class="prediction-section-title">Clinical interpretation</div>
+                <div class="interpretation-text">{{ clinicalInterpretation(latestPostOpPrediction, 'POST_OP') }}</div>
+              </div>
+              <div class="interpretation-card">
+                <div class="prediction-section-title">Suggested workflow status</div>
+                <div class="workflow-state">{{ suggestedWorkflowStatus(latestPostOpPrediction, 'POST_OP') }}</div>
+                <div class="workflow-support">Decision support strength: {{ decisionSupportStrength(latestPostOpPrediction) }}</div>
+              </div>
+            </div>
+
+            <div class="prediction-recommendation" *ngIf="latestPostOpPrediction?.recommendation">
+              <div class="prediction-section-title">Clinical recommendation</div>
+              <div>{{ latestPostOpPrediction?.recommendation }}</div>
+            </div>
+
+            <div class="prediction-factors" *ngIf="predictionExplanations(latestPostOpPrediction).length > 0">
+              <div class="prediction-section-title">Contributing factors</div>
+              <div class="factor-list">
+                <div class="factor-item" *ngFor="let factor of predictionExplanations(latestPostOpPrediction)">
+                  <span>{{ factor.key }}</span>
+                  <strong>{{ factor.value | number:'1.2-2' }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="prediction-model-context">
+              <div class="prediction-section-title">Model context</div>
+              <div class="model-context-grid">
+                <div class="model-context-item">
+                  <span>Model</span>
+                  <strong>{{ modelDisplayName(latestPostOpPrediction, 'POST_OP') }}</strong>
+                </div>
+                <div class="model-context-item">
+                  <span>Technique</span>
+                  <strong>{{ modelTechnique(latestPostOpPrediction, 'POST_OP') }}</strong>
+                </div>
+                <div class="model-context-item">
+                  <span>Version</span>
+                  <strong>{{ latestPostOpPrediction?.modelVersion || '-' }}</strong>
+                </div>
+                <div class="model-context-item">
+                  <span>Scope</span>
+                  <strong>Decision support only</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="prediction-support-note">
+              Decision support only. Final post-operative action remains a clinical decision.
+            </div>
+          </div>
+
+          <div class="prediction-history-panel mt-3" *ngIf="predictionHistory('POST_OP').length > 0">
+            <div class="prediction-section-title mb-2">Prediction History</div>
+            <div class="prediction-history-item" *ngFor="let item of predictionHistory('POST_OP')">
+              <div>
+                <strong>{{ item.predictionLabel.replaceAll('_', ' ') }}</strong>
+                <div class="text-muted small">{{ predictionGeneratedAt(item) }}</div>
+              </div>
+              <div class="history-prediction-meta">
+                <span class="history-risk">{{ item.riskLevel }}</span>
+                <strong>{{ predictionScore(item) }}%</strong>
+              </div>
+            </div>
+          </div>
 
           <hr />
           <h6 class="mb-2">Post-Op History (Selected Case)</h6>

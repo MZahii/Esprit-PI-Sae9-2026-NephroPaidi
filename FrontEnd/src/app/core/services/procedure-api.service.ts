@@ -111,6 +111,21 @@ export interface CareTask {
   done: boolean;
 }
 
+export interface SurgicalPrediction {
+  id: number;
+  surgicalCaseId: number;
+  phase: string;
+  modelName: string;
+  modelVersion: string;
+  predictionLabel: string;
+  riskLevel: string;
+  probability: number;
+  recommendation: string | null;
+  inputSnapshotJson: string | null;
+  outputJson: string | null;
+  createdAt: string;
+}
+
 export interface WhatsAppTestResponse {
   status: string;
 }
@@ -355,6 +370,20 @@ export class ProcedureApiService {
 
   updateCareTask(id: number, payload: { title: string; done: boolean }): Observable<CareTask> {
     return this.http.put<CareTask>(`${this.baseUrl}/api/procedures/surgical/care-tasks/${id}`, payload);
+  }
+
+  getSurgicalPredictions(surgicalCaseId: number): Observable<SurgicalPrediction[]> {
+    return this.http.get<SurgicalPrediction[]>(`${this.baseUrl}/api/procedures/surgical/predictions`, {
+      params: { surgicalCaseId: String(surgicalCaseId) }
+    });
+  }
+
+  runPreOpPrediction(surgicalCaseId: number): Observable<SurgicalPrediction> {
+    return this.http.post<SurgicalPrediction>(`${this.baseUrl}/api/procedures/surgical/predictions/pre-op/${surgicalCaseId}`, {});
+  }
+
+  runPostOpPrediction(surgicalCaseId: number): Observable<SurgicalPrediction> {
+    return this.http.post<SurgicalPrediction>(`${this.baseUrl}/api/procedures/surgical/predictions/post-op/${surgicalCaseId}`, {});
   }
 
   sendWhatsAppTestMessage(): Observable<WhatsAppTestResponse> {

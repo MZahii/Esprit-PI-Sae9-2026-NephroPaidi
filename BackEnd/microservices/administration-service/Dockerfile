@@ -8,6 +8,7 @@ RUN JAR_FILE=$(ls /app/target/*.jar | grep -v '\.original$' | head -n 1) && cp "
 
 FROM eclipse-temurin:17-jre
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/app.jar app.jar
 EXPOSE 8087
 ENTRYPOINT ["java","-jar","/app/app.jar"]

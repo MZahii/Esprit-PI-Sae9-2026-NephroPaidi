@@ -9,6 +9,7 @@ import {
   PostOpObservation,
   PreOpAssessment,
   ProcedureApiService,
+  SurgicalPrediction,
   SurgicalCase
 } from '../../../core/services/procedure-api.service';
 
@@ -31,10 +32,12 @@ export class ProcedureSurgicalAdvancedComponent implements OnInit {
   postOps: PostOpObservation[] = [];
   complications: Complication[] = [];
   careTasks: CareTask[] = [];
+  predictions: SurgicalPrediction[] = [];
 
   selectedCaseId = '';
   editingComplicationId: number | null = null;
   editingCareTaskId: number | null = null;
+  predictionRunningPhase: 'PRE_OP' | 'POST_OP' | '' = '';
 
   preOpForm = {
     hemodynamicsOk: false,
@@ -117,6 +120,154 @@ export class ProcedureSurgicalAdvancedComponent implements OnInit {
     return this.careTasks.filter((item) => item.surgicalCaseId === id);
   }
 
+  get preOpPredictionsForSelectedCase(): SurgicalPrediction[] {
+    const id = Number(this.selectedCaseId);
+    return this.predictions.filter((item) => item.surgicalCaseId === id && item.phase === 'PRE_OP');
+  }
+
+  get postOpPredictionsForSelectedCase(): SurgicalPrediction[] {
+    const id = Number(this.selectedCaseId);
+    return this.predictions.filter((item) => item.surgicalCaseId === id && item.phase === 'POST_OP');
+  }
+
+  get latestPreOpPrediction(): SurgicalPrediction | undefined {
+    return this.preOpPredictionsForSelectedCase[0];
+  }
+
+  get latestPostOpPrediction(): SurgicalPrediction | undefined {
+    return this.postOpPredictionsForSelectedCase[0];
+  }
+
+  predictionScore(prediction: SurgicalPrediction | undefined): number {
+    return Math.round((prediction?.probability ?? 0) * 100);
+  }
+
+  predictionTone(prediction: SurgicalPrediction | undefined): 'high' | 'medium' | 'low' {
+    const risk = String(prediction?.riskLevel ?? '').toUpperCase();
+    if (risk === 'HIGH') {
+      return 'high';
+    }
+    if (risk === 'MEDIUM') {
+      return 'medium';
+    }
+    return 'low';
+  }
+
+  predictionSummary(prediction: SurgicalPrediction | undefined, phase: 'PRE_OP' | 'POST_OP'): string {
+    if (!prediction) {
+      return phase === 'PRE_OP'
+        ? 'Run the model to get a pre-operative risk reading for this surgical case.'
+        : 'Run the model to estimate post-operative complication risk for this surgical case.';
+    }
+
+    const label = String(prediction.predictionLabel ?? '').replaceAll('_', ' ').trim();
+    if (phase === 'PRE_OP') {
+      return `${label} detected before intervention. Use this score to validate readiness and escalation level.`;
+    }
+    return `${label} detected after intervention. Use this score to guide monitoring and complication response.`;
+  }
+
+  predictionExplanations(prediction: SurgicalPrediction | undefined): Array<{ key: string; value: number }> {
+    const parsed = this.parsePredictionPayload(prediction?.outputJson);
+    const explanations = parsed?.['explanations'];
+    if (!explanations || typeof explanations !== 'object') {
+      return [];
+    }
+
+    return Object.entries(explanations)
+      .map(([key, value]) => ({ key: this.humanizeExplanationKey(key), value: Number(value ?? 0) }))
+      .filter((item) => !Number.isNaN(item.value))
+      .sort((left, right) => right.value - left.value)
+      .slice(0, 5);
+  }
+
+  predictionGeneratedAt(prediction: SurgicalPrediction | undefined): string {
+    if (!prediction?.createdAt) {
+      return '-';
+    }
+    const parsed = new Date(prediction.createdAt);
+    return Number.isNaN(parsed.getTime()) ? String(prediction.createdAt) : parsed.toLocaleString();
+  }
+
+  predictionHistory(phase: 'PRE_OP' | 'POST_OP'): SurgicalPrediction[] {
+    return phase === 'PRE_OP' ? this.preOpPredictionsForSelectedCase : this.postOpPredictionsForSelectedCase;
+  }
+
+  clinicalInterpretation(prediction: SurgicalPrediction | undefined, phase: 'PRE_OP' | 'POST_OP'): string {
+    if (!prediction) {
+      return phase === 'PRE_OP'
+        ? 'No pre-operative interpretation yet. Run the model after validating the pre-op criteria.'
+        : 'No post-operative interpretation yet. Run the model after recording the immediate recovery state.';
+    }
+
+    const risk = String(prediction.riskLevel ?? '').toUpperCase();
+    if (phase === 'PRE_OP') {
+      if (risk === 'HIGH') {
+        return 'The patient should be considered high-risk for intervention and requires reinforced surgical review before proceeding.';
+      }
+      if (risk === 'MEDIUM') {
+        return 'The patient presents a moderate pre-operative risk profile and should proceed only after targeted clinical review.';
+      }
+      return 'The patient currently presents a low pre-operative risk signal based on the available structured inputs.';
+    }
+
+    if (risk === 'HIGH') {
+      return 'The post-operative pattern suggests a significant complication signal and supports escalation in recovery monitoring.';
+    }
+    if (risk === 'MEDIUM') {
+      return 'The post-operative pattern suggests a moderate complication risk and supports closer observation with reassessment.';
+    }
+    return 'The post-operative pattern currently suggests a stable recovery signal under the available documented observations.';
+  }
+
+  suggestedWorkflowStatus(prediction: SurgicalPrediction | undefined, phase: 'PRE_OP' | 'POST_OP'): string {
+    if (!prediction) {
+      return 'Awaiting ML run';
+    }
+
+    const risk = String(prediction.riskLevel ?? '').toUpperCase();
+    if (phase === 'PRE_OP') {
+      if (risk === 'HIGH') return 'Hold intervention';
+      if (risk === 'MEDIUM') return 'Needs clinical review';
+      return 'Proceed with caution';
+    }
+
+    if (risk === 'HIGH') return 'Escalate monitoring';
+    if (risk === 'MEDIUM') return 'Reassess in recovery';
+    return 'Continue standard follow-up';
+  }
+
+  modelDisplayName(prediction: SurgicalPrediction | undefined, phase: 'PRE_OP' | 'POST_OP'): string {
+    if (prediction?.modelName) {
+      if (phase === 'PRE_OP') {
+        return 'Pre-Op Risk Model';
+      }
+      return 'Post-Op Complication Model';
+    }
+    return phase === 'PRE_OP' ? 'Pre-Op Risk Model' : 'Post-Op Complication Model';
+  }
+
+  modelTechnique(prediction: SurgicalPrediction | undefined, phase: 'PRE_OP' | 'POST_OP'): string {
+    const version = String(prediction?.modelVersion ?? '').toLowerCase();
+    if (version.includes('preop')) {
+      return 'XGBoost pipeline';
+    }
+    if (version.includes('postop')) {
+      return 'Decision tree pipeline';
+    }
+    return phase === 'PRE_OP' ? 'Structured pre-op inference' : 'Structured post-op inference';
+  }
+
+  decisionSupportStrength(prediction: SurgicalPrediction | undefined): string {
+    if (!prediction) {
+      return 'Not evaluated';
+    }
+    const risk = String(prediction.riskLevel ?? '').toUpperCase();
+    if (risk === 'HIGH') return 'Strong signal';
+    if (risk === 'MEDIUM') return 'Moderate signal';
+    return 'Low signal';
+  }
+
   parseRecord(notes: string | null | undefined): Record<string, string> {
     const parsed: Record<string, string> = {};
     const raw = (notes ?? '').trim();
@@ -167,6 +318,7 @@ export class ProcedureSurgicalAdvancedComponent implements OnInit {
     this.partialLoadWarnings = [];
     this.cancelComplicationEdit();
     this.cancelCareTaskEdit();
+    this.loadPredictionsForSelectedCase();
     this.refreshView();
   }
 
@@ -205,6 +357,7 @@ export class ProcedureSurgicalAdvancedComponent implements OnInit {
         this.complications = complications ?? [];
         this.careTasks = careTasks ?? [];
         this.partialLoadWarnings = warnings;
+        this.loadPredictionsForSelectedCase();
         this.loading = false;
         this.refreshView();
       },
@@ -244,6 +397,60 @@ export class ProcedureSurgicalAdvancedComponent implements OnInit {
     this.careTaskForm.title = '';
     this.careTaskForm.done = false;
     this.refreshView();
+  }
+
+  runPreOpPrediction(): void {
+    const surgicalCaseId = Number(this.selectedCaseId);
+    if (!surgicalCaseId || Number.isNaN(surgicalCaseId)) {
+      this.errorMessage = 'Please select a surgical case.';
+      this.refreshView();
+      return;
+    }
+
+    this.predictionRunningPhase = 'PRE_OP';
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.procedureApi.runPreOpPrediction(surgicalCaseId).subscribe({
+      next: (prediction) => {
+        this.predictionRunningPhase = '';
+        this.upsertPrediction(prediction);
+        this.successMessage = 'Pre-op ML prediction generated.';
+        this.refreshView();
+      },
+      error: (err: { error?: { message?: string }; message?: string }) => {
+        this.predictionRunningPhase = '';
+        this.errorMessage = err?.error?.message || err?.message || 'Unable to generate pre-op prediction.';
+        this.refreshView();
+      }
+    });
+  }
+
+  runPostOpPrediction(): void {
+    const surgicalCaseId = Number(this.selectedCaseId);
+    if (!surgicalCaseId || Number.isNaN(surgicalCaseId)) {
+      this.errorMessage = 'Please select a surgical case.';
+      this.refreshView();
+      return;
+    }
+
+    this.predictionRunningPhase = 'POST_OP';
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.procedureApi.runPostOpPrediction(surgicalCaseId).subscribe({
+      next: (prediction) => {
+        this.predictionRunningPhase = '';
+        this.upsertPrediction(prediction);
+        this.successMessage = 'Post-op ML prediction generated.';
+        this.refreshView();
+      },
+      error: (err: { error?: { message?: string }; message?: string }) => {
+        this.predictionRunningPhase = '';
+        this.errorMessage = err?.error?.message || err?.message || 'Unable to generate post-op prediction.';
+        this.refreshView();
+      }
+    });
   }
 
   submitComplication(): void {
@@ -468,5 +675,49 @@ export class ProcedureSurgicalAdvancedComponent implements OnInit {
       return `Unable to load ${section}: procedure-service is unavailable.`;
     }
     return `Unable to load ${section}: ${message}`;
+  }
+
+  private loadPredictionsForSelectedCase(): void {
+    const surgicalCaseId = Number(this.selectedCaseId);
+    if (!surgicalCaseId || Number.isNaN(surgicalCaseId)) {
+      this.predictions = [];
+      this.refreshView();
+      return;
+    }
+
+    this.procedureApi.getSurgicalPredictions(surgicalCaseId).subscribe({
+      next: (predictions) => {
+        this.predictions = predictions ?? [];
+        this.refreshView();
+      },
+      error: () => {
+        this.predictions = [];
+        this.refreshView();
+      }
+    });
+  }
+
+  private upsertPrediction(prediction: SurgicalPrediction): void {
+    this.predictions = [prediction, ...this.predictions.filter((item) => item.id !== prediction.id)]
+      .sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt)));
+  }
+
+  private parsePredictionPayload(raw: string | null | undefined): Record<string, unknown> | null {
+    if (!raw) {
+      return null;
+    }
+    try {
+      return JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  }
+
+  private humanizeExplanationKey(key: string): string {
+    const normalized = String(key ?? '').replace(/^keyword:/, '').replaceAll('_', ' ').trim();
+    if (!normalized) {
+      return 'Signal';
+    }
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
   }
 }

@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: ml-prediction-service
+  cloud:
+    config:
+      uri: ${SPRING_CLOUD_CONFIG_URI:http://localhost:8888}
+      fail-fast: false

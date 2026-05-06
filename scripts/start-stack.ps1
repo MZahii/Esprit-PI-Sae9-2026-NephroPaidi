@@ -36,9 +36,10 @@ Wait-Url -Url "http://localhost:8888/actuator/health" -TimeoutSec 300
 Wait-Url -Url "http://localhost:8080/realms/master/.well-known/openid-configuration" -TimeoutSec 300
 
 Write-Host "Step 2/4: starting backend microservices (without gateway/frontend)..."
-docker compose -p $ProjectName -f $ComposeFile up -d --build user-service administration-service communication-service clinical-service ops-service core-ops-service pharmacy-service procedure-service
+docker compose -p $ProjectName -f $ComposeFile up -d --build user-service administration-service communication-service clinical-service ops-service core-ops-service ml-prediction-service pharmacy-service procedure-service
 Wait-Url -Url "http://localhost:8090/actuator/health" -TimeoutSec 300
 Wait-Url -Url "http://localhost:8087/actuator/health" -TimeoutSec 300
+Wait-Url -Url "http://localhost:8092/api/predictions/health" -TimeoutSec 300
 
 Write-Host "Step 3/4: starting api-gateway after services are discoverable..."
 docker compose -p $ProjectName -f $ComposeFile up -d --build api-gateway

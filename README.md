@@ -14,6 +14,21 @@ This repository is now structured for full containerized startup with strict pri
 	- Memory: 8 GB minimum
 - Optional: copy `.env.example` to `.env` and adjust secrets/URLs
 
+## Maven build
+
+The repository can now be built from the root as a Maven multi-module project:
+
+```powershell
+.\mvnw.cmd clean install
+```
+
+Useful targeted builds:
+
+```powershell
+.\mvnw.cmd -pl BackEnd clean install
+.\mvnw.cmd -pl FrontEnd clean compile
+```
+
 ## 2. Full stack files
 
 - Full orchestration: `docker-compose.full.yml`

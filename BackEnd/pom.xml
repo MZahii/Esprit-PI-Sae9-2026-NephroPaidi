@@ -20,6 +20,7 @@
         <module>microservices/clinical-service</module>
         <module>microservices/communication-service</module>
         <module>microservices/core-ops-service</module>
+        <module>microservices/ml-prediction-service</module>
         <module>microservices/ops-service</module>
         <module>microservices/pharmacy-service</module>
         <module>microservices/procedure-service</module>

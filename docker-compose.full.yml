@@ -391,6 +391,35 @@ services:
     networks:
       - nephro-net
 
+  ml-prediction-service:
+    build:
+      context: ./BackEnd/microservices/ml-prediction-service
+    container_name: nephro-ml-prediction-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8092
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
+      EUREKA_INSTANCE_HOSTNAME: ml-prediction-service
+    ports:
+      - "8092:8092"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8092/api/predictions/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    cpus: "0.60"
+    mem_limit: "640m"
+    networks:
+      - nephro-net
+
   pharmacy-service:
     build:
       context: ./BackEnd/microservices/pharmacy-service
@@ -445,13 +474,19 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-onboarding@resend.dev}
       RESEND_DEMO_RECIPIENT: ${RESEND_DEMO_RECIPIENT:-}
+      ML_PREDICTION_SERVICE_URL: http://ml-prediction-service:8092
       ENVIRONMENT: docker
     ports:
       - "8089:8089"
     depends_on:
-      - config-server
-      - eureka
-      - keycloak
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      ml-prediction-service:
+        condition: service_healthy
     cpus: "0.60"
     mem_limit: "640m"
     networks:
