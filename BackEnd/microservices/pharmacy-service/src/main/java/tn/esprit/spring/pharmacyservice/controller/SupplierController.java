@@ -80,9 +80,11 @@ public class SupplierController {
 
     @PatchMapping("/orders/{orderId}/deliver")
     @PreAuthorize("hasAnyRole('PHARMACIST','ADMIN')")
-    @Operation(summary = "Mark order as delivered (triggers stock update)")
-    public ResponseEntity<SupplyOrderDTO> markDelivered(@PathVariable Long orderId) {
-        return ResponseEntity.ok(supplierService.markDelivered(orderId));
+    @Operation(summary = "Mark order as delivered. Pass deliveredQuantity to track discrepancy vs ordered quantity.")
+    public ResponseEntity<SupplyOrderDTO> markDelivered(
+            @PathVariable Long orderId,
+            @RequestParam(required = false) Integer deliveredQuantity) {
+        return ResponseEntity.ok(supplierService.markDelivered(orderId, deliveredQuantity));
     }
 
     @PatchMapping("/orders/{orderId}/cancel")

@@ -6,4 +6,8 @@ import lombok.*;
 public class SmartDispenseRequestDTO {
     private Long    medicationId;
     private Integer quantity;
+    private Long    patientId;
+    private String  patientName;
+    private Long    prescriptionId;
+    private String  dispensedBy;
 }

@@ -122,16 +122,22 @@ public class StockService {
         }
 
         stock.updateStock(-qty);
-        log.info("Dispensed {} units from batch {} for patient {}",
-                qty, batchId); //, request.getPatientId()  put it in
         StockDTO result = toDTO(stockRepository.save(stock));
 
         dispensationLogRepository.save(DispensationLog.builder()
                 .batchId(batchId)
+                .batchNumber(batch.getBatchNumber())
+                .medicationName(batch.getMedication() != null ? batch.getMedication().getName() : null)
                 .quantity(qty)
+                .patientId(request.getPatientId())
+                .patientName(request.getPatientName())
+                .prescriptionId(request.getPrescriptionId())
+                .dispensedBy(request.getDispensedBy())
                 .dispensedAt(LocalDateTime.now())
                 .build());
 
+        log.info("Dispensed {} units of batch {} (by: {}, patient: {})",
+                qty, batchId, request.getDispensedBy(), request.getPatientName());
         return result;
     }
 
@@ -226,7 +232,13 @@ public class StockService {
 
             dispensationLogRepository.save(DispensationLog.builder()
                     .batchId(batch.getBatchId())
+                    .batchNumber(batch.getBatchNumber())
+                    .medicationName(medicationName)
                     .quantity(toDispense)
+                    .patientId(request.getPatientId())
+                    .patientName(request.getPatientName())
+                    .prescriptionId(request.getPrescriptionId())
+                    .dispensedBy(request.getDispensedBy())
                     .dispensedAt(LocalDateTime.now())
                     .build());
 
@@ -283,7 +295,13 @@ public class StockService {
         return DispensationLogDTO.builder()
                 .id(l.getId())
                 .batchId(l.getBatchId())
+                .batchNumber(l.getBatchNumber())
+                .medicationName(l.getMedicationName())
                 .quantity(l.getQuantity())
+                .patientId(l.getPatientId())
+                .patientName(l.getPatientName())
+                .prescriptionId(l.getPrescriptionId())
+                .dispensedBy(l.getDispensedBy())
                 .dispensedAt(l.getDispensedAt())
                 .build();
     }

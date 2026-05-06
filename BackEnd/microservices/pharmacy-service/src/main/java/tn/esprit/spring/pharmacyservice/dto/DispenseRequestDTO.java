@@ -4,8 +4,10 @@ import lombok.*;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class DispenseRequestDTO {
-    private Long batchId;
+    private Long    batchId;
     private Integer quantity;
-   // private String patientId;   // reference to patient-service
-   // private String prescriptionId; // reference to clinical-service
+    private Long    patientId;
+    private String  patientName;
+    private Long    prescriptionId;
+    private String  dispensedBy;
 }

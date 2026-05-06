@@ -5,7 +5,8 @@ import {
   Medication, Batch, Stock,
   DispenseRequest, DispensationLog, Supplier, SupplierStats, SupplyOrder,
   ReorderAlert, SmartDispenseRequest, SmartDispenseResponse,
-  TransferStockRequest, TransferStockResponse
+  TransferStockRequest, TransferStockResponse,
+  EquipmentItem, DialysisItem, StockMovement, RecordMovementRequest, PharmacyPrescription
 } from '../models/pharmacy.models';
 import { environment } from '../../../environments/environment';
 
@@ -130,5 +131,97 @@ export class PharmacyService {
   }
   getSupplierStats(supplierId: number): Observable<SupplierStats> {
     return this.http.get<SupplierStats>(`${this.base}/suppliers/${supplierId}/stats`);
+  }
+
+  markDeliveredWithQty(orderId: number, deliveredQuantity?: number): Observable<SupplyOrder> {
+    const params = deliveredQuantity != null
+      ? new HttpParams().set('deliveredQuantity', deliveredQuantity)
+      : new HttpParams();
+    return this.http.patch<SupplyOrder>(`${this.base}/suppliers/orders/${orderId}/deliver`, {}, { params });
+  }
+
+  // ─── Equipment Stock ────────────────────────────────────────────────────────
+  getEquipmentItems(): Observable<EquipmentItem[]> {
+    return this.http.get<EquipmentItem[]>(`${this.base}/equipment`);
+  }
+  getEquipmentItem(id: number): Observable<EquipmentItem> {
+    return this.http.get<EquipmentItem>(`${this.base}/equipment/${id}`);
+  }
+  createEquipmentItem(item: EquipmentItem): Observable<EquipmentItem> {
+    return this.http.post<EquipmentItem>(`${this.base}/equipment`, item);
+  }
+  updateEquipmentItem(id: number, item: EquipmentItem): Observable<EquipmentItem> {
+    return this.http.put<EquipmentItem>(`${this.base}/equipment/${id}`, item);
+  }
+  deleteEquipmentItem(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/equipment/${id}`);
+  }
+  adjustEquipmentStock(id: number, delta: number): Observable<EquipmentItem> {
+    return this.http.patch<EquipmentItem>(`${this.base}/equipment/${id}/adjust`, null,
+      { params: new HttpParams().set('delta', delta) });
+  }
+  getLowEquipmentStock(): Observable<EquipmentItem[]> {
+    return this.http.get<EquipmentItem[]>(`${this.base}/equipment/low-stock`);
+  }
+
+  // ─── Dialysis Stock ─────────────────────────────────────────────────────────
+  getDialysisItems(): Observable<DialysisItem[]> {
+    return this.http.get<DialysisItem[]>(`${this.base}/dialysis-stock`);
+  }
+  getDialysisItem(id: number): Observable<DialysisItem> {
+    return this.http.get<DialysisItem>(`${this.base}/dialysis-stock/${id}`);
+  }
+  createDialysisItem(item: DialysisItem): Observable<DialysisItem> {
+    return this.http.post<DialysisItem>(`${this.base}/dialysis-stock`, item);
+  }
+  updateDialysisItem(id: number, item: DialysisItem): Observable<DialysisItem> {
+    return this.http.put<DialysisItem>(`${this.base}/dialysis-stock/${id}`, item);
+  }
+  deleteDialysisItem(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/dialysis-stock/${id}`);
+  }
+  adjustDialysisStock(id: number, delta: number): Observable<DialysisItem> {
+    return this.http.patch<DialysisItem>(`${this.base}/dialysis-stock/${id}/adjust`, null,
+      { params: new HttpParams().set('delta', delta) });
+  }
+  getLowDialysisStock(): Observable<DialysisItem[]> {
+    return this.http.get<DialysisItem[]>(`${this.base}/dialysis-stock/low-stock`);
+  }
+
+  // ─── Stock Movements ────────────────────────────────────────────────────────
+  getStockMovements(): Observable<StockMovement[]> {
+    return this.http.get<StockMovement[]>(`${this.base}/stock-movements`);
+  }
+  getStockMovementsByType(stockType: string): Observable<StockMovement[]> {
+    return this.http.get<StockMovement[]>(`${this.base}/stock-movements/type/${stockType}`);
+  }
+  recordStockMovement(req: RecordMovementRequest): Observable<StockMovement> {
+    return this.http.post<StockMovement>(`${this.base}/stock-movements`, req);
+  }
+
+  // ─── Pharmacy Prescriptions ─────────────────────────────────────────────────
+  getPrescriptions(): Observable<PharmacyPrescription[]> {
+    return this.http.get<PharmacyPrescription[]>(`${this.base}/prescriptions`);
+  }
+  getPrescriptionsByStatus(status: string): Observable<PharmacyPrescription[]> {
+    return this.http.get<PharmacyPrescription[]>(`${this.base}/prescriptions/status/${status}`);
+  }
+  getPrescription(id: number): Observable<PharmacyPrescription> {
+    return this.http.get<PharmacyPrescription>(`${this.base}/prescriptions/${id}`);
+  }
+  submitPrescription(p: PharmacyPrescription): Observable<PharmacyPrescription> {
+    return this.http.post<PharmacyPrescription>(`${this.base}/prescriptions`, p);
+  }
+  updatePrescriptionStatus(id: number, status: string, processedBy?: string): Observable<PharmacyPrescription> {
+    let params = new HttpParams().set('status', status);
+    if (processedBy) params = params.set('processedBy', processedBy);
+    return this.http.patch<PharmacyPrescription>(`${this.base}/prescriptions/${id}/status`, {}, { params });
+  }
+
+  verifyPrescription(id: number, verifiedBy: string, allergyConfirmed: boolean): Observable<PharmacyPrescription> {
+    const params = new HttpParams()
+      .set('verifiedBy', verifiedBy)
+      .set('allergyConfirmed', allergyConfirmed);
+    return this.http.patch<PharmacyPrescription>(`${this.base}/prescriptions/${id}/verify`, {}, { params });
   }
 }
