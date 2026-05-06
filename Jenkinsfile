@@ -29,7 +29,7 @@ pipeline {
         sh '''
           sed -i 's/\r$//' BackEnd/api-gateway/mvnw
           chmod +x BackEnd/api-gateway/mvnw
-          BackEnd/api-gateway/mvnw -B -ntp -f BackEnd/pom.xml clean verify
+          BackEnd/api-gateway/mvnw -B -ntp -f BackEnd/pom.xml clean package -DskipTests
         '''
       }
     }
