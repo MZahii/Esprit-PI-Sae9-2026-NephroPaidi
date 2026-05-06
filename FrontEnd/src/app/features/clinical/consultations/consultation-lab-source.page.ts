@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ClinicalApiService } from '../../../core/services/clinical-api.service';
@@ -58,8 +59,16 @@ export class ConsultationLabSourcePage implements OnInit, OnDestroy {
         this.isPdf = this.contentType.includes('pdf');
         this.isImage = this.contentType.startsWith('image/');
       },
-      error: () => {
+      error: (error: HttpErrorResponse) => {
         this.loading = false;
+        if (error.status === 404) {
+          this.error = 'No uploaded lab source is linked to this consultation yet.';
+          return;
+        }
+        if (error.status === 410) {
+          this.error = 'This lab source was recorded, but its file is not available in the shared environment. It needs to be re-uploaded from a shared stack.';
+          return;
+        }
         this.error = 'Unable to load the analyzed lab source file.';
       }
     });

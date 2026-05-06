@@ -73,10 +73,10 @@ services:
       timeout: 10s
       retries: 5
 
-  ai-service:
+  ai-pharmacy-service:
     build:
-      context: ./ai-service
-    container_name: nephro-ai-service
+      context: ./microservices/ai-pharmacy-service
+    container_name: nephro-ai-pharmacy-service
     environment:
       MODEL_PATH: model.joblib
     ports:

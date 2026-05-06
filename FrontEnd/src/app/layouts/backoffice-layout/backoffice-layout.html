@@ -2,7 +2,7 @@
 <nav class="nxl-navigation">
   <div class="navbar-wrapper">
     <div class="m-header">
-      <a routerLink="/backoffice/dashboard" class="b-brand">
+      <a [routerLink]="homeRoute" class="b-brand">
         <img [src]="logoPath" alt="logo" class="logo logo-lg" />
         <img [src]="logoPath" alt="logo" class="logo logo-sm" />
       </a>
@@ -238,7 +238,7 @@
 
     <p>
       <span>
-        {{ isAdmin ? 'NephrosPaidi Admin Dashboard' : isHr ? 'NephrosPaidi HR Dashboard' : isSurgeon ? 'NephrosPaidi Procedure Dashboard' : isLabAgent ? 'NephrosPaidi Lab Workflow' : 'NephrosPaidi Backoffice' }}
+        {{ isAdmin ? 'NephrosPaidi Admin Dashboard' : isHr ? 'NephrosPaidi HR Dashboard' : isPharmacist ? 'NephrosPaidi Pharmacy Workspace' : isSurgeon ? 'NephrosPaidi Procedure Dashboard' : isLabAgent ? 'NephrosPaidi Lab Workflow' : 'NephrosPaidi Backoffice' }}
       </span>
     </p>
 

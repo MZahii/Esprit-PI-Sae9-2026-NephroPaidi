@@ -125,6 +125,7 @@ public class LabRequestServiceImpl implements LabRequestService {
                     .fileName(originalName)
                     .contentType(file.getContentType())
                     .fileSizeBytes(file.getSize())
+                    .fileData(bytes)
                     .uploadedBy(uploadedBy)
                     .aiStatus("PENDING")
                     .aiRequiresDoctorReview(Boolean.TRUE)

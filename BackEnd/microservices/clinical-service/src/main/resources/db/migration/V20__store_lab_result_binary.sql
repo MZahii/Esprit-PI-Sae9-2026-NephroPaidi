@@ -1,0 +1,2 @@
+ALTER TABLE lab_results
+ADD COLUMN IF NOT EXISTS file_data BYTEA;

@@ -2,7 +2,7 @@
   <div class="container">
     <div class="details-header d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
       <div>
-        <h2 class="section-title mb-1">Consultation #{{ consultationId }}</h2>
+        <h2 class="section-title mb-1">{{ consultationTitle }}</h2>
         <p class="text-muted mb-0">Read-only consultation summary.</p>
       </div>
       <a class="btn btn-light" routerLink="/frontoffice/consultations">Back to list</a>
@@ -14,7 +14,7 @@
     <div class="details-card" *ngIf="!loading && !error">
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
         <div class="text-muted">
-          Scheduled {{ consultation?.dateTime | date:'medium' }}
+          Scheduled {{ formatConsultationDate(consultation?.dateTime, 'medium') || '-' }}
         </div>
         <span [ngClass]="statusBadge(consultation?.status)">{{ consultation?.status || 'OPEN' }}</span>
       </div>

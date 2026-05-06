@@ -91,9 +91,9 @@ spring:
               filters:
                 - RewritePath=/api/ops/?(.*), /api/$1
 
-            # AI Service - Pediatric dosing verification
-            - id: ai-service-api
-              uri: ${AI_SERVICE_URI:http://localhost:8091}
+            # AI Pharmacy Service - Pediatric dosing verification
+            - id: ai-pharmacy-service-api
+              uri: ${AI_PHARMACY_SERVICE_URI:http://ai-pharmacy-service:8091}
               predicates:
                 - Path=/api/ai/**
               filters:

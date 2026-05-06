@@ -2,7 +2,9 @@ package tn.esprit.spring.clinicalservice.labRequest.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -34,6 +36,11 @@ public class LabResult {
 
     @Column(name = "file_size_bytes")
     private Long fileSizeBytes;
+
+    @Basic(fetch = FetchType.LAZY)
+    @JdbcTypeCode(SqlTypes.VARBINARY)
+    @Column(name = "file_data", columnDefinition = "bytea")
+    private byte[] fileData;
 
     @Column(name = "uploaded_by", columnDefinition = "uuid")
     private UUID uploadedBy;
