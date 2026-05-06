@@ -73,15 +73,6 @@ services:
       timeout: 10s
       retries: 5
 
-  ai-service:
-    build:
-      context: ./ai-service
-    container_name: nephro-ai-service
-    environment:
-      MODEL_PATH: model.joblib
-    ports:
-      - "8091:8091"
-
 volumes:
   keycloak_db:
   rabbitmq_data:

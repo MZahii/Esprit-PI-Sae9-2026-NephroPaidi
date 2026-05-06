@@ -10,6 +10,8 @@ public class PharmacyPrescriptionDTO {
     private String        consultationId;
     private Long          patientId;
     private String        patientName;
+    private Integer       patientAge;
+    private Double        patientWeight;
     private String        doctorId;
     private String        doctorName;
     private String        urgency;

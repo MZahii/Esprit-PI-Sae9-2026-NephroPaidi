@@ -19,7 +19,7 @@ export interface DoseVerificationResponse {
 @Injectable({ providedIn: 'root' })
 export class AiService {
   private http = inject(HttpClient);
-  private base = `${environment.apiBaseUrl}/api/ai`;
+  private base = `${environment.aiServiceUrl}`;
 
   verifyPediatricDose(req: DoseVerificationRequest): Observable<DoseVerificationResponse> {
     return this.http.post<DoseVerificationResponse>(`${this.base}/predict/pediatric-dose`, req);

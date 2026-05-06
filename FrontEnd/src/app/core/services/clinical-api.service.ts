@@ -283,6 +283,13 @@ export class ClinicalApiService {
     );
   }
 
+  getConsultationMetrics(consultationId: string): Observable<any> {
+    return this.http.get<any>(
+      `${this.base}/api/clinical/consultations/${consultationId}/metrics`,
+      { headers: this.authHeaders() }
+    );
+  }
+
   getConsultationOutcome(id: string): Observable<any> {
     return this.http.get<any>(
       `${this.base}/api/clinical/consultations/${id}/outcomes`,

@@ -22,6 +22,8 @@ public class PharmacyPrescription {
 
     private Long patientId;
     private String patientName;
+    private Integer patientAge;
+    private Double patientWeight;
 
     private String doctorId;
     private String doctorName;

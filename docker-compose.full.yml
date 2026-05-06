@@ -300,6 +300,7 @@ services:
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-my-super-secret-internal-key}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       ENVIRONMENT: docker
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
     ports:
       - "8088:8088"
     depends_on:
@@ -309,6 +310,20 @@ services:
       - user-service
     cpus: "0.60"
     mem_limit: "640m"
+    networks:
+      - nephro-net
+
+  ai-service:
+    build:
+      context: ./BackEnd/microservices/pharmacy-service/ai-service
+    container_name: nephro-ai-service
+    restart: unless-stopped
+    environment:
+      MODEL_PATH: model.joblib
+      SCALER_PATH: scaler.joblib
+      ENCODER_PATH: label_encoder.joblib
+    ports:
+      - "8091:8091"
     networks:
       - nephro-net
 

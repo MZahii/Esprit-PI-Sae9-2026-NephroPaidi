@@ -5,9 +5,10 @@ import { RouterLink } from '@angular/router';
 import { Subscription, forkJoin } from 'rxjs';
 import { PharmacyService } from '../../../../core/services/pharmacy.service';
 import { PharmacyRealtimeService } from '../../../../core/services/pharmacy-realtime.service';
-import { PharmacyPrescription, DispenseRequest } from '../../../../core/models/pharmacy.models';
+import { Medication, PharmacyPrescription, DispenseRequest } from '../../../../core/models/pharmacy.models';
 import { AuthStorageService } from '../../../../core/auth/auth-storage.service';
 import { AiService, DoseVerificationRequest, DoseVerificationResponse } from '../../../../core/services/ai.service';
+import { ClinicalApiService } from '../../../../core/services/clinical-api.service';
 
 interface DispenseItem { med: any; batchId: number | null; quantity: number; }
 interface BatchOption  { batchId: number; label: string; maxQty: number; medicationName: string; }
@@ -23,14 +24,19 @@ export class PrescriptionsComponent implements OnInit, OnDestroy {
   private auth = inject(AuthStorageService);
   private realtime = inject(PharmacyRealtimeService);
   private aiSvc = inject(AiService);
+  private clinicalSvc = inject(ClinicalApiService);
   private sub = new Subscription();
 
   // Pediatric dose verification
-  showDoseVerify = false;
+  detailTab: 'info' | 'ai' = 'info';
   doseVerifyForm: Partial<DoseVerificationRequest> = {};
   doseVerifyResult: DoseVerificationResponse | null = null;
   doseVerifying = signal(false);
   doseVerifyError = signal('');
+  recommendedDoseCatalogLabel = signal('');
+  recommendedDoseSource = signal<'catalog' | 'none'>('none');
+  ageSource    = signal<'prescription' | 'metrics' | 'none'>('none');
+  weightSource = signal<'prescription' | 'metrics' | 'none'>('none');
 
   prescriptions = signal<PharmacyPrescription[]>([]);
   filtered = signal<PharmacyPrescription[]>([]);
@@ -86,6 +92,9 @@ export class PrescriptionsComponent implements OnInit, OnDestroy {
 
   openDetail(p: PharmacyPrescription) {
     this.selectedPrescription = p;
+    this.detailTab = 'info';
+    this.doseVerifyResult = null;
+    this.doseVerifyError.set('');
     this.showDetail = true;
   }
 
@@ -255,18 +264,97 @@ export class PrescriptionsComponent implements OnInit, OnDestroy {
   }
 
   openDoseVerify() {
-    const meds = this.parseMedications(this.selectedPrescription?.medicationsJson);
-    const firstMed = meds[0];
+    const p       = this.selectedPrescription;
+    const meds    = this.parseMedications(p?.medicationsJson);
+    const med     = meds[0] ?? {};
+    const medName = (med.name || med.medicationName || '').trim().toLowerCase();
+
     this.doseVerifyForm = {
-      age_years:           undefined,
-      weight_kg:           undefined,
-      prescribed_dose_mg:  firstMed?.dosage || undefined,
+      age_years:           p?.patientAge    ?? undefined,
+      weight_kg:           p?.patientWeight ?? undefined,
+      prescribed_dose_mg:  this.parseMg(med.dosage ?? med.prescribedDoseMg),
       recommended_dose_mg: undefined,
-      frequency_per_day:   firstMed?.frequency || undefined,
+      frequency_per_day:   this.parseFreq(med.frequency ?? med.frequencyPerDay),
     };
     this.doseVerifyResult = null;
     this.doseVerifyError.set('');
-    this.showDoseVerify = true;
+    this.recommendedDoseCatalogLabel.set('');
+    this.recommendedDoseSource.set('none');
+    this.ageSource.set(p?.patientAge    != null ? 'prescription' : 'none');
+    this.weightSource.set(p?.patientWeight != null ? 'prescription' : 'none');
+    this.detailTab = 'ai';
+    this.doseVerifying.set(true);
+
+    const needsMetrics = (!this.doseVerifyForm.age_years || !this.doseVerifyForm.weight_kg) && !!p?.consultationId;
+
+    if (needsMetrics) {
+      forkJoin({
+        catalog: this.svc.getMedications(),
+        metrics: this.clinicalSvc.getConsultationMetrics(p!.consultationId!)
+      }).subscribe({
+        next: ({ catalog, metrics }) => {
+          this.applyMedicationCatalog(catalog, medName);
+          if (metrics?.ageYears) { this.doseVerifyForm.age_years  = metrics.ageYears;  if (this.ageSource()    === 'none') this.ageSource.set('metrics'); }
+          if (metrics?.weightKg) { this.doseVerifyForm.weight_kg  = metrics.weightKg;  if (this.weightSource() === 'none') this.weightSource.set('metrics'); }
+          this.doseVerifying.set(false);
+          this.autoSubmitIfReady();
+        },
+        error: () => this.doseVerifying.set(false)
+      });
+    } else {
+      this.svc.getMedications().subscribe({
+        next: catalog => {
+          this.applyMedicationCatalog(catalog, medName);
+          this.doseVerifying.set(false);
+          this.autoSubmitIfReady();
+        },
+        error: () => this.doseVerifying.set(false)
+      });
+    }
+  }
+
+  private applyMedicationCatalog(medications: Medication[], medName: string) {
+    if (!medName) { this.recommendedDoseSource.set('none'); return; }
+    const match = medications.find(m => {
+      const name = (m.name || '').trim().toLowerCase();
+      return name.includes(medName) || medName.includes(name);
+    });
+    if (!match) { this.recommendedDoseSource.set('none'); return; }
+
+    const raw = match.pediatricDosage || match.standardDosage || '';
+    const parsed = this.parseMg(raw);
+    if (parsed != null) {
+      this.doseVerifyForm.recommended_dose_mg = parsed;
+      this.recommendedDoseCatalogLabel.set(raw);
+      this.recommendedDoseSource.set('catalog');
+    } else {
+      this.recommendedDoseCatalogLabel.set(raw);
+      this.recommendedDoseSource.set('none');
+    }
+  }
+
+  private autoSubmitIfReady() {
+    const f = this.doseVerifyForm;
+    if (f.age_years && f.weight_kg && f.prescribed_dose_mg && f.recommended_dose_mg && f.frequency_per_day) {
+      this.submitDoseVerify();
+    }
+  }
+
+  private parseMg(val: any): number | undefined {
+    if (val == null) return undefined;
+    if (typeof val === 'number') return val;
+    const n = parseFloat(String(val).replace(/[^\d.]/g, ''));
+    return isNaN(n) ? undefined : n;
+  }
+
+  private parseFreq(val: any): number | undefined {
+    if (val == null) return undefined;
+    if (typeof val === 'number') return val;
+    const map: Record<string, number> = { qd:1, od:1, bid:2, tid:3, qid:4, q6h:4, q8h:3, q12h:2 };
+    const lower = String(val).toLowerCase().trim();
+    if (map[lower]) return map[lower];
+    const n = parseInt(lower.replace(/[^\d]/g, ''), 10);
+    return isNaN(n) ? undefined : n;
   }
 
   submitDoseVerify() {

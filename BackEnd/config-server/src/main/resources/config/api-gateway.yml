@@ -87,7 +87,7 @@ spring:
 
             # AI Service - Pediatric dosing verification
             - id: ai-service-api
-              uri: ${AI_SERVICE_URI:http://localhost:8091}
+              uri: ${AI_SERVICE_URI:http://ai-service:8091}
               predicates:
                 - Path=/api/ai/**
               filters:

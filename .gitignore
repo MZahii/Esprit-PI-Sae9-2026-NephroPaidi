@@ -21,3 +21,6 @@ dist/
 .idea/
 BackEnd/.idea/
 target/
+
+__pycache__/
+**/__pycache__/

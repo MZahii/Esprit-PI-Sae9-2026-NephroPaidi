@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { PharmacyService } from '../../../../core/services/pharmacy.service';
 import { PharmacyRealtimeService } from '../../../../core/services/pharmacy-realtime.service';
@@ -15,6 +16,7 @@ import { StockMovement } from '../../../../core/models/pharmacy.models';
 export class MovementsComponent implements OnInit, OnDestroy {
   private svc = inject(PharmacyService);
   private realtime = inject(PharmacyRealtimeService);
+  private route = inject(ActivatedRoute);
   private sub = new Subscription();
 
   movements = signal<StockMovement[]>([]);
@@ -32,6 +34,8 @@ export class MovementsComponent implements OnInit, OnDestroy {
   get dialysisCount() { return this.movements().filter(m => m.stockType === 'DIALYSIS').length; }
 
   ngOnInit() {
+    const type = this.route.snapshot.queryParamMap.get('type')?.toUpperCase();
+    if (type === 'EQUIPMENT' || type === 'DIALYSIS') this.filterType = type;
     this.load();
     this.sub.add(
       this.realtime.movements$().subscribe(() => this.load())

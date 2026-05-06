@@ -337,7 +337,7 @@ export const routes: Routes = [
           import('./pages/backoffice/pharmacy/pharmacy.routes')
             .then((m) => m.PHARMACY_ROUTES),
         canActivate: [roleGuard],
-        data: { roles: ['PHARMACIST', 'ADMIN', 'NURSE'] }
+        data: { roles: ['PHARMACIST'] }
       },
       {
         path: 'hospital-structure',

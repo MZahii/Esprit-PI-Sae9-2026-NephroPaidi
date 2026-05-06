@@ -176,6 +176,11 @@ public class ConsultationController {
             @RequestHeader(value = "X-Doctor-Id", required = false) UUID doctorId,
             Authentication authentication
     ) {
+        boolean isPharmacist = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_PHARMACIST"));
+        if (isPharmacist) {
+            return ResponseEntity.ok(consultationMetricsService.getForPharmacist(id));
+        }
         UUID resolvedDoctorId = requireDoctorId(doctorId, authentication);
         return ResponseEntity.ok(consultationMetricsService.get(id, resolvedDoctorId));
     }

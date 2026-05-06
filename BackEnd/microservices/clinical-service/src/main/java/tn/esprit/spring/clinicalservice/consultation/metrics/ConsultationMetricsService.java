@@ -72,6 +72,13 @@ public class ConsultationMetricsService {
         return toResponse(metrics);
     }
 
+    @Transactional(readOnly = true)
+    public ConsultationMetricsResponse getForPharmacist(UUID consultationId) {
+        ConsultationMetrics metrics = metricsRepository.findByConsultationId(consultationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Metrics not found"));
+        return toResponse(metrics);
+    }
+
     private Consultation requireConsultation(UUID consultationId, UUID doctorId) {
         Consultation consultation = consultationRepository.findById(consultationId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Consultation not found"));

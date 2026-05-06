@@ -212,7 +212,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
         key: 'dashboard',
         label: 'Dashboard',
         icon: 'feather-airplay',
-        route: '/backoffice/dashboard',
+        route: this.isPharmacist ? '/backoffice/pharmacy/dashboard' : '/backoffice/dashboard',
         exact: true
       }
     ];
@@ -420,34 +420,50 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
       });
     }
 
-    if (this.isPharmacist || this.isAdmin || this.isNurse) {
+    if (this.isPharmacist ) {
+      // Medications
       items.push({
-        key: 'pharmacy',
-        label: 'Pharmacy',
+        key: 'pharmacy-medications',
+        label: 'Medications',
         icon: 'feather-package',
         children: [
-          {
-            label: 'Medications',
-            route: '/backoffice/pharmacy/medications',
-            implemented: true
-          },
-          {
-            label: 'Stock',
-            route: '/backoffice/pharmacy/stock',
-            implemented: true
-          },
-          ...(this.isPharmacist || this.isAdmin
-            ? [{
-                label: 'Suppliers',
-                route: '/backoffice/pharmacy/suppliers',
-                implemented: true
-              } as BackofficeNavChild]
-            : []),
-          {
-            label: 'Dispensations',
-            route: '/backoffice/pharmacy/dispensations',
-            implemented: true
-          }
+          { label: 'Catalog',       route: '/backoffice/pharmacy/medications',   implemented: true },
+          { label: 'Stock',         route: '/backoffice/pharmacy/stock',          implemented: true },
+          { label: 'Prescriptions', route: '/backoffice/pharmacy/prescriptions',  implemented: true },
+          { label: 'Dispensations', route: '/backoffice/pharmacy/dispensations',  implemented: true },
+        ]
+      });
+
+      // Equipment
+      items.push({
+        key: 'pharmacy-equipment',
+        label: 'Equipment',
+        icon: 'feather-tool',
+        children: [
+          { label: 'Equipment Stock', route: '/backoffice/pharmacy/equipment',  implemented: true },
+          { label: 'Outgoing',        route: '/backoffice/pharmacy/movements',  queryParams: { type: 'EQUIPMENT' }, implemented: true },
+        ]
+      });
+
+      // Dialysis
+      items.push({
+        key: 'pharmacy-dialysis',
+        label: 'Dialysis Stock',
+        icon: 'feather-droplet',
+        children: [
+          { label: 'Dialysis Stock', route: '/backoffice/pharmacy/dialysis-stock', implemented: true },
+          { label: 'Outgoing',       route: '/backoffice/pharmacy/movements',       queryParams: { type: 'DIALYSIS' }, implemented: true },
+        ]
+      });
+
+      // Administration
+      items.push({
+        key: 'pharmacy-admin',
+        label: 'Pharmacy Admin',
+        icon: 'feather-settings',
+        children: [
+          { label: 'Suppliers', route: '/backoffice/pharmacy/suppliers', implemented: true },
+          { label: 'Alerts',    route: '/backoffice/pharmacy/alerts',    implemented: true },
         ]
       });
     }

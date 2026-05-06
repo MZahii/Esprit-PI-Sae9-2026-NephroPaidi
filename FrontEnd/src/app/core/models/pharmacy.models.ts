@@ -191,6 +191,8 @@ export interface PharmacyPrescription {
   consultationId?: string;
   patientId?: number;
   patientName?: string;
+  patientAge?: number;
+  patientWeight?: number;
   doctorId?: string;
   doctorName?: string;
   urgency?: 'STAT' | 'URGENT' | 'ROUTINE';
