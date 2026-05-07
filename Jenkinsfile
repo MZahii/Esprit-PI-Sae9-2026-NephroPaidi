@@ -95,7 +95,7 @@ pipeline {
         expression { return params.RUN_SONAR }
       }
       steps {
-        timeout(time: 20, unit: 'MINUTES') {
+        timeout(time: 30, unit: 'MINUTES') {
           waitForQualityGate abortPipeline: true
         }
       }
