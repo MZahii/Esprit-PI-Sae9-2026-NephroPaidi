@@ -55,10 +55,14 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: never
+  metrics:
+    export:
+      prometheus:
+        enabled: true
 
 internal:
   api-key: ${INTERNAL_API_KEY:}
