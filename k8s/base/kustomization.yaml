@@ -18,3 +18,9 @@ resources:
   - ops-service.yaml
   - pharmacy-service.yaml
   - api-gateway.yaml
+  - prometheus-config.yaml
+  - prometheus.yaml
+  - grafana-datasource.yaml
+  - grafana-dashboard-provider.yaml
+  - grafana-dashboard.yaml
+  - grafana.yaml
