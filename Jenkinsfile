@@ -11,6 +11,7 @@ pipeline {
     booleanParam(name: 'RUN_FRONTEND_TESTS', defaultValue: false, description: 'Run Angular/Vitest frontend tests')
     booleanParam(name: 'RUN_SONAR', defaultValue: true, description: 'Run SonarQube analysis and quality gate')
     booleanParam(name: 'RUN_SONAR_SERVICE_BREAKDOWN', defaultValue: false, description: 'Also publish one SonarQube project per backend service')
+    booleanParam(name: 'WAIT_FOR_QUALITY_GATE', defaultValue: false, description: 'Block the pipeline on SonarQube Quality Gate. Requires Sonar webhook to Jenkins.')
     booleanParam(name: 'BUILD_DOCKER_IMAGES', defaultValue: false, description: 'Build jury-demo Docker images for frontend and backend')
     booleanParam(name: 'PUSH_DOCKER_IMAGES', defaultValue: false, description: 'Push Docker images to GitHub Container Registry')
     string(name: 'DOCKER_NAMESPACE', defaultValue: 'mzahii', description: 'GHCR namespace/owner, lowercase recommended')
@@ -91,17 +92,6 @@ pipeline {
       }
     }
 
-    stage('Quality Gate') {
-      when {
-        expression { return params.RUN_SONAR }
-      }
-      steps {
-        timeout(time: 10, unit: 'MINUTES') {
-          waitForQualityGate abortPipeline: true
-        }
-      }
-    }
-
     stage('SonarQube Service Breakdown') {
       when {
         expression { return params.RUN_SONAR && params.RUN_SONAR_SERVICE_BREAKDOWN }
@@ -140,6 +130,17 @@ pipeline {
               """
             }
           }
+        }
+      }
+    }
+
+    stage('Quality Gate (Optional)') {
+      when {
+        expression { return params.RUN_SONAR && params.WAIT_FOR_QUALITY_GATE }
+      }
+      steps {
+        timeout(time: 10, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: true
         }
       }
     }
