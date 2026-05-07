@@ -120,13 +120,13 @@ pipeline {
           docker build \
             -t nephropaidi-api-gateway:${IMAGE_TAG_EFFECTIVE} \
             -t ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE_EFFECTIVE}/nephropaidi-api-gateway:${IMAGE_TAG_EFFECTIVE} \
-            -f BackEnd/api-gateway/Dockerfile \
+            -f BackEnd/api-gateway/Dockerfile.ci \
             BackEnd/api-gateway
 
           docker build \
             -t nephropaidi-frontend:${IMAGE_TAG_EFFECTIVE} \
             -t ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE_EFFECTIVE}/nephropaidi-frontend:${IMAGE_TAG_EFFECTIVE} \
-            -f FrontEnd/Dockerfile \
+            -f FrontEnd/Dockerfile.ci \
             FrontEnd
         '''
       }
