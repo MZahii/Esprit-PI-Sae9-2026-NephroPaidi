@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: procedure-service
+  namespace: nephro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: procedure-service
+  template:
+    metadata:
+      labels:
+        app: procedure-service
+    spec:
+      containers:
+        - name: procedure-service
+          image: nephropaidi-procedure-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8089
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              value: "optional:configserver:http://config-server:8888"
+            - name: SPRING_CLOUD_CONFIG_URI
+              value: "http://config-server:8888"
+            - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+              value: "http://eureka:8761/eureka"
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: "procedure-service"
+            - name: KEYCLOAK_ISSUER_URI
+              value: "http://localhost:8080/realms/nephrospaidi"
+            - name: KEYCLOAK_JWK_SET_URI
+              value: "http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs"
+            - name: TWILIO_WHATSAPP_ENABLED
+              value: "false"
+            - name: TWILIO_WHATSAPP_ACCOUNT_SID
+              value: ""
+            - name: TWILIO_WHATSAPP_AUTH_TOKEN
+              value: ""
+            - name: TWILIO_WHATSAPP_FROM
+              value: "whatsapp:+14155238886"
+            - name: TWILIO_WHATSAPP_DEFAULT_RECIPIENT
+              value: ""
+            - name: TWILIO_WHATSAPP_API_BASE_URL
+              value: "https://api.twilio.com"
+            - name: RESEND_ENABLED
+              value: "false"
+            - name: RESEND_API_KEY
+              value: ""
+            - name: RESEND_FROM_EMAIL
+              value: "onboarding@resend.dev"
+            - name: RESEND_DEMO_RECIPIENT
+              value: ""
+            - name: ENVIRONMENT
+              value: "docker"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: procedure-service
+  namespace: nephro
+spec:
+  selector:
+    app: procedure-service
+  ports:
+    - name: http
+      port: 8089
+      targetPort: 8089
