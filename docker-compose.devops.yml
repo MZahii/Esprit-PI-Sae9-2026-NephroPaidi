@@ -47,6 +47,11 @@ services:
       SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/${SONAR_DB_NAME:-sonarqube}
       SONAR_JDBC_USERNAME: ${SONAR_DB_USER:-sonar}
       SONAR_JDBC_PASSWORD: ${SONAR_DB_PASSWORD:-sonar}
+      # JVM memory optimization for faster analysis processing
+      SONAR_WEB_JAVAADDITIONALOPTS: -Xmx2G
+      SONAR_CE_JAVAADDITIONALOPTS: -Xmx2G
+      # Increase number of workers for parallel task processing
+      SONAR_CE_WORKERS: 4
     ports:
       - "${SONARQUBE_PORT:-9000}:9000"
     volumes:
