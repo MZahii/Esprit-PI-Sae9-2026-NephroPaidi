@@ -4,7 +4,9 @@ services:
   frontend:
     image: node:22-alpine
     container_name: nephro-frontend-dev
-    build: !reset null
+    build:
+      context: ./FrontEnd
+      dockerfile: Dockerfile
     working_dir: /workspace/FrontEnd
     command: sh -c "npm ci && npm start -- --host 0.0.0.0 --poll 2000"
     restart: "no"
@@ -14,14 +16,14 @@ services:
     volumes:
       - ./FrontEnd:/workspace/FrontEnd
       - frontend_node_modules:/workspace/FrontEnd/node_modules
-    ports: !override
+    ports:
       - "4300:4200"
     stdin_open: true
     tty: true
-    cpus: !reset null
-    mem_limit: !reset null
-    depends_on: !reset null
-    networks: !reset null
+    cpus: 1
+    mem_limit: 0
+    depends_on: {}
+    networks: []
 
 volumes:
   frontend_node_modules:
