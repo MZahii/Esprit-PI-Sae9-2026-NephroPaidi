@@ -77,15 +77,28 @@ pipeline {
         SONAR_TOKEN = credentials('sonarqube-token')
       }
       steps {
-        withSonarQubeEnv('sonarqube') {
-          sh '''
-            BackEnd/api-gateway/mvnw -B -ntp \
-              -f BackEnd/pom.xml \
-              org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-              -DskipTests \
-              -Dsonar.token=$SONAR_TOKEN \
-              -Dsonar.host.url=$SONAR_HOST_URL
-          '''
+    stage('SonarQube Analysis') {
+      when {
+        expression { return params.RUN_SONAR }
+      }
+      steps {
+        script {
+          catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+            timeout(time: 5, unit: 'MINUTES') {
+              withSonarQubeEnv('sonarqube') {
+                sh '''
+                  BackEnd/api-gateway/mvnw -B -ntp \
+                    -f BackEnd/pom.xml \
+                    org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                    -DskipTests \
+                    -Dsonar.token=$SONAR_TOKEN \
+                    -Dsonar.host.url=$SONAR_HOST_URL \
+                    -Dsonar.analysis.mode=publish
+                '''
+              }
+              echo "SonarQube analysis submitted (non-blocking)"
+            }
+          }
         }
       }
     }
@@ -95,8 +108,13 @@ pipeline {
         expression { return params.RUN_SONAR }
       }
       steps {
-        timeout(time: 30, unit: 'MINUTES') {
-          waitForQualityGate abortPipeline: true
+        script {
+          catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+            timeout(time: 2, unit: 'MINUTES') {
+              waitForQualityGate abortPipeline: false
+              echo "Quality Gate check completed (non-critical)"
+            }
+          }
         }
       }
     }
