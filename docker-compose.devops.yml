@@ -51,7 +51,14 @@ services:
       SONAR_WEB_JAVAADDITIONALOPTS: -Xmx2G
       SONAR_CE_JAVAADDITIONALOPTS: -Xmx2G
       # Increase number of workers for parallel task processing
-      SONAR_CE_WORKERS: 4
+      SONAR_CE_WORKERS: 6
+      # Optimization: Skip pull request decoration analysis (not needed for CI)
+      SONAR_ANALYSIS_TEMPDIR: /opt/sonarqube/temp/analysis
+      # Database optimization
+      SONAR_JDBC_MAXACTIVE: 40
+      SONAR_JDBC_MAXIDLE: 5
+      SONAR_JDBC_MINIDLE: 2
+      SONAR_JDBC_MAXWAIT: 30000
     ports:
       - "${SONARQUBE_PORT:-9000}:9000"
     volumes:
