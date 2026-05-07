@@ -10,11 +10,16 @@ pipeline {
   parameters {
     booleanParam(name: 'RUN_FRONTEND_TESTS', defaultValue: false, description: 'Run Angular unit tests in CI')
     booleanParam(name: 'RUN_SONAR', defaultValue: true, description: 'Run SonarQube analysis')
+    booleanParam(name: 'BUILD_DOCKER_IMAGES', defaultValue: false, description: 'Build backend and frontend Docker images')
+    booleanParam(name: 'PUSH_DOCKER_IMAGES', defaultValue: false, description: 'Push Docker images to GitHub Container Registry')
+    string(name: 'DOCKER_NAMESPACE', defaultValue: 'mzahii', description: 'GHCR namespace/owner, lowercase recommended')
+    string(name: 'IMAGE_TAG', defaultValue: '', description: 'Docker image tag. Empty uses build-${BUILD_NUMBER}')
   }
 
   environment {
     JAVA_HOME = tool(name: 'jdk17', type: 'jdk')
     PATH = "${JAVA_HOME}/bin:${env.PATH}"
+    DOCKER_REGISTRY = 'ghcr.io'
   }
 
   stages {
@@ -92,6 +97,57 @@ pipeline {
       steps {
         timeout(time: 10, unit: 'MINUTES') {
           waitForQualityGate abortPipeline: true
+        }
+      }
+    }
+
+    stage('Docker Build Images') {
+      when {
+        expression { return params.BUILD_DOCKER_IMAGES || params.PUSH_DOCKER_IMAGES }
+      }
+      steps {
+        script {
+          def imageTag = params.IMAGE_TAG?.trim()
+          if (!imageTag) {
+            imageTag = "build-${env.BUILD_NUMBER}"
+          }
+          env.IMAGE_TAG_EFFECTIVE = imageTag
+          env.DOCKER_NAMESPACE_EFFECTIVE = params.DOCKER_NAMESPACE.trim().toLowerCase()
+        }
+        sh '''
+          docker version
+
+          docker build \
+            -t nephropaidi-api-gateway:${IMAGE_TAG_EFFECTIVE} \
+            -t ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE_EFFECTIVE}/nephropaidi-api-gateway:${IMAGE_TAG_EFFECTIVE} \
+            -f BackEnd/api-gateway/Dockerfile \
+            BackEnd/api-gateway
+
+          docker build \
+            -t nephropaidi-frontend:${IMAGE_TAG_EFFECTIVE} \
+            -t ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE_EFFECTIVE}/nephropaidi-frontend:${IMAGE_TAG_EFFECTIVE} \
+            -f FrontEnd/Dockerfile \
+            FrontEnd
+        '''
+      }
+    }
+
+    stage('Docker Push Images') {
+      when {
+        expression { return params.PUSH_DOCKER_IMAGES }
+      }
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'github-pat', usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_TOKEN')]) {
+          sh '''
+            set +x
+            echo "$REGISTRY_TOKEN" | docker login ${DOCKER_REGISTRY} -u "$REGISTRY_USER" --password-stdin
+            set -x
+
+            docker push ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE_EFFECTIVE}/nephropaidi-api-gateway:${IMAGE_TAG_EFFECTIVE}
+            docker push ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE_EFFECTIVE}/nephropaidi-frontend:${IMAGE_TAG_EFFECTIVE}
+
+            docker logout ${DOCKER_REGISTRY}
+          '''
         }
       }
     }
