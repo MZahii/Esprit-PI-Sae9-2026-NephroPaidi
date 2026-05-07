@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: core-ops-service
+  namespace: nephro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: core-ops-service
+  template:
+    metadata:
+      labels:
+        app: core-ops-service
+    spec:
+      containers:
+        - name: core-ops-service
+          image: nephropaidi-core-ops-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8086
+          env:
+            - name: SERVICE_NAME
+              value: "core-ops-service"
+            - name: PORT
+              value: "8086"
+            - name: CORE_OPS_DB_URL
+              value: "postgresql://neondb_owner:npg_Zb1Kda5LPlin@ep-cool-breeze-agqhhjlc-pooler.c-2.eu-central-1.aws.neon.tech:5432/nephros_core_ops_service_db?sslmode=require"
+            - name: RABBITMQ_URL
+              value: "amqp://admin:admin123@rabbitmq:5672/%2F"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: core-ops-service
+  namespace: nephro
+spec:
+  selector:
+    app: core-ops-service
+  ports:
+    - name: http
+      port: 8086
+      targetPort: 8086
+

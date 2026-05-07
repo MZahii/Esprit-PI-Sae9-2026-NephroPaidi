@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-clinical-service
+  namespace: nephro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-clinical-service
+  template:
+    metadata:
+      labels:
+        app: ai-clinical-service
+    spec:
+      containers:
+        - name: ai-clinical-service
+          image: nephropaidi-ai-clinical-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8091
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-clinical-service
+  namespace: nephro
+spec:
+  selector:
+    app: ai-clinical-service
+  ports:
+    - name: http
+      port: 8091
+      targetPort: 8091
+

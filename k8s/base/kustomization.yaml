@@ -9,6 +9,11 @@ resources:
   - user-service.yaml
   - administration-service.yaml
   - communication-service.yaml
+  - clinical-service.yaml
+  - ai-clinical-service.yaml
+  - egfr-ml-service.yaml
+  - ai-pharmacy-service.yaml
+  - core-ops-service.yaml
   - procedure-service.yaml
   - ops-service.yaml
   - pharmacy-service.yaml
