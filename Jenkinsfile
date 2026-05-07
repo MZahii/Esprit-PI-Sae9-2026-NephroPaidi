@@ -8,9 +8,10 @@ pipeline {
   }
 
   parameters {
-    booleanParam(name: 'RUN_FRONTEND_TESTS', defaultValue: false, description: 'Run Angular unit tests in CI')
-    booleanParam(name: 'RUN_SONAR', defaultValue: true, description: 'Run SonarQube analysis')
-    booleanParam(name: 'BUILD_DOCKER_IMAGES', defaultValue: false, description: 'Build backend and frontend Docker images')
+    booleanParam(name: 'RUN_FRONTEND_TESTS', defaultValue: false, description: 'Run Angular/Vitest frontend tests')
+    booleanParam(name: 'RUN_SONAR', defaultValue: true, description: 'Run SonarQube analysis and quality gate')
+    booleanParam(name: 'RUN_SONAR_SERVICE_BREAKDOWN', defaultValue: false, description: 'Also publish one SonarQube project per backend service')
+    booleanParam(name: 'BUILD_DOCKER_IMAGES', defaultValue: false, description: 'Build jury-demo Docker images for frontend and backend')
     booleanParam(name: 'PUSH_DOCKER_IMAGES', defaultValue: false, description: 'Push Docker images to GitHub Container Registry')
     string(name: 'DOCKER_NAMESPACE', defaultValue: 'mzahii', description: 'GHCR namespace/owner, lowercase recommended')
     string(name: 'IMAGE_TAG', defaultValue: '', description: 'Docker image tag. Empty uses build-${BUILD_NUMBER}')
@@ -62,7 +63,7 @@ pipeline {
           def nodeHome = tool(name: 'node20', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation')
           withEnv(["PATH+NODE=${nodeHome}/bin"]) {
             dir('FrontEnd') {
-              sh 'npm run test -- --watch=false --browsers=ChromeHeadless'
+              sh 'npm run test -- --watch=false'
             }
           }
         }
@@ -77,28 +78,15 @@ pipeline {
         SONAR_TOKEN = credentials('sonarqube-token')
       }
       steps {
-    stage('SonarQube Analysis') {
-      when {
-        expression { return params.RUN_SONAR }
-      }
-      steps {
-        script {
-          catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-            timeout(time: 5, unit: 'MINUTES') {
-              withSonarQubeEnv('sonarqube') {
-                sh '''
-                  BackEnd/api-gateway/mvnw -B -ntp \
-                    -f BackEnd/pom.xml \
-                    org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-                    -DskipTests \
-                    -Dsonar.token=$SONAR_TOKEN \
-                    -Dsonar.host.url=$SONAR_HOST_URL \
-                    -Dsonar.analysis.mode=publish
-                '''
-              }
-              echo "SonarQube analysis submitted (non-blocking)"
-            }
-          }
+        withSonarQubeEnv('sonarqube') {
+          sh '''
+            BackEnd/api-gateway/mvnw -B -ntp \
+              -f BackEnd/pom.xml \
+              org.sonarsource.scanner.maven:sonar-maven-plugin:5.1.0.4751:sonar \
+              -DskipTests \
+              -Dsonar.token=$SONAR_TOKEN \
+              -Dsonar.host.url=$SONAR_HOST_URL
+          '''
         }
       }
     }
@@ -108,11 +96,48 @@ pipeline {
         expression { return params.RUN_SONAR }
       }
       steps {
+        timeout(time: 10, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: true
+        }
+      }
+    }
+
+    stage('SonarQube Service Breakdown') {
+      when {
+        expression { return params.RUN_SONAR && params.RUN_SONAR_SERVICE_BREAKDOWN }
+      }
+      environment {
+        SONAR_TOKEN = credentials('sonarqube-token')
+      }
+      steps {
         script {
-          catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-            timeout(time: 2, unit: 'MINUTES') {
-              waitForQualityGate abortPipeline: false
-              echo "Quality Gate check completed (non-critical)"
+          def backendProjects = [
+            [key: 'nephropaidi-api-gateway',            name: 'NephroPaidi API Gateway',            pom: 'BackEnd/api-gateway/pom.xml'],
+            [key: 'nephropaidi-config-server',          name: 'NephroPaidi Config Server',          pom: 'BackEnd/config-server/pom.xml'],
+            [key: 'nephropaidi-eureka',                 name: 'NephroPaidi Eureka',                 pom: 'BackEnd/eureka/pom.xml'],
+            [key: 'nephropaidi-administration-service', name: 'NephroPaidi Administration Service', pom: 'BackEnd/microservices/administration-service/pom.xml'],
+            [key: 'nephropaidi-clinical-service',       name: 'NephroPaidi Clinical Service',       pom: 'BackEnd/microservices/clinical-service/pom.xml'],
+            [key: 'nephropaidi-communication-service',  name: 'NephroPaidi Communication Service',  pom: 'BackEnd/microservices/communication-service/pom.xml'],
+            [key: 'nephropaidi-core-ops-service',       name: 'NephroPaidi Core Ops Service',       pom: 'BackEnd/microservices/core-ops-service/pom.xml'],
+            [key: 'nephropaidi-ops-service',            name: 'NephroPaidi Ops Service',            pom: 'BackEnd/microservices/ops-service/pom.xml'],
+            [key: 'nephropaidi-pharmacy-service',       name: 'NephroPaidi Pharmacy Service',       pom: 'BackEnd/microservices/pharmacy-service/pom.xml'],
+            [key: 'nephropaidi-procedure-service',      name: 'NephroPaidi Procedure Service',      pom: 'BackEnd/microservices/procedure-service/pom.xml'],
+            [key: 'nephropaidi-user-service',           name: 'NephroPaidi User Service',           pom: 'BackEnd/microservices/user-service/pom.xml']
+          ]
+
+          withSonarQubeEnv('sonarqube') {
+            backendProjects.each { svc ->
+              sh """
+                BackEnd/api-gateway/mvnw -B -ntp \\
+                  -f ${svc.pom} \\
+                  org.sonarsource.scanner.maven:sonar-maven-plugin:5.1.0.4751:sonar \\
+                  -DskipTests \\
+                  -Dsonar.token=\$SONAR_TOKEN \\
+                  -Dsonar.host.url=\$SONAR_HOST_URL \\
+                  -Dsonar.projectKey=${svc.key} \\
+                  -Dsonar.projectName='${svc.name}' \\
+                  -Dsonar.qualitygate.wait=false
+              """
             }
           }
         }
@@ -155,7 +180,7 @@ pipeline {
         expression { return params.PUSH_DOCKER_IMAGES }
       }
       steps {
-        withCredentials([usernamePassword(credentialsId: 'github-pat', usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_TOKEN')]) {
+        withCredentials([usernamePassword(credentialsId: 'github-pat-userpass', usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_TOKEN')]) {
           sh '''
             set +x
             echo "$REGISTRY_TOKEN" | docker login ${DOCKER_REGISTRY} -u "$REGISTRY_USER" --password-stdin
