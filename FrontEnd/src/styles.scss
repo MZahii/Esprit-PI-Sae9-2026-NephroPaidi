@@ -396,7 +396,7 @@ body.admin-redesign.backoffice-body .nxl-navigation .m-header {
 }
 
 body.admin-redesign.backoffice-body .nxl-navigation .navbar-content {
-  padding: 22px 18px !important;
+  padding: 22px 22px !important;
 }
 
 body.admin-redesign.backoffice-body .nxl-caption label {
@@ -407,23 +407,44 @@ body.admin-redesign.backoffice-body .nxl-caption label {
 }
 
 body.admin-redesign.backoffice-body .nxl-link {
-  border-radius: 8px !important;
+  align-items: center !important;
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
   color: #20344d !important;
-  font-weight: 760 !important;
-  margin-bottom: 4px !important;
-  transition: transform 0.18s ease, background-color 0.18s ease, color 0.18s ease !important;
+  display: flex !important;
+  font-weight: 850 !important;
+  min-height: 48px !important;
+  padding: 0 18px !important;
+  transition: transform 0.18s ease, background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease !important;
 }
 
 body.admin-redesign.backoffice-body .nxl-link:hover,
 body.admin-redesign.backoffice-body .nxl-item.active > .nxl-link,
 body.admin-redesign.backoffice-body .nxl-submenu .nxl-link.active {
-  background: #e8f5f8 !important;
+  background: linear-gradient(180deg, #ffffff 0%, #e6f8fc 100%) !important;
+  border-color: #9bd8ec !important;
   color: #085b75 !important;
-  transform: translateX(3px);
+  box-shadow: 0 12px 28px rgba(18, 126, 158, 0.1) !important;
+  transform: translateX(4px);
 }
 
 body.admin-redesign.backoffice-body .nxl-item.active > .nxl-link {
-  box-shadow: inset 4px 0 0 #0f7b8d !important;
+  background: linear-gradient(180deg, #dff8fe 0%, #c6edf6 100%) !important;
+  border-color: #0e9ab3 !important;
+  box-shadow: inset 4px 0 0 #0f7b8d, 0 14px 30px rgba(18, 126, 158, 0.17) !important;
+}
+
+body.admin-redesign.backoffice-body .nxl-item.active > .nxl-link::after {
+  background: #0e9ab3 !important;
+  box-shadow: 0 0 0 7px rgba(14, 154, 179, 0.12) !important;
+}
+
+body.admin-redesign.backoffice-body .nxl-navbar > .nxl-item:not(.nxl-caption) {
+  margin: 8px 0 !important;
+}
+
+body.admin-redesign.backoffice-body .nxl-mtext {
+  line-height: 1.15 !important;
 }
 
 body.admin-redesign.backoffice-body .nxl-header {
@@ -439,7 +460,8 @@ body.admin-redesign.backoffice-body .header-filter-dock {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 8px;
   overflow: visible;
   padding: 6px 2px 6px 0;
 }
@@ -450,7 +472,7 @@ body.admin-redesign.backoffice-body .header-filter-dock:empty {
 
 body.admin-redesign.backoffice-body .header-filter-dock .topbar-filter-group {
   position: relative;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   width: auto !important;
   max-width: none !important;
@@ -464,9 +486,31 @@ body.admin-redesign.backoffice-body .header-filter-dock .topbar-filter-group {
   gap: 10px !important;
 }
 
+body.admin-redesign.backoffice-body .header-filter-dock .topbar-filter-group:has(input.form-control)::before {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background-image: url('/assets/backoffice/images/auth/recherche.png');
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 6px 14px rgba(15, 128, 148, 0.12);
+  z-index: 2;
+  pointer-events: none;
+}
+
 body.admin-redesign.backoffice-body .header-filter-dock .topbar-filter-group input.form-control {
   width: clamp(260px, 32vw, 520px) !important;
   min-width: 280px;
+  height: 54px !important;
+  padding-left: 20px !important;
+  padding-right: 64px !important;
+  background-image: none !important;
 }
 
 body.admin-redesign.backoffice-body .header-filter-dock .topbar-filter-group select.form-control,
@@ -498,9 +542,11 @@ body.admin-redesign.backoffice-body .topbar-filter-menu {
 }
 
 body.admin-redesign.backoffice-body .topbar-filter-menu-trigger {
-  height: 46px;
-  min-width: 150px;
-  padding: 0 16px;
+  height: 52px;
+  width: 58px;
+  min-width: 58px;
+  padding: 0;
+  position: relative;
   border: 1px solid #c8ddea;
   border-radius: 12px;
   background: linear-gradient(180deg, #ffffff 0%, #eef8fb 100%);
@@ -513,6 +559,14 @@ body.admin-redesign.backoffice-body .topbar-filter-menu-trigger {
   gap: 8px;
   box-shadow: 0 8px 20px rgba(22, 50, 80, 0.08);
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+body.admin-redesign.backoffice-body .topbar-filter-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 6px 14px rgba(15, 128, 148, 0.12);
 }
 
 body.admin-redesign.backoffice-body .topbar-filter-menu-trigger:hover,
@@ -749,42 +803,490 @@ body.admin-redesign.backoffice-body .audit-filters {
   box-shadow: 0 12px 30px rgba(18, 46, 78, 0.06) !important;
 }
 
-body.admin-redesign.backoffice-body .form-control {
-  min-height: 43px !important;
-  border: 1px solid #cfdfea !important;
-  border-radius: 8px !important;
+body.admin-redesign.backoffice-body .form-control,
+body.admin-redesign.backoffice-body .form-select,
+body.admin-redesign.backoffice-body select {
+  min-height: 48px !important;
+  border: 1px solid #c8ddea !important;
+  border-radius: 12px !important;
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  color: #10233f !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  box-shadow: 0 8px 20px rgba(22, 50, 80, 0.05) !important;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease !important;
+}
+
+body.admin-redesign.backoffice-body select.form-control,
+body.admin-redesign.backoffice-body select.form-select,
+body.admin-redesign.backoffice-body select {
+  appearance: none !important;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #0f8fa1 50%),
+    linear-gradient(135deg, #0f8fa1 50%, transparent 50%) !important;
+  background-position:
+    calc(100% - 22px) 50%,
+    calc(100% - 15px) 50% !important;
+  background-repeat: no-repeat !important;
+  background-size: 7px 7px, 7px 7px !important;
+  padding-right: 58px !important;
+}
+
+body.admin-redesign.backoffice-body select option {
   background: #ffffff !important;
+  color: #10233f !important;
+  font-size: 14px !important;
+  padding: 10px 12px !important;
+}
+
+body.admin-redesign.backoffice-body select option:checked,
+body.admin-redesign.backoffice-body select option:hover {
+  background: #dff4f9 !important;
+  color: #073b4c !important;
+}
+
+body.admin-redesign.backoffice-body select.fancy-select-native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
   box-shadow: none !important;
 }
 
-body.admin-redesign.backoffice-body .form-control:focus {
-  border-color: #0f7b8d !important;
-  box-shadow: 0 0 0 4px rgba(15, 123, 141, 0.12) !important;
+body.admin-redesign.backoffice-body input.fancy-date-native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+body.admin-redesign.backoffice-body .fancy-select {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  z-index: 1;
+}
+
+body.admin-redesign.backoffice-body .fancy-date {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  z-index: 1;
+}
+
+body.admin-redesign.backoffice-body .fancy-select.open {
+  z-index: 5000;
+}
+
+body.admin-redesign.backoffice-body .fancy-date.open {
+  z-index: 5000;
+}
+
+body.admin-redesign.backoffice-body .fancy-select-trigger {
+  align-items: center;
+  background:
+    linear-gradient(45deg, transparent 50%, #0f8fa1 50%) calc(100% - 22px) 50% / 7px 7px no-repeat,
+    linear-gradient(135deg, #0f8fa1 50%, transparent 50%) calc(100% - 15px) 50% / 7px 7px no-repeat,
+    rgba(255, 255, 255, 0.98);
+  border: 1px solid #c8ddea;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(22, 50, 80, 0.05);
+  color: #10233f;
+  cursor: pointer;
+  display: flex;
+  font-size: 14px;
+  font-weight: 700;
+  justify-content: flex-start;
+  min-height: 48px;
+  padding: 0 58px 0 16px;
+  text-align: left;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  width: 100%;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-trigger {
+  align-items: center;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 252, 254, 0.98));
+  border: 1px solid #c8ddea;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(22, 50, 80, 0.05);
+  color: #10233f;
+  cursor: pointer;
+  display: flex;
+  font-size: 14px;
+  font-weight: 750;
+  justify-content: flex-start;
+  min-height: 48px;
+  padding: 0 46px 0 16px;
+  position: relative;
+  text-align: left;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  width: 100%;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-trigger::after {
+  content: "";
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-50%);
+  background:
+    linear-gradient(#10233f, #10233f) 4px 5px / 10px 2px no-repeat,
+    linear-gradient(#10233f, #10233f) 4px 10px / 10px 2px no-repeat,
+    linear-gradient(#10233f, #10233f) 5px 2px / 2px 4px no-repeat,
+    linear-gradient(#10233f, #10233f) 11px 2px / 2px 4px no-repeat;
+  border: 2px solid #10233f;
+  border-radius: 4px;
+  opacity: 0.85;
+}
+
+body.admin-redesign.backoffice-body .fancy-select-trigger:hover,
+body.admin-redesign.backoffice-body .fancy-select.open .fancy-select-trigger {
+  border-color: #0f8fa1;
+  box-shadow: 0 0 0 4px rgba(15, 143, 161, 0.12), 0 12px 26px rgba(22, 50, 80, 0.08);
+}
+
+body.admin-redesign.backoffice-body .fancy-date-trigger:hover,
+body.admin-redesign.backoffice-body .fancy-date.open .fancy-date-trigger {
+  border-color: #0f8fa1;
+  box-shadow: 0 0 0 4px rgba(15, 143, 161, 0.12), 0 12px 26px rgba(22, 50, 80, 0.08);
+}
+
+body.admin-redesign.backoffice-body .fancy-select-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+body.admin-redesign.backoffice-body .fancy-select-list {
+  background: linear-gradient(180deg, #ffffff 0%, #f4fbfd 100%);
+  border: 1px solid #b8dbea;
+  border-radius: 14px;
+  box-shadow: 0 20px 44px rgba(15, 50, 70, 0.18);
+  display: grid;
+  gap: 5px;
+  left: 0;
+  max-height: min(310px, 54vh);
+  min-width: 100%;
+  opacity: 0;
+  overflow: auto;
+  padding: 8px;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top center;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  z-index: 1080;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-panel {
+  background: linear-gradient(180deg, #ffffff 0%, #f4fbfd 100%);
+  border: 1px solid #b8dbea;
+  border-radius: 16px;
+  box-shadow: 0 22px 48px rgba(15, 50, 70, 0.2);
+  left: 0;
+  max-width: min(360px, calc(100vw - 36px));
+  min-width: min(310px, 100%);
+  opacity: 0;
+  padding: 12px;
+  pointer-events: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top center;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  z-index: 1080;
+}
+
+body.admin-redesign.backoffice-body .fancy-date.align-right .fancy-date-panel {
+  left: auto;
+  right: 0;
+}
+
+body.admin-redesign.backoffice-body .fancy-date.drop-up .fancy-date-panel {
+  bottom: calc(100% + 8px);
+  top: auto;
+  transform: translateY(6px) scale(0.98);
+  transform-origin: bottom center;
+}
+
+body.admin-redesign.backoffice-body .fancy-select.open .fancy-select-list {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+  z-index: 5001;
+}
+
+body.admin-redesign.backoffice-body .fancy-date.open .fancy-date-panel {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+  z-index: 5001;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-month,
+body.admin-redesign.backoffice-body .fancy-date-nav-btn,
+body.admin-redesign.backoffice-body .fancy-date-link,
+body.admin-redesign.backoffice-body .fancy-date-day {
+  border: 0;
+  background: transparent;
+  color: #10233f;
+  font-family: inherit;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-month {
+  font-size: 15px;
+  font-weight: 900;
+  padding: 7px 8px;
+  text-align: left;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-nav {
+  display: inline-flex;
+  gap: 5px;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-nav-btn {
+  align-items: center;
+  border: 1px solid #d4e7f1;
+  border-radius: 10px;
+  display: inline-flex;
+  font-size: 17px;
+  font-weight: 900;
+  height: 36px;
+  justify-content: center;
+  transition: background-color 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
+  width: 36px;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-nav-btn:hover {
+  background: #eaf8fb;
+  border-color: #9bd8ec;
+  transform: translateY(-1px);
+}
+
+body.admin-redesign.backoffice-body .fancy-date-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-weekday {
+  color: #60728c;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 5px 0;
+  text-align: center;
+  text-transform: lowercase;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-day {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 800;
+  height: 34px;
+  justify-content: center;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease, transform 0.14s ease;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-day:hover {
+  background: #eaf8fb;
+  border-color: #b8dbea;
+  color: #075c72;
+  transform: translateY(-1px);
+}
+
+body.admin-redesign.backoffice-body .fancy-date-day.outside {
+  color: #8fa0b4;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-day.today {
+  border-color: #98d8e8;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-day.active {
+  background: linear-gradient(180deg, #1399b2 0%, #3b4dab 100%);
+  border-color: #1399b2;
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 128, 148, 0.2);
+}
+
+body.admin-redesign.backoffice-body .fancy-date-day:disabled {
+  color: #bac5d3;
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-footer {
+  border-top: 1px solid #e3edf4;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-link {
+  color: #0f7b8d;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 7px 8px;
+}
+
+body.admin-redesign.backoffice-body .fancy-date-link:hover {
+  color: #075c72;
+}
+
+body.admin-redesign.backoffice-body .fancy-select-option {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #10233f;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  min-height: 38px;
+  padding: 9px 11px;
+  text-align: left;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease, transform 0.14s ease;
+}
+
+body.admin-redesign.backoffice-body .fancy-select-option:hover {
+  background: #eaf8fb;
+  border-color: #b8dbea;
+  color: #075c72;
+  transform: translateX(2px);
+}
+
+body.admin-redesign.backoffice-body .fancy-select-option.active {
+  background: linear-gradient(180deg, #dff8fe 0%, #c8eef7 100%);
+  border-color: #78cce0;
+  color: #073b4c;
+  box-shadow: inset 4px 0 0 #0f8fa1;
+}
+
+body.admin-redesign.backoffice-body .fancy-select-option:disabled {
+  color: #98a8bd;
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+body.admin-redesign.backoffice-body .card:has(.fancy-select.open),
+body.admin-redesign.backoffice-body .card:has(.fancy-date.open),
+body.admin-redesign.backoffice-body .card-body:has(.fancy-select.open),
+body.admin-redesign.backoffice-body .card-body:has(.fancy-date.open),
+body.admin-redesign.backoffice-body .control-panel:has(.fancy-select.open),
+body.admin-redesign.backoffice-body .control-panel:has(.fancy-date.open),
+body.admin-redesign.backoffice-body .creation-panel:has(.fancy-select.open),
+body.admin-redesign.backoffice-body .creation-panel:has(.fancy-date.open),
+body.admin-redesign.backoffice-body .floor-card:has(.fancy-select.open),
+body.admin-redesign.backoffice-body .floor-card:has(.fancy-date.open),
+body.admin-redesign.backoffice-body .add-workspace-row:has(.fancy-select.open),
+body.admin-redesign.backoffice-body .add-workspace-row:has(.fancy-date.open),
+body.admin-redesign.backoffice-body .create-grid:has(.fancy-select.open),
+body.admin-redesign.backoffice-body .create-grid:has(.fancy-date.open),
+body.admin-redesign.backoffice-body .field-wrap:has(.fancy-select.open),
+body.admin-redesign.backoffice-body .field-wrap:has(.fancy-date.open),
+body.admin-redesign.backoffice-body .create-hr-modal-body:has(.fancy-date.open),
+body.admin-redesign.backoffice-body .create-hr-modal:has(.fancy-date.open),
+body.admin-redesign.backoffice-body .create-contract-modal:has(.fancy-date.open),
+body.admin-redesign.backoffice-body .staff-details-modal:has(.fancy-date.open),
+body.admin-redesign.backoffice-body .create-hr-modal-body .details-grid:has(.fancy-date.open),
+body.admin-redesign.backoffice-body .create-hr-modal-body .contract-card:has(.fancy-date.open),
+body.admin-redesign.backoffice-body .create-hr-modal-body .card:has(.fancy-date.open),
+body.admin-redesign.backoffice-body .create-hr-modal-body .card-body:has(.fancy-date.open) {
+  overflow: visible !important;
+}
+
+body.admin-redesign.backoffice-body .form-control::placeholder {
+  color: #8da1bd !important;
+}
+
+body.admin-redesign.backoffice-body .form-control:focus,
+body.admin-redesign.backoffice-body .form-select:focus,
+body.admin-redesign.backoffice-body select:focus {
+  border-color: #0f8fa1 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 4px rgba(15, 143, 161, 0.14), 0 12px 26px rgba(22, 50, 80, 0.08) !important;
 }
 
 body.admin-redesign.backoffice-body .table-responsive {
   border: 1px solid #cfe2ef !important;
-  border-radius: 10px !important;
-  box-shadow: 0 14px 34px rgba(18, 46, 78, 0.07) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 18px 42px rgba(18, 46, 78, 0.08) !important;
+  overflow: auto !important;
+  background: #ffffff !important;
+}
+
+body.admin-redesign.backoffice-body .table {
+  margin-bottom: 0 !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
 }
 
 body.admin-redesign.backoffice-body .table thead th {
-  background: #eaf4f8 !important;
-  color: #30506a !important;
-  padding: 14px 16px !important;
+  background: linear-gradient(180deg, #eef9fc 0%, #e4f2f7 100%) !important;
+  color: #163954 !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.055em !important;
+  padding: 16px 18px !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
 }
 
 body.admin-redesign.backoffice-body .table tbody td {
-  padding: 15px 16px !important;
-  border-color: #e7eef5 !important;
+  color: #062342 !important;
+  font-size: 14px !important;
+  padding: 18px 18px !important;
+  border-color: #e3edf4 !important;
+  vertical-align: middle !important;
 }
 
 body.admin-redesign.backoffice-body .table tbody tr {
-  transition: background-color 0.16s ease, transform 0.16s ease !important;
+  background: #ffffff !important;
+  transition: background-color 0.16s ease, box-shadow 0.16s ease !important;
+}
+
+body.admin-redesign.backoffice-body .table tbody tr:nth-child(even) {
+  background: #f7fcfe !important;
 }
 
 body.admin-redesign.backoffice-body .table tbody tr:hover {
-  background: #f2fafb !important;
+  background: #eef9fc !important;
+  box-shadow: inset 4px 0 0 #0f8fa1 !important;
 }
 
 body.admin-redesign.backoffice-body .status-pill,
@@ -792,9 +1294,73 @@ body.admin-redesign.backoffice-body .source-pill,
 body.admin-redesign.backoffice-body .event-action,
 body.admin-redesign.backoffice-body .count-pill,
 body.admin-redesign.backoffice-body .group-pill {
-  padding: 6px 10px !important;
+  align-items: center !important;
+  border: 1px solid transparent !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 8px 18px rgba(22, 50, 80, 0.05) !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+  min-height: 34px !important;
+  padding: 7px 13px !important;
   border-radius: 999px !important;
-  font-size: 11px !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.02em !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+}
+
+body.admin-redesign.backoffice-body .badge-active,
+body.admin-redesign.backoffice-body .badge-contract-running {
+  background: linear-gradient(180deg, #e7fff0 0%, #ccf7dc 100%) !important;
+  border-color: #a5e9bd !important;
+  color: #05703f !important;
+}
+
+body.admin-redesign.backoffice-body .contract-chip {
+  background: linear-gradient(180deg, #f5fbff 0%, #e1f4fb 100%) !important;
+  border-color: #b9ddea !important;
+  color: #0a6174 !important;
+}
+
+body.admin-redesign.backoffice-body .badge-enabled {
+  background: linear-gradient(180deg, #eef6ff 0%, #d8eaff 100%) !important;
+  border-color: #bdd8ff !important;
+  color: #1658d4 !important;
+}
+
+body.admin-redesign.backoffice-body .badge-live {
+  background: linear-gradient(180deg, #f5ffd8 0%, #e5f8ad 100%) !important;
+  border-color: #d5ed8b !important;
+  color: #4e7d0e !important;
+}
+
+body.admin-redesign.backoffice-body .badge-inactive,
+body.admin-redesign.backoffice-body .badge-expired {
+  background: linear-gradient(180deg, #fff1f1 0%, #ffdada 100%) !important;
+  border-color: #ffc2c2 !important;
+  color: #b42323 !important;
+}
+
+body.admin-redesign.backoffice-body .badge-disabled,
+body.admin-redesign.backoffice-body .badge-archived {
+  background: linear-gradient(180deg, #f4f7fb 0%, #e4eaf2 100%) !important;
+  border-color: #d5dde8 !important;
+  color: #334155 !important;
+}
+
+body.admin-redesign.backoffice-body .badge-ended,
+body.admin-redesign.backoffice-body .badge-contract-history {
+  background: linear-gradient(180deg, #eef6ff 0%, #d9eaff 100%) !important;
+  border-color: #c3dcff !important;
+  color: #1252d6 !important;
+}
+
+body.admin-redesign.backoffice-body .badge-suspended,
+body.admin-redesign.backoffice-body .badge-pending,
+body.admin-redesign.backoffice-body .badge-contract-none {
+  background: linear-gradient(180deg, #fff8e7 0%, #ffebba 100%) !important;
+  border-color: #ffdf91 !important;
+  color: #9a5b00 !important;
 }
 
 body.admin-redesign.backoffice-body .btn {
@@ -828,9 +1394,16 @@ body.admin-redesign.backoffice-body .user-group,
 body.admin-redesign.backoffice-body .details-card,
 body.admin-redesign.backoffice-body .contract-card,
 body.admin-redesign.backoffice-body .audit-card {
-  border-radius: 10px !important;
+  border-radius: 16px !important;
   border-color: #d2e3ef !important;
   box-shadow: 0 12px 28px rgba(18, 46, 78, 0.06) !important;
+}
+
+body.admin-redesign.backoffice-body .stats-card {
+  border: 1px solid #cfe2ef !important;
+  border-radius: 16px !important;
+  background: linear-gradient(145deg, #ffffff, #f4fafc) !important;
+  box-shadow: 0 16px 38px rgba(19, 86, 112, 0.06) !important;
 }
 
 body.admin-redesign.backoffice-body .chart-card .circle-wrap {
@@ -1094,6 +1667,15 @@ body.admin-redesign.backoffice-body .table td:last-child {
 body.admin-redesign.backoffice-body .table td:last-child .btn {
   min-width: 128px !important;
   margin: 3px !important;
+}
+
+body.admin-redesign.backoffice-body .table td:last-child .btn.icon-action-btn,
+body.admin-redesign.backoffice-body .table td:last-child .btn.pagination-icon-btn {
+  width: 56px !important;
+  min-width: 56px !important;
+  max-width: 56px !important;
+  height: 42px !important;
+  margin: 0 !important;
 }
 
 body.admin-redesign.backoffice-body .expiry-progress,
@@ -1383,6 +1965,7 @@ body.admin-redesign.backoffice-body .page-statistics-tools {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  gap: 12px;
   min-height: 70px;
   width: auto;
   padding: 12px 22px;
@@ -1395,10 +1978,12 @@ body.admin-redesign.backoffice-body .page-statistics-tools {
   box-shadow: 0 14px 34px rgba(15, 60, 90, 0.08);
 }
 
-body.admin-redesign.backoffice-body .statistics-trigger {
-  height: 40px;
-  min-width: 128px;
-  padding: 0 16px;
+body.admin-redesign.backoffice-body .statistics-trigger,
+body.admin-redesign.backoffice-body .create-hr-trigger {
+  height: 52px;
+  min-width: 58px;
+  width: 58px;
+  padding: 0;
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -1410,36 +1995,414 @@ body.admin-redesign.backoffice-body .statistics-trigger {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
   box-shadow: 0 8px 18px rgba(15, 128, 148, 0.11);
   animation: statisticsButtonPulse 2.4s ease-in-out infinite;
   transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
 }
 
-body.admin-redesign.backoffice-body .statistics-trigger::before {
-  content: '';
+body.admin-redesign.backoffice-body .topbar-filter-menu-trigger::after {
+  content: attr(data-tooltip);
   position: absolute;
-  inset: -60% auto -60% -45%;
-  width: 42%;
-  z-index: -1;
-  transform: rotate(18deg);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.88), transparent);
-  animation: statisticsButtonShine 3.2s ease-in-out infinite;
+  left: 50%;
+  top: calc(100% + 9px);
+  transform: translateX(-50%) translateY(-4px);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  border-radius: 999px;
+  background: #10233d;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 7px 11px;
+  box-shadow: 0 12px 24px rgba(15, 40, 60, 0.18);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 1060;
 }
 
-body.admin-redesign.backoffice-body .statistics-trigger i {
+body.admin-redesign.backoffice-body .topbar-filter-menu-trigger:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+body.admin-redesign.backoffice-body .tool-button-icon,
+body.admin-redesign.backoffice-body .page-action-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 36px;
+  box-shadow: 0 6px 14px rgba(15, 128, 148, 0.12);
+}
+
+body.admin-redesign.backoffice-body .create-hr-trigger {
+  min-width: 58px;
+  width: 58px;
+  border-color: #7eaebe;
+  background: linear-gradient(180deg, #dceff5 0%, #b8d9e4 100%);
+  color: #08243a;
+}
+
+body.admin-redesign.backoffice-body .page-action-docked {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  flex: 0 0 auto !important;
+  flex-wrap: nowrap !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  min-height: 0 !important;
+}
+
+body.admin-redesign.backoffice-body .page-action-docked:has(.report-action) {
+  justify-content: flex-start !important;
+  width: auto !important;
+}
+
+body.admin-redesign.backoffice-body .page-action-docked:has(.tab-btn) {
+  justify-content: flex-end !important;
+  width: auto !important;
+  margin-left: auto !important;
+}
+
+body.admin-redesign.backoffice-body .page-action-docked.card,
+body.admin-redesign.backoffice-body .page-action-docked .card-body {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+body.admin-redesign.backoffice-body .page-action-docked .card-body {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: nowrap !important;
+}
+
+body.admin-redesign.backoffice-body .page-action-docked .btn,
+body.admin-redesign.backoffice-body .page-action-docked .tab-btn {
+  height: 52px !important;
+  width: 58px !important;
+  min-width: 58px;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  border: 1px solid #b9dbea !important;
+  background: linear-gradient(180deg, #ffffff 0%, #eef9fc 100%) !important;
+  color: #10233d !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  text-transform: uppercase;
+  box-shadow: 0 8px 18px rgba(15, 128, 148, 0.11) !important;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease !important;
+}
+
+body.admin-redesign.backoffice-body .page-action-docked .report-action,
+body.admin-redesign.backoffice-body .page-action-docked .tab-btn {
+  border-color: #7eaebe !important;
+  background: linear-gradient(180deg, #dceff5 0%, #b8d9e4 100%) !important;
+  color: #08243a !important;
+}
+
+body.admin-redesign.backoffice-body .page-action-docked .create-contract-action {
+  margin-left: 0 !important;
+}
+
+body.admin-redesign.backoffice-body .page-action-docked .btn-primary,
+body.admin-redesign.backoffice-body .page-action-docked .tab-btn.active {
+  border-color: #7eaebe !important;
+  background: linear-gradient(180deg, #dceff5 0%, #b8d9e4 100%) !important;
+  color: #10233d !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-trigger span,
+body.admin-redesign.backoffice-body .create-hr-trigger span,
+body.admin-redesign.backoffice-body .page-action-docked .btn span,
+body.admin-redesign.backoffice-body .page-action-docked .tab-btn span {
+  white-space: nowrap;
+}
+
+body.admin-redesign.backoffice-body .page-action-docked .btn:hover,
+body.admin-redesign.backoffice-body .page-action-docked .tab-btn:hover {
+  transform: translateY(-2px);
+  border-color: #0b8fa0 !important;
+  box-shadow: 0 12px 24px rgba(15, 128, 148, 0.18) !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-trigger::before,
+body.admin-redesign.backoffice-body .create-hr-trigger::before {
+  content: none !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-trigger i,
+body.admin-redesign.backoffice-body .create-hr-trigger i {
   width: 17px;
   height: 17px;
   color: #07869a;
   filter: drop-shadow(0 3px 6px rgba(7, 134, 154, 0.2));
 }
 
-body.admin-redesign.backoffice-body .statistics-trigger:hover {
+body.admin-redesign.backoffice-body .statistics-trigger:hover,
+body.admin-redesign.backoffice-body .create-hr-trigger:hover {
   transform: translateY(-2px);
   border-color: #0b8fa0;
   background: linear-gradient(180deg, #ffffff 0%, #e3f7fb 100%);
   box-shadow: 0 12px 24px rgba(15, 128, 148, 0.18);
+}
+
+body.admin-redesign.backoffice-body [data-ui-tooltip] {
+  position: relative;
+  overflow: visible !important;
+}
+
+body.admin-redesign.backoffice-body [data-ui-tooltip]::after {
+  content: attr(data-ui-tooltip);
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 9px);
+  transform: translateX(-50%) translateY(-4px);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  border-radius: 999px;
+  background: #10233d;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 9px 13px;
+  box-shadow: 0 12px 24px rgba(15, 40, 60, 0.18);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 1060;
+  text-transform: none;
+}
+
+body.admin-redesign.backoffice-body [data-ui-tooltip]:hover::after,
+body.admin-redesign.backoffice-body [data-ui-tooltip]:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+body.admin-redesign.backoffice-body .icon-action-row {
+  display: flex !important;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+}
+
+body.admin-redesign.backoffice-body .icon-action-btn,
+body.admin-redesign.backoffice-body .pagination-icon-btn {
+  width: 56px !important;
+  max-width: 56px !important;
+  height: 42px !important;
+  min-width: 56px !important;
+  padding: 3px !important;
+  border-radius: 10px !important;
+  border: 1px solid #a7d4e7 !important;
+  background: linear-gradient(180deg, #e9f7fb 0%, #d5eef5 100%) !important;
+  color: #08243a !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  box-shadow: 0 8px 18px rgba(15, 128, 148, 0.08) !important;
+}
+
+body.admin-redesign.backoffice-body .icon-action-btn img,
+body.admin-redesign.backoffice-body .pagination-icon-btn img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+body.admin-redesign.backoffice-body .pagination-wrap > .d-flex:last-child,
+body.admin-redesign.backoffice-body .pagination-row .pagination-controls,
+body.admin-redesign.backoffice-body .pagination-bar .pagination-controls {
+  display: flex !important;
+  align-items: center;
+  gap: 10px !important;
+}
+
+body.admin-redesign.backoffice-body .pagination-wrap .btn:not(.pagination-icon-btn),
+body.admin-redesign.backoffice-body .pagination-row .btn:not(.pagination-icon-btn),
+body.admin-redesign.backoffice-body .pagination-bar .btn:not(.pagination-icon-btn) {
+  min-width: 42px;
+  height: 42px;
+  border-radius: 10px;
+}
+
+body.admin-redesign.backoffice-body td .icon-action-btn,
+body.admin-redesign.backoffice-body .table .icon-action-btn,
+body.admin-redesign.backoffice-body .action-stack .icon-action-btn {
+  width: 56px !important;
+  max-width: 56px !important;
+  min-width: 56px !important;
+  height: 42px !important;
+  padding: 3px !important;
+  flex: 0 0 56px !important;
+}
+
+body.admin-redesign.backoffice-body td .icon-action-btn img,
+body.admin-redesign.backoffice-body .table .icon-action-btn img,
+body.admin-redesign.backoffice-body .action-stack .icon-action-btn img {
+  width: 30px !important;
+  height: 30px !important;
+}
+
+body.admin-redesign.backoffice-body .create-hr-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1110;
+  background: rgba(15, 32, 48, 0.28);
+  backdrop-filter: blur(3px);
+  animation: statisticsFade 0.18s ease both;
+}
+
+body.admin-redesign.backoffice-body .create-hr-modal {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  bottom: 18px;
+  width: min(980px, calc(100vw - 36px));
+  z-index: 1120;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #c9e2f2;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(7, 134, 154, 0.12), transparent 34%),
+    linear-gradient(180deg, #ffffff 0%, #f4fbfd 100%);
+  box-shadow: 0 26px 70px rgba(15, 40, 60, 0.22);
+  transform: translateX(calc(100% + 30px));
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.18s ease;
+  overflow: hidden;
+}
+
+body.admin-redesign.backoffice-body .create-hr-modal.open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+body.admin-redesign.backoffice-body .create-contract-modal {
+  width: min(1160px, calc(100vw - 36px));
+}
+
+body.admin-redesign.backoffice-body .staff-details-modal {
+  width: min(1220px, calc(100vw - 36px));
+}
+
+body.admin-redesign.backoffice-body .patient-details-modal,
+body.admin-redesign.backoffice-body .guardian-linked-details-modal {
+  width: min(1120px, calc(100vw - 36px));
+}
+
+body.admin-redesign.backoffice-body .create-hr-modal-head {
+  min-height: 76px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #dbeaf4;
+  background: linear-gradient(90deg, rgba(238, 249, 252, 0.96), rgba(255, 255, 255, 0.86));
+}
+
+body.admin-redesign.backoffice-body .create-hr-kicker {
+  display: block;
+  color: #07869a;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+body.admin-redesign.backoffice-body .create-hr-modal-head h5 {
+  margin: 0;
+  color: #10233d;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+body.admin-redesign.backoffice-body .create-hr-close {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  border: 1px solid #c9e2f2;
+  background: #fff;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  overflow: hidden;
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+body.admin-redesign.backoffice-body .create-hr-close img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+body.admin-redesign.backoffice-body .create-hr-close:hover {
+  transform: rotate(6deg) scale(1.04);
+  background: #eef9fc;
+}
+
+body.admin-redesign.backoffice-body .create-hr-modal-body {
+  flex: 1;
+  overflow: auto;
+  padding: 22px;
+}
+
+body.admin-redesign.backoffice-body .create-hr-modal-body .page-header {
+  display: none !important;
+}
+
+body.admin-redesign.backoffice-body .create-hr-modal-body .main-content {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body.admin-redesign.backoffice-body .create-hr-modal-body .row {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+body.admin-redesign.backoffice-body .create-hr-modal-body .col-xxl-8,
+body.admin-redesign.backoffice-body .create-hr-modal-body .col-xxl-9,
+body.admin-redesign.backoffice-body .create-hr-modal-body .col-xl-10 {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+body.admin-redesign.backoffice-body .create-hr-modal-body .card {
+  border: 1px solid rgba(7, 134, 154, 0.18) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 18px 40px rgba(15, 60, 90, 0.1) !important;
+  overflow: hidden;
 }
 
 body.admin-redesign.backoffice-body .statistics-backdrop {
@@ -1509,8 +2472,8 @@ body.admin-redesign.backoffice-body .statistics-modal-head h5 {
 }
 
 body.admin-redesign.backoffice-body .statistics-close {
-  width: 42px;
-  height: 42px;
+  width: 54px;
+  height: 54px;
   border-radius: 14px;
   border: 1px solid #c9e2f2;
   background: #fff;
@@ -1518,12 +2481,30 @@ body.admin-redesign.backoffice-body .statistics-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 4px;
+  overflow: hidden;
   transition: transform 0.18s ease, background 0.18s ease;
+}
+
+body.admin-redesign.backoffice-body .statistics-close img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
 }
 
 body.admin-redesign.backoffice-body .statistics-close:hover {
   transform: rotate(6deg) scale(1.04);
   background: #eef9fc;
+}
+
+body.admin-redesign.backoffice-body .staff-profile-statistics-backdrop {
+  z-index: 1135;
+}
+
+body.admin-redesign.backoffice-body .staff-profile-statistics-modal {
+  z-index: 1140;
 }
 
 body.admin-redesign.backoffice-body .statistics-modal-body {
@@ -1636,6 +2617,244 @@ body.admin-redesign.backoffice-body .statistics-modal-body .metric-card[data-sta
 body.admin-redesign.backoffice-body .statistics-modal-body .role-card[data-stat-tooltip]::after,
 body.admin-redesign.backoffice-body .statistics-modal-body .analytics-pill[data-stat-tooltip]::after {
   display: none !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body.visual-stat-stage {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 18px !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-grid {
+  flex: 1 1 auto !important;
+  min-height: clamp(360px, 62vh, 680px) !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)) !important;
+  grid-auto-rows: minmax(240px, 1fr) !important;
+  align-content: stretch !important;
+  gap: 18px !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-grid:has(> :nth-child(1):last-child) {
+  grid-template-columns: minmax(280px, 520px) !important;
+  justify-content: center !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-grid:has(> :nth-child(2):last-child) {
+  grid-template-columns: repeat(2, minmax(260px, 1fr)) !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-grid:has(> :nth-child(3):last-child) {
+  grid-template-columns: repeat(3, minmax(220px, 1fr)) !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card {
+  position: relative !important;
+  min-height: 240px !important;
+  display: grid !important;
+  grid-template-rows: auto 1fr auto !important;
+  place-items: center !important;
+  text-align: center !important;
+  isolation: isolate !important;
+  padding: 20px 18px 18px !important;
+  animation: visualStatRise 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--stat-delay, 0ms);
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card::before {
+  opacity: 0.95 !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card::after {
+  content: attr(data-stat-tooltip) !important;
+  position: absolute !important;
+  left: 50% !important;
+  bottom: calc(100% - 10px) !important;
+  z-index: 30 !important;
+  display: block !important;
+  width: min(280px, calc(100% - 20px)) !important;
+  padding: 10px 12px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(7, 134, 154, 0.28) !important;
+  background: #10233d !important;
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  line-height: 1.35 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  box-shadow: 0 18px 38px rgba(15, 32, 48, 0.24) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translate(-50%, 10px) scale(0.96) !important;
+  transition: opacity 0.16s ease, transform 0.16s ease !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card:hover::after {
+  opacity: 1 !important;
+  transform: translate(-50%, 0) scale(1) !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-orbit {
+  --ring-size: clamp(128px, 34vw, 176px);
+  width: var(--ring-size);
+  height: var(--ring-size);
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin: 12px auto 16px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #ffffff 0 32%, transparent 33%),
+    conic-gradient(var(--stat-accent, #07869a) calc(var(--stat-p, 64) * 1%), rgba(213, 233, 243, 0.85) 0);
+  box-shadow:
+    inset 0 0 0 10px rgba(255, 255, 255, 0.76),
+    0 16px 32px rgba(7, 134, 154, 0.14),
+    0 0 0 9px rgba(7, 134, 154, 0.05);
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-orbit::before,
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-orbit::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  inset: 8px;
+  border: 1px solid rgba(7, 134, 154, 0.28);
+  animation: visualStatPulse 2.7s ease-in-out infinite;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-orbit::after {
+  inset: 20px;
+  border-color: rgba(37, 99, 235, 0.18);
+  animation-delay: -1.1s;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-web {
+  position: absolute;
+  inset: 15%;
+  width: 70%;
+  height: 70%;
+  overflow: visible;
+  filter: drop-shadow(0 8px 18px rgba(7, 134, 154, 0.16));
+  animation: visualStatSpin 12s linear infinite;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .web-ring,
+body.admin-redesign.backoffice-body .statistics-modal-body .web-axis,
+body.admin-redesign.backoffice-body .statistics-modal-body .web-shape {
+  fill: none;
+  stroke: var(--stat-accent, #07869a);
+  stroke-width: 2.2;
+  opacity: 0.34;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .web-axis {
+  stroke-width: 1.3;
+  opacity: 0.18;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .web-shape {
+  fill: color-mix(in srgb, var(--stat-accent, #07869a) 18%, transparent);
+  stroke-width: 3;
+  opacity: 0.82;
+  stroke-dasharray: 260;
+  stroke-dashoffset: 260;
+  animation: visualStatDraw 1.4s ease forwards;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-core {
+  z-index: 2;
+  min-width: 72px;
+  min-height: 72px;
+  padding: 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #ffffff, #f4fbfd);
+  color: #10233d;
+  font-size: clamp(19px, 3vw, 28px);
+  font-weight: 950;
+  box-shadow: inset 0 0 0 1px rgba(7, 134, 154, 0.18), 0 10px 24px rgba(15, 60, 90, 0.14);
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-spider .visual-stat-orbit {
+  border-radius: 26%;
+  background:
+    radial-gradient(circle at center, #ffffff 0 28%, transparent 29%),
+    conic-gradient(from 30deg, var(--stat-accent, #2563eb) calc(var(--stat-p, 64) * 1%), rgba(213, 233, 243, 0.9) 0);
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-speed .visual-stat-orbit {
+  background:
+    radial-gradient(circle at center, #ffffff 0 34%, transparent 35%),
+    conic-gradient(from -120deg, var(--stat-accent, #14b8a6) calc(var(--stat-p, 64) * 0.72%), rgba(213, 233, 243, 0.9) 0 72%, transparent 0 100%);
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card .stats-label,
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card .metric-label,
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card.resource-overview-card span,
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card.role-card h6,
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card.kpi-card span {
+  order: -2;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card .stats-value,
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card .metric-value,
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card .role-total,
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card.kpi-card strong,
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card.resource-overview-card strong,
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card .circle-wrap {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card .stats-line,
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card small,
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card p {
+  max-width: 92%;
+  color: #60728a !important;
+  font-weight: 800 !important;
+  line-height: 1.35 !important;
+  text-align: center !important;
+}
+
+@keyframes visualStatRise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes visualStatPulse {
+  0%, 100% {
+    opacity: 0.22;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.52;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes visualStatSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes visualStatDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 @keyframes statisticsGroupIn {

@@ -49,7 +49,7 @@
             <input
               type="text"
               class="form-control"
-              placeholder="Search guardian/patient names, email, phone, blood type, allergies..."
+              placeholder="Search guardian/patient names, email, phone, blood type ..."
               [(ngModel)]="searchTerm"
               (ngModelChange)="onFiltersChanged()"
             />
@@ -95,49 +95,18 @@
                     <td>
                       <span class="count-pill">{{ row.patients.length }}</span>
                     </td>
-                    <td>{{ patientNames(row) }}</td>
                     <td>
-                      <button type="button" class="btn btn-sm btn-light" (click)="toggleRow(row)">
-                        {{ isExpanded(row) ? 'Hide' : 'View' }}
-                      </button>
-                    </td>
-                  </tr>
-                  <tr class="details-row" *ngIf="isExpanded(row)">
-                    <td colspan="6">
-                      <div class="details-card">
-                        <div class="details-title">Linked Patient Profiles</div>
-                        <div class="table-responsive">
-                          <table class="table table-sm align-middle mb-0">
-                            <thead>
-                              <tr>
-                                <th>Patient</th>
-                                <th>Date Of Birth</th>
-                                <th>Sex</th>
-                                <th>Blood Type</th>
-                                <th>Allergies</th>
-                                <th>Chronic Conditions</th>
-                                <th>Medical Notes</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr *ngFor="let patient of row.patients">
-                                <td>{{ patient.firstName }} {{ patient.lastName }}</td>
-                                <td>{{ patient.dateOfBirth }}</td>
-                                <td>{{ patient.sex }}</td>
-                                <td>{{ patient.bloodType || '-' }}</td>
-                                <td>{{ patient.allergies || '-' }}</td>
-                                <td>{{ patient.chronicConditions || '-' }}</td>
-                                <td>{{ patient.medicalNotes || '-' }}</td>
-                              </tr>
-                              <tr *ngIf="row.patients.length === 0">
-                                <td colspan="7" class="text-muted text-center py-2">
-                                  No linked patient profile.
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
+                      <div class="patient-name-list" *ngIf="row.patients.length > 0; else noLinkedPatients">
+                        <span *ngFor="let patient of row.patients">
+                          {{ patient.firstName }} {{ patient.lastName }}
+                        </span>
                       </div>
+                      <ng-template #noLinkedPatients>-</ng-template>
+                    </td>
+                    <td>
+                      <button type="button" class="btn btn-sm btn-light icon-action-btn" (click)="openDetails(row)" data-ui-tooltip="Details" aria-label="Details">
+                        <img src="assets/backoffice/images/banner/details.png" alt="" />
+                      </button>
                     </td>
                   </tr>
                 </ng-container>
@@ -159,8 +128,8 @@
               </select>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
-                Prev
+              <button class="btn btn-sm btn-light pagination-icon-btn" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" data-ui-tooltip="Previous" aria-label="Previous">
+                <img src="assets/backoffice/images/banner/prev.png" alt="" />
               </button>
               <button
                 *ngFor="let p of pageNumbers"
@@ -171,8 +140,8 @@
               >
                 {{ p }}
               </button>
-              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
-                Next
+              <button class="btn btn-sm btn-light pagination-icon-btn" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" data-ui-tooltip="Next" aria-label="Next">
+                <img src="assets/backoffice/images/banner/next.png" alt="" />
               </button>
             </div>
           </div>
@@ -181,6 +150,74 @@
     </div>
   </div>
 </div>
+
+<div class="create-hr-backdrop" *ngIf="detailsRow" (click)="closeDetails()"></div>
+
+<aside
+  class="create-hr-modal guardian-linked-details-modal"
+  [class.open]="!!detailsRow"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Linked patient profiles"
+  [attr.aria-hidden]="detailsRow ? null : 'true'"
+>
+  <div class="create-hr-modal-head">
+    <div>
+      <span class="create-hr-kicker">Guardian</span>
+      <h5>Linked Patient Profiles</h5>
+    </div>
+    <button type="button" class="create-hr-close" (click)="closeDetails()" data-ui-tooltip="Close details" aria-label="Close details">
+      <img src="assets/backoffice/images/banner/close.png" alt="" />
+    </button>
+  </div>
+
+  <div class="create-hr-modal-body" *ngIf="detailsRow as row">
+    <div class="details-card">
+      <div class="details-section mb-3">
+        <div class="details-title">Guardian Information</div>
+        <div class="details-grid">
+          <div><strong>Guardian:</strong> {{ guardianFullName(row.guardian) }}</div>
+          <div><strong>Email:</strong> {{ row.guardian.email || '-' }}</div>
+          <div><strong>Phone:</strong> {{ row.guardian.phone || '-' }}</div>
+          <div><strong>Linked Profiles:</strong> {{ row.patients.length }}</div>
+        </div>
+      </div>
+
+      <div class="details-title">Linked Patient Profiles</div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>Date Of Birth</th>
+              <th>Sex</th>
+              <th>Blood Type</th>
+              <th>Allergies</th>
+              <th>Chronic Conditions</th>
+              <th>Medical Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let patient of row.patients">
+              <td>{{ patient.firstName }} {{ patient.lastName }}</td>
+              <td>{{ patient.dateOfBirth }}</td>
+              <td>{{ patient.sex }}</td>
+              <td>{{ patient.bloodType || '-' }}</td>
+              <td>{{ patient.allergies || '-' }}</td>
+              <td>{{ patient.chronicConditions || '-' }}</td>
+              <td>{{ patient.medicalNotes || '-' }}</td>
+            </tr>
+            <tr *ngIf="row.patients.length === 0">
+              <td colspan="7" class="text-muted text-center py-2">
+                No linked patient profile.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</aside>
 
 
 

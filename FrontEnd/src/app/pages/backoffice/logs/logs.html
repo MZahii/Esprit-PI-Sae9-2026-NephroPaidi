@@ -18,9 +18,13 @@
         <h5 class="card-title mb-1">System Activity Report</h5>
         <div class="logs-subtitle">Grouped by user to reduce scrolling and improve supervision.</div>
       </div>
-      <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-light" type="button" (click)="printLogs()">Print Report</button>
-        <button class="btn btn-sm btn-primary" type="button" (click)="downloadPdf()">Export PDF</button>
+      <div class="report-actions">
+        <button class="icon-command" type="button" (click)="printLogs()" data-ui-tooltip="Print Report" aria-label="Print Report">
+          <img src="assets/backoffice/images/auth/print.png" alt="" />
+        </button>
+        <button class="icon-command" type="button" (click)="downloadPdf()" data-ui-tooltip="Export PDF" aria-label="Export PDF">
+          <img src="assets/backoffice/images/auth/pdf.png" alt="" />
+        </button>
       </div>
     </div>
 
@@ -55,10 +59,14 @@
               <span class="group-pill">{{ group.totalLogs }} events</span>
               <span class="group-pill source-account">{{ group.accountLogs }} account</span>
               <span class="group-pill source-contract">{{ group.contractLogs }} contract</span>
-              <button class="btn btn-xs btn-light" type="button" (click)="printUserLogs(group, $event)">Print User</button>
-              <button class="btn btn-xs btn-primary" type="button" (click)="exportUserPdf(group, $event)">PDF User</button>
-              <button class="btn btn-xs btn-outline-primary" type="button" (click)="toggleGroup(group.key)">
-                {{ isGroupExpanded(group.key) ? 'Hide Details' : 'Show Details' }}
+              <button class="icon-command icon-command--small" type="button" (click)="printUserLogs(group, $event)" data-ui-tooltip="Print User" aria-label="Print User">
+                <img src="assets/backoffice/images/auth/print.png" alt="" />
+              </button>
+              <button class="icon-command icon-command--small" type="button" (click)="exportUserPdf(group, $event)" data-ui-tooltip="Export User PDF" aria-label="Export User PDF">
+                <img src="assets/backoffice/images/auth/pdf.png" alt="" />
+              </button>
+              <button class="icon-command icon-command--small" type="button" (click)="toggleGroup(group.key)" [attr.data-ui-tooltip]="isGroupExpanded(group.key) ? 'Hide Details' : 'Show Details'" [attr.aria-label]="isGroupExpanded(group.key) ? 'Hide Details' : 'Show Details'">
+                <img [src]="isGroupExpanded(group.key) ? 'assets/backoffice/images/banner/hide.png' : 'assets/backoffice/images/banner/show.png'" alt="" />
               </button>
             </div>
           </header>
@@ -115,7 +123,9 @@
           >
             <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
           </select>
-          <button class="btn btn-sm btn-light" type="button" (click)="previousPage()" [disabled]="currentPage === 1">Prev</button>
+          <button class="icon-command icon-command--page" type="button" (click)="previousPage()" [disabled]="currentPage === 1" data-ui-tooltip="Previous Page" aria-label="Previous Page">
+            <img src="assets/backoffice/images/banner/prev.png" alt="" />
+          </button>
           <button
             type="button"
             class="btn btn-sm"
@@ -126,7 +136,9 @@
           >
             {{ page }}
           </button>
-          <button class="btn btn-sm btn-light" type="button" (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+          <button class="icon-command icon-command--page" type="button" (click)="nextPage()" [disabled]="currentPage === totalPages" data-ui-tooltip="Next Page" aria-label="Next Page">
+            <img src="assets/backoffice/images/banner/next.png" alt="" />
+          </button>
         </div>
       </div>
     </div>

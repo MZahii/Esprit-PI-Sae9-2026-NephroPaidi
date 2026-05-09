@@ -10,10 +10,6 @@
 
     <div class="navbar-content">
       <ul class="nxl-navbar">
-        <li class="nxl-item nxl-caption">
-          <label>Navigation</label>
-        </li>
-
         <ng-container *ngFor="let item of navigationItems">
           <!-- SIMPLE LINK -->
           <li
@@ -22,7 +18,7 @@
             routerLinkActive="active"
             [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
           >
-            <a [routerLink]="item.route!" class="nxl-link">
+            <a [routerLink]="item.route!" [queryParams]="item.queryParams" class="nxl-link">
               <span class="nxl-micon"><i [class]="item.icon"></i></span>
               <span class="nxl-mtext">{{ item.label }}</span>
             </a>
@@ -82,6 +78,13 @@
         </ng-container>
       </ul>
     </div>
+
+    <div class="sidebar-footer">
+      <button type="button" class="sidebar-logout-btn" (click)="onLogout()">
+        <img src="assets/backoffice/images/banner/logout.png" alt="" />
+        <span>Logout</span>
+      </button>
+    </div>
   </div>
 </nav>
 
@@ -108,6 +111,26 @@
 
     <div class="header-right ms-auto">
       <div class="header-actions">
+        <div class="messages-menu" *ngIf="canUseInternalStaffMessaging" [class.open]="messagesOpen">
+          <button
+            type="button"
+            class="messages-trigger"
+            (click)="toggleMessages($event)"
+            data-ui-tooltip="Internal Staff Messaging"
+            aria-label="Internal Staff Messaging"
+          >
+            <img
+              src="assets/backoffice/images/icons/message.png"
+              alt="Internal staff messaging"
+              class="header-action-img"
+            />
+          </button>
+
+          <div class="messages-dropdown" *ngIf="messagesOpen">
+            <app-internal-staff-messaging [compactMode]="true"></app-internal-staff-messaging>
+          </div>
+        </div>
+
         <div class="notifications-menu" [class.open]="notificationsOpen">
           <button
             type="button"
@@ -115,7 +138,8 @@
             [class.has-unread]="unreadCount > 0"
             [class.glow]="hasNewNotificationPulse"
             (click)="toggleNotifications($event)"
-            title="Notifications"
+            data-ui-tooltip="Notifications"
+            aria-label="Notifications"
           >
             <img
               src="assets/frontoffice/img/notification.png"
@@ -127,7 +151,10 @@
 
           <div class="notifications-dropdown" *ngIf="notificationsOpen">
             <div class="notifications-head">
-              <h6 class="mb-0">Notifications</h6>
+              <div class="notifications-title">
+                <img src="assets/frontoffice/img/notification.png" alt="" />
+                <h6 class="mb-0">Notifications</h6>
+              </div>
               <small class="text-muted">{{ unreadCount }} unread</small>
             </div>
 
@@ -152,25 +179,6 @@
                 No notifications yet.
               </div>
             </div>
-          </div>
-        </div>
-
-        <div class="messages-menu" *ngIf="canUseInternalStaffMessaging" [class.open]="messagesOpen">
-          <button
-            type="button"
-            class="messages-trigger"
-            (click)="toggleMessages($event)"
-            title="Internal Staff Messaging"
-          >
-            <img
-              src="assets/backoffice/images/icons/message.png"
-              alt="Internal staff messaging"
-              class="header-action-img"
-            />
-          </button>
-
-          <div class="messages-dropdown" *ngIf="messagesOpen">
-            <app-internal-staff-messaging [compactMode]="true"></app-internal-staff-messaging>
           </div>
         </div>
 
@@ -210,7 +218,7 @@
               routerLink="/backoffice/logs-center"
               (click)="userMenuOpen = false"
             >
-              <i class="feather-activity"></i>
+              <img class="user-menu-item-icon" src="assets/backoffice/images/banner/logs.png" alt="" />
               <div>
                 <span>Logs</span>
                 <small>Audit and clinical activity logs</small>
@@ -223,7 +231,7 @@
               routerLink="/backoffice/my-contract"
               (click)="userMenuOpen = false"
             >
-              <i class="feather-file-text"></i>
+              <img class="user-menu-item-icon" src="assets/backoffice/images/banner/logs.png" alt="" />
               <div>
                 <span>My Contract</span>
                 <small>View your contract details</small>
@@ -235,7 +243,7 @@
               routerLink="/backoffice/account-settings"
               (click)="userMenuOpen = false"
             >
-              <i class="feather-settings"></i>
+              <img class="user-menu-item-icon" src="assets/backoffice/images/banner/settings.png" alt="" />
               <div>
                 <span>Account Settings</span>
                 <small>Manage your profile, security, and preferences</small>
@@ -243,7 +251,7 @@
             </a>
 
             <button type="button" class="user-menu-item logout-item" (click)="onLogout()">
-              <i class="feather-log-out"></i>
+              <img class="user-menu-item-icon" src="assets/backoffice/images/banner/logout.png" alt="" />
               <div>
                 <span>Logout</span>
                 <small>Sign out from backoffice</small>
@@ -259,15 +267,27 @@
 <!-- MAIN CONTENT -->
 <main class="nxl-container">
   <div class="nxl-content">
-    <div class="page-statistics-tools" *ngIf="hasPageStats">
+    <div class="page-statistics-tools" *ngIf="showPageToolsShell">
       <button
+        *ngIf="showCreateHrTool"
+        type="button"
+        class="create-hr-trigger"
+        (click)="openCreateHrPanel($event)"
+        data-ui-tooltip="Create HR Account"
+        aria-label="Create HR Account"
+      >
+        <img class="tool-button-icon" src="assets/backoffice/images/auth/addHr.png" alt="" />
+      </button>
+
+      <button
+        *ngIf="hasPageStats"
         type="button"
         class="statistics-trigger"
         (click)="openStatsPanel($event)"
-        title="Statistics"
+        data-ui-tooltip="Statistics"
+        aria-label="Statistics"
       >
-        <i class="feather-bar-chart-2"></i>
-        <span>Statistics</span>
+        <img class="tool-button-icon" src="assets/backoffice/images/auth/stat.png" alt="" />
       </button>
     </div>
 
@@ -276,21 +296,20 @@
 
   <!-- FOOTER -->
   <footer class="footer">
-    <p class="fs-11 text-muted fw-medium text-uppercase mb-0 copyright">
-      <span>Copyright ©</span>
-      <span>2026</span>
-    </p>
-
-    <p>
-      <span>
+    <div class="footer-brand">
+      <span class="footer-mark">NP</span>
+      <div>
+        <p class="footer-title">
         {{ isAdmin ? 'NephrosPaidi Admin Dashboard' : isHr ? 'NephrosPaidi HR Dashboard' : isPharmacist ? 'NephrosPaidi Pharmacy Workspace' : isSurgeon ? 'NephrosPaidi Procedure Dashboard' : isLabAgent ? 'NephrosPaidi Lab Workflow' : 'NephrosPaidi Backoffice' }}
-      </span>
-    </p>
+        </p>
+        <p class="footer-copy">Copyright &copy; 2026</p>
+      </div>
+    </div>
 
-    <div class="d-flex align-items-center gap-4">
-      <a href="#" class="fs-11 fw-semibold text-uppercase">Help</a>
-      <a href="#" class="fs-11 fw-semibold text-uppercase">Terms</a>
-      <a href="#" class="fs-11 fw-semibold text-uppercase">Privacy</a>
+    <div class="footer-links">
+      <a href="#">Help</a>
+      <a href="#">Terms</a>
+      <a href="#">Privacy</a>
     </div>
   </footer>
 </main>
@@ -310,9 +329,96 @@
       <span class="statistics-kicker">Page overview</span>
       <h5>Statistics</h5>
     </div>
-    <button type="button" class="statistics-close" (click)="closeStatsPanel()" title="Close statistics">
-      <i class="feather-x"></i>
+    <button type="button" class="statistics-close" (click)="closeStatsPanel()" data-ui-tooltip="Close statistics" aria-label="Close statistics">
+      <img src="assets/backoffice/images/banner/close.png" alt="" />
     </button>
   </div>
   <div class="statistics-modal-body"></div>
+</aside>
+
+<div class="create-hr-backdrop" *ngIf="staffDetailsPanelOpen" (click)="closeStaffDetailsPanel()"></div>
+
+<aside
+  class="create-hr-modal staff-details-modal"
+  [class.open]="staffDetailsPanelOpen"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Staff Details"
+  [attr.aria-hidden]="staffDetailsPanelOpen ? null : 'true'"
+>
+  <div class="create-hr-modal-head">
+    <div>
+      <span class="create-hr-kicker">Profile</span>
+      <h5>Staff Details</h5>
+    </div>
+    <button type="button" class="create-hr-close" (click)="closeStaffDetailsPanel()" data-ui-tooltip="Close staff details" aria-label="Close staff details">
+      <img src="assets/backoffice/images/banner/close.png" alt="" />
+    </button>
+  </div>
+
+  <div class="create-hr-modal-body">
+    <app-staff-user-details
+      *ngIf="staffDetailsPanelOpen && staffDetailsUserId"
+      [modalMode]="true"
+      [userId]="staffDetailsUserId"
+      (closeModal)="closeStaffDetailsPanel()"
+    ></app-staff-user-details>
+  </div>
+</aside>
+
+<div class="create-hr-backdrop" *ngIf="createHrPanelOpen" (click)="closeCreateHrPanel()"></div>
+
+<aside
+  class="create-hr-modal"
+  [class.open]="createHrPanelOpen"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Create HR Account"
+  [attr.aria-hidden]="createHrPanelOpen ? null : 'true'"
+>
+  <div class="create-hr-modal-head">
+    <div>
+      <span class="create-hr-kicker">Accounts</span>
+      <h5>Create HR Account</h5>
+    </div>
+    <button type="button" class="create-hr-close" (click)="closeCreateHrPanel()" data-ui-tooltip="Close create HR account" aria-label="Close create HR account">
+      <img src="assets/backoffice/images/banner/close.png" alt="" />
+    </button>
+  </div>
+
+  <div class="create-hr-modal-body">
+    <app-create-hr
+      [modalMode]="true"
+      (closeModal)="closeCreateHrPanel()"
+    ></app-create-hr>
+  </div>
+</aside>
+
+<div class="create-hr-backdrop" *ngIf="createContractPanelOpen" (click)="closeCreateContractPanel()"></div>
+
+<aside
+  class="create-hr-modal create-contract-modal"
+  [class.open]="createContractPanelOpen"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Create Contract"
+  [attr.aria-hidden]="createContractPanelOpen ? null : 'true'"
+>
+  <div class="create-hr-modal-head">
+    <div>
+      <span class="create-hr-kicker">Contracts</span>
+      <h5>Create Contract</h5>
+    </div>
+    <button type="button" class="create-hr-close" (click)="closeCreateContractPanel()" data-ui-tooltip="Close create contract" aria-label="Close create contract">
+      <img src="assets/backoffice/images/banner/close.png" alt="" />
+    </button>
+  </div>
+
+  <div class="create-hr-modal-body">
+    <app-create-contract
+      *ngIf="createContractPanelOpen"
+      [modalMode]="true"
+      (closeModal)="closeCreateContractPanel()"
+    ></app-create-contract>
+  </div>
 </aside>

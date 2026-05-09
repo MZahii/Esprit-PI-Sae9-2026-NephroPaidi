@@ -15,21 +15,19 @@
   <section class="card stretch stretch-full panel-card">
     <div class="card-header panel-head">
       <h5 class="card-title mb-0">Clinical Service Trace</h5>
-      <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-light" type="button" (click)="printLogs()">Print Report</button>
-        <button class="btn btn-sm btn-primary" type="button" (click)="exportPdf()">Export PDF</button>
+      <div class="report-actions">
+        <button class="icon-command" type="button" (click)="printLogs()" data-ui-tooltip="Print Report" aria-label="Print Report">
+          <img src="assets/backoffice/images/auth/print.png" alt="" />
+        </button>
+        <button class="icon-command" type="button" (click)="exportPdf()" data-ui-tooltip="Export PDF" aria-label="Export PDF">
+          <img src="assets/backoffice/images/auth/pdf.png" alt="" />
+        </button>
       </div>
     </div>
 
     <div class="card-body">
       <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
       <div *ngIf="loading" class="text-muted py-3">Loading logs...</div>
-
-      <div class="kpi-grid mb-3" *ngIf="!loading">
-        <article class="kpi-card"><span>Total Events</span><strong>{{ filteredLogs.length }}</strong></article>
-        <article class="kpi-card"><span>Unique Actions</span><strong>{{ uniqueActionsCount }}</strong></article>
-        <article class="kpi-card"><span>Entity Types</span><strong>{{ uniqueEntityTypesCount }}</strong></article>
-      </div>
 
       <div class="filters mb-3" *ngIf="!loading">
         <input
@@ -72,8 +70,8 @@
           </select>
         </div>
         <div class="d-flex align-items-center gap-2">
-          <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
-            Prev
+          <button class="icon-command icon-command--page" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" data-ui-tooltip="Previous Page" aria-label="Previous Page">
+            <img src="assets/backoffice/images/banner/prev.png" alt="" />
           </button>
           <button
             *ngFor="let p of pageNumbers"
@@ -84,8 +82,8 @@
           >
             {{ p }}
           </button>
-          <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
-            Next
+          <button class="icon-command icon-command--page" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" data-ui-tooltip="Next Page" aria-label="Next Page">
+            <img src="assets/backoffice/images/banner/next.png" alt="" />
           </button>
         </div>
       </div>

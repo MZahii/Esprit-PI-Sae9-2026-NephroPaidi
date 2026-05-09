@@ -124,13 +124,15 @@
                 </span>
               </td>
               <td>
-                <a
-                  class="btn btn-sm btn-light"
-                  [routerLink]="['/backoffice/staff', user.id]"
-                  [queryParams]="{ returnTo: 'staff-details' }"
+                <button
+                  type="button"
+                  class="btn btn-sm btn-light icon-action-btn"
+                  (click)="openStaffDetailsPanel($event, user.id)"
+                  data-ui-tooltip="Details"
+                  aria-label="Details"
                 >
-                  Details
-                </a>
+                  <img src="assets/backoffice/images/banner/details.png" alt="" />
+                </button>
               </td>
             </tr>
             <tr *ngIf="paginatedStaff.length === 0">
@@ -151,7 +153,9 @@
         </div>
 
         <div class="pagination-controls" *ngIf="totalPages > 1">
-          <button class="btn btn-sm btn-light" (click)="previousPage()" [disabled]="currentPage === 1">Prev</button>
+          <button class="btn btn-sm btn-light pagination-icon-btn" (click)="previousPage()" [disabled]="currentPage === 1" data-ui-tooltip="Previous" aria-label="Previous">
+            <img src="assets/backoffice/images/banner/prev.png" alt="" />
+          </button>
           <button
             class="btn btn-sm"
             *ngFor="let page of pageNumbers"
@@ -160,7 +164,9 @@
           >
             {{ page }}
           </button>
-          <button class="btn btn-sm btn-light" (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+          <button class="btn btn-sm btn-light pagination-icon-btn" (click)="nextPage()" [disabled]="currentPage === totalPages" data-ui-tooltip="Next" aria-label="Next">
+            <img src="assets/backoffice/images/banner/next.png" alt="" />
+          </button>
         </div>
       </div>
     </div>

@@ -221,15 +221,17 @@
               </div>
 
               <div class="expiring-card-actions">
-                <span class="badge bg-light text-dark">{{ contract.status }}</span>
-                  <a
+                <span class="status-pill" [ngClass]="'badge-' + contract.status.toLowerCase()">{{ contract.status }}</span>
+                  <button
                     *ngIf="canOpenExpiringAccounts"
-                    class="btn btn-sm btn-light-brand"
-                    [routerLink]="['/backoffice/staff', contract.staffUserId]"
-                    [queryParams]="{ returnTo: 'contracts' }"
+                    type="button"
+                    class="btn btn-sm btn-light-brand icon-action-btn"
+                    (click)="openStaffDetailsPanel($event, contract.staffUserId)"
+                    data-ui-tooltip="Details"
+                    aria-label="Details"
                   >
-                    Open Account
-                  </a>
+                    <img src="assets/backoffice/images/banner/details.png" alt="" />
+                  </button>
               </div>
             </div>
           </div>

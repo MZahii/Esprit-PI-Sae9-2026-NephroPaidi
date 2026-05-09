@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -59,7 +59,7 @@ export class ContractsList implements OnInit, OnDestroy {
   searchTerm = '';
   statusFilter: ContractStatus | 'ALL' = 'ALL';
   roleFilter: 'ALL' | 'HR' | 'DOCTOR' | 'NURSE' | 'SURGEON' | 'PHARMACIST' | 'RECEPTIONIST' | 'LAB_AGENT' = 'ALL';
-  pageSize = 10;
+  pageSize = 5;
   currentPage = 1;
   sortField: 'name' | 'startDate' | 'endDate' = 'name';
   sortDirection: 'asc' | 'desc' = 'desc';
@@ -78,6 +78,28 @@ export class ContractsList implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private documentExportService: DocumentExportService
   ) {}
+
+  openCreateContractPanel(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    window.dispatchEvent(new CustomEvent('open-create-contract-panel'));
+  }
+
+  openStaffDetailsPanel(event: MouseEvent, userId: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    window.dispatchEvent(new CustomEvent('open-staff-details-panel', {
+      detail: { userId }
+    }));
+  }
+
+  @HostListener('window:contract-created', ['$event'])
+  async onContractCreated(event: Event): Promise<void> {
+    const detail = (event as CustomEvent<{ message?: string }>).detail;
+    this.actionMessage = detail?.message ?? 'The contract was created successfully.';
+    await this.loadContracts();
+    this.cdr.detectChanges();
+  }
 
   ngOnInit(): void {
     this.role = this.authStorage.getRole() ?? '';

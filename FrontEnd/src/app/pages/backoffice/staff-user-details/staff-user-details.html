@@ -17,7 +17,20 @@
       <div class="card stretch stretch-full">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
           <h5 class="card-title mb-0">Profile</h5>
-          <a class="btn btn-sm btn-light" [routerLink]="backRoute">{{ backLabel }}</a>
+          <div class="icon-action-row">
+            <button
+              type="button"
+              class="btn btn-sm btn-light icon-action-btn"
+              (click)="openProfileStats($event)"
+              data-ui-tooltip="Statistics"
+              aria-label="Statistics"
+            >
+              <img src="assets/backoffice/images/auth/stat.png" alt="" />
+            </button>
+            <a *ngIf="!modalMode" class="btn btn-sm btn-light icon-action-btn" [routerLink]="backRoute" [attr.data-ui-tooltip]="backLabel" [attr.aria-label]="backLabel">
+              <img src="assets/backoffice/images/auth/back.png" alt="" />
+            </a>
+          </div>
         </div>
 
         <div class="card-body">
@@ -31,63 +44,51 @@
           <div *ngIf="loading" class="text-muted py-3">Loading user details...</div>
 
           <ng-container *ngIf="!loading && user">
-            <div class="stats-grid mb-4">
-              <div class="stats-card">
-                <div class="stats-label">Profile Completeness</div>
-                <div class="stats-value">{{ profileCompleteness }}%</div>
-              </div>
-              <div class="stats-card">
-                <div class="stats-label">Active Contracts</div>
-                <div class="stats-value">{{ activeContractCount }}</div>
-                <div class="stats-line">Historical/ended: {{ endedContractCount }}</div>
-              </div>
-              <div class="stats-card">
-                <div class="stats-label">Latest Contract State</div>
-                <div class="stats-value">{{ latestContractStatus }}</div>
-              </div>
-              <div class="stats-card">
-                <div class="stats-label">Audit Events</div>
-                <div class="stats-value">{{ auditEventCount }}</div>
-              </div>
-            </div>
-
             <div class="d-flex justify-content-between align-items-center mb-3">
               <h6 class="mb-0">User Profile</h6>
-              <div class="d-flex gap-2">
+              <div class="icon-action-row">
                 <button
                   *ngIf="canEditProfile && !editProfile"
                   type="button"
-                  class="btn btn-sm btn-light-brand"
+                  class="btn btn-sm btn-light-brand icon-action-btn"
                   (click)="startProfileEdit()"
+                  data-ui-tooltip="Edit Profile"
+                  aria-label="Edit Profile"
                 >
-                  Edit Profile
+                  <img src="assets/backoffice/images/banner/edit.png" alt="" />
                 </button>
                 <button
                   *ngIf="canToggleAccountStatus"
                   type="button"
-                  class="btn btn-sm btn-light"
+                  class="btn btn-sm btn-light icon-action-btn"
                   [disabled]="lifecycleLoading || !!user.deleted"
                   (click)="toggleUserAccountStatus()"
+                  [attr.data-ui-tooltip]="user.accountStatus === 'INACTIVE' ? 'Activate Account' : 'Deactivate Account'"
+                  [attr.aria-label]="user.accountStatus === 'INACTIVE' ? 'Activate Account' : 'Deactivate Account'"
                 >
-                  {{ user.accountStatus === 'INACTIVE' ? 'Activate Account' : 'Deactivate Account' }}
+                  <img [src]="user.accountStatus === 'INACTIVE' ? 'assets/backoffice/images/banner/restore.png' : 'assets/backoffice/images/banner/desactive.png'" alt="" />
                 </button>
                 <button
                   *ngIf="canArchiveUser"
                   type="button"
-                  class="btn btn-sm btn-outline-danger"
+                  class="btn btn-sm btn-outline-danger icon-action-btn"
                   [disabled]="lifecycleLoading"
                   (click)="softDeleteUser()"
+                  data-ui-tooltip="Archive User"
+                  aria-label="Archive User"
                 >
-                  Archive User
+                  <img src="assets/backoffice/images/banner/archive.png" alt="" />
                 </button>
                 <button
                   *ngIf="canRestoreUser"
                   type="button"
-                  class="btn btn-sm btn-outline-success"
+                  class="btn btn-sm btn-outline-success icon-action-btn"
                   [disabled]="lifecycleLoading"
                   (click)="restoreUser()"
+                  data-ui-tooltip="Restore User"
+                  aria-label="Restore User"
                 >
-                  Restore User
+                  <img src="assets/backoffice/images/banner/restore.png" alt="" />
                 </button>
               </div>
             </div>
@@ -104,7 +105,6 @@
               <div><strong>Full Name:</strong> {{ fullName }}</div>
               <div><strong>Email:</strong> {{ user.email || '-' }}</div>
               <div><strong>Phone:</strong> {{ user.phone || '-' }}</div>
-              <div><strong>Avatar URL:</strong> {{ user.avatarUrl || '-' }}</div>
               <div><strong>Date Of Birth:</strong> {{ user.dateOfBirth || '-' }}</div>
               <div><strong>Sex:</strong> {{ user.sex || '-' }}</div>
               <div><strong>Role:</strong> {{ user.role }}</div>
@@ -124,10 +124,6 @@
                 <input class="form-control" [(ngModel)]="profileForm.email" />
               </div>
               <div>
-                <label class="form-label">Avatar URL</label>
-                <input class="form-control" type="url" [(ngModel)]="profileForm.avatarUrl" placeholder="https://example.com/photo.jpg" />
-              </div>
-              <div>
                 <label class="form-label">Date Of Birth</label>
                 <input class="form-control" type="date" [(ngModel)]="profileForm.dateOfBirth" />
               </div>
@@ -139,12 +135,12 @@
               </div>
             </div>
 
-            <div class="d-flex gap-2 mb-4" *ngIf="editProfile">
-              <button class="btn btn-primary btn-sm" type="button" [disabled]="savingProfile" (click)="saveProfile()">
-                {{ savingProfile ? 'Saving...' : 'Save Profile' }}
+            <div class="icon-action-row mb-4" *ngIf="editProfile">
+              <button class="btn btn-primary btn-sm icon-action-btn" type="button" [disabled]="savingProfile" (click)="saveProfile()" [attr.data-ui-tooltip]="savingProfile ? 'Saving' : 'Save Profile'" [attr.aria-label]="savingProfile ? 'Saving' : 'Save Profile'">
+                <img src="assets/backoffice/images/auth/send.png" alt="" />
               </button>
-              <button class="btn btn-light btn-sm" type="button" [disabled]="savingProfile" (click)="cancelProfileEdit()">
-                Cancel
+              <button class="btn btn-light btn-sm icon-action-btn" type="button" [disabled]="savingProfile" (click)="cancelProfileEdit()" data-ui-tooltip="Cancel" aria-label="Cancel">
+                <img src="assets/backoffice/images/auth/back.png" alt="" />
               </button>
             </div>
 
@@ -156,8 +152,8 @@
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                   <div class="contract-title"><strong>Contract</strong></div>
                   <div class="d-flex gap-2">
-                    <span class="badge bg-light text-dark">{{ contract.contractType }}</span>
-                    <span class="badge bg-light text-dark">{{ contract.status }}</span>
+                    <span class="status-pill contract-chip">{{ contract.contractType }}</span>
+                    <span class="status-pill" [ngClass]="'badge-' + contract.status.toLowerCase()">{{ contract.status }}</span>
                   </div>
                 </div>
 
@@ -211,129 +207,69 @@
                   </div>
                 </div>
 
-            <div class="d-flex gap-2 mt-3" *ngIf="canManageContracts">
+            <div class="icon-action-row mt-3" *ngIf="canManageContracts">
                   <button
                     *ngIf="editingContractId !== contract.id"
-                    class="btn btn-sm btn-light-brand"
+                    class="btn btn-sm btn-light-brand icon-action-btn"
                     type="button"
                     (click)="startContractEdit(contract)"
+                    data-ui-tooltip="Edit Contract"
+                    aria-label="Edit Contract"
                   >
-                    Edit Contract
+                    <img src="assets/backoffice/images/banner/edit.png" alt="" />
                   </button>
                   <button
                     *ngIf="editingContractId !== contract.id && contract.status === 'ACTIVE'"
-                    class="btn btn-sm btn-light-brand"
+                    class="btn btn-sm btn-light-brand icon-action-btn"
                     type="button"
                     (click)="runContractAction(contract.id, 'suspend')"
+                    data-ui-tooltip="Suspend"
+                    aria-label="Suspend"
                   >
-                    Suspend
+                    <img src="assets/backoffice/images/banner/suspend.png" alt="" />
                   </button>
                   <button
                     *ngIf="editingContractId !== contract.id && contract.status === 'SUSPENDED'"
-                    class="btn btn-sm btn-light-brand"
+                    class="btn btn-sm btn-light-brand icon-action-btn"
                     type="button"
                     (click)="runContractAction(contract.id, 'resume')"
+                    data-ui-tooltip="Resume"
+                    aria-label="Resume"
                   >
-                    Resume
+                    <img src="assets/backoffice/images/banner/restore.png" alt="" />
                   </button>
                   <button
                     *ngIf="editingContractId !== contract.id && (contract.status === 'ACTIVE' || contract.status === 'SUSPENDED')"
-                    class="btn btn-sm btn-light"
+                    class="btn btn-sm btn-light icon-action-btn"
                     type="button"
                     (click)="runContractAction(contract.id, 'end')"
+                    data-ui-tooltip="End"
+                    aria-label="End"
                   >
-                    End
+                    <img src="assets/backoffice/images/banner/end.png" alt="" />
                   </button>
                   <button
                     *ngIf="editingContractId === contract.id"
-                    class="btn btn-sm btn-primary"
+                    class="btn btn-sm btn-primary icon-action-btn"
                     type="button"
                     [disabled]="savingContractId === contract.id"
                     (click)="saveContract(contract.id)"
+                    [attr.data-ui-tooltip]="savingContractId === contract.id ? 'Saving' : 'Save Contract'"
+                    [attr.aria-label]="savingContractId === contract.id ? 'Saving' : 'Save Contract'"
                   >
-                    {{ savingContractId === contract.id ? 'Saving...' : 'Save Contract' }}
+                    <img src="assets/backoffice/images/auth/send.png" alt="" />
                   </button>
                   <button
                     *ngIf="editingContractId === contract.id"
-                    class="btn btn-sm btn-light"
+                    class="btn btn-sm btn-light icon-action-btn"
                     type="button"
                     [disabled]="savingContractId === contract.id"
                     (click)="cancelContractEdit()"
+                    data-ui-tooltip="Cancel"
+                    aria-label="Cancel"
                   >
-                    Cancel
+                    <img src="assets/backoffice/images/auth/back.png" alt="" />
                   </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="audit-section mt-4" *ngIf="canViewAudit">
-              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                <div>
-                  <h6 class="mb-1">User Audit Trail</h6>
-                  <div class="text-muted small">
-                    Review account lifecycle and profile changes recorded for this user.
-                  </div>
-                </div>
-                <span class="badge bg-soft-primary text-primary">
-                  {{ filteredAuditLogs.length }} visible
-                </span>
-              </div>
-
-              <div class="audit-filters mb-3">
-                <input
-                  type="text"
-                  class="form-control"
-                  placeholder="Search by action, actor, field change, or timestamp..."
-                  [(ngModel)]="auditSearch"
-                  (ngModelChange)="onAuditFiltersChanged()"
-                />
-                <select class="form-control" [(ngModel)]="auditActionFilter" (ngModelChange)="onAuditFiltersChanged()">
-                  <option value="ALL">All Actions</option>
-                  <option *ngFor="let action of auditActions" [value]="action">{{ action }}</option>
-                </select>
-              </div>
-
-              <div *ngIf="auditLoading" class="text-muted py-3">Loading audit trail...</div>
-
-              <div class="audit-list" *ngIf="!auditLoading">
-                <div *ngIf="filteredAuditLogs.length === 0" class="text-muted">
-                  No user audit records match the current filters.
-                </div>
-
-                <div class="audit-card" *ngFor="let log of filteredAuditLogs">
-                  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
-                    <div>
-                      <div class="audit-action">{{ log.action }}</div>
-                      <div class="audit-meta">
-                        {{ log.createdAt | date:'yyyy-MM-dd HH:mm:ss' }} | Actor: {{ log.actor || '-' }}
-                      </div>
-                    </div>
-                    <span class="badge bg-light text-dark">User #{{ log.userId }}</span>
-                  </div>
-
-                  <ng-container *ngIf="getChangedFields(log).length > 0; else rawAuditDetails">
-                    <div class="diff-list">
-                      <div class="diff-item" *ngFor="let diff of getChangedFields(log)">
-                        <div class="diff-field">{{ diff.field }}</div>
-                        <div class="diff-values">
-                          <span class="diff-old">{{ diff.oldValue }}</span>
-                          <span class="diff-arrow">-></span>
-                          <span class="diff-new">{{ diff.newValue }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </ng-container>
-
-                  <ng-template #rawAuditDetails>
-                    <div *ngIf="hasParsedAuditDetails(log)" class="text-muted">No field-level change captured.</div>
-                    <div *ngIf="!hasParsedAuditDetails(log) && hasRawAuditDetails(log)" class="raw-details">
-                      <div><strong>Old:</strong> {{ getRawOld(log) }}</div>
-                      <div><strong>New:</strong> {{ getRawNew(log) }}</div>
-                    </div>
-                    <div *ngIf="!hasParsedAuditDetails(log) && !hasRawAuditDetails(log)" class="text-muted">
-                      No field changes captured.
-                    </div>
-                  </ng-template>
                 </div>
               </div>
             </div>
@@ -344,5 +280,44 @@
     </div>
   </div>
 </div>
+
+<div class="statistics-backdrop staff-profile-statistics-backdrop" *ngIf="profileStatsOpen" (click)="closeProfileStats()"></div>
+
+<aside
+  class="statistics-modal staff-profile-statistics-modal"
+  [class.open]="profileStatsOpen"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Profile statistics"
+  [attr.aria-hidden]="profileStatsOpen ? null : 'true'"
+>
+  <div class="statistics-modal-head">
+    <div>
+      <span class="statistics-kicker">Profile overview</span>
+      <h5>Statistics</h5>
+    </div>
+    <button type="button" class="statistics-close" (click)="closeProfileStats()" data-ui-tooltip="Close statistics" aria-label="Close statistics">
+      <img src="assets/backoffice/images/banner/close.png" alt="" />
+    </button>
+  </div>
+
+  <div class="statistics-modal-body">
+    <div class="stats-grid" *ngIf="user">
+      <div class="stats-card">
+        <div class="stats-label">Profile Completeness</div>
+        <div class="stats-value">{{ profileCompleteness }}%</div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-label">Active Contracts</div>
+        <div class="stats-value">{{ activeContractCount }}</div>
+        <div class="stats-line">Historical/ended: {{ endedContractCount }}</div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-label">Latest Contract State</div>
+        <div class="stats-value">{{ latestContractStatus }}</div>
+      </div>
+    </div>
+  </div>
+</aside>
 
 

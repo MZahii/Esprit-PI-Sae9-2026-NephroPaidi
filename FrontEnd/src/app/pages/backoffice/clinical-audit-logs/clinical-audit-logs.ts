@@ -34,8 +34,8 @@ export class ClinicalAuditLogsComponent implements OnInit {
   actionFilter = 'ALL';
   logs: ClinicalAuditEvent[] = [];
   currentPage = 1;
-  pageSize = 20;
-  readonly pageSizeOptions = [10, 20, 50];
+  pageSize = 5;
+  readonly pageSizeOptions = [5, 10, 20, 50];
 
   async ngOnInit(): Promise<void> {
     await this.loadLogs();

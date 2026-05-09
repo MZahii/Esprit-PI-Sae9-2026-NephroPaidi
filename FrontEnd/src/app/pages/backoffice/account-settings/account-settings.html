@@ -21,14 +21,28 @@
 
   <section class="card stretch stretch-full tab-panel">
     <div class="card-body tab-row">
-      <button type="button" class="tab-btn" [class.active]="activeTab==='profile'" (click)="setTab('profile')" [disabled]="forcePasswordChange">Profile</button>
-      <button type="button" class="tab-btn" [class.active]="activeTab==='security'" (click)="setTab('security')">Security</button>
-      <button type="button" class="tab-btn" [class.active]="activeTab==='preferences'" (click)="setTab('preferences')" [disabled]="forcePasswordChange">Preferences</button>
+      <button type="button" class="tab-btn" [class.active]="activeTab==='profile'" (click)="setTab('profile')" [disabled]="forcePasswordChange">
+        <img src="assets/backoffice/images/auth/auth-user.png" alt="" />
+        <span>Profile</span>
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeTab==='security'" (click)="setTab('security')">
+        <img src="assets/backoffice/images/banner/settings.png" alt="" />
+        <span>Security</span>
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeTab==='preferences'" (click)="setTab('preferences')" [disabled]="forcePasswordChange">
+        <img src="assets/backoffice/images/banner/Preferences.png" alt="" />
+        <span>Preferences</span>
+      </button>
     </div>
   </section>
 
   <section class="card stretch stretch-full panel-card" *ngIf="settings && activeTab==='profile'">
-    <div class="card-header"><h6 class="mb-0">Profile Information</h6></div>
+    <div class="card-header panel-head">
+      <div>
+        <span class="section-kicker">Identity</span>
+        <h6 class="mb-0">Profile Information</h6>
+      </div>
+    </div>
     <div class="card-body form-grid">
       <label class="field-wrap">
         <span class="field-label">First Name</span>
@@ -55,12 +69,21 @@
         <div><strong>Status:</strong> {{ settings.accountStatus }}</div>
       </aside>
 
-      <div class="actions"><button class="btn btn-primary" type="button" [disabled]="savingProfile" (click)="saveProfile()">Save Profile</button></div>
+      <div class="actions">
+        <button class="icon-command icon-command--primary" type="button" [disabled]="savingProfile" (click)="saveProfile()" data-ui-tooltip="Save Profile" aria-label="Save Profile">
+          <img src="assets/backoffice/images/banner/save.png" alt="" />
+        </button>
+      </div>
     </div>
   </section>
 
   <section class="card stretch stretch-full panel-card" *ngIf="settings && activeTab==='security'">
-    <div class="card-header"><h6 class="mb-0">Security Settings</h6></div>
+    <div class="card-header panel-head">
+      <div>
+        <span class="section-kicker">Credentials</span>
+        <h6 class="mb-0">Security Settings</h6>
+      </div>
+    </div>
     <div class="card-body form-grid">
       <label class="field-wrap">
         <span class="field-label">Current Password</span>
@@ -84,12 +107,21 @@
         <div><strong>Password Update Required:</strong> {{ settings.mustChangePassword ? 'Yes' : 'No' }}</div>
       </aside>
 
-      <div class="actions"><button class="btn btn-primary" type="button" [disabled]="savingPassword" (click)="changePassword()">Change Password</button></div>
+      <div class="actions">
+        <button class="icon-command icon-command--primary" type="button" [disabled]="savingPassword" (click)="changePassword()" data-ui-tooltip="Change Password" aria-label="Change Password">
+          <img src="assets/backoffice/images/banner/save.png" alt="" />
+        </button>
+      </div>
     </div>
   </section>
 
   <section class="card stretch stretch-full panel-card" *ngIf="settings && activeTab==='preferences'">
-    <div class="card-header"><h6 class="mb-0">Preferences</h6></div>
+    <div class="card-header panel-head">
+      <div>
+        <span class="section-kicker">Interface</span>
+        <h6 class="mb-0">Preferences</h6>
+      </div>
+    </div>
     <div class="card-body form-grid">
       <label class="field-wrap">
         <span class="field-label">Language</span>
@@ -109,9 +141,20 @@
         </select>
       </label>
 
-      <label class="toggle-line"><input type="checkbox" [(ngModel)]="preferencesForm.notificationsEnabled" /> Enable notifications</label>
+      <label class="toggle-line">
+        <input type="checkbox" [(ngModel)]="preferencesForm.notificationsEnabled" />
+        <span class="toggle-control" aria-hidden="true"></span>
+        <span class="toggle-copy">
+          <strong>Enable notifications</strong>
+          <small>Show alerts from the backoffice header.</small>
+        </span>
+      </label>
 
-      <div class="actions"><button class="btn btn-primary" type="button" [disabled]="savingPrefs" (click)="savePreferences()">Save Preferences</button></div>
+      <div class="actions">
+        <button class="icon-command icon-command--primary" type="button" [disabled]="savingPrefs" (click)="savePreferences()" data-ui-tooltip="Save Preferences" aria-label="Save Preferences">
+          <img src="assets/backoffice/images/banner/save.png" alt="" />
+        </button>
+      </div>
     </div>
   </section>
 </div>

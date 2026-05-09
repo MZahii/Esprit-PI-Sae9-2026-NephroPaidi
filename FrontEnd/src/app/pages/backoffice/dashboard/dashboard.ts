@@ -82,6 +82,14 @@ export class Dashboard implements AfterViewInit, OnInit {
     RECEPTIONIST: new Set<number>()
   };
 
+  openStaffDetailsPanel(event: MouseEvent, userId: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    window.dispatchEvent(new CustomEvent('open-staff-details-panel', {
+      detail: { userId }
+    }));
+  }
+
   get expiringContractsPreview(): Array<{
     id: number;
     staffUserId: number;

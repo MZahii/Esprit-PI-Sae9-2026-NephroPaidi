@@ -80,7 +80,7 @@ export class LogsComponent implements OnInit {
   logs: UnifiedLog[] = [];
   private diffCache = new Map<string, LogDiffInfo>();
   currentPage = 1;
-  pageSize = 8;
+  pageSize = 5;
   readonly pageSizeOptions = [5, 8, 12, 20];
   expandedGroups = new Set<string>();
 

@@ -24,10 +24,14 @@
     <article class="kpi-card" [attr.data-stat-tooltip]="'HR without office: ' + hrWithoutOffice"><span>HR Without Office</span><strong appCountUp>{{ hrWithoutOffice }}</strong></article>
   </section>
 
-  <section class="card stretch stretch-full tab-panel">
+  <section class="card stretch stretch-full tab-panel" data-page-action-dock>
     <div class="card-body tab-row">
-      <button type="button" class="tab-btn" [class.active]="activeTab==='ADMIN'" (click)="setTab('ADMIN')">Admin Offices</button>
-      <button type="button" class="tab-btn" [class.active]="activeTab==='HR'" (click)="setTab('HR')">HR Offices</button>
+      <button type="button" class="tab-btn" [class.active]="activeTab==='HR'" (click)="setTab('HR')" data-ui-tooltip="HR Offices" aria-label="HR Offices">
+        <img class="page-action-icon" src="assets/backoffice/images/auth/hroffice.png" alt="" />
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeTab==='ADMIN'" (click)="setTab('ADMIN')" data-ui-tooltip="Admin Offices" aria-label="Admin Offices">
+        <img class="page-action-icon" src="assets/backoffice/images/auth/adminoff.png" alt="" />
+      </button>
     </div>
   </section>
 
@@ -52,7 +56,9 @@
         </select>
       </label>
 
-      <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createAssignment(activeTab)">Assign</button>
+      <button class="icon-command icon-command--primary" type="button" [disabled]="saving" (click)="createAssignment(activeTab)" data-ui-tooltip="Assign User" aria-label="Assign User">
+        <img src="assets/backoffice/images/auth/send.png" alt="" />
+      </button>
     </div>
   </section>
 
@@ -78,13 +84,17 @@
           <div class="assigned-actions">
             <button
               type="button"
-              class="btn btn-outline-warning btn-sm"
+              class="icon-command icon-command--warning"
               [disabled]="saving"
               (click)="moveState[assignment.id]?.enabled ? cancelMove(assignment.id) : startMove(assignment.id)"
+              [attr.data-ui-tooltip]="moveState[assignment.id]?.enabled ? 'Cancel Move' : 'Move User'"
+              [attr.aria-label]="moveState[assignment.id]?.enabled ? 'Cancel Move' : 'Move User'"
             >
-              {{ moveState[assignment.id]?.enabled ? 'Cancel' : 'Move' }}
+              <img [src]="moveState[assignment.id]?.enabled ? 'assets/backoffice/images/banner/close.png' : 'assets/backoffice/images/banner/move.png'" alt="" />
             </button>
-            <button type="button" class="btn btn-outline-danger btn-sm" [disabled]="saving" (click)="deleteAssignment(assignment)">Delete</button>
+            <button type="button" class="icon-command icon-command--danger" [disabled]="saving" (click)="deleteAssignment(assignment)" data-ui-tooltip="Delete Assignment" aria-label="Delete Assignment">
+              <img src="assets/backoffice/images/banner/delete.png" alt="" />
+            </button>
           </div>
 
           <div class="move-inline" *ngIf="moveState[assignment.id]?.enabled">
@@ -97,7 +107,9 @@
                 {{ workspaceLabel(ws) }}
               </option>
             </select>
-            <button class="btn btn-warning btn-sm" type="button" [disabled]="saving" (click)="confirmMove(assignment)">Confirm Move</button>
+            <button class="icon-command icon-command--warning" type="button" [disabled]="saving" (click)="confirmMove(assignment)" data-ui-tooltip="Confirm Move" aria-label="Confirm Move">
+              <img src="assets/backoffice/images/banner/move.png" alt="" />
+            </button>
           </div>
         </div>
       </div>

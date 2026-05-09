@@ -211,46 +211,57 @@
                     </td>
                     <td>
                       <div class="action-stack">
-                      <a
-                        class="btn btn-sm btn-light"
-                        [routerLink]="['/backoffice/staff', user.id]"
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-light icon-action-btn"
+                        (click)="openStaffDetailsPanel($event, user.id)"
+                        data-ui-tooltip="Check User Details"
+                        aria-label="Check User Details"
                       >
-                        Check User Details
-                      </a>
+                        <img src="assets/backoffice/images/banner/details.png" alt="" />
+                      </button>
                       <button
                         *ngIf="isHr"
                         type="button"
-                        class="btn btn-sm btn-light"
+                        class="btn btn-sm btn-light icon-action-btn"
                         [disabled]="actionLoadingUserId === user.id || !!user.deleted"
                         (click)="toggleAccountStatus(user)"
+                        [attr.data-ui-tooltip]="user.accountStatus === 'INACTIVE' ? 'Activate Account' : 'Deactivate Account'"
+                        [attr.aria-label]="user.accountStatus === 'INACTIVE' ? 'Activate Account' : 'Deactivate Account'"
                       >
-                        {{ user.accountStatus === 'INACTIVE' ? 'Activate Account' : 'Deactivate Account' }}
+                        <img [src]="user.accountStatus === 'INACTIVE' ? 'assets/backoffice/images/banner/restore.png' : 'assets/backoffice/images/banner/desactive.png'" alt="" />
                       </button>
                       <button
                         *ngIf="canSoftDelete(user)"
                         type="button"
-                        class="btn btn-sm btn-outline-danger"
+                        class="btn btn-sm btn-outline-danger icon-action-btn"
                         [disabled]="actionLoadingUserId === user.id"
                         (click)="softDeleteUser(user)"
+                        data-ui-tooltip="Archive User"
+                        aria-label="Archive User"
                       >
-                        Archive User
+                        <img src="assets/backoffice/images/banner/archive.png" alt="" />
                       </button>
                       <button
                         *ngIf="canRestore(user)"
                         type="button"
-                        class="btn btn-sm btn-outline-success"
+                        class="btn btn-sm btn-outline-success icon-action-btn"
                         [disabled]="actionLoadingUserId === user.id"
                         (click)="restoreUser(user)"
+                        data-ui-tooltip="Restore User"
+                        aria-label="Restore User"
                       >
-                        Restore User
+                        <img src="assets/backoffice/images/banner/restore.png" alt="" />
                       </button>
                       <a
                         *ngIf="isHr && !hasAnyContract(user.id) && !user.deleted"
-                        class="btn btn-sm btn-light-brand"
+                        class="btn btn-sm btn-light-brand icon-action-btn"
                         [routerLink]="['/backoffice/contracts/create']"
                         [queryParams]="{ staffUserId: user.id, staffName: fullName(user) }"
+                        data-ui-tooltip="Create Contract"
+                        aria-label="Create Contract"
                       >
-                        Create Contract
+                        <img src="assets/backoffice/images/auth/contract.png" alt="" />
                       </a>
                       </div>
                     </td>
@@ -273,8 +284,8 @@
               </select>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
-                Prev
+              <button class="btn btn-sm btn-light pagination-icon-btn" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" data-ui-tooltip="Previous" aria-label="Previous">
+                <img src="assets/backoffice/images/banner/prev.png" alt="" />
               </button>
               <button
                 *ngFor="let p of pageNumbers"
@@ -285,8 +296,8 @@
               >
                 {{ p }}
               </button>
-              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
-                Next
+              <button class="btn btn-sm btn-light pagination-icon-btn" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" data-ui-tooltip="Next" aria-label="Next">
+                <img src="assets/backoffice/images/banner/next.png" alt="" />
               </button>
             </div>
           </div>

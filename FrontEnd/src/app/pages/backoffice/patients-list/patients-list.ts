@@ -53,10 +53,10 @@ export class PatientsList implements OnInit {
   bloodTypeFilter: string | 'ALL' = 'ALL';
   ageGroupFilter: AgeGroup = 'ALL';
   sortDirection: 'asc' | 'desc' = 'asc';
-  pageSize = 10;
+  pageSize = 5;
   currentPage = 1;
   readonly pageSizeOptions: number[] = [5, 10, 20];
-  expandedPatientId: number | null = null;
+  detailsPatient: PatientProfile | null = null;
   editingPatientId: number | null = null;
   editMode: 'PATIENT' | 'GUARDIAN' = 'PATIENT';
   savingEdit = false;
@@ -207,12 +207,12 @@ export class PatientsList implements OnInit {
     this.currentPage = page;
   }
 
-  toggleDetails(patientId: number): void {
-    this.expandedPatientId = this.expandedPatientId === patientId ? null : patientId;
+  openDetails(patient: PatientProfile): void {
+    this.detailsPatient = patient;
   }
 
-  isExpanded(patientId: number): boolean {
-    return this.expandedPatientId === patientId;
+  closeDetails(): void {
+    this.detailsPatient = null;
   }
 
   startEdit(patient: PatientProfile): void {

@@ -53,7 +53,7 @@
             <input
               type="text"
               class="form-control"
-              placeholder="Search patient/guardian, blood type, allergy, condition, DOB..."
+              placeholder="Search patient/guardian, blood type, allergy, condition ..."
               [(ngModel)]="searchTerm"
               (ngModelChange)="onFiltersChanged()"
             />
@@ -108,13 +108,15 @@
                     <td>{{ patient.bloodType || '-' }}</td>
                     <td>{{ guardianDisplay(patient) }}</td>
                     <td>{{ guardianMap[patient.guardianUserId]?.email || '-' }}</td>
-                    <td class="d-flex gap-2 flex-wrap">
-                      <button type="button" class="btn btn-sm btn-light" (click)="toggleDetails(patient.id)">
-                        {{ isExpanded(patient.id) ? 'Hide Details' : 'Details' }}
+                    <td>
+                      <div class="icon-action-row">
+                      <button type="button" class="btn btn-sm btn-light icon-action-btn" (click)="openDetails(patient)" data-ui-tooltip="Details" aria-label="Details">
+                        <img src="assets/backoffice/images/banner/details.png" alt="" />
                       </button>
-                      <button *ngIf="isReceptionist" type="button" class="btn btn-sm btn-light-brand" (click)="startEdit(patient)">
-                        Edit
+                      <button *ngIf="isReceptionist" type="button" class="btn btn-sm btn-light-brand icon-action-btn" (click)="startEdit(patient)" data-ui-tooltip="Edit" aria-label="Edit">
+                        <img src="assets/backoffice/images/auth/ref.png" alt="" />
                       </button>
+                      </div>
                     </td>
                   </tr>
                   <tr class="details-row" *ngIf="isEditing(patient.id)">
@@ -205,35 +207,6 @@
                       </div>
                     </td>
                   </tr>
-                  <tr class="details-row" *ngIf="isExpanded(patient.id)">
-                    <td colspan="8">
-                      <div class="details-card">
-                        <div class="details-section">
-                          <div class="details-title">Patient Information</div>
-                          <div class="details-grid">
-                            <div><strong>Patient:</strong> {{ patientFullName(patient) }}</div>
-                            <div><strong>Date Of Birth:</strong> {{ patient.dateOfBirth }}</div>
-                            <div><strong>Age:</strong> {{ patientAge(patient.dateOfBirth) }}</div>
-                            <div><strong>Age Group:</strong> {{ patientAgeGroup(patient.dateOfBirth) }}</div>
-                            <div><strong>Sex:</strong> {{ patient.sex }}</div>
-                            <div><strong>Blood Type:</strong> {{ patient.bloodType || '-' }}</div>
-                            <div><strong>Allergies:</strong> {{ patient.allergies || '-' }}</div>
-                            <div><strong>Chronic Conditions:</strong> {{ patient.chronicConditions || '-' }}</div>
-                            <div><strong>Medical Notes:</strong> {{ patient.medicalNotes || '-' }}</div>
-                          </div>
-                        </div>
-
-                        <div class="details-section mt-3">
-                          <div class="details-title">Guardian Information</div>
-                          <div class="details-grid">
-                            <div><strong>Guardian:</strong> {{ guardianDisplay(patient) }}</div>
-                            <div><strong>Guardian Email:</strong> {{ guardianMap[patient.guardianUserId]?.email || '-' }}</div>
-                            <div><strong>Guardian Phone:</strong> {{ guardianMap[patient.guardianUserId]?.phone || '-' }}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
                 </ng-container>
 
                 <tr *ngIf="paginatedPatients.length === 0">
@@ -253,8 +226,8 @@
               </select>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
-                Prev
+              <button class="btn btn-sm btn-light pagination-icon-btn" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" data-ui-tooltip="Previous" aria-label="Previous">
+                <img src="assets/backoffice/images/banner/prev.png" alt="" />
               </button>
               <button
                 *ngFor="let p of pageNumbers"
@@ -265,8 +238,8 @@
               >
                 {{ p }}
               </button>
-              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
-                Next
+              <button class="btn btn-sm btn-light pagination-icon-btn" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" data-ui-tooltip="Next" aria-label="Next">
+                <img src="assets/backoffice/images/banner/next.png" alt="" />
               </button>
             </div>
           </div>
@@ -275,6 +248,55 @@
     </div>
   </div>
 </div>
+
+<div class="create-hr-backdrop" *ngIf="detailsPatient" (click)="closeDetails()"></div>
+
+<aside
+  class="create-hr-modal patient-details-modal"
+  [class.open]="!!detailsPatient"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Patient details"
+  [attr.aria-hidden]="detailsPatient ? null : 'true'"
+>
+  <div class="create-hr-modal-head">
+    <div>
+      <span class="create-hr-kicker">Patient Profile</span>
+      <h5>Details</h5>
+    </div>
+    <button type="button" class="create-hr-close" (click)="closeDetails()" data-ui-tooltip="Close details" aria-label="Close details">
+      <img src="assets/backoffice/images/banner/close.png" alt="" />
+    </button>
+  </div>
+
+  <div class="create-hr-modal-body" *ngIf="detailsPatient as patient">
+    <div class="details-card">
+      <div class="details-section">
+        <div class="details-title">Patient Information</div>
+        <div class="details-grid">
+          <div><strong>Patient:</strong> {{ patientFullName(patient) }}</div>
+          <div><strong>Date Of Birth:</strong> {{ patient.dateOfBirth }}</div>
+          <div><strong>Age:</strong> {{ patientAge(patient.dateOfBirth) }}</div>
+          <div><strong>Age Group:</strong> {{ patientAgeGroup(patient.dateOfBirth) }}</div>
+          <div><strong>Sex:</strong> {{ patient.sex }}</div>
+          <div><strong>Blood Type:</strong> {{ patient.bloodType || '-' }}</div>
+          <div><strong>Allergies:</strong> {{ patient.allergies || '-' }}</div>
+          <div><strong>Chronic Conditions:</strong> {{ patient.chronicConditions || '-' }}</div>
+          <div><strong>Medical Notes:</strong> {{ patient.medicalNotes || '-' }}</div>
+        </div>
+      </div>
+
+      <div class="details-section mt-3">
+        <div class="details-title">Guardian Information</div>
+        <div class="details-grid">
+          <div><strong>Guardian:</strong> {{ guardianDisplay(patient) }}</div>
+          <div><strong>Guardian Email:</strong> {{ guardianMap[patient.guardianUserId]?.email || '-' }}</div>
+          <div><strong>Guardian Phone:</strong> {{ guardianMap[patient.guardianUserId]?.phone || '-' }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>
 
 
 

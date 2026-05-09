@@ -9,10 +9,11 @@
         <div class="messenger-head-actions">
           <a
             routerLink="/backoffice/internal-staff-messaging"
-            class="messenger-open-page"
-            title="Open full page"
+            class="messenger-icon-btn"
+            data-ui-tooltip="Open full page"
+            aria-label="Open full page"
           >
-            Open
+            <img src="assets/backoffice/images/banner/open.png" alt="" />
           </a>
           <button type="button" class="messenger-icon-btn" (click)="refreshAll()" title="Refresh">
             <img src="assets/backoffice/images/auth/ref.png" alt="Refresh" />
@@ -138,6 +139,16 @@
         <li class="breadcrumb-item">Internal Staff Messaging</li>
       </ul>
     </div>
+    <div class="page-header-right">
+      <a
+        routerLink="/backoffice/dashboard"
+        class="messenger-page-icon-btn"
+        data-ui-tooltip="Back to Dashboard"
+        aria-label="Back to Dashboard"
+      >
+        <img src="assets/backoffice/images/auth/back.png" alt="" />
+      </a>
+    </div>
   </div>
 
   <div class="main-content">
@@ -147,20 +158,34 @@
           <aside class="staff-messaging-sidebar">
             <div class="pane-header">
               <div>
-                <h5 class="mb-1">Inbox</h5>
+                <h5 class="mb-1 messaging-title">
+                  <img src="assets/backoffice/images/icons/message.png" alt="" />
+                  <span>Inbox</span>
+                </h5>
                 <small class="text-muted">{{ liveStatusLabel }}</small>
               </div>
-              <button class="btn btn-sm btn-light-brand" type="button" (click)="refreshAll()">Refresh</button>
+              <button
+                class="messenger-page-icon-btn"
+                type="button"
+                (click)="refreshAll()"
+                data-ui-tooltip="Refresh"
+                aria-label="Refresh"
+              >
+                <img src="assets/backoffice/images/auth/ref.png" alt="" />
+              </button>
             </div>
 
             <div class="search-panel">
               <label class="form-label fw-semibold mb-2">New direct conversation</label>
-              <input
-                class="form-control"
-                placeholder="Search staff by name or username"
-                [(ngModel)]="searchTerm"
-                (ngModelChange)="scheduleUserSearch()"
-              />
+              <div class="messaging-search-control">
+                <input
+                  class="form-control"
+                  placeholder="Search staff by name or username"
+                  [(ngModel)]="searchTerm"
+                  (ngModelChange)="scheduleUserSearch()"
+                />
+                <img src="assets/backoffice/images/auth/recherche.png" alt="" />
+              </div>
 
               <div class="search-results mt-2" *ngIf="searchLoading || staffResults.length > 0 || searchTerm.trim()">
                 <div class="search-loading text-muted small" *ngIf="searchLoading">Searching staff...</div>
@@ -213,9 +238,12 @@
 
           <section class="staff-messaging-thread">
             <div class="thread-header" *ngIf="selectedConversation; else emptyThread">
-              <div>
+              <div class="messaging-thread-identity">
+                <img src="assets/backoffice/images/icons/message.png" alt="" />
+                <div>
                 <h5 class="mb-1">{{ selectedConversationLabel }}</h5>
                 <small class="text-muted">{{ getRoleLabel(selectedPeer?.userRole) }}</small>
+                </div>
               </div>
               <div class="thread-meta">
                 <span class="badge" [ngClass]="wsConnected ? 'bg-soft-success text-success' : 'bg-soft-warning text-warning'">
@@ -266,8 +294,15 @@
               ></textarea>
               <div class="composer-actions">
                 <small class="text-muted">REST stays active even if live delivery is reconnecting.</small>
-                <button class="btn btn-primary" type="button" [disabled]="sending || !draftMessage.trim()" (click)="sendMessage()">
-                  {{ sending ? 'Sending...' : 'Send' }}
+                <button
+                  class="messenger-page-icon-btn send"
+                  type="button"
+                  [disabled]="sending || !draftMessage.trim()"
+                  (click)="sendMessage()"
+                  [attr.data-ui-tooltip]="sending ? 'Sending' : 'Send'"
+                  [attr.aria-label]="sending ? 'Sending' : 'Send'"
+                >
+                  <img src="assets/backoffice/images/auth/send.png" alt="" />
                 </button>
               </div>
             </div>

@@ -81,7 +81,7 @@ export class StaffList implements OnInit, OnDestroy {
   contractFilter: ContractFilter = 'ALL';
   sortField: SortField = 'username';
   sortDirection: 'asc' | 'desc' = 'asc';
-  pageSize = 10;
+  pageSize = 5;
   currentPage = 1;
   actionLoadingUserId: number | null = null;
   actionMessage = '';
@@ -100,6 +100,14 @@ export class StaffList implements OnInit, OnDestroy {
     private authStorage: AuthStorageService,
     private cdr: ChangeDetectorRef
   ) {}
+
+  openStaffDetailsPanel(event: MouseEvent, userId: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    window.dispatchEvent(new CustomEvent('open-staff-details-panel', {
+      detail: { userId }
+    }));
+  }
 
   ngOnInit(): void {
     this.role = this.authStorage.getRole() ?? '';

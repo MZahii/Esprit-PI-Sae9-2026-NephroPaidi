@@ -52,10 +52,10 @@ export class GuardiansLinkedProfiles implements OnInit {
   linkedFilter: LinkFilter = 'ALL';
   sexFilter: 'ALL' | 'MALE' | 'FEMALE' = 'ALL';
   sortDirection: 'asc' | 'desc' = 'asc';
-  pageSize = 10;
+  pageSize = 5;
   currentPage = 1;
   readonly pageSizeOptions: number[] = [5, 10, 20];
-  expandedGuardianId: number | null = null;
+  detailsRow: GuardianLinkedRow | null = null;
 
   allRows: GuardianLinkedRow[] = [];
 
@@ -159,12 +159,12 @@ export class GuardiansLinkedProfiles implements OnInit {
     this.currentPage = page;
   }
 
-  toggleRow(row: GuardianLinkedRow): void {
-    this.expandedGuardianId = this.expandedGuardianId === row.guardian.id ? null : row.guardian.id;
+  openDetails(row: GuardianLinkedRow): void {
+    this.detailsRow = row;
   }
 
-  isExpanded(row: GuardianLinkedRow): boolean {
-    return this.expandedGuardianId === row.guardian.id;
+  closeDetails(): void {
+    this.detailsRow = null;
   }
 
   guardianFullName(guardian: GuardianUser): string {

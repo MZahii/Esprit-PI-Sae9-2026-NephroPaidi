@@ -54,7 +54,7 @@ export class HrList implements OnInit, OnDestroy {
   contractFilter: ContractFilter = 'ALL';
   contractSort: ContractSort = 'WITH_CONTRACT_FIRST';
   sortDirection: 'asc' | 'desc' = 'asc';
-  pageSize = 10;
+  pageSize = 5;
   currentPage = 1;
   actionLoadingUserId: number | null = null;
   actionMessage = '';
@@ -70,6 +70,14 @@ export class HrList implements OnInit, OnDestroy {
     private http: HttpClient,
     private cdr: ChangeDetectorRef
   ) {}
+
+  openStaffDetailsPanel(event: MouseEvent, userId: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    window.dispatchEvent(new CustomEvent('open-staff-details-panel', {
+      detail: { userId }
+    }));
+  }
 
   ngOnInit(): void {
     const navigationState = history.state as { actionMessage?: string } | undefined;
@@ -397,7 +405,6 @@ export class HrList implements OnInit, OnDestroy {
       user.firstName ?? '',
       user.lastName ?? '',
       `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
-      user.email ?? '',
       user.phone ?? '',
       user.accountStatus ?? '',
       user.deleted ? 'archived' : 'live',

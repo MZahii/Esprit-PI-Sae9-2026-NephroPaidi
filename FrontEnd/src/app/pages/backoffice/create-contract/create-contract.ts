@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -43,6 +43,9 @@ interface CreatedContractResponse {
   styleUrl: './create-contract.scss'
 })
 export class CreateContract implements OnInit {
+  @Input() modalMode = false;
+  @Output() closeModal = new EventEmitter<void>();
+
   loading = false;
   loadingStaff = false;
   successMessage = '';
@@ -316,6 +319,19 @@ export class CreateContract implements OnInit {
           : 'Contract created successfully. Returning to the previous page...'
       );
       this.cdr.detectChanges();
+      if (this.modalMode) {
+        window.dispatchEvent(new CustomEvent('contract-created', {
+          detail: {
+            message: this.contractId
+              ? 'The contract was updated successfully.'
+              : `The contract for ${this.selectedStaffDisplayName} was created successfully.`
+          }
+        }));
+        setTimeout(() => {
+          this.closeModal.emit();
+        }, 900);
+        return;
+      }
       setTimeout(() => {
         void this.router.navigate([this.backRoute], {
           queryParams: this.backRouteQueryParams,
@@ -356,6 +372,10 @@ export class CreateContract implements OnInit {
   }
 
   goToBackRoute(): void {
+    if (this.modalMode) {
+      this.closeModal.emit();
+      return;
+    }
     void this.router.navigate([this.backRoute], {
       queryParams: this.backRouteQueryParams
     });

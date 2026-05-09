@@ -58,7 +58,7 @@ export class StaffRolesDetails implements OnInit, OnDestroy {
   sortBy: 'firstName' | 'lastName' | 'username' | 'email' = 'firstName';
   sortDir: 'asc' | 'desc' = 'asc';
   currentPage = 1;
-  pageSize = 10;
+  pageSize = 5;
   readonly pageSizeOptions = [5, 10, 20, 50];
 
   readonly staffRoles: StaffRole[] = ['DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST', 'LAB_AGENT'];
@@ -74,6 +74,14 @@ export class StaffRolesDetails implements OnInit, OnDestroy {
     private http: HttpClient,
     private cdr: ChangeDetectorRef
   ) {}
+
+  openStaffDetailsPanel(event: MouseEvent, userId: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    window.dispatchEvent(new CustomEvent('open-staff-details-panel', {
+      detail: { userId }
+    }));
+  }
 
   ngOnInit(): void {
     this.loadRoleStats();

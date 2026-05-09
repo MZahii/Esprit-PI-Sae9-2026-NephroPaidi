@@ -29,7 +29,12 @@
     </section>
 
     <section class="card stretch stretch-full control-panel" *ngIf="workspaceTypeDistribution.length">
-      <div class="card-header"><h5 class="card-title">Workspace Mix</h5></div>
+      <div class="card-header section-head">
+        <div>
+          <span class="section-kicker">Workspace overview</span>
+          <h5 class="card-title">Workspace Mix</h5>
+        </div>
+      </div>
       <div class="card-body">
         <div class="floor-preview">
           <span class="preview-chip" *ngFor="let item of workspaceTypeDistribution">
@@ -46,15 +51,20 @@
           <span class="field-label">Number of Floors</span>
           <input type="number" class="form-control" min="1" max="120" [(ngModel)]="initializeTotalFloors" />
         </label>
-        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="initializeFloors()">
-          {{ saving ? 'INITIALIZING...' : 'INITIALIZE FLOORS' }}
+        <button class="icon-command icon-command--primary" type="button" [disabled]="saving" (click)="initializeFloors()" data-ui-tooltip="Initialize Floors" aria-label="Initialize Floors">
+          <img src="assets/backoffice/images/auth/send.png" alt="" />
         </button>
       </div>
     </section>
 
     <ng-container *ngIf="state.initialized">
       <section class="card stretch stretch-full control-panel">
-        <div class="card-header"><h5 class="card-title">Manage Floors / Add Floor</h5></div>
+        <div class="card-header section-head">
+          <div>
+            <span class="section-kicker">Floor controls</span>
+            <h5 class="card-title">Manage Floors / Add Floor</h5>
+          </div>
+        </div>
         <div class="card-body control-grid control-grid--floors">
           <label class="field-wrap">
             <span class="field-label">Insert Position</span>
@@ -73,8 +83,8 @@
             </select>
           </label>
 
-          <button class="btn btn-primary" type="button" [disabled]="saving" (click)="addFloor()">
-            {{ saving ? 'ADDING...' : 'ADD FLOOR' }}
+          <button class="icon-command icon-command--primary" type="button" [disabled]="saving" (click)="addFloor()" data-ui-tooltip="Add Floor" aria-label="Add Floor">
+            <img src="assets/backoffice/images/auth/send.png" alt="" />
           </button>
         </div>
       </section>
@@ -82,7 +92,7 @@
       <section class="floor-stack" *ngIf="state.floors.length; else emptyState">
         <article class="card stretch stretch-full floor-card" *ngFor="let floor of state.floors">
           <header class="card-header floor-header">
-            <button class="floor-toggle" type="button" (click)="toggleFloor(floor.id)">
+            <div class="floor-summary">
               <div class="floor-main">
                 <div class="floor-title">Floor {{ floor.floorLabel }}</div>
                 <div class="floor-total">{{ floor.totalWorkspaces }} workspace(s)</div>
@@ -92,10 +102,14 @@
                   {{ group.label }}: {{ group.count }}
                 </span>
               </div>
-              <div class="floor-toggle-text">{{ isExpanded(floor.id) ? 'Hide' : 'Show' }}</div>
-            </button>
+            </div>
             <div class="floor-actions">
-              <button class="btn btn-outline-danger btn-sm" type="button" [disabled]="saving" (click)="deleteFloor(floor)">Delete Floor</button>
+              <button class="icon-command" type="button" (click)="toggleFloor(floor.id)" [attr.data-ui-tooltip]="isExpanded(floor.id) ? 'Hide Floor Details' : 'Show Floor Details'" [attr.aria-label]="isExpanded(floor.id) ? 'Hide Floor Details' : 'Show Floor Details'">
+                <img [src]="isExpanded(floor.id) ? 'assets/backoffice/images/banner/hide.png' : 'assets/backoffice/images/banner/show.png'" alt="" />
+              </button>
+              <button class="icon-command icon-command--danger" type="button" [disabled]="saving" (click)="deleteFloor(floor)" data-ui-tooltip="Delete Floor" aria-label="Delete Floor">
+                <img src="assets/backoffice/images/banner/delete.png" alt="" />
+              </button>
             </div>
           </header>
 
@@ -113,7 +127,9 @@
                 <input type="number" class="form-control" min="1" max="200" [(ngModel)]="workspaceFormByFloor[floor.id].quantity" />
               </label>
               <div class="add-btn-wrap">
-                <button class="btn btn-primary" type="button" [disabled]="saving" (click)="addWorkspaces(floor)">Add Workspace Group</button>
+                <button class="icon-command icon-command--primary" type="button" [disabled]="saving" (click)="addWorkspaces(floor)" data-ui-tooltip="Add Workspace Group" aria-label="Add Workspace Group">
+                  <img src="assets/backoffice/images/auth/send.png" alt="" />
+                </button>
               </div>
             </div>
 
@@ -122,8 +138,12 @@
                 <div class="group-name">{{ group.label }}</div>
                 <div class="group-count">{{ group.count }} item(s)</div>
                 <div class="group-actions">
-                  <button class="btn btn-outline-secondary btn-sm" type="button" (click)="openGroupDetails(floor, group)">View Details</button>
-                  <button class="btn btn-outline-danger btn-sm" type="button" [disabled]="saving" (click)="deleteGroup(floor, group)">Delete Group</button>
+                  <button class="icon-command" type="button" (click)="openGroupDetails(floor, group)" data-ui-tooltip="View Details" aria-label="View Details">
+                    <img src="assets/backoffice/images/banner/details.png" alt="" />
+                  </button>
+                  <button class="icon-command icon-command--danger" type="button" [disabled]="saving" (click)="deleteGroup(floor, group)" data-ui-tooltip="Delete Group" aria-label="Delete Group">
+                    <img src="assets/backoffice/images/banner/delete.png" alt="" />
+                  </button>
                 </div>
               </article>
             </div>
@@ -145,7 +165,9 @@
     <div class="details-panel" (click)="$event.stopPropagation()">
       <div class="details-header">
         <h6>{{ modal.group.label }} - Floor {{ modal.floor.floorLabel }}</h6>
-        <button class="btn btn-sm btn-light" type="button" (click)="closeGroupDetails()">Close</button>
+        <button class="icon-command" type="button" (click)="closeGroupDetails()" data-ui-tooltip="Close" aria-label="Close">
+          <img src="assets/backoffice/images/banner/close.png" alt="" />
+        </button>
       </div>
       <div class="details-list" *ngIf="modal.group.items.length; else noItems">
         <div class="details-item" *ngFor="let item of modal.group.items">
@@ -153,7 +175,9 @@
             <div class="item-name">{{ item.workspaceName }}</div>
             <div class="item-code">{{ item.workspaceCode }}</div>
           </div>
-          <button class="btn btn-outline-danger btn-sm" type="button" [disabled]="saving" (click)="deleteWorkspaceItem(item)">Delete</button>
+          <button class="icon-command icon-command--danger" type="button" [disabled]="saving" (click)="deleteWorkspaceItem(item)" data-ui-tooltip="Delete Workspace" aria-label="Delete Workspace">
+            <img src="assets/backoffice/images/banner/delete.png" alt="" />
+          </button>
         </div>
       </div>
       <ng-template #noItems><div class="text-muted">No items found.</div></ng-template>

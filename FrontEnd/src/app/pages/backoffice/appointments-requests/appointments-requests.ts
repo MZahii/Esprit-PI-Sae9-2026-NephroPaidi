@@ -44,7 +44,7 @@ export class AppointmentsRequestsComponent implements OnInit, OnDestroy {
   search = '';
   dateFilter = '';
   page = 1;
-  readonly pageSize = 10;
+  readonly pageSize = 5;
   patientsById: Record<number, string> = {};
   private toastTimer?: ReturnType<typeof setTimeout>;
 
