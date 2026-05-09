@@ -43,13 +43,13 @@ public class AppointmentStartServiceImpl implements AppointmentStartService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime appointmentTime = appointment.getScheduledAt();
         
-        // Start window: from 5 minutes before scheduled time until 20 minutes after.
-        // Button visible from: appointment_time - 5 minutes
-        // Hard cancel at: appointment_time + 20 minutes
+		// Start window: from 5 minutes before scheduled time until 15 minutes after.
+		// HAS requirement: auto-cancel after 15 minutes inactivity
+		// Button visible from: appointment_time - 5 minutes
+		// Hard cancel at: appointment_time + 15 minutes
         LocalDateTime earliestStart = appointmentTime.minusMinutes(5);  // 5-min buffer
-        LocalDateTime hardCancelTime = appointmentTime.plusMinutes(20);
-
-        // Check if within window (can start 5 min early or up to 20 min late)
+        LocalDateTime hardCancelTime = appointmentTime.plusMinutes(15);  // HAS requirement: 15 min auto-cancel
+        
         if (now.isBefore(earliestStart)) {
             throw new IllegalStateException("Too early to start consultation (available from " + 
                 earliestStart + ")");
