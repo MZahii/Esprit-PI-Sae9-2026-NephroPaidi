@@ -1,0 +1,977 @@
+Structure du dossier pour le volume Windows
+Le numéro de série du volume est A483-0539
+C:.
+¦   .gitattributes
+¦   .gitignore
+¦   Dockerfile
+¦   file.txt
+¦   mvnw
+¦   mvnw.cmd
+¦   pom.xml
+¦   
++---.mvn
+¦   +---wrapper
+¦           maven-wrapper.properties
+¦           
++---data
+¦       clinicaldb.mv.db
+¦       
++---META-INF
+¦       MANIFEST.MF
+¦       
++---src
+¦   +---main
+¦   ¦   +---java
+¦   ¦   ¦   +---tn
+¦   ¦   ¦       +---esprit
+¦   ¦   ¦           +---spring
+¦   ¦   ¦               +---clinicalservice
+¦   ¦   ¦                   ¦   ClinicalProxyController.java
+¦   ¦   ¦                   ¦   ClinicalServiceApplication.java
+¦   ¦   ¦                   ¦   ClinicalServiceRestApi.java
+¦   ¦   ¦                   ¦   
+¦   ¦   ¦                   +---ai
+¦   ¦   ¦                   ¦   ¦   ClinicalAiGateway.java
+¦   ¦   ¦                   ¦   ¦   
+¦   ¦   ¦                   ¦   +---dto
+¦   ¦   ¦                   ¦           AiLabAnalysisRequest.java
+¦   ¦   ¦                   ¦           AiLabAnalysisResponse.java
+¦   ¦   ¦                   ¦           
+¦   ¦   ¦                   +---appointment
+¦   ¦   ¦                   ¦   +---controller
+¦   ¦   ¦                   ¦   ¦       AppointmentController.java
+¦   ¦   ¦                   ¦   ¦       AppointmentStartController.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---dto
+¦   ¦   ¦                   ¦   ¦       AppointmentAvailabilityResponse.java
+¦   ¦   ¦                   ¦   ¦       AppointmentCancelRequest.java
+¦   ¦   ¦                   ¦   ¦       AppointmentCreateRequest.java
+¦   ¦   ¦                   ¦   ¦       AppointmentResponse.java
+¦   ¦   ¦                   ¦   ¦       AppointmentUpdateRequest.java
+¦   ¦   ¦                   ¦   ¦       StartConsultationResponse.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---entity
+¦   ¦   ¦                   ¦   ¦       Appointment.java
+¦   ¦   ¦                   ¦   ¦       AppointmentStatus.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---repository
+¦   ¦   ¦                   ¦   ¦       AppointmentRepository.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---service
+¦   ¦   ¦                   ¦       ¦   AppointmentService.java
+¦   ¦   ¦                   ¦       ¦   AppointmentStartService.java
+¦   ¦   ¦                   ¦       ¦   AppointmentStartServiceImpl.java
+¦   ¦   ¦                   ¦       ¦   
+¦   ¦   ¦                   ¦       +---impl
+¦   ¦   ¦                   ¦               AppointmentServiceImpl.java
+¦   ¦   ¦                   ¦               
+¦   ¦   ¦                   +---audit
+¦   ¦   ¦                   ¦       AuditController.java
+¦   ¦   ¦                   ¦       AuditEvent.java
+¦   ¦   ¦                   ¦       AuditEventRepository.java
+¦   ¦   ¦                   ¦       AuditEventResponse.java
+¦   ¦   ¦                   ¦       AuditService.java
+¦   ¦   ¦                   ¦       
+¦   ¦   ¦                   +---client
+¦   ¦   ¦                   ¦       AdministrationClient.java
+¦   ¦   ¦                   ¦       AdministrationClientWrapper.java
+¦   ¦   ¦                   ¦       CommunicationClient.java
+¦   ¦   ¦                   ¦       CommunicationClientWrapper.java
+¦   ¦   ¦                   ¦       FeignClientConfiguration.java
+¦   ¦   ¦                   ¦       PharmacyClient.java
+¦   ¦   ¦                   ¦       PharmacyClientWrapper.java
+¦   ¦   ¦                   ¦       ProcedureServiceClient.java
+¦   ¦   ¦                   ¦       ProcedureServiceClientWrapper.java
+¦   ¦   ¦                   ¦       UserServiceClient.java
+¦   ¦   ¦                   ¦       UserServiceClientWrapper.java
+¦   ¦   ¦                   ¦       
+¦   ¦   ¦                   +---config
+¦   ¦   ¦                   ¦       OpenAPIConfig.java
+¦   ¦   ¦                   ¦       RestConfig.java
+¦   ¦   ¦                   ¦       SecurityConfig.java
+¦   ¦   ¦                   ¦       SecurityConfigDev.java
+¦   ¦   ¦                   ¦       
+¦   ¦   ¦                   +---consultation
+¦   ¦   ¦                   ¦   +---controller
+¦   ¦   ¦                   ¦   ¦       ConsultationController.java
+¦   ¦   ¦                   ¦   ¦       GuardianConsultationController.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---dto
+¦   ¦   ¦                   ¦   ¦       ConsultationCreateRequest.java
+¦   ¦   ¦                   ¦   ¦       ConsultationMetricsRequest.java
+¦   ¦   ¦                   ¦   ¦       ConsultationMetricsResponse.java
+¦   ¦   ¦                   ¦   ¦       ConsultationOutcomeResponse.java
+¦   ¦   ¦                   ¦   ¦       ConsultationOutcomeUpdateRequest.java
+¦   ¦   ¦                   ¦   ¦       ConsultationResponse.java
+¦   ¦   ¦                   ¦   ¦       ConsultationSectionRequest.java
+¦   ¦   ¦                   ¦   ¦       ConsultationSectionResponse.java
+¦   ¦   ¦                   ¦   ¦       ConsultationUpdateRequest.java
+¦   ¦   ¦                   ¦   ¦       FollowUpSuggestionResponse.java
+¦   ¦   ¦                   ¦   ¦       GuardianOutcomeResponse.java
+¦   ¦   ¦                   ¦   ¦       MedicationOrderRequest.java
+¦   ¦   ¦                   ¦   ¦       MedicationOrderResponse.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---entity
+¦   ¦   ¦                   ¦   ¦       Consultation.java
+¦   ¦   ¦                   ¦   ¦       ConsultationOutcome.java
+¦   ¦   ¦                   ¦   ¦       ConsultationStatus.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---exception
+¦   ¦   ¦                   ¦   ¦       ConsultationValidationException.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---medication
+¦   ¦   ¦                   ¦   ¦       DoseValidationStatus.java
+¦   ¦   ¦                   ¦   ¦       MedicationOrder.java
+¦   ¦   ¦                   ¦   ¦       MedicationOrderRepository.java
+¦   ¦   ¦                   ¦   ¦       MedicationOrderService.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---metrics
+¦   ¦   ¦                   ¦   ¦       CKDEPICalculationService.java
+¦   ¦   ¦                   ¦   ¦       CkdStage.java
+¦   ¦   ¦                   ¦   ¦       CKDStageResolver.java
+¦   ¦   ¦                   ¦   ¦       ConsultationMetrics.java
+¦   ¦   ¦                   ¦   ¦       ConsultationMetricsRepository.java
+¦   ¦   ¦                   ¦   ¦       ConsultationMetricsService.java
+¦   ¦   ¦                   ¦   ¦       FollowUpSuggestionService.java
+¦   ¦   ¦                   ¦   ¦       LabUnitConversionService.java
+¦   ¦   ¦                   ¦   ¦       PediatricEgfrCalculationService.java
+¦   ¦   ¦                   ¦   ¦       TrendAnalysisService.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---repository
+¦   ¦   ¦                   ¦   ¦       ConsultationOutcomeRepository.java
+¦   ¦   ¦                   ¦   ¦       ConsultationRepository.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---section
+¦   ¦   ¦                   ¦   ¦       ConsultationSection.java
+¦   ¦   ¦                   ¦   ¦       ConsultationSectionRepository.java
+¦   ¦   ¦                   ¦   ¦       ConsultationSectionService.java
+¦   ¦   ¦                   ¦   ¦       ConsultationSectionType.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---service
+¦   ¦   ¦                   ¦       ¦   ConsultationOutcomeService.java
+¦   ¦   ¦                   ¦       ¦   ConsultationService.java
+¦   ¦   ¦                   ¦       ¦   GuardianConsultationService.java
+¦   ¦   ¦                   ¦       ¦   
+¦   ¦   ¦                   ¦       +---impl
+¦   ¦   ¦                   ¦               ConsultationOutcomeServiceImpl.java
+¦   ¦   ¦                   ¦               ConsultationServiceImpl.java
+¦   ¦   ¦                   ¦               
+¦   ¦   ¦                   +---dashboard
+¦   ¦   ¦                   ¦   +---controller
+¦   ¦   ¦                   ¦   ¦       DoctorDashboardController.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---dto
+¦   ¦   ¦                   ¦   ¦       DoctorDashboardDto.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---service
+¦   ¦   ¦                   ¦           DoctorDashboardService.java
+¦   ¦   ¦                   ¦           DoctorDashboardServiceImpl.java
+¦   ¦   ¦                   ¦           
+¦   ¦   ¦                   +---discharge
+¦   ¦   ¦                   ¦   +---controller
+¦   ¦   ¦                   ¦   ¦       DischargeFollowUpController.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---dto
+¦   ¦   ¦                   ¦   ¦       CreateDischargeFollowUpRequest.java
+¦   ¦   ¦                   ¦   ¦       CreateFollowUpItemRequest.java
+¦   ¦   ¦                   ¦   ¦       DischargeFollowUpDto.java
+¦   ¦   ¦                   ¦   ¦       FollowUpItemDto.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---entity
+¦   ¦   ¦                   ¦   ¦       DischargeFollowUp.java
+¦   ¦   ¦                   ¦   ¦       FollowUpItem.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---repository
+¦   ¦   ¦                   ¦   ¦       DischargeFollowUpRepository.java
+¦   ¦   ¦                   ¦   ¦       FollowUpItemRepository.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---service
+¦   ¦   ¦                   ¦           DischargeFollowUpService.java
+¦   ¦   ¦                   ¦           DischargeFollowUpServiceImpl.java
+¦   ¦   ¦                   ¦           
+¦   ¦   ¦                   +---doctor
+¦   ¦   ¦                   ¦   +---controller
+¦   ¦   ¦                   ¦           DoctorController.java
+¦   ¦   ¦                   ¦           
+¦   ¦   ¦                   +---entity
+¦   ¦   ¦                   ¦       AllergyEntry.java
+¦   ¦   ¦                   ¦       AuditoryVisionSection.java
+¦   ¦   ¦                   ¦       CardiacSection.java
+¦   ¦   ¦                   ¦       ConsultationRecord.java
+¦   ¦   ¦                   ¦       ICD10Diagnosis.java
+¦   ¦   ¦                   ¦       InfectiousSection.java
+¦   ¦   ¦                   ¦       MedicalDossierEntry.java
+¦   ¦   ¦                   ¦       NeonatalData.java
+¦   ¦   ¦                   ¦       NeurologicalSection.java
+¦   ¦   ¦                   ¦       PediatricNephrologyRecord.java
+¦   ¦   ¦                   ¦       RespiratorySection.java
+¦   ¦   ¦                   ¦       SOAPNote.java
+¦   ¦   ¦                   ¦       VitalSigns.java
+¦   ¦   ¦                   ¦       
+¦   ¦   ¦                   +---enums
+¦   ¦   ¦                   ¦       AdmissionMode.java
+¦   ¦   ¦                   ¦       AKIOrigin.java
+¦   ¦   ¦                   ¦       AllergySeverity.java
+¦   ¦   ¦                   ¦       AllergyStatus.java
+¦   ¦   ¦                   ¦       AllergyType.java
+¦   ¦   ¦                   ¦       BiopsyHistology.java
+¦   ¦   ¦                   ¦       BPCuffSize.java
+¦   ¦   ¦                   ¦       BPDSeverity.java
+¦   ¦   ¦                   ¦       BPMeasurementLimb.java
+¦   ¦   ¦                   ¦       CAKUTSubtype.java
+¦   ¦   ¦                   ¦       CardiacPathologyType.java
+¦   ¦   ¦                   ¦       CKDCause.java
+¦   ¦   ¦                   ¦       CKDStage.java
+¦   ¦   ¦                   ¦       ConsultationType.java
+¦   ¦   ¦                   ¦       CorticomedullaryDiff.java
+¦   ¦   ¦                   ¦       CorticosteroidResponse.java
+¦   ¦   ¦                   ¦       CRHDocumentStatus.java
+¦   ¦   ¦                   ¦       DeliveryMode.java
+¦   ¦   ¦                   ¦       DialysisIndication.java
+¦   ¦   ¦                   ¦       DischargeDestination.java
+¦   ¦   ¦                   ¦       DonorType.java
+¦   ¦   ¦                   ¦       EdemaLocation.java
+¦   ¦   ¦                   ¦       EntryType.java
+¦   ¦   ¦                   ¦       FeedingType.java
+¦   ¦   ¦                   ¦       GestationalAgeCategory.java
+¦   ¦   ¦                   ¦       HearingResult.java
+¦   ¦   ¦                   ¦       HearingScore.java
+¦   ¦   ¦                   ¦       HearingTechnique.java
+¦   ¦   ¦                   ¦       HematuriaLevel.java
+¦   ¦   ¦                   ¦       HereditaryNephropathyType.java
+¦   ¦   ¦                   ¦       HTACause.java
+¦   ¦   ¦                   ¦       HTASeverity.java
+¦   ¦   ¦                   ¦       HUSOutcome.java
+¦   ¦   ¦                   ¦       HUSType.java
+¦   ¦   ¦                   ¦       Hypotrophy.java
+¦   ¦   ¦                   ¦       InfectiousAgent.java
+¦   ¦   ¦                   ¦       IVHGrade.java
+¦   ¦   ¦                   ¦       KidneyEchogenicity.java
+¦   ¦   ¦                   ¦       MaternalFetalInfection.java
+¦   ¦   ¦                   ¦       MedicationStatus.java
+¦   ¦   ¦                   ¦       NephroticCause.java
+¦   ¦   ¦                   ¦       NephroticEvolution.java
+¦   ¦   ¦                   ¦       NephrotoxicDrug.java
+¦   ¦   ¦                   ¦       NeurologyScore.java
+¦   ¦   ¦                   ¦       NutritionalAssessment.java
+¦   ¦   ¦                   ¦       PDA_Treatment.java
+¦   ¦   ¦                   ¦       PregnancyType.java
+¦   ¦   ¦                   ¦       ProteinuriaCategory.java
+¦   ¦   ¦                   ¦       RespiratoryPathologyType.java
+¦   ¦   ¦                   ¦       ROP_Stage.java
+¦   ¦   ¦                   ¦       ROP_Treatment.java
+¦   ¦   ¦                   ¦       RouteOfAdministration.java
+¦   ¦   ¦                   ¦       RRTType.java
+¦   ¦   ¦                   ¦       Surfactant.java
+¦   ¦   ¦                   ¦       TubulopathyType.java
+¦   ¦   ¦                   ¦       VisionScore.java
+¦   ¦   ¦                   ¦       VURGrade.java
+¦   ¦   ¦                   ¦       
+¦   ¦   ¦                   +---event
+¦   ¦   ¦                   ¦       ConsultationClosedEvent.java
+¦   ¦   ¦                   ¦       DischargeCreatedEvent.java
+¦   ¦   ¦                   ¦       LabResultUploadedEvent.java
+¦   ¦   ¦                   ¦       MedicalDossierEventListener.java
+¦   ¦   ¦                   ¦       MedicationDispensedEvent.java
+¦   ¦   ¦                   ¦       MedicationRequestApprovedEvent.java
+¦   ¦   ¦                   ¦       MedicationRequestRejectedEvent.java
+¦   ¦   ¦                   ¦       OperationScheduledEvent.java
+¦   ¦   ¦                   ¦       PostOpMedicationApprovalNeededEvent.java
+¦   ¦   ¦                   ¦       PostOpReportCreatedEvent.java
+¦   ¦   ¦                   ¦       PreOpHoldAlertEvent.java
+¦   ¦   ¦                   ¦       PreOpLabsReadyEvent.java
+¦   ¦   ¦                   ¦       PreOpMedicationUnavailableEvent.java
+¦   ¦   ¦                   ¦       PreOpReadinessRequestedEvent.java
+¦   ¦   ¦                   ¦       SurgeryAcceptedEvent.java
+¦   ¦   ¦                   ¦       SurgeryOfferMadeEvent.java
+¦   ¦   ¦                   ¦       SurgeryRejectedEvent.java
+¦   ¦   ¦                   ¦       
+¦   ¦   ¦                   +---followup
+¦   ¦   ¦                   ¦   ¦   DoctorFollowUpStatus.java
+¦   ¦   ¦                   ¦   ¦   FollowUpOffsetUnit.java
+¦   ¦   ¦                   ¦   ¦   
+¦   ¦   ¦                   ¦   +---controller
+¦   ¦   ¦                   ¦   ¦       DoctorFollowUpController.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---dto
+¦   ¦   ¦                   ¦   ¦       DoctorFollowUpConfirmRequest.java
+¦   ¦   ¦                   ¦   ¦       DoctorFollowUpCreateRequest.java
+¦   ¦   ¦                   ¦   ¦       DoctorFollowUpResponse.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---entity
+¦   ¦   ¦                   ¦   ¦       DoctorFollowUpRequest.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---repository
+¦   ¦   ¦                   ¦   ¦       DoctorFollowUpRequestRepository.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---service
+¦   ¦   ¦                   ¦       ¦   DoctorFollowUpRequestService.java
+¦   ¦   ¦                   ¦       ¦   
+¦   ¦   ¦                   ¦       +---impl
+¦   ¦   ¦                   ¦               DoctorFollowUpRequestServiceImpl.java
+¦   ¦   ¦                   ¦               
+¦   ¦   ¦                   +---hospitalization
+¦   ¦   ¦                   ¦   +---dto
+¦   ¦   ¦                   ¦           AdmissionPriority.java
+¦   ¦   ¦                   ¦           HospitalizationCreateRequest.java
+¦   ¦   ¦                   ¦           HospitalizationCreateResponse.java
+¦   ¦   ¦                   ¦           HospitalizationMeasurementKind.java
+¦   ¦   ¦                   ¦           HospitalizationTaskRequest.java
+¦   ¦   ¦                   ¦           HospitalizationTaskType.java
+¦   ¦   ¦                   ¦           OpsCreateDossierRequest.java
+¦   ¦   ¦                   ¦           OpsCreateHospitalizationRequest.java
+¦   ¦   ¦                   ¦           OpsCreateHospitalizationTaskRequest.java
+¦   ¦   ¦                   ¦           OpsHospitalizationCaseResponse.java
+¦   ¦   ¦                   ¦           OpsHospitalizationTaskExecutionResponse.java
+¦   ¦   ¦                   ¦           OpsHospitalizationTaskResponse.java
+¦   ¦   ¦                   ¦           OpsPatientDossierResponse.java
+¦   ¦   ¦                   ¦           
+¦   ¦   ¦                   +---labRequest
+¦   ¦   ¦                   ¦   ¦   LabResultProcessingService.java
+¦   ¦   ¦                   ¦   ¦   
+¦   ¦   ¦                   ¦   +---controller
+¦   ¦   ¦                   ¦   ¦       LabRequestController.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---dto
+¦   ¦   ¦                   ¦   ¦       CreateLabRequestRequest.java
+¦   ¦   ¦                   ¦   ¦       LabRequestDto.java
+¦   ¦   ¦                   ¦   ¦       UploadLabResultRequest.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---entity
+¦   ¦   ¦                   ¦   ¦       LabRequest.java
+¦   ¦   ¦                   ¦   ¦       LabResult.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---events
+¦   ¦   ¦                   ¦   ¦       LabResultUploadedEvent.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---repository
+¦   ¦   ¦                   ¦   ¦       LabRequestRepository.java
+¦   ¦   ¦                   ¦   ¦       LabResultRepository.java
+¦   ¦   ¦                   ¦   ¦       
+¦   ¦   ¦                   ¦   +---service
+¦   ¦   ¦                   ¦       ¦   LabRequestService.java
+¦   ¦   ¦                   ¦       ¦   
+¦   ¦   ¦                   ¦       +---impl
+¦   ¦   ¦                   ¦               LabRequestServiceImpl.java
+¦   ¦   ¦                   ¦               
+¦   ¦   ¦                   +---notification
+¦   ¦   ¦                   ¦       GuardianNotification.java
+¦   ¦   ¦                   ¦       GuardianNotificationRepository.java
+¦   ¦   ¦                   ¦       GuardianNotificationResponse.java
+¦   ¦   ¦                   ¦       GuardianNotificationService.java
+¦   ¦   ¦                   ¦       GuardianNotificationType.java
+¦   ¦   ¦                   ¦       
+¦   ¦   ¦                   +---patient
+¦   ¦   ¦                   ¦   ¦   PatientController.java
+¦   ¦   ¦                   ¦   ¦   PatientDirectoryClient.java
+¦   ¦   ¦                   ¦   ¦   
+¦   ¦   ¦                   ¦   +---dto
+¦   ¦   ¦                   ¦           PatientProfileDetails.java
+¦   ¦   ¦                   ¦           PatientSummary.java
+¦   ¦   ¦                   ¦           
+¦   ¦   ¦                   +---repository
+¦   ¦   ¦                   ¦       MedicalDossierRepository.java
+¦   ¦   ¦                   ¦       
+¦   ¦   ¦                   +---security
+¦   ¦   ¦                   ¦       ActorInfo.java
+¦   ¦   ¦                   ¦       ActorResolver.java
+¦   ¦   ¦                   ¦       DoctorIdResolver.java
+¦   ¦   ¦                   ¦       GuardianIdResolver.java
+¦   ¦   ¦                   ¦       
+¦   ¦   ¦                   +---service
+¦   ¦   ¦                   ¦       SchwartzGFRCalculator.java
+¦   ¦   ¦                   ¦       
+¦   ¦   ¦                   +---surgery
+¦   ¦   ¦                       +---controller
+¦   ¦   ¦                       ¦       SurgeryIndicationController.java
+¦   ¦   ¦                       ¦       
+¦   ¦   ¦                       +---dto
+¦   ¦   ¦                       ¦       CreateSurgeryIndicationRequest.java
+¦   ¦   ¦                       ¦       SurgeryIndicationDto.java
+¦   ¦   ¦                       ¦       
+¦   ¦   ¦                       +---entity
+¦   ¦   ¦                       ¦       SurgeryIndication.java
+¦   ¦   ¦                       ¦       
+¦   ¦   ¦                       +---repository
+¦   ¦   ¦                       ¦       SurgeryIndicationRepository.java
+¦   ¦   ¦                       ¦       
+¦   ¦   ¦                       +---service
+¦   ¦   ¦                           ¦   SurgeryIndicationService.java
+¦   ¦   ¦                           ¦   
+¦   ¦   ¦                           +---impl
+¦   ¦   ¦                                   SurgeryIndicationServiceImpl.java
+¦   ¦   ¦                                   
+¦   ¦   +---resources
+¦   ¦       ¦   application.yml
+¦   ¦       ¦   bootstrap.yml
+¦   ¦       ¦   
+¦   ¦       +---db
+¦   ¦           +---migration
+¦   ¦                   V10__create_discharge_follow_up_table.sql
+¦   ¦                   V11__add_appointment_timestamps.sql
+¦   ¦                   V12__add_ckdepi_formula_support.sql
+¦   ¦                   V13__add_ckdepi_egfr_column.sql
+¦   ¦                   V14__fix_ckdepi_egfr_column_type.sql
+¦   ¦                   V17__rebuild_ckdepi_columns_clean.sql
+¦   ¦                   V18__doctor_follow_up_request.sql
+¦   ¦                   V19__add_pediatric_ai_support.sql
+¦   ¦                   V1__init.sql
+¦   ¦                   V20__store_lab_result_binary.sql
+¦   ¦                   V2__alter_patient_id_to_bigint.sql
+¦   ¦                   V3__appointments_and_consultation_updates.sql
+¦   ¦                   V4__consultation_outcomes.sql
+¦   ¦                   V5__clinical_advanced_features.sql
+¦   ¦                   V6__guardian_notifications_and_sections.sql
+¦   ¦                   V7__add_appointment_fk_to_consultation.sql
+¦   ¦                   V8__create_lab_requests_table.sql
+¦   ¦                   V9__create_surgery_indications_table.sql
+¦   ¦                   
+¦   +---test
+¦       +---java
+¦       ¦   +---tn
+¦       ¦       +---esprit
+¦       ¦           +---spring
+¦       ¦               +---clinicalservice
+¦       ¦                   ¦   ClinicalServiceApplicationTests.java
+¦       ¦                   ¦   
+¦       ¦                   +---appointment
+¦       ¦                   ¦   +---service
+¦       ¦                   ¦           AppointmentServiceImplTest.java
+¦       ¦                   ¦           
+¦       ¦                   +---client
+¦       ¦                   ¦       ClinicalServiceClientWrappersTest.java
+¦       ¦                   ¦       
+¦       ¦                   +---config
+¦       ¦                   ¦       TestConfig.java
+¦       ¦                   ¦       
+¦       ¦                   +---consultation
+¦       ¦                       +---metrics
+¦       ¦                       ¦       CKDEPICalculationServiceTest.java
+¦       ¦                       ¦       
+¦       ¦                       +---service
+¦       ¦                               ConsultationOutcomeServiceImplTest.java
+¦       ¦                               ConsultationServiceTest.java
+¦       ¦                               
+¦       +---resources
+¦               application-test.yml
+¦               
++---target
+    +---classes
+    ¦   ¦   application.yml
+    ¦   ¦   bootstrap.yml
+    ¦   ¦   
+    ¦   +---db
+    ¦   ¦   +---migration
+    ¦   ¦           V10__create_discharge_follow_up_table.sql
+    ¦   ¦           V11__add_appointment_timestamps.sql
+    ¦   ¦           V12__add_ckdepi_formula_support.sql
+    ¦   ¦           V13__add_ckdepi_egfr_column.sql
+    ¦   ¦           V14__fix_ckdepi_egfr_column_type.sql
+    ¦   ¦           V17__rebuild_ckdepi_columns_clean.sql
+    ¦   ¦           V18__doctor_follow_up_request.sql
+    ¦   ¦           V19__add_pediatric_ai_support.sql
+    ¦   ¦           V1__init.sql
+    ¦   ¦           V20__store_lab_result_binary.sql
+    ¦   ¦           V2__alter_patient_id_to_bigint.sql
+    ¦   ¦           V3__appointments_and_consultation_updates.sql
+    ¦   ¦           V4__consultation_outcomes.sql
+    ¦   ¦           V5__clinical_advanced_features.sql
+    ¦   ¦           V6__guardian_notifications_and_sections.sql
+    ¦   ¦           V7__add_appointment_fk_to_consultation.sql
+    ¦   ¦           V8__create_lab_requests_table.sql
+    ¦   ¦           V9__create_surgery_indications_table.sql
+    ¦   ¦           
+    ¦   +---tn
+    ¦       +---esprit
+    ¦           +---spring
+    ¦               +---clinicalservice
+    ¦                   ¦   ClinicalProxyController.class
+    ¦                   ¦   ClinicalServiceApplication.class
+    ¦                   ¦   ClinicalServiceRestApi.class
+    ¦                   ¦   
+    ¦                   +---ai
+    ¦                   ¦   ¦   ClinicalAiGateway.class
+    ¦                   ¦   ¦   
+    ¦                   ¦   +---dto
+    ¦                   ¦           AiLabAnalysisRequest$AiLabAnalysisRequestBuilder.class
+    ¦                   ¦           AiLabAnalysisRequest.class
+    ¦                   ¦           AiLabAnalysisResponse.class
+    ¦                   ¦           
+    ¦                   +---appointment
+    ¦                   ¦   +---controller
+    ¦                   ¦   ¦       AppointmentController.class
+    ¦                   ¦   ¦       AppointmentStartController.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---dto
+    ¦                   ¦   ¦       AppointmentAvailabilityResponse$AppointmentAvailabilityResponseBuilder.class
+    ¦                   ¦   ¦       AppointmentAvailabilityResponse.class
+    ¦                   ¦   ¦       AppointmentCancelRequest$AppointmentCancelRequestBuilder.class
+    ¦                   ¦   ¦       AppointmentCancelRequest.class
+    ¦                   ¦   ¦       AppointmentCreateRequest$AppointmentCreateRequestBuilder.class
+    ¦                   ¦   ¦       AppointmentCreateRequest.class
+    ¦                   ¦   ¦       AppointmentResponse$AppointmentResponseBuilder.class
+    ¦                   ¦   ¦       AppointmentResponse.class
+    ¦                   ¦   ¦       AppointmentUpdateRequest$AppointmentUpdateRequestBuilder.class
+    ¦                   ¦   ¦       AppointmentUpdateRequest.class
+    ¦                   ¦   ¦       StartConsultationResponse$StartConsultationResponseBuilder.class
+    ¦                   ¦   ¦       StartConsultationResponse.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---entity
+    ¦                   ¦   ¦       Appointment$AppointmentBuilder.class
+    ¦                   ¦   ¦       Appointment.class
+    ¦                   ¦   ¦       AppointmentStatus.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---repository
+    ¦                   ¦   ¦       AppointmentRepository.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---service
+    ¦                   ¦       ¦   AppointmentService.class
+    ¦                   ¦       ¦   AppointmentStartService.class
+    ¦                   ¦       ¦   AppointmentStartServiceImpl.class
+    ¦                   ¦       ¦   
+    ¦                   ¦       +---impl
+    ¦                   ¦               AppointmentServiceImpl.class
+    ¦                   ¦               
+    ¦                   +---audit
+    ¦                   ¦       AuditController.class
+    ¦                   ¦       AuditEvent$AuditEventBuilder.class
+    ¦                   ¦       AuditEvent.class
+    ¦                   ¦       AuditEventRepository.class
+    ¦                   ¦       AuditEventResponse$AuditEventResponseBuilder.class
+    ¦                   ¦       AuditEventResponse.class
+    ¦                   ¦       AuditService.class
+    ¦                   ¦       
+    ¦                   +---client
+    ¦                   ¦       AdministrationClient.class
+    ¦                   ¦       AdministrationClientWrapper$ErrorResponse.class
+    ¦                   ¦       AdministrationClientWrapper.class
+    ¦                   ¦       CommunicationClient.class
+    ¦                   ¦       CommunicationClientFallback.class
+    ¦                   ¦       CommunicationClientWrapper$ErrorResponse.class
+    ¦                   ¦       CommunicationClientWrapper.class
+    ¦                   ¦       ConflictException.class
+    ¦                   ¦       FeignClientConfiguration.class
+    ¦                   ¦       FeignErrorHandler.class
+    ¦                   ¦       FeignException.class
+    ¦                   ¦       InternalServerException.class
+    ¦                   ¦       PharmacyClient.class
+    ¦                   ¦       PharmacyClientFallback.class
+    ¦                   ¦       PharmacyClientWrapper$ErrorResponse.class
+    ¦                   ¦       PharmacyClientWrapper.class
+    ¦                   ¦       ProcedureServiceClient.class
+    ¦                   ¦       ProcedureServiceClientWrapper$ErrorResponse.class
+    ¦                   ¦       ProcedureServiceClientWrapper.class
+    ¦                   ¦       ResourceNotFoundException.class
+    ¦                   ¦       SecurityException.class
+    ¦                   ¦       ServiceUnavailableException.class
+    ¦                   ¦       UserServiceClient.class
+    ¦                   ¦       UserServiceClientWrapper$ErrorResponse.class
+    ¦                   ¦       UserServiceClientWrapper.class
+    ¦                   ¦       
+    ¦                   +---config
+    ¦                   ¦       OpenAPIConfig.class
+    ¦                   ¦       RestConfig.class
+    ¦                   ¦       SecurityConfig.class
+    ¦                   ¦       SecurityConfigDev.class
+    ¦                   ¦       
+    ¦                   +---consultation
+    ¦                   ¦   +---controller
+    ¦                   ¦   ¦       ConsultationController.class
+    ¦                   ¦   ¦       GuardianConsultationController.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---dto
+    ¦                   ¦   ¦       ConsultationCreateRequest$ConsultationCreateRequestBuilder.class
+    ¦                   ¦   ¦       ConsultationCreateRequest.class
+    ¦                   ¦   ¦       ConsultationMetricsRequest.class
+    ¦                   ¦   ¦       ConsultationMetricsResponse$ConsultationMetricsResponseBuilder.class
+    ¦                   ¦   ¦       ConsultationMetricsResponse.class
+    ¦                   ¦   ¦       ConsultationOutcomeResponse$ConsultationOutcomeResponseBuilder.class
+    ¦                   ¦   ¦       ConsultationOutcomeResponse.class
+    ¦                   ¦   ¦       ConsultationOutcomeUpdateRequest$ConsultationOutcomeUpdateRequestBuilder.class
+    ¦                   ¦   ¦       ConsultationOutcomeUpdateRequest.class
+    ¦                   ¦   ¦       ConsultationResponse$ConsultationResponseBuilder.class
+    ¦                   ¦   ¦       ConsultationResponse.class
+    ¦                   ¦   ¦       ConsultationSectionRequest.class
+    ¦                   ¦   ¦       ConsultationSectionResponse$ConsultationSectionResponseBuilder.class
+    ¦                   ¦   ¦       ConsultationSectionResponse.class
+    ¦                   ¦   ¦       ConsultationUpdateRequest$ConsultationUpdateRequestBuilder.class
+    ¦                   ¦   ¦       ConsultationUpdateRequest.class
+    ¦                   ¦   ¦       FollowUpSuggestionResponse$FollowUpSuggestionResponseBuilder.class
+    ¦                   ¦   ¦       FollowUpSuggestionResponse.class
+    ¦                   ¦   ¦       GuardianOutcomeResponse$GuardianOutcomeResponseBuilder.class
+    ¦                   ¦   ¦       GuardianOutcomeResponse.class
+    ¦                   ¦   ¦       MedicationOrderRequest.class
+    ¦                   ¦   ¦       MedicationOrderResponse$MedicationOrderResponseBuilder.class
+    ¦                   ¦   ¦       MedicationOrderResponse.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---entity
+    ¦                   ¦   ¦       Consultation$ConsultationBuilder.class
+    ¦                   ¦   ¦       Consultation.class
+    ¦                   ¦   ¦       ConsultationOutcome$ConsultationOutcomeBuilder.class
+    ¦                   ¦   ¦       ConsultationOutcome.class
+    ¦                   ¦   ¦       ConsultationStatus.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---exception
+    ¦                   ¦   ¦       ConsultationValidationException.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---medication
+    ¦                   ¦   ¦       DoseValidationStatus.class
+    ¦                   ¦   ¦       MedicationOrder$MedicationOrderBuilder.class
+    ¦                   ¦   ¦       MedicationOrder.class
+    ¦                   ¦   ¦       MedicationOrderRepository.class
+    ¦                   ¦   ¦       MedicationOrderService$DoseRule.class
+    ¦                   ¦   ¦       MedicationOrderService$ValidationResult.class
+    ¦                   ¦   ¦       MedicationOrderService.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---metrics
+    ¦                   ¦   ¦       CKDEPICalculationService$QualityFlag.class
+    ¦                   ¦   ¦       CKDEPICalculationService.class
+    ¦                   ¦   ¦       CkdStage.class
+    ¦                   ¦   ¦       CKDStageResolver$1.class
+    ¦                   ¦   ¦       CKDStageResolver$CKDStage.class
+    ¦                   ¦   ¦       CKDStageResolver.class
+    ¦                   ¦   ¦       ConsultationMetrics$ConsultationMetricsBuilder.class
+    ¦                   ¦   ¦       ConsultationMetrics.class
+    ¦                   ¦   ¦       ConsultationMetricsRepository.class
+    ¦                   ¦   ¦       ConsultationMetricsService$1.class
+    ¦                   ¦   ¦       ConsultationMetricsService.class
+    ¦                   ¦   ¦       FollowUpSuggestionService$1.class
+    ¦                   ¦   ¦       FollowUpSuggestionService.class
+    ¦                   ¦   ¦       LabUnitConversionService$ConversionRecord$ConversionRecordBuilder.class
+    ¦                   ¦   ¦       LabUnitConversionService$ConversionRecord.class
+    ¦                   ¦   ¦       LabUnitConversionService.class
+    ¦                   ¦   ¦       PediatricEgfrCalculationService.class
+    ¦                   ¦   ¦       TrendAnalysisService$1.class
+    ¦                   ¦   ¦       TrendAnalysisService$EgfrTrend.class
+    ¦                   ¦   ¦       TrendAnalysisService$TrendData$TrendDataBuilder.class
+    ¦                   ¦   ¦       TrendAnalysisService$TrendData.class
+    ¦                   ¦   ¦       TrendAnalysisService.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---repository
+    ¦                   ¦   ¦       ConsultationOutcomeRepository.class
+    ¦                   ¦   ¦       ConsultationRepository.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---section
+    ¦                   ¦   ¦       ConsultationSection$ConsultationSectionBuilder.class
+    ¦                   ¦   ¦       ConsultationSection.class
+    ¦                   ¦   ¦       ConsultationSectionRepository.class
+    ¦                   ¦   ¦       ConsultationSectionService.class
+    ¦                   ¦   ¦       ConsultationSectionType.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---service
+    ¦                   ¦       ¦   ConsultationOutcomeService.class
+    ¦                   ¦       ¦   ConsultationService.class
+    ¦                   ¦       ¦   GuardianConsultationService.class
+    ¦                   ¦       ¦   
+    ¦                   ¦       +---impl
+    ¦                   ¦               ConsultationOutcomeServiceImpl.class
+    ¦                   ¦               ConsultationServiceImpl.class
+    ¦                   ¦               
+    ¦                   +---dashboard
+    ¦                   ¦   +---controller
+    ¦                   ¦   ¦       DoctorDashboardController.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---dto
+    ¦                   ¦   ¦       DoctorDashboardDto$AppointmentSummary$AppointmentSummaryBuilder.class
+    ¦                   ¦   ¦       DoctorDashboardDto$AppointmentSummary.class
+    ¦                   ¦   ¦       DoctorDashboardDto$DoctorDashboardDtoBuilder.class
+    ¦                   ¦   ¦       DoctorDashboardDto.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---service
+    ¦                   ¦           DoctorDashboardService.class
+    ¦                   ¦           DoctorDashboardServiceImpl.class
+    ¦                   ¦           
+    ¦                   +---discharge
+    ¦                   ¦   +---controller
+    ¦                   ¦   ¦       DischargeFollowUpController.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---dto
+    ¦                   ¦   ¦       CreateDischargeFollowUpRequest$CreateDischargeFollowUpRequestBuilder.class
+    ¦                   ¦   ¦       CreateDischargeFollowUpRequest.class
+    ¦                   ¦   ¦       CreateFollowUpItemRequest$CreateFollowUpItemRequestBuilder.class
+    ¦                   ¦   ¦       CreateFollowUpItemRequest.class
+    ¦                   ¦   ¦       DischargeFollowUpDto$DischargeFollowUpDtoBuilder.class
+    ¦                   ¦   ¦       DischargeFollowUpDto.class
+    ¦                   ¦   ¦       FollowUpItemDto$FollowUpItemDtoBuilder.class
+    ¦                   ¦   ¦       FollowUpItemDto.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---entity
+    ¦                   ¦   ¦       DischargeFollowUp$DischargeFollowUpBuilder.class
+    ¦                   ¦   ¦       DischargeFollowUp$FollowUpStatus.class
+    ¦                   ¦   ¦       DischargeFollowUp.class
+    ¦                   ¦   ¦       FollowUpItem$FollowUpItemBuilder.class
+    ¦                   ¦   ¦       FollowUpItem$ItemStatus.class
+    ¦                   ¦   ¦       FollowUpItem.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---repository
+    ¦                   ¦   ¦       DischargeFollowUpRepository.class
+    ¦                   ¦   ¦       FollowUpItemRepository.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---service
+    ¦                   ¦           DischargeFollowUpService.class
+    ¦                   ¦           DischargeFollowUpServiceImpl.class
+    ¦                   ¦           
+    ¦                   +---doctor
+    ¦                   ¦   +---controller
+    ¦                   ¦           DoctorController.class
+    ¦                   ¦           
+    ¦                   +---entity
+    ¦                   ¦       AllergyEntry.class
+    ¦                   ¦       CardiacSection.class
+    ¦                   ¦       ConsultationRecord.class
+    ¦                   ¦       ICD10Diagnosis.class
+    ¦                   ¦       InfectiousSection.class
+    ¦                   ¦       MedicalDossierEntry.class
+    ¦                   ¦       NeonatalData.class
+    ¦                   ¦       NeurologicalSection.class
+    ¦                   ¦       PediatricNephrologyRecord.class
+    ¦                   ¦       RespiratorySection.class
+    ¦                   ¦       SOAPNote.class
+    ¦                   ¦       VitalSigns.class
+    ¦                   ¦       
+    ¦                   +---enums
+    ¦                   ¦       AdmissionMode.class
+    ¦                   ¦       AKIOrigin.class
+    ¦                   ¦       AllergySeverity.class
+    ¦                   ¦       AllergyStatus.class
+    ¦                   ¦       AllergyType.class
+    ¦                   ¦       BiopsyHistology.class
+    ¦                   ¦       BPCuffSize.class
+    ¦                   ¦       BPDSeverity.class
+    ¦                   ¦       BPMeasurementLimb.class
+    ¦                   ¦       CAKUTSubtype.class
+    ¦                   ¦       CardiacPathologyType.class
+    ¦                   ¦       CKDCause.class
+    ¦                   ¦       CKDStage.class
+    ¦                   ¦       ConsultationType.class
+    ¦                   ¦       CorticomedullaryDiff.class
+    ¦                   ¦       CorticosteroidResponse.class
+    ¦                   ¦       CRHDocumentStatus.class
+    ¦                   ¦       DeliveryMode.class
+    ¦                   ¦       DialysisIndication.class
+    ¦                   ¦       DischargeDestination.class
+    ¦                   ¦       DonorType.class
+    ¦                   ¦       EdemaLocation.class
+    ¦                   ¦       EntryType.class
+    ¦                   ¦       FeedingType.class
+    ¦                   ¦       GestationalAgeCategory.class
+    ¦                   ¦       HearingResult.class
+    ¦                   ¦       HearingScore.class
+    ¦                   ¦       HearingTechnique.class
+    ¦                   ¦       HematuriaLevel.class
+    ¦                   ¦       HereditaryNephropathyType.class
+    ¦                   ¦       HTACause.class
+    ¦                   ¦       HTASeverity.class
+    ¦                   ¦       HUSOutcome.class
+    ¦                   ¦       HUSType.class
+    ¦                   ¦       Hypotrophy.class
+    ¦                   ¦       InfectiousAgent.class
+    ¦                   ¦       IVHGrade.class
+    ¦                   ¦       KidneyEchogenicity.class
+    ¦                   ¦       MaternalFetalInfection.class
+    ¦                   ¦       MedicationStatus.class
+    ¦                   ¦       NephroticCause.class
+    ¦                   ¦       NephroticEvolution.class
+    ¦                   ¦       NephrotoxicDrug.class
+    ¦                   ¦       NeurologyScore.class
+    ¦                   ¦       NutritionalAssessment.class
+    ¦                   ¦       PDA_Treatment.class
+    ¦                   ¦       PregnancyType.class
+    ¦                   ¦       ProteinuriaCategory.class
+    ¦                   ¦       RespiratoryPathologyType.class
+    ¦                   ¦       ROP_Stage.class
+    ¦                   ¦       ROP_Treatment.class
+    ¦                   ¦       RouteOfAdministration.class
+    ¦                   ¦       RRTType.class
+    ¦                   ¦       Surfactant.class
+    ¦                   ¦       TubulopathyType.class
+    ¦                   ¦       VisionScore.class
+    ¦                   ¦       VURGrade.class
+    ¦                   ¦       
+    ¦                   +---event
+    ¦                   ¦       ConsultationClosedEvent.class
+    ¦                   ¦       DischargeCreatedEvent.class
+    ¦                   ¦       LabResultUploadedEvent.class
+    ¦                   ¦       MedicalDossierEventListener.class
+    ¦                   ¦       MedicationDispensedEvent.class
+    ¦                   ¦       MedicationRequestApprovedEvent.class
+    ¦                   ¦       MedicationRequestRejectedEvent.class
+    ¦                   ¦       OperationScheduledEvent.class
+    ¦                   ¦       PostOpMedicationApprovalNeededEvent.class
+    ¦                   ¦       PostOpReportCreatedEvent.class
+    ¦                   ¦       PreOpHoldAlertEvent.class
+    ¦                   ¦       PreOpLabsReadyEvent.class
+    ¦                   ¦       PreOpMedicationUnavailableEvent.class
+    ¦                   ¦       PreOpReadinessRequestedEvent.class
+    ¦                   ¦       SurgeryAcceptedEvent.class
+    ¦                   ¦       SurgeryOfferMadeEvent.class
+    ¦                   ¦       SurgeryRejectedEvent.class
+    ¦                   ¦       
+    ¦                   +---followup
+    ¦                   ¦   ¦   DoctorFollowUpStatus.class
+    ¦                   ¦   ¦   FollowUpOffsetUnit.class
+    ¦                   ¦   ¦   
+    ¦                   ¦   +---controller
+    ¦                   ¦   ¦       DoctorFollowUpController.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---dto
+    ¦                   ¦   ¦       DoctorFollowUpConfirmRequest$DoctorFollowUpConfirmRequestBuilder.class
+    ¦                   ¦   ¦       DoctorFollowUpConfirmRequest.class
+    ¦                   ¦   ¦       DoctorFollowUpCreateRequest$DoctorFollowUpCreateRequestBuilder.class
+    ¦                   ¦   ¦       DoctorFollowUpCreateRequest.class
+    ¦                   ¦   ¦       DoctorFollowUpResponse$DoctorFollowUpResponseBuilder.class
+    ¦                   ¦   ¦       DoctorFollowUpResponse.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---entity
+    ¦                   ¦   ¦       DoctorFollowUpRequest$DoctorFollowUpRequestBuilder.class
+    ¦                   ¦   ¦       DoctorFollowUpRequest.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---repository
+    ¦                   ¦   ¦       DoctorFollowUpRequestRepository.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---service
+    ¦                   ¦       ¦   DoctorFollowUpRequestService.class
+    ¦                   ¦       ¦   
+    ¦                   ¦       +---impl
+    ¦                   ¦               DoctorFollowUpRequestServiceImpl$1.class
+    ¦                   ¦               DoctorFollowUpRequestServiceImpl.class
+    ¦                   ¦               
+    ¦                   +---hospitalization
+    ¦                   ¦   +---dto
+    ¦                   ¦           AdmissionPriority.class
+    ¦                   ¦           HospitalizationCreateRequest.class
+    ¦                   ¦           HospitalizationCreateResponse.class
+    ¦                   ¦           HospitalizationMeasurementKind.class
+    ¦                   ¦           HospitalizationTaskRequest.class
+    ¦                   ¦           HospitalizationTaskType.class
+    ¦                   ¦           OpsCreateDossierRequest.class
+    ¦                   ¦           OpsCreateHospitalizationRequest.class
+    ¦                   ¦           OpsCreateHospitalizationTaskRequest.class
+    ¦                   ¦           OpsHospitalizationCaseResponse.class
+    ¦                   ¦           OpsHospitalizationTaskExecutionResponse.class
+    ¦                   ¦           OpsHospitalizationTaskResponse.class
+    ¦                   ¦           OpsPatientDossierResponse.class
+    ¦                   ¦           
+    ¦                   +---labRequest
+    ¦                   ¦   ¦   LabResultProcessingService$LabProcessingResult$LabProcessingResultBuilder.class
+    ¦                   ¦   ¦   LabResultProcessingService$LabProcessingResult.class
+    ¦                   ¦   ¦   LabResultProcessingService.class
+    ¦                   ¦   ¦   
+    ¦                   ¦   +---controller
+    ¦                   ¦   ¦       LabRequestController.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---dto
+    ¦                   ¦   ¦       CreateLabRequestRequest$CreateLabRequestRequestBuilder.class
+    ¦                   ¦   ¦       CreateLabRequestRequest.class
+    ¦                   ¦   ¦       LabRequestDto$LabRequestDtoBuilder.class
+    ¦                   ¦   ¦       LabRequestDto.class
+    ¦                   ¦   ¦       UploadLabResultRequest$UploadLabResultRequestBuilder.class
+    ¦                   ¦   ¦       UploadLabResultRequest.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---entity
+    ¦                   ¦   ¦       LabRequest$LabRequestBuilder.class
+    ¦                   ¦   ¦       LabRequest$LabStatus.class
+    ¦                   ¦   ¦       LabRequest$LabUrgency.class
+    ¦                   ¦   ¦       LabRequest.class
+    ¦                   ¦   ¦       LabResult$LabResultBuilder.class
+    ¦                   ¦   ¦       LabResult.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---events
+    ¦                   ¦   ¦       LabResultUploadedEvent$LabResultUploadedEventBuilder.class
+    ¦                   ¦   ¦       LabResultUploadedEvent.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---repository
+    ¦                   ¦   ¦       LabRequestRepository.class
+    ¦                   ¦   ¦       LabResultRepository.class
+    ¦                   ¦   ¦       
+    ¦                   ¦   +---service
+    ¦                   ¦       ¦   LabRequestService.class
+    ¦                   ¦       ¦   
+    ¦                   ¦       +---impl
+    ¦                   ¦               LabRequestServiceImpl.class
+    ¦                   ¦               
+    ¦                   +---notification
+    ¦                   ¦       GuardianNotification$GuardianNotificationBuilder.class
+    ¦                   ¦       GuardianNotification.class
+    ¦                   ¦       GuardianNotificationRepository.class
+    ¦                   ¦       GuardianNotificationResponse$GuardianNotificationResponseBuilder.class
+    ¦                   ¦       GuardianNotificationResponse.class
+    ¦                   ¦       GuardianNotificationService.class
+    ¦                   ¦       GuardianNotificationType.class
+    ¦                   ¦       
+    ¦                   +---patient
+    ¦                   ¦   ¦   PatientController.class
+    ¦                   ¦   ¦   PatientDirectoryClient.class
+    ¦                   ¦   ¦   
+    ¦                   ¦   +---dto
+    ¦                   ¦           PatientProfileDetails.class
+    ¦                   ¦           PatientSummary.class
+    ¦                   ¦           
+    ¦                   +---repository
+    ¦                   ¦       MedicalDossierRepository.class
+    ¦                   ¦       
+    ¦                   +---security
+    ¦                   ¦       ActorInfo.class
+    ¦                   ¦       ActorResolver.class
+    ¦                   ¦       DoctorIdResolver.class
+    ¦                   ¦       GuardianIdResolver.class
+    ¦                   ¦       
+    ¦                   +---service
+    ¦                   ¦       SchwartzGFRCalculator$SchwartzResult.class
+    ¦                   ¦       SchwartzGFRCalculator.class
+    ¦                   ¦       
+    ¦                   +---surgery
+    ¦                       +---controller
+    ¦                       ¦       SurgeryIndicationController.class
+    ¦                       ¦       
+    ¦                       +---dto
+    ¦                       ¦       CreateSurgeryIndicationRequest$CreateSurgeryIndicationRequestBuilder.class
+    ¦                       ¦       CreateSurgeryIndicationRequest.class
+    ¦                       ¦       SurgeryIndicationDto$SurgeryIndicationDtoBuilder.class
+    ¦                       ¦       SurgeryIndicationDto.class
+    ¦                       ¦       
+    ¦                       +---entity
+    ¦                       ¦       SurgeryIndication$SurgeryIndicationBuilder.class
+    ¦                       ¦       SurgeryIndication$SurgeryStatus.class
+    ¦                       ¦       SurgeryIndication$SurgeryUrgency.class
+    ¦                       ¦       SurgeryIndication.class
+    ¦                       ¦       
+    ¦                       +---repository
+    ¦                       ¦       SurgeryIndicationRepository.class
+    ¦                       ¦       
+    ¦                       +---service
+    ¦                           ¦   SurgeryIndicationService.class
+    ¦                           ¦   
+    ¦                           +---impl
+    ¦                                   SurgeryIndicationServiceImpl.class
+    ¦                                   
+    +---generated-sources
+    ¦   +---annotations
+    +---generated-test-sources
+    ¦   +---test-annotations
+    +---maven-status
+    ¦   +---maven-compiler-plugin
+    ¦       +---compile
+    ¦           +---default-compile
+    ¦                   createdFiles.lst
+    ¦                   inputFiles.lst
+    ¦                   
+    +---test-classes
+        ¦   application-test.yml
+        ¦   
+        +---tn
+            +---esprit
+                +---spring
+                    +---clinicalservice
+                        +---appointment
+                        ¦   +---service
+                        ¦           AppointmentServiceImplTest.class
+                        ¦           
+                        +---consultation
+                            +---metrics
+                            ¦       CKDEPICalculationServiceTest.class
+                            ¦       
+                            +---service
+                                    ConsultationOutcomeServiceImplTest.class
+                                    ConsultationServiceTest.class
+                                    
