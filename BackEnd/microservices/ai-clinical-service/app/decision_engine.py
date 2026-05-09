@@ -1,12 +1,34 @@
 from typing import List, Optional
 
 
-def pediatric_egfr(height_cm: Optional[float], creatinine_mg_dl: Optional[float], age_years: Optional[int]) -> Optional[float]:
+def pediatric_egfr(height_cm: Optional[float], creatinine_mg_dl: Optional[float], age_years: Optional[int], is_premature: bool = False) -> Optional[float]:
+    """
+    Calculate pediatric eGFR using Schwartz formula with age-dependent k-values.
+    
+    Formula: eGFR = k × height_cm / creatinine_mg_dL
+    
+    k-values (age-dependent):
+    - Premature: k = 0.33
+    - <1 year (term neonate): k = 0.45
+    - 1-13 years (child): k = 0.55
+    - ≥13 years (adolescent): k = 0.70
+    """
     if age_years is None or age_years >= 18:
         return None
     if height_cm is None or height_cm <= 0 or creatinine_mg_dl is None or creatinine_mg_dl <= 0:
         return None
-    return round((0.413 * height_cm) / creatinine_mg_dl, 1)
+    
+    # Select k-value based on age and prematurity
+    if is_premature:
+        k = 0.33  # premature
+    elif age_years < 1:
+        k = 0.45  # term neonate
+    elif age_years < 13:
+        k = 0.55  # child
+    else:
+        k = 0.70  # adolescent
+    
+    return round((k * height_cm) / creatinine_mg_dl, 1)
 
 
 def recommend_case(age_years: Optional[int], height_cm: Optional[float], creatinine_mg_dl: Optional[float],
