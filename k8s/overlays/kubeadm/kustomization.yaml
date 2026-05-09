@@ -1,0 +1,57 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nephro
+
+resources:
+  - ../../base
+
+images:
+  - name: nephropaidi-administration-service
+    newName: ghcr.io/mzahii/nephropaidi-administration-service
+    newTag: latest
+  - name: nephropaidi-ai-clinical-service
+    newName: ghcr.io/mzahii/nephropaidi-ai-clinical-service
+    newTag: latest
+  - name: nephropaidi-ai-pharmacy-service
+    newName: ghcr.io/mzahii/nephropaidi-ai-pharmacy-service
+    newTag: latest
+  - name: nephropaidi-api-gateway
+    newName: ghcr.io/mzahii/nephropaidi-api-gateway
+    newTag: latest
+  - name: nephropaidi-clinical-service
+    newName: ghcr.io/mzahii/nephropaidi-clinical-service
+    newTag: latest
+  - name: nephropaidi-communication-service
+    newName: ghcr.io/mzahii/nephropaidi-communication-service
+    newTag: latest
+  - name: nephropaidi-config-server
+    newName: ghcr.io/mzahii/nephropaidi-config-server
+    newTag: latest
+  - name: nephropaidi-core-ops-service
+    newName: ghcr.io/mzahii/nephropaidi-core-ops-service
+    newTag: latest
+  - name: nephropaidi-egfr-ml-service
+    newName: ghcr.io/mzahii/nephropaidi-egfr-ml-service
+    newTag: latest
+  - name: nephropaidi-eureka
+    newName: ghcr.io/mzahii/nephropaidi-eureka
+    newTag: latest
+  - name: nephropaidi-frontend
+    newName: ghcr.io/mzahii/nephropaidi-frontend
+    newTag: latest
+  - name: nephropaidi-ops-service
+    newName: ghcr.io/mzahii/nephropaidi-ops-service
+    newTag: latest
+  - name: nephropaidi-pharmacy-service
+    newName: ghcr.io/mzahii/nephropaidi-pharmacy-service
+    newTag: latest
+  - name: nephropaidi-procedure-service
+    newName: ghcr.io/mzahii/nephropaidi-procedure-service
+    newTag: latest
+  - name: nephropaidi-user-service
+    newName: ghcr.io/mzahii/nephropaidi-user-service
+    newTag: latest
+
+patches:
+  - path: registry-pull-secret.yaml

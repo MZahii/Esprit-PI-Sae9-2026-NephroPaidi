@@ -1,5 +1,6 @@
 package tn.esprit.spring.Administrationservice.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.spring.Administrationservice.dto.request.CreateStaffContractRequest;
 import tn.esprit.spring.Administrationservice.dto.request.UpdateStaffContractRequest;
 import tn.esprit.spring.Administrationservice.dto.response.StaffContractResponse;
@@ -19,5 +20,6 @@ public interface StaffContractService {
     void updateStaffStatus(Long staffUserId, String status);
     void delete(Long contractId);
     StaffContractResponse restore(Long contractId);
+    @Transactional
     int expireContractsAndDisableAccess();
 }

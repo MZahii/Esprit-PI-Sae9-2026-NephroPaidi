@@ -258,6 +258,9 @@ public class LabRequestServiceImpl implements LabRequestService {
     }
 
     private String sanitizeFileName(String originalName) {
+        if (originalName == null || originalName.isBlank()) {
+            return "lab-result.bin";
+        }
         return originalName.replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 }

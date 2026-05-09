@@ -33,7 +33,8 @@ public class ClinicalProxyController {
         String url = administrationBase + "/api/patients/" + id;
         try {
             ResponseEntity<String> resp = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(authHeaders(authentication)), String.class);
-            return ResponseEntity.status(resp.getStatusCode()).body(resp.getBody());
+            String body = resp.getBody();
+            return ResponseEntity.status(resp.getStatusCode()).body(body);
         } catch (HttpStatusCodeException ex) {
             return ResponseEntity.status(ex.getStatusCode()).body(ex.getResponseBodyAsString());
         }

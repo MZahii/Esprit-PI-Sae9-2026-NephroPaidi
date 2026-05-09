@@ -269,6 +269,7 @@ public class StaffContractServiceImpl implements StaffContractService {
     }
 
     @Scheduled(cron = "0 0 2 * * *")
+    @Transactional
     public void scheduledExpirationCheck() {
         int expiredCount = expireContractsAndDisableAccess();
         if (expiredCount > 0) {
