@@ -1,0 +1,43 @@
+.logs-center-page {
+  display: grid;
+  gap: 14px;
+}
+
+.logs-tabs-card {
+  border: 1px solid #dbe7f5;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 16px 36px rgba(15, 60, 90, 0.08);
+}
+
+.logs-tab-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 16px 18px;
+}
+
+.logs-tab {
+  min-height: 46px;
+  padding: 0 20px;
+  border: 1px solid #d4e3f2;
+  border-radius: 999px;
+  background: #fff;
+  color: #24384f;
+  font-weight: 800;
+  line-height: 1;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.logs-tab:hover {
+  border-color: #8ebbd7;
+  color: #006177;
+}
+
+.logs-tab.active {
+  border-color: #4f46e5;
+  background: #eef2ff;
+  color: #4338ca;
+  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.16);
+}

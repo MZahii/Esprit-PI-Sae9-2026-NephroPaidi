@@ -33,12 +33,14 @@
             class="nxl-item nxl-hasmenu"
             *ngIf="item.children?.length"
             [class.nxl-trigger]="isMenuOpen(item.key)"
+            [class.route-active]="isItemRouteActive(item)"
           >
             <button
               type="button"
               class="nxl-link menu-toggle-btn"
               (click)="toggleMenu($event, item.key)"
               [attr.aria-expanded]="isMenuOpen(item.key)"
+              [class.active]="isItemRouteActive(item)"
             >
               <span class="d-flex align-items-center gap-2">
                 <span class="nxl-micon"><i [class]="item.icon"></i></span>
@@ -51,13 +53,18 @@
             </button>
 
             <ul class="nxl-submenu">
-              <li class="nxl-item" *ngFor="let child of item.children">
+              <li
+                class="nxl-item"
+                *ngFor="let child of item.children"
+                [class.active]="isChildRouteActive(child)"
+              >
                 <a
                   *ngIf="child.implemented && child.route"
                   class="nxl-link"
                   [routerLink]="child.route"
                   [queryParams]="child.queryParams"
-                  routerLinkActive="active"
+                  [class.active]="isChildRouteActive(child)"
+                  [attr.aria-current]="isChildRouteActive(child) ? 'page' : null"
                 >
                   {{ child.label }}
                 </a>
@@ -95,18 +102,12 @@
           <i class="feather-align-left"></i>
         </a>
       </div>
-
-      <div class="header-copy">
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-          <h5 class="mb-0">{{ headerTitle }}</h5>
-          <span class="badge" [ngClass]="roleBadgeClass">{{ role }}</span>
-        </div>
-        <small class="text-muted">{{ headerSubtitle }}</small>
-      </div>
     </div>
 
+    <div class="header-filter-dock" aria-label="Page search and filters"></div>
+
     <div class="header-right ms-auto">
-      <div class="d-flex align-items-center gap-3 flex-wrap">
+      <div class="header-actions">
         <div class="notifications-menu" [class.open]="notificationsOpen">
           <button
             type="button"
@@ -119,7 +120,7 @@
             <img
               src="assets/frontoffice/img/notification.png"
               alt="Notifications"
-              class="notifications-trigger-img"
+              class="header-action-img"
             />
             <span class="unread-badge" *ngIf="unreadCount > 0">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
           </button>
@@ -163,7 +164,7 @@
             <img
               [src]="avatarPath"
               alt="user-image"
-              class="img-fluid user-avtar me-0"
+              class="header-action-img"
             />
           </button>
 
@@ -183,6 +184,19 @@
             </div>
 
             <div class="user-menu-divider"></div>
+
+            <a
+              *ngIf="isAdmin"
+              class="user-menu-item"
+              routerLink="/backoffice/logs-center"
+              (click)="userMenuOpen = false"
+            >
+              <i class="feather-activity"></i>
+              <div>
+                <span>Logs</span>
+                <small>Audit and clinical activity logs</small>
+              </div>
+            </a>
 
             <a
               *ngIf="canViewMyContract"
@@ -226,6 +240,18 @@
 <!-- MAIN CONTENT -->
 <main class="nxl-container">
   <div class="nxl-content">
+    <div class="page-statistics-tools" *ngIf="hasPageStats">
+      <button
+        type="button"
+        class="statistics-trigger"
+        (click)="openStatsPanel($event)"
+        title="Statistics"
+      >
+        <i class="feather-bar-chart-2"></i>
+        <span>Statistics</span>
+      </button>
+    </div>
+
     <router-outlet></router-outlet>
   </div>
 
@@ -249,3 +275,25 @@
     </div>
   </footer>
 </main>
+
+<div class="statistics-backdrop" *ngIf="statsPanelOpen" (click)="closeStatsPanel()"></div>
+
+<aside
+  class="statistics-modal"
+  [class.open]="statsPanelOpen"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Page statistics"
+  [attr.aria-hidden]="statsPanelOpen ? null : 'true'"
+>
+  <div class="statistics-modal-head">
+    <div>
+      <span class="statistics-kicker">Page overview</span>
+      <h5>Statistics</h5>
+    </div>
+    <button type="button" class="statistics-close" (click)="closeStatsPanel()" title="Close statistics">
+      <i class="feather-x"></i>
+    </button>
+  </div>
+  <div class="statistics-modal-body"></div>
+</aside>

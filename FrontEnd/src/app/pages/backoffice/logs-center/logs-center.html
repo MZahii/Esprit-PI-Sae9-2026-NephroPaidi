@@ -1,0 +1,26 @@
+<div class="logs-center-page">
+  <section class="card stretch stretch-full logs-tabs-card">
+    <div class="card-body logs-tab-row">
+      <button
+        type="button"
+        class="logs-tab"
+        [class.active]="activeTab === 'audit'"
+        (click)="setTab('audit')"
+      >
+        Audit Logs
+      </button>
+
+      <button
+        type="button"
+        class="logs-tab"
+        [class.active]="activeTab === 'clinical'"
+        (click)="setTab('clinical')"
+      >
+        Clinical Audit Logs
+      </button>
+    </div>
+  </section>
+
+  <app-logs *ngIf="activeTab === 'audit'"></app-logs>
+  <app-clinical-audit-logs *ngIf="activeTab === 'clinical'"></app-clinical-audit-logs>
+</div>

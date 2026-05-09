@@ -427,11 +427,131 @@ body.admin-redesign.backoffice-body .nxl-item.active > .nxl-link {
 }
 
 body.admin-redesign.backoffice-body .nxl-header {
-  background: rgba(255, 255, 255, 0.92) !important;
+  top: 0 !important;
+  min-height: 72px !important;
+  background:
+    linear-gradient(180deg, #ffffff 0%, #eef7fb 100%) !important;
   border-bottom: 1px solid #dbe7f2 !important;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 10px 28px rgba(22, 50, 80, 0.06) !important;
 }
+
+body.admin-redesign.backoffice-body .header-filter-dock {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: visible;
+  padding: 6px 2px 6px 0;
+}
+
+body.admin-redesign.backoffice-body .header-filter-dock:empty {
+  display: none;
+}
+
+body.admin-redesign.backoffice-body .header-filter-dock .topbar-filter-group {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+body.admin-redesign.backoffice-body .header-filter-dock .topbar-filter-group input.form-control {
+  width: clamp(260px, 32vw, 520px) !important;
+  min-width: 280px;
+}
+
+body.admin-redesign.backoffice-body .header-filter-dock .topbar-filter-group select.form-control,
+body.admin-redesign.backoffice-body .header-filter-dock .topbar-filter-group select.form-select {
+  width: 100% !important;
+  min-width: 160px;
+}
+
+body.admin-redesign.backoffice-body .header-filter-dock .topbar-filter-group .form-control,
+body.admin-redesign.backoffice-body .header-filter-dock .topbar-filter-group .form-select {
+  height: 46px;
+  border-radius: 12px;
+  border: 1px solid #c8ddea;
+  background-color: rgba(255, 255, 255, 0.94);
+  color: #10233f;
+  font-size: 14px;
+  box-shadow: 0 8px 20px rgba(22, 50, 80, 0.06);
+}
+
+body.admin-redesign.backoffice-body .header-filter-dock .topbar-filter-group .form-control:focus,
+body.admin-redesign.backoffice-body .header-filter-dock .topbar-filter-group .form-select:focus {
+  border-color: #0f8fa1;
+  box-shadow: 0 0 0 3px rgba(15, 143, 161, 0.14);
+}
+
+body.admin-redesign.backoffice-body .topbar-filter-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+body.admin-redesign.backoffice-body .topbar-filter-menu-trigger {
+  height: 46px;
+  min-width: 150px;
+  padding: 0 16px;
+  border: 1px solid #c8ddea;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #eef8fb 100%);
+  color: #10233f;
+  font-size: 14px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 8px 20px rgba(22, 50, 80, 0.08);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+body.admin-redesign.backoffice-body .topbar-filter-menu-trigger:hover,
+body.admin-redesign.backoffice-body .topbar-filter-menu.open .topbar-filter-menu-trigger {
+  border-color: #0f8fa1;
+  box-shadow: 0 12px 24px rgba(15, 128, 148, 0.14);
+  transform: translateY(-1px);
+}
+
+body.admin-redesign.backoffice-body .topbar-filter-menu-trigger i,
+body.admin-redesign.backoffice-body .topbar-filter-menu-trigger svg {
+  width: 16px;
+  height: 16px;
+}
+
+body.admin-redesign.backoffice-body .topbar-filter-menu-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(360px, calc(100vw - 40px));
+  padding: 12px;
+  border: 1px solid #cfe2ef;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 46px rgba(18, 46, 78, 0.16);
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1055;
+}
+
+body.admin-redesign.backoffice-body .topbar-filter-menu.open .topbar-filter-menu-panel {
+  display: flex;
+}
+
+body.admin-redesign.backoffice-body .topbar-filter-panel-docked {
+  display: none !important;
+}
+
 
 body.admin-redesign.backoffice-body .header-copy h5 {
   color: #10233f !important;
@@ -819,6 +939,17 @@ body.admin-redesign.backoffice-body .page-header-title {
 body.admin-redesign.backoffice-body .page-header-title h5 {
   font-size: clamp(30px, 3vw, 48px) !important;
   letter-spacing: -0.04em !important;
+}
+
+/* Hide repeated backoffice title/breadcrumb hero blocks across admin pages. */
+body.admin-redesign.backoffice-body .page-header,
+body.admin-redesign.backoffice-body .module-header,
+body.admin-redesign.backoffice-body .admin-dashboard-welcome {
+  display: none !important;
+}
+
+body.admin-redesign.backoffice-body .page-header + .main-content {
+  padding-top: 26px !important;
 }
 
 body.admin-redesign.backoffice-body .stats-card,
@@ -1232,4 +1363,327 @@ body.np-theme-dark.admin-redesign.backoffice-body .table tbody tr:hover,
 body.np-theme-dark.admin-redesign.backoffice-body .notification-item:hover,
 body.np-theme-dark.admin-redesign.backoffice-body .user-menu-item:hover {
   background: #10243c !important;
+}
+
+body.admin-redesign.backoffice-body:not(.backoffice-dashboard-route) .nxl-content .stats-grid,
+body.admin-redesign.backoffice-body:not(.backoffice-dashboard-route) .nxl-content .kpi-grid,
+body.admin-redesign.backoffice-body:not(.backoffice-dashboard-route) .nxl-content .resource-overview-grid,
+body.admin-redesign.backoffice-body:not(.backoffice-dashboard-route) .nxl-content .row:has(.role-card) {
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+body.admin-redesign.backoffice-body .page-statistics-tools {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 70px;
+  width: auto;
+  padding: 12px 22px;
+  margin: 14px 4px 16px;
+  position: relative;
+  z-index: 6;
+  border: 1px solid #d5e6f1;
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 252, 254, 0.98) 100%);
+  box-shadow: 0 14px 34px rgba(15, 60, 90, 0.08);
+}
+
+body.admin-redesign.backoffice-body .statistics-trigger {
+  height: 40px;
+  min-width: 128px;
+  padding: 0 16px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid #b9dbea;
+  background: linear-gradient(180deg, #ffffff 0%, #eef9fc 100%);
+  color: #10233d;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: 0 8px 18px rgba(15, 128, 148, 0.11);
+  animation: statisticsButtonPulse 2.4s ease-in-out infinite;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+body.admin-redesign.backoffice-body .statistics-trigger::before {
+  content: '';
+  position: absolute;
+  inset: -60% auto -60% -45%;
+  width: 42%;
+  z-index: -1;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.88), transparent);
+  animation: statisticsButtonShine 3.2s ease-in-out infinite;
+}
+
+body.admin-redesign.backoffice-body .statistics-trigger i {
+  width: 17px;
+  height: 17px;
+  color: #07869a;
+  filter: drop-shadow(0 3px 6px rgba(7, 134, 154, 0.2));
+}
+
+body.admin-redesign.backoffice-body .statistics-trigger:hover {
+  transform: translateY(-2px);
+  border-color: #0b8fa0;
+  background: linear-gradient(180deg, #ffffff 0%, #e3f7fb 100%);
+  box-shadow: 0 12px 24px rgba(15, 128, 148, 0.18);
+}
+
+body.admin-redesign.backoffice-body .statistics-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1090;
+  background: rgba(15, 32, 48, 0.26);
+  backdrop-filter: blur(3px);
+  animation: statisticsFade 0.18s ease both;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  bottom: 18px;
+  width: min(1040px, calc(100vw - 36px));
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #c9e2f2;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(7, 134, 154, 0.12), transparent 34%),
+    linear-gradient(180deg, #ffffff 0%, #f4fbfd 100%);
+  box-shadow: 0 26px 70px rgba(15, 40, 60, 0.22);
+  transform: translateX(calc(100% + 30px));
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.18s ease;
+  overflow: hidden;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal.open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-head {
+  min-height: 76px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #dbeaf4;
+  background:
+    linear-gradient(90deg, rgba(238, 249, 252, 0.96), rgba(255, 255, 255, 0.86));
+}
+
+body.admin-redesign.backoffice-body .statistics-kicker {
+  display: block;
+  color: #07869a;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-head h5 {
+  margin: 0;
+  color: #10233d;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+body.admin-redesign.backoffice-body .statistics-close {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  border: 1px solid #c9e2f2;
+  background: #fff;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+body.admin-redesign.backoffice-body .statistics-close:hover {
+  transform: rotate(6deg) scale(1.04);
+  background: #eef9fc;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body {
+  flex: 1;
+  overflow: auto;
+  padding: 22px;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .statistics-modal-group {
+  margin: 0 0 18px !important;
+  animation: statisticsGroupIn 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .statistics-modal-group:last-child {
+  margin-bottom: 0 !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .stats-grid,
+body.admin-redesign.backoffice-body .statistics-modal-body .kpi-grid,
+body.admin-redesign.backoffice-body .statistics-modal-body .resource-overview-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)) !important;
+  gap: 16px !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .stats-card,
+body.admin-redesign.backoffice-body .statistics-modal-body .kpi-card,
+body.admin-redesign.backoffice-body .statistics-modal-body .metric-card,
+body.admin-redesign.backoffice-body .statistics-modal-body .role-card,
+body.admin-redesign.backoffice-body .statistics-modal-body .resource-overview-card {
+  min-height: 168px !important;
+  padding: 22px !important;
+  border: 1px solid rgba(7, 134, 154, 0.2) !important;
+  border-radius: 20px !important;
+  background:
+    radial-gradient(circle at top right, rgba(20, 184, 166, 0.18), transparent 36%),
+    radial-gradient(circle at bottom left, rgba(37, 99, 235, 0.08), transparent 34%),
+    linear-gradient(180deg, #ffffff 0%, #f6fbfd 100%) !important;
+  box-shadow: 0 18px 40px rgba(15, 60, 90, 0.12) !important;
+  transform: translateY(0);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  overflow: hidden;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .stats-card:hover,
+body.admin-redesign.backoffice-body .statistics-modal-body .kpi-card:hover,
+body.admin-redesign.backoffice-body .statistics-modal-body .metric-card:hover,
+body.admin-redesign.backoffice-body .statistics-modal-body .role-card:hover,
+body.admin-redesign.backoffice-body .statistics-modal-body .resource-overview-card:hover {
+  transform: translateY(-5px) scale(1.01);
+  border-color: #80c7d8 !important;
+  box-shadow: 0 22px 46px rgba(15, 60, 90, 0.16) !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .stats-card::before,
+body.admin-redesign.backoffice-body .statistics-modal-body .kpi-card::before,
+body.admin-redesign.backoffice-body .statistics-modal-body .metric-card::before,
+body.admin-redesign.backoffice-body .statistics-modal-body .role-card::before,
+body.admin-redesign.backoffice-body .statistics-modal-body .resource-overview-card::before {
+  height: 6px !important;
+  background: linear-gradient(90deg, #006f89, #16c6b6, #7bbf3f) !important;
+  box-shadow: 0 8px 18px rgba(20, 184, 166, 0.18) !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .stats-label,
+body.admin-redesign.backoffice-body .statistics-modal-body .kpi-card span,
+body.admin-redesign.backoffice-body .statistics-modal-body .metric-label,
+body.admin-redesign.backoffice-body .statistics-modal-body .resource-overview-card span,
+body.admin-redesign.backoffice-body .statistics-modal-body .role-card h6 {
+  color: #60728a !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .stats-value,
+body.admin-redesign.backoffice-body .statistics-modal-body .kpi-card strong,
+body.admin-redesign.backoffice-body .statistics-modal-body .metric-value,
+body.admin-redesign.backoffice-body .statistics-modal-body .resource-overview-card strong,
+body.admin-redesign.backoffice-body .statistics-modal-body .role-total {
+  color: #063b4a !important;
+  font-weight: 900 !important;
+  text-shadow: 0 8px 22px rgba(6, 59, 74, 0.08) !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .chart-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .circle-wrap {
+  width: 120px !important;
+  height: 120px !important;
+  margin: 10px auto !important;
+  box-shadow: 0 0 0 8px rgba(7, 134, 154, 0.06) !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .circle-value {
+  font-size: 20px !important;
+  font-weight: 900 !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .stats-card[data-stat-tooltip]::after,
+body.admin-redesign.backoffice-body .statistics-modal-body .kpi-card[data-stat-tooltip]::after,
+body.admin-redesign.backoffice-body .statistics-modal-body .metric-card[data-stat-tooltip]::after,
+body.admin-redesign.backoffice-body .statistics-modal-body .role-card[data-stat-tooltip]::after,
+body.admin-redesign.backoffice-body .statistics-modal-body .analytics-pill[data-stat-tooltip]::after {
+  display: none !important;
+}
+
+@keyframes statisticsGroupIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes statisticsButtonPulse {
+  0%, 100% {
+    box-shadow: 0 8px 18px rgba(15, 128, 148, 0.12), 0 0 0 0 rgba(7, 134, 154, 0);
+  }
+  50% {
+    box-shadow: 0 12px 24px rgba(15, 128, 148, 0.18), 0 0 0 4px rgba(7, 134, 154, 0.08);
+  }
+}
+
+@keyframes statisticsButtonShine {
+  0%, 45% {
+    left: -45%;
+  }
+  72%, 100% {
+    left: 118%;
+  }
+}
+
+@keyframes statisticsFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 900px) {
+  body.admin-redesign.backoffice-body .statistics-trigger {
+    min-width: 56px;
+    width: 56px;
+    padding: 0;
+  }
+
+  body.admin-redesign.backoffice-body .statistics-trigger span {
+    display: none;
+  }
 }

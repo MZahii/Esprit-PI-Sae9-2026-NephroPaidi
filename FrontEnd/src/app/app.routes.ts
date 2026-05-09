@@ -21,6 +21,7 @@ import { FrontofficeHomeComponent } from './pages/frontoffice/frontoffice-home/f
 import { FrontofficePatientDetailsComponent } from './pages/frontoffice/frontoffice-patient-details/frontoffice-patient-details';
 import { MyContractComponent } from './pages/shared/my-contract/my-contract';
 import { LogsComponent } from './pages/backoffice/logs/logs';
+import { LogsCenterComponent } from './pages/backoffice/logs-center/logs-center';
 import { ClinicalAuditLogsComponent } from './pages/backoffice/clinical-audit-logs/clinical-audit-logs';
 import { CommunicationInboxComponent } from './pages/backoffice/communication-inbox/communication-inbox';
 import { CommunicationDetailsComponent } from './pages/backoffice/communication-details/communication-details';
@@ -310,6 +311,12 @@ export const routes: Routes = [
         component: MyContractComponent,
         canActivate: [roleGuard],
         data: { roles: ['HR', 'DOCTOR', 'NURSE', 'SURGEON', 'PHARMACIST', 'RECEPTIONIST', 'LAB_AGENT'] }
+      },
+      {
+        path: 'logs-center',
+        component: LogsCenterComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] }
       },
       {
         path: 'logs',

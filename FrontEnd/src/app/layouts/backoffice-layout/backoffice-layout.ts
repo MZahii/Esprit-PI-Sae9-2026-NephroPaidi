@@ -1,6 +1,8 @@
 ﻿import {
   AfterViewInit,
+  ChangeDetectorRef,
   Component,
+  ElementRef,
   HostListener,
   OnDestroy,
   OnInit
@@ -9,12 +11,14 @@ import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import {
   NavigationEnd,
+  NavigationStart,
+  Params,
   Router,
   RouterLink,
   RouterLinkActive,
   RouterOutlet
 } from '@angular/router';
-import { filter, firstValueFrom, Subscription } from 'rxjs';
+import { firstValueFrom, Subscription } from 'rxjs';
 import { AuthStorageService } from '../../core/auth/auth-storage.service';
 import { getValidToken, logout } from '../../core/auth/keycloak.service';
 import { TemplateAssetsService } from '../../core/services/template-assets.service';
@@ -63,6 +67,29 @@ interface HeaderNotification {
   createdAt: string;
 }
 
+interface DockedFilterGroup {
+  node: HTMLElement;
+  placeholder: Comment;
+  parentPanel?: HTMLElement;
+  compactMenu?: DockedFilterCompactMenu;
+}
+
+interface DockedFilterCompactMenu {
+  wrapper: HTMLElement;
+  panel: HTMLElement;
+  button: HTMLButtonElement;
+  movedControls: Array<{
+    node: HTMLElement;
+    parent: Node;
+    nextSibling: ChildNode | null;
+  }>;
+}
+
+interface DockedStatGroup {
+  node: HTMLElement;
+  placeholder: Comment;
+}
+
 @Component({
   selector: 'app-backoffice-layout',
   standalone: true,
@@ -86,8 +113,17 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
   notificationsEnabled = true;
 
   private notificationsTimer?: ReturnType<typeof setInterval>;
+  private filterDockTimer?: ReturnType<typeof setTimeout>;
+  private filterDockObserver?: MutationObserver;
+  private dockedFilterGroups: DockedFilterGroup[] = [];
+  private dockedStatGroups: DockedStatGroup[] = [];
   private lastNotificationId?: number;
   private readonly notificationsPollMs = 15000;
+  private lastManualMenuToggleAt = 0;
+  private readonly manualMenuToggleGraceMs = 900;
+  private destroyed = false;
+  hasPageStats = false;
+  statsPanelOpen = false;
 
   openMenus: Record<string, boolean> = {
     accounts: false,
@@ -111,7 +147,9 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     private templateAssetsService: TemplateAssetsService,
     private interfacePreferences: InterfacePreferencesService,
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private elementRef: ElementRef<HTMLElement>,
+    private cdr: ChangeDetectorRef
   ) {
     this.user = this.authStorage.getUser();
     this.role = this.authStorage.getRole() ?? '';
@@ -257,22 +295,6 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     ];
 
     if (this.isAdmin) {
-      items.push({
-        key: 'logs',
-        label: 'Audit Logs',
-        icon: 'feather-activity',
-        route: '/backoffice/logs',
-        exact: true
-      });
-
-      items.push({
-        key: 'clinicalLogs',
-        label: 'Clinical Audit Logs',
-        icon: 'feather-file-text',
-        route: '/backoffice/clinical-audit-logs',
-        exact: true
-      });
-
       items.push({
         key: 'accounts',
         label: 'Accounts',
@@ -469,7 +491,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
       });
     }
 
-    if (this.isPharmacist || this.isAdmin || this.isNurse) {
+    if (this.isPharmacist || this.isNurse) {
       items.push({
         key: 'pharmacy',
         label: 'Pharmacy',
@@ -650,6 +672,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
 
     document.body.classList.remove('public-body', 'frontoffice-body');
     document.body.classList.add('backoffice-body', 'admin-redesign');
+    this.updateRouteBodyClasses();
 
     await this.templateAssetsService.loadGroup(
       'backoffice',
@@ -659,16 +682,29 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     this.applyPreferences(this.authStorage.getPreferences());
     await this.loadAccountPreferences();
 
-    this.navSub = this.router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe(() => {
+    this.navSub = this.router.events.subscribe((event) => {
+      if (event instanceof NavigationStart) {
+        this.restoreDockedFilters();
+        this.restoreDockedStats();
+        return;
+      }
+
+      if (event instanceof NavigationEnd) {
+        this.updateRouteBodyClasses();
         this.userMenuOpen = false;
         this.notificationsOpen = false;
+        if (Date.now() - this.lastManualMenuToggleAt > this.manualMenuToggleGraceMs) {
+          this.syncOpenMenusWithRoute();
+        }
         setTimeout(() => {
           this.refreshFeatherIcons();
           this.interfacePreferences.setLanguage(this.authStorage.getPreferences().preferredLanguage);
         }, 120);
-      });
+        this.scheduleFilterDocking(0);
+      }
+    });
+
+    this.syncOpenMenusWithRoute();
 
     if (this.notificationsEnabled) {
       await this.loadNotifications(true);
@@ -681,24 +717,335 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
   ngAfterViewInit(): void {
     setTimeout(() => {
       this.refreshFeatherIcons();
+      this.scheduleFilterDocking(0);
     }, 300);
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
     this.navSub?.unsubscribe();
+    this.restoreDockedFilters();
+    this.restoreDockedStats();
+    this.filterDockObserver?.disconnect();
+    if (this.filterDockTimer) {
+      clearTimeout(this.filterDockTimer);
+    }
     if (this.notificationsTimer) {
       clearInterval(this.notificationsTimer);
     }
     this.templateAssetsService.unloadGroup('backoffice');
     this.interfacePreferences.stop();
-    document.body.classList.remove('backoffice-body', 'admin-redesign');
+    document.body.classList.remove('backoffice-body', 'admin-redesign', 'backoffice-dashboard-route', 'backoffice-has-page-stats');
+  }
+
+  private scheduleFilterDocking(delay = 0): void {
+    if (this.filterDockTimer) {
+      clearTimeout(this.filterDockTimer);
+    }
+
+    this.filterDockTimer = setTimeout(() => {
+      this.dockPageFilters();
+      this.dockPageStats();
+      this.watchForLateFilters();
+    }, delay);
+  }
+
+  private dockPageFilters(): void {
+    const host = this.elementRef.nativeElement;
+    const dock = host.querySelector<HTMLElement>('.header-filter-dock');
+    if (!dock) return;
+
+    this.pruneDisconnectedDockedFilters();
+
+    const candidates = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '.nxl-content .filters, .nxl-content .filters-grid'
+      )
+    ).filter((node) => this.isDockableFilterGroup(node, dock));
+
+    candidates.forEach((node) => {
+      const parent = node.parentElement;
+      if (!parent) return;
+
+      const placeholder = document.createComment('backoffice-filter-dock-placeholder');
+      parent.insertBefore(placeholder, node);
+
+      const parentPanel = node.closest<HTMLElement>('.filters-panel, .staff-filter-panel');
+      parentPanel?.classList.add('topbar-filter-panel-docked');
+
+      node.classList.add('topbar-filter-group');
+      dock.appendChild(node);
+      this.dockedFilterGroups.push({
+        node,
+        placeholder,
+        parentPanel: parentPanel ?? undefined
+      });
+    });
+
+    this.compactDockedFilterSelects(dock);
+  }
+
+  private pruneDisconnectedDockedFilters(): void {
+    this.dockedFilterGroups = this.dockedFilterGroups.filter((group) => {
+      if (group.node.isConnected && group.placeholder.isConnected) {
+        return true;
+      }
+
+      group.compactMenu?.wrapper.remove();
+      group.node.remove();
+      group.placeholder.remove();
+      group.parentPanel?.classList.remove('topbar-filter-panel-docked');
+      return false;
+    });
+  }
+
+  private isDockableFilterGroup(node: HTMLElement, dock: HTMLElement): boolean {
+    if (dock.contains(node)) return false;
+    if (this.dockedFilterGroups.some((group) => group.node === node)) return false;
+    if (!node.isConnected) return false;
+    if (!node.querySelector('input, select')) return false;
+    if (!node.querySelector('input[placeholder], select')) return false;
+    if (node.closest('form, .modal, .dropdown-menu, .notifications-dropdown, .user-menu-dropdown')) return false;
+
+    const styles = window.getComputedStyle(node);
+    return styles.display !== 'none' && styles.visibility !== 'hidden';
+  }
+
+  private compactDockedFilterSelects(dock: HTMLElement): void {
+    if (this.dockedFilterGroups.some((group) => !!group.compactMenu)) {
+      return;
+    }
+
+    const selects = Array.from(
+      dock.querySelectorAll<HTMLElement>('.topbar-filter-group select.form-control, .topbar-filter-group select.form-select')
+    );
+    if (selects.length <= 1) {
+      return;
+    }
+
+    const movedControls = selects.map((select) => ({
+      node: select,
+      parent: select.parentNode as Node,
+      nextSibling: select.nextSibling
+    }));
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'topbar-filter-menu';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'topbar-filter-menu-trigger';
+    button.setAttribute('aria-haspopup', 'true');
+    button.setAttribute('aria-expanded', 'false');
+
+    const hasSearch = !!dock.querySelector('.topbar-filter-group input');
+    button.innerHTML = `
+      <span>${hasSearch ? 'Filters & Sort' : 'Sort'}</span>
+      <i class="feather-chevron-down" aria-hidden="true"></i>
+    `;
+
+    const panel = document.createElement('div');
+    panel.className = 'topbar-filter-menu-panel';
+
+    selects.forEach((select) => {
+      panel.appendChild(select);
+    });
+
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const nextOpen = !wrapper.classList.contains('open');
+      this.closeTopbarFilterMenus();
+      wrapper.classList.toggle('open', nextOpen);
+      button.setAttribute('aria-expanded', String(nextOpen));
+      this.refreshFeatherIcons();
+    });
+
+    wrapper.appendChild(button);
+    wrapper.appendChild(panel);
+    dock.appendChild(wrapper);
+
+    setTimeout(() => this.refreshFeatherIcons(), 0);
+
+    const owner = this.dockedFilterGroups[0];
+    if (owner) {
+      owner.compactMenu = { wrapper, panel, button, movedControls };
+    }
+  }
+
+  private closeTopbarFilterMenus(): void {
+    this.dockedFilterGroups.forEach((group) => {
+      group.compactMenu?.wrapper.classList.remove('open');
+      group.compactMenu?.button.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  private restoreDockedFilters(): void {
+    this.dockedFilterGroups.forEach(({ node, placeholder, parentPanel, compactMenu }) => {
+      if (compactMenu) {
+        compactMenu.movedControls.forEach((control) => {
+          if (control.parent.isConnected) {
+            control.parent.insertBefore(
+              control.node,
+              control.nextSibling?.parentNode === control.parent ? control.nextSibling : null
+            );
+          }
+        });
+        compactMenu.wrapper.remove();
+      }
+
+      node.classList.remove('topbar-filter-group');
+      parentPanel?.classList.remove('topbar-filter-panel-docked');
+
+      if (placeholder.parentNode && node.isConnected) {
+        placeholder.parentNode.insertBefore(node, placeholder);
+      }
+
+      placeholder.remove();
+    });
+
+    this.dockedFilterGroups = [];
+  }
+
+  private watchForLateFilters(): void {
+    this.filterDockObserver?.disconnect();
+
+    const content = document.querySelector('.nxl-content');
+    if (!content) return;
+
+    this.filterDockObserver = new MutationObserver(() => {
+      this.scheduleFilterDocking(0);
+    });
+
+    this.filterDockObserver.observe(content, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  private dockPageStats(): void {
+    const host = this.elementRef.nativeElement;
+    const statsBody = host.querySelector<HTMLElement>('.statistics-modal-body');
+    if (!statsBody) return;
+
+    if (this.isDashboardRoute()) {
+      this.restoreDockedStats();
+      this.hasPageStats = false;
+      return;
+    }
+
+    this.pruneDisconnectedDockedStats();
+
+    const candidates = this.findStatisticGroups(statsBody);
+    candidates.forEach((node) => {
+      const parent = node.parentElement;
+      if (!parent) return;
+
+      const placeholder = document.createComment('backoffice-stat-dock-placeholder');
+      parent.insertBefore(placeholder, node);
+      node.classList.add('statistics-modal-group');
+      statsBody.appendChild(node);
+      this.dockedStatGroups.push({ node, placeholder });
+    });
+
+    this.hasPageStats = this.dockedStatGroups.length > 0;
+    document.body.classList.toggle('backoffice-has-page-stats', this.hasPageStats);
+    if (!this.hasPageStats) {
+      this.statsPanelOpen = false;
+    }
+    this.refreshLayoutState();
+  }
+
+  private findStatisticGroups(statsBody: HTMLElement): HTMLElement[] {
+    const baseGroups = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '.nxl-content .stats-grid, .nxl-content .kpi-grid, .nxl-content .resource-overview-grid'
+      )
+    );
+
+    const roleRows = Array.from(
+      document.querySelectorAll<HTMLElement>('.nxl-content .row')
+    ).filter((node) => !!node.querySelector('.role-card'));
+
+    return [...baseGroups, ...roleRows].filter((node, index, all) => {
+      if (all.indexOf(node) !== index) return false;
+      if (statsBody.contains(node)) return false;
+      if (this.dockedStatGroups.some((group) => group.node === node)) return false;
+      if (!node.isConnected) return false;
+      if (!node.querySelector('.stats-card, .kpi-card, .metric-card, .role-card, .resource-overview-card')) return false;
+      if (node.closest('.dashboard-page')) return false;
+
+      const styles = window.getComputedStyle(node);
+      return styles.display !== 'none' && styles.visibility !== 'hidden';
+    });
+  }
+
+  private pruneDisconnectedDockedStats(): void {
+    this.dockedStatGroups = this.dockedStatGroups.filter((group) => {
+      if (group.node.isConnected && group.placeholder.isConnected) {
+        return true;
+      }
+
+      group.node.remove();
+      group.placeholder.remove();
+      return false;
+    });
+  }
+
+  private restoreDockedStats(): void {
+    this.dockedStatGroups.forEach(({ node, placeholder }) => {
+      node.classList.remove('statistics-modal-group');
+
+      if (placeholder.parentNode && node.isConnected) {
+        placeholder.parentNode.insertBefore(node, placeholder);
+      }
+
+      placeholder.remove();
+    });
+
+    this.dockedStatGroups = [];
+    this.hasPageStats = false;
+    this.statsPanelOpen = false;
+    document.body.classList.remove('backoffice-has-page-stats');
+    this.refreshLayoutState();
+  }
+
+  private refreshLayoutState(): void {
+    if (!this.destroyed) {
+      this.cdr.detectChanges();
+    }
+  }
+
+  private isDashboardRoute(): boolean {
+    const path = this.router.url.split('?')[0].split('#')[0];
+    return path.endsWith('/dashboard') || path.includes('/dashboard/');
+  }
+
+  private updateRouteBodyClasses(): void {
+    document.body.classList.toggle('backoffice-dashboard-route', this.isDashboardRoute());
+  }
+
+  openStatsPanel(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.statsPanelOpen = true;
+    this.refreshLayoutState();
+  }
+
+  closeStatsPanel(): void {
+    this.statsPanelOpen = false;
+    this.refreshLayoutState();
   }
 
   toggleMenu(event: MouseEvent, key: string): void {
     event.preventDefault();
     event.stopPropagation();
+    this.lastManualMenuToggleAt = Date.now();
 
-    const willOpen = !this.openMenus[key];
+    const item = this.navigationItems.find((navItem) => navItem.key === key);
+    const isActiveRouteMenu = item ? this.isItemRouteActive(item) : false;
+    const willOpen = isActiveRouteMenu || !this.openMenus[key];
 
     Object.keys(this.openMenus).forEach(menuKey => {
       this.openMenus[menuKey] = false;
@@ -707,12 +1054,21 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     this.openMenus[key] = willOpen;
 
     setTimeout(() => {
+      this.openMenus[key] = willOpen;
       this.refreshFeatherIcons();
     }, 0);
   }
 
   isMenuOpen(key: string): boolean {
     return !!this.openMenus[key];
+  }
+
+  isItemRouteActive(item: BackofficeNavItem): boolean {
+    if (!item.children?.length) {
+      return false;
+    }
+
+    return item.children.some((child) => this.isChildRouteActive(child));
   }
 
   toggleUserMenu(event: MouseEvent): void {
@@ -733,6 +1089,12 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     }
     if (!target?.closest('.user-menu')) {
       this.userMenuOpen = false;
+    }
+    if (!target?.closest('.topbar-filter-menu')) {
+      this.closeTopbarFilterMenus();
+    }
+    if (this.statsPanelOpen && !target?.closest('.statistics-modal') && !target?.closest('.statistics-trigger')) {
+      this.closeStatsPanel();
     }
   }
 
@@ -823,6 +1185,34 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     } catch (error) {
       console.log('Feather init skipped:', error);
     }
+  }
+
+  private syncOpenMenusWithRoute(): void {
+    Object.keys(this.openMenus).forEach(menuKey => {
+      this.openMenus[menuKey] = false;
+    });
+
+    const activeParent = this.navigationItems.find((item) => this.isItemRouteActive(item));
+    if (activeParent) {
+      this.openMenus[activeParent.key] = true;
+    }
+  }
+
+  isChildRouteActive(child: BackofficeNavChild): boolean {
+    if (!child.route) {
+      return false;
+    }
+
+    const tree = this.router.createUrlTree([child.route], {
+      queryParams: child.queryParams as Params | undefined
+    });
+
+    return this.router.isActive(tree, {
+      paths: 'subset',
+      queryParams: child.queryParams ? 'subset' : 'ignored',
+      fragment: 'ignored',
+      matrixParams: 'ignored'
+    });
   }
 
   async onLogout(): Promise<void> {

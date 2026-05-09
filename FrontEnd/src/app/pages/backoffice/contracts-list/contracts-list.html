@@ -66,15 +66,19 @@
               (ngModelChange)="onFiltersChanged()"
             />
 
-            <select class="form-control" [(ngModel)]="roleFilter" (ngModelChange)="onFiltersChanged()">
+            <select
+              *ngIf="contractScope !== 'HR'"
+              class="form-control"
+              [(ngModel)]="roleFilter"
+              (ngModelChange)="onFiltersChanged()"
+            >
               <option value="ALL">All Roles</option>
-              <option *ngIf="isAdmin" value="HR">HR</option>
-              <option *ngIf="!isAdmin" value="DOCTOR">DOCTOR</option>
-              <option *ngIf="!isAdmin" value="NURSE">NURSE</option>
-              <option *ngIf="!isAdmin" value="SURGEON">SURGEON</option>
-              <option *ngIf="!isAdmin" value="PHARMACIST">PHARMACIST</option>
-              <option *ngIf="!isAdmin" value="RECEPTIONIST">RECEPTIONIST</option>
-              <option *ngIf="!isAdmin" value="LAB_AGENT">LAB_AGENT</option>
+              <option value="DOCTOR">DOCTOR</option>
+              <option value="NURSE">NURSE</option>
+              <option value="SURGEON">SURGEON</option>
+              <option value="PHARMACIST">PHARMACIST</option>
+              <option value="RECEPTIONIST">RECEPTIONIST</option>
+              <option value="LAB_AGENT">LAB_AGENT</option>
             </select>
 
             <select class="form-control" [(ngModel)]="statusFilter" (ngModelChange)="onFiltersChanged()">
