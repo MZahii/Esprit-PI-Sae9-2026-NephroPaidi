@@ -2,11 +2,13 @@ package tn.esprit.spring.clinicalservice.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.spring.clinicalservice.dto.ConsultationRecordDTO;
 import tn.esprit.spring.clinicalservice.entity.ConsultationRecord;
+import tn.esprit.spring.clinicalservice.event.ConsultationCreatedEvent;
 import tn.esprit.spring.clinicalservice.mapper.ConsultationRecordMapper;
 import tn.esprit.spring.clinicalservice.repository.ConsultationRecordRepository;
 import java.util.List;
@@ -26,6 +28,9 @@ public class ConsultationController {
     
     @Autowired
     private ConsultationRecordMapper mapper;
+    
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
     
     /**
      * GET /api/v1/consultations/{id}
@@ -53,6 +58,7 @@ public class ConsultationController {
     
     /**
      * POST /api/v1/consultations
+     * Creates a consultation and publishes event for async AI prediction
      */
     @PostMapping
     public ResponseEntity<ConsultationRecordDTO> createConsultation(
@@ -60,6 +66,27 @@ public class ConsultationController {
         ConsultationRecord entity = mapper.toEntity(dto);
         ConsultationRecord saved = consultationRepository.save(entity);
         log.info("Consultation created for patient {}", saved.getPatientId());
+        
+        // Publish event to trigger async AI prediction
+        // Extract age from DTO (may come from query param or embedded user data)
+        Integer ageYears = null;
+        if (dto.getWeight_kg() != null) {
+            // Age might be inferred from other data - for now we'll extract from DTOs when available
+            // In production, call UserService to get patient demographics
+        }
+        
+        ConsultationCreatedEvent event = new ConsultationCreatedEvent(
+            saved.getId(),
+            saved.getPatientId(),
+            ageYears,
+            null, // sex - would come from UserService
+            saved.getParserConfidence(),
+            saved.getContentType(),
+            saved.getRequiresManualReview()
+        );
+        eventPublisher.publishEvent(event);
+        log.debug("Published ConsultationCreatedEvent for async AI processing: {}", saved.getId());
+        
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDTO(saved));
     }
     
