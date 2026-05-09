@@ -1,0 +1,92 @@
+{
+  "realm": "nephrospaidi",
+  "enabled": true,
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "verifyEmail": true,
+  "emailTheme": "nephrospaidi",
+  "editUsernameAllowed": false,
+
+  "roles": {
+    "realm": [
+      { "name": "ADMIN" },
+      { "name": "HR" },
+      { "name": "RECEPTIONIST" },
+      { "name": "DOCTOR" },
+      { "name": "NURSE" },
+      { "name": "SURGEON" },
+      { "name": "PHARMACIST" },
+      { "name": "LAB_AGENT" },
+      { "name": "GUARDIAN" }
+    ]
+  },
+
+  "clients": [
+    {
+      "clientId": "nephro-backend",
+      "name": "nephro-backend",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "nephro-backend-secret",
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "fullScopeAllowed": true
+    }
+  ],
+
+  "users": [
+    {
+      "username": "platform-admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Platform",
+      "lastName": "Admin",
+      "email": "platform-admin@nephrospaidi.local",
+      "realmRoles": ["ADMIN"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Admin123!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "dr-test",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "Doctor",
+      "email": "dr.test@nephrospaidi.local",
+      "realmRoles": ["DOCTOR"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Doctor123!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "receptionist-test",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "Receptionist",
+      "email": "receptionist.test@nephrospaidi.local",
+      "realmRoles": ["RECEPTIONIST"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Reception123!",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

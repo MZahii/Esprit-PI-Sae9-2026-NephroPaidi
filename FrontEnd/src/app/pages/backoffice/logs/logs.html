@@ -1,0 +1,138 @@
+<div class="module-page logs-page">
+  <header class="module-header card stretch stretch-full">
+    <div>
+      <p class="module-kicker">Observability</p>
+      <h2>Audit Logs</h2>
+      <p class="module-subtitle">User-grouped operational audit stream for account and contract activity.</p>
+    </div>
+    <div class="module-header__crumbs">
+      <a routerLink="/backoffice/dashboard">Dashboard</a>
+      <span>/</span>
+      <span>Audit Logs</span>
+    </div>
+  </header>
+
+  <section class="card stretch stretch-full logs-shell">
+    <div class="card-header logs-head">
+      <div>
+        <h5 class="card-title mb-1">System Activity Report</h5>
+        <div class="logs-subtitle">Grouped by user to reduce scrolling and improve supervision.</div>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-light" type="button" (click)="printLogs()">Print Report</button>
+        <button class="btn btn-sm btn-primary" type="button" (click)="downloadPdf()">Export PDF</button>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
+      <div *ngIf="loading" class="text-muted py-3">Loading logs...</div>
+<div class="filters mb-3" *ngIf="!loading">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search logs by user, role, action, actor, source, date..."
+          [(ngModel)]="search"
+          (ngModelChange)="onFiltersChanged()"
+        />
+        <select class="form-control" [(ngModel)]="sourceFilter" (ngModelChange)="onFiltersChanged()">
+          <option value="ALL">All Sources</option>
+          <option value="ACCOUNT">Account</option>
+          <option value="CONTRACT">Contract</option>
+        </select>
+      </div>
+
+      <div class="user-groups" *ngIf="!loading">
+        <article class="user-group" *ngFor="let group of paginatedGroups">
+          <header class="group-head">
+            <div class="group-main">
+              <h6>{{ group.fullName }}</h6>
+              <div class="group-role">{{ group.role }}</div>
+              <div class="group-meta">Latest event: {{ group.latestAt | date:'yyyy-MM-dd HH:mm:ss' }}</div>
+            </div>
+
+            <div class="group-tools">
+              <span class="group-pill">{{ group.totalLogs }} events</span>
+              <span class="group-pill source-account">{{ group.accountLogs }} account</span>
+              <span class="group-pill source-contract">{{ group.contractLogs }} contract</span>
+              <button class="btn btn-xs btn-light" type="button" (click)="printUserLogs(group, $event)">Print User</button>
+              <button class="btn btn-xs btn-primary" type="button" (click)="exportUserPdf(group, $event)">PDF User</button>
+              <button class="btn btn-xs btn-outline-primary" type="button" (click)="toggleGroup(group.key)">
+                {{ isGroupExpanded(group.key) ? 'Hide Details' : 'Show Details' }}
+              </button>
+            </div>
+          </header>
+
+          <div class="group-body" *ngIf="isGroupExpanded(group.key)">
+            <article class="log-row improved-log-row" *ngFor="let log of group.entries">
+              <div class="log-left log-timeline-cell">
+                <div class="log-date">{{ log.createdAt | date:'yyyy-MM-dd HH:mm:ss' }}</div>
+                <div class="log-tags">
+                  <span class="source-pill" [ngClass]="sourceClass(log.source)">{{ log.source }}</span>
+                  <span class="event-action" [ngClass]="actionClass(log.action)">{{ log.action }}</span>
+                </div>
+                <div class="actor-line"><strong>Actor:</strong> {{ log.actor || '-' }}</div>
+              </div>
+
+              <div class="log-right log-change-panel">
+                <ng-container *ngIf="getChangedFields(log).length > 0; else rawDetails">
+                  <div class="diff-item diff-card" *ngFor="let diff of getChangedFields(log)">
+                    <div class="diff-field">{{ diff.field }}</div>
+                    <div class="diff-values">
+                      <span class="diff-old">{{ diff.oldValue }}</span>
+                      <span class="diff-arrow">-></span>
+                      <span class="diff-new">{{ diff.newValue }}</span>
+                    </div>
+                  </div>
+                </ng-container>
+                <ng-template #rawDetails>
+                  <div *ngIf="hasParsedDetails(log)" class="empty-details">No field-level change captured.</div>
+                  <div *ngIf="!hasParsedDetails(log) && hasRawDetails(log)" class="raw-details">
+                    <div><strong>Old:</strong> {{ getRawOld(log) }}</div>
+                    <div><strong>New:</strong> {{ getRawNew(log) }}</div>
+                  </div>
+                  <div *ngIf="!hasParsedDetails(log) && !hasRawDetails(log)" class="empty-details">No field changes captured.</div>
+                </ng-template>
+              </div>
+            </article>
+          </div>
+        </article>
+
+        <div class="empty-state" *ngIf="groupedLogs.length === 0">No logs found.</div>
+      </div>
+
+      <div class="pagination-bar" *ngIf="!loading && groupedLogs.length > 0">
+        <div class="pagination-meta">
+          Showing {{ rangeStart }} - {{ rangeEnd }} of {{ groupedLogs.length }} users
+        </div>
+        <div class="pagination-controls">
+          <label for="logs-page-size" class="mb-0">Rows:</label>
+          <select
+            id="logs-page-size"
+            class="form-control page-size-select"
+            [(ngModel)]="pageSize"
+            (ngModelChange)="onPageSizeChanged()"
+          >
+            <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+          </select>
+          <button class="btn btn-sm btn-light" type="button" (click)="previousPage()" [disabled]="currentPage === 1">Prev</button>
+          <button
+            type="button"
+            class="btn btn-sm"
+            [class.btn-primary]="page === currentPage"
+            [class.btn-light]="page !== currentPage"
+            *ngFor="let page of pageNumbers"
+            (click)="goToPage(page)"
+          >
+            {{ page }}
+          </button>
+          <button class="btn btn-sm btn-light" type="button" (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+
+
+

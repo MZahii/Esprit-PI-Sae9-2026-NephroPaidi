@@ -1,0 +1,248 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.frontoffice-layout,
+.guardian-main {
+  display: block;
+  min-height: 100vh;
+}
+
+.guardian-header .header-container {
+  gap: 18px;
+}
+
+.guardian-logo {
+  height: 46px;
+  width: auto;
+  object-fit: contain;
+  margin-right: 10px;
+}
+
+.guardian-account-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.guardian-account-toggle {
+  border: 1px solid color-mix(in srgb, var(--default-color, #4f5d75) 12%, transparent);
+  background: var(--surface-color, #ffffff);
+  border-radius: 999px;
+  padding: 8px 12px 8px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+}
+
+.guardian-account-toggle:hover {
+  border-color: color-mix(in srgb, var(--accent-color, #e61e62) 28%, transparent);
+}
+
+.guardian-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-color, #e61e62), #7b2cbf);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.guardian-avatar-lg {
+  width: 52px;
+  height: 52px;
+  font-size: 18px;
+}
+
+.guardian-account-copy {
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+
+.guardian-account-copy strong {
+  font-size: 14px;
+  color: var(--heading-color, #183b56);
+  font-weight: 800;
+}
+
+.guardian-account-copy small {
+  font-size: 12px;
+  color: var(--default-color, #4f5d75);
+}
+
+.guardian-menu-icon {
+  color: var(--default-color, #4f5d75);
+  font-size: 13px;
+}
+
+.guardian-account-dropdown {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  width: 290px;
+  background: var(--surface-color, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--default-color, #4f5d75) 10%, transparent);
+  border-radius: 22px;
+  box-shadow: 0 22px 48px rgba(15, 23, 42, 0.16);
+  padding: 16px;
+  z-index: 1200;
+}
+
+.guardian-account-head {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.guardian-account-meta h6 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--heading-color, #183b56);
+}
+
+.guardian-account-meta p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--default-color, #4f5d75);
+  word-break: break-word;
+}
+
+.guardian-role-pill {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-color, #e61e62) 10%, white);
+  color: var(--accent-color, #e61e62);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.guardian-divider {
+  height: 1px;
+  background: color-mix(in srgb, var(--default-color, #4f5d75) 10%, transparent);
+  margin: 14px 0;
+}
+
+.guardian-menu-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  color: var(--heading-color, #183b56);
+  font-weight: 700;
+  transition: 0.2s ease;
+}
+
+.guardian-menu-item i {
+  font-size: 16px;
+  color: var(--accent-color, #e61e62);
+}
+
+.guardian-menu-item:hover {
+  background: color-mix(in srgb, var(--accent-color, #e61e62) 7%, white);
+}
+
+.guardian-menu-item.logout-item {
+  color: #c81e5b;
+}
+
+.guardian-menu-item.logout-item i {
+  color: #c81e5b;
+}
+
+.guardian-menu-item.disabled-item {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.guardian-menu-item.disabled-item:hover {
+  background: transparent;
+}
+
+.menu-item-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.menu-item-copy small {
+  font-size: 11px;
+  color: var(--default-color, #64748b);
+  font-weight: 600;
+}
+
+.guardian-footer {
+  margin-top: 0;
+}
+
+:host-context(body.np-theme-dark) .guardian-header,
+:host-context(body.np-theme-dark) .header-container {
+  background: rgba(15, 23, 42, 0.94);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:host-context(body.np-theme-dark) .guardian-account-toggle,
+:host-context(body.np-theme-dark) .guardian-account-dropdown {
+  background: #111827;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
+}
+
+:host-context(body.np-theme-dark) .guardian-account-copy strong,
+:host-context(body.np-theme-dark) .guardian-account-meta h6,
+:host-context(body.np-theme-dark) .guardian-menu-item {
+  color: #f8fafc;
+}
+
+:host-context(body.np-theme-dark) .guardian-account-copy small,
+:host-context(body.np-theme-dark) .guardian-account-meta p,
+:host-context(body.np-theme-dark) .menu-item-copy small {
+  color: #b8c7dc;
+}
+
+:host-context(body.np-theme-dark) .guardian-menu-item:hover {
+  background: rgba(233, 30, 99, 0.14);
+}
+
+:host-context(body.np-theme-dark) .guardian-divider {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+#scroll-top {
+  cursor: pointer;
+}
+
+@media (max-width: 1199.98px) {
+  .guardian-account-copy {
+    display: none !important;
+  }
+
+  .guardian-account-toggle {
+    padding-right: 10px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .guardian-account-dropdown {
+    width: 260px;
+    right: -8px;
+  }
+
+  .guardian-logo {
+    height: 40px;
+  }
+}

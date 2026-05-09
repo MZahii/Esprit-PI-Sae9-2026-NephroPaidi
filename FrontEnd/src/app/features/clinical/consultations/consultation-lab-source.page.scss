@@ -1,0 +1,22 @@
+.consultation-lab-source-page {
+  .viewer-body {
+    min-height: 70vh;
+  }
+
+  .viewer-frame {
+    width: 100%;
+    min-height: 70vh;
+    border: 1px solid #d9e2f2;
+    border-radius: 16px;
+    background: #fff;
+  }
+
+  .viewer-image {
+    width: 100%;
+    max-height: 75vh;
+    object-fit: contain;
+    border: 1px solid #d9e2f2;
+    border-radius: 16px;
+    background: #fff;
+  }
+}

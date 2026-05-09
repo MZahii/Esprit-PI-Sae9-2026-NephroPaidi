@@ -1,0 +1,97 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Quick-Reply Templates</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item"><a routerLink="/backoffice/communication/inbox">Inbox</a></li>
+      <li class="breadcrumb-item">Templates</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="row g-3">
+    <div class="col-lg-5">
+      <div class="card stretch stretch-full">
+        <div class="card-header">
+          <h5 class="card-title mb-0">{{ title }}</h5>
+        </div>
+        <div class="card-body">
+          <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+          <form [formGroup]="templateForm" (ngSubmit)="save()">
+            <label class="form-label fw-semibold">Template name</label>
+            <input class="form-control mb-2" formControlName="name" />
+
+            <label class="form-label fw-semibold">Message type</label>
+            <select class="form-control mb-2" formControlName="messageType">
+              <option *ngFor="let type of types" [value]="type">{{ type }}</option>
+            </select>
+
+            <label class="form-label fw-semibold">Reply content</label>
+            <textarea class="form-control mb-2" rows="6" formControlName="templateText"></textarea>
+
+            <small class="text-danger d-block" *ngIf="templateForm.controls.name.touched && templateForm.controls.name.hasError('required')">Name is required.</small>
+            <small class="text-danger d-block" *ngIf="templateForm.controls.templateText.touched && templateForm.controls.templateText.hasError('required')">Template content is required.</small>
+
+            <div class="d-flex gap-2 mt-3">
+              <button class="btn btn-primary" type="submit" [disabled]="saving || templateForm.invalid">{{ saving ? 'Saving...' : 'Save Template' }}</button>
+              <button class="btn btn-light-brand" type="button" (click)="cancelEdit()" *ngIf="editingId">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="card stretch stretch-full">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">Templates</h5>
+          <button class="btn btn-light-brand btn-sm" type="button" (click)="load()">Refresh</button>
+        </div>
+        <div class="card-body">
+          <div *ngIf="loading" class="text-muted">Loading templates...</div>
+
+          <div class="table-responsive" *ngIf="!loading">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Role</th>
+                  <th>Type</th>
+                  <th>Usage</th>
+                  <th>Preview</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let template of templates">
+                  <td>{{ template.name }}</td>
+                  <td>{{ template.staffRole }}</td>
+                  <td>{{ template.messageType }}</td>
+                  <td>{{ template.usageCount }}</td>
+                  <td>{{ template.templateText.length > 80 ? (template.templateText | slice:0:80) + '...' : template.templateText }}</td>
+                  <td>
+                    <div class="d-flex gap-2 justify-content-end">
+                      <button class="btn btn-sm btn-light-brand" type="button" (click)="startEdit(template)">Edit</button>
+                      <button class="btn btn-sm btn-outline-danger" type="button" [disabled]="deletingId === template.id" (click)="deleteTemplate(template)">
+                        {{ deletingId === template.id ? 'Deleting...' : 'Remove' }}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="templates.length === 0">
+                  <td colspan="6" class="text-center text-muted py-4">No quick-reply templates available.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

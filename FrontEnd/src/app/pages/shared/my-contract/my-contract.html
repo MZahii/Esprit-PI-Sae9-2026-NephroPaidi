@@ -1,0 +1,55 @@
+<div class="page-header" *ngIf="isBackoffice">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">{{ pageTitle }}</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a [routerLink]="backRoute">Home</a></li>
+      <li class="breadcrumb-item">My Contract</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="card stretch stretch-full">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <h5 class="card-title mb-0">My Contract Details</h5>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-light" type="button" (click)="printContract()">Print</button>
+        <button class="btn btn-sm btn-primary" type="button" (click)="exportContractPdf()">Export PDF</button>
+        <a class="btn btn-sm btn-light" [routerLink]="backRoute">Back</a>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
+      <div *ngIf="loading" class="text-muted py-3">Loading contract details...</div>
+
+      <div *ngIf="!loading && contracts.length === 0" class="text-muted py-2">
+        No contract found for your account.
+      </div>
+
+      <div class="contract-list" *ngIf="!loading && contracts.length > 0">
+        <div class="contract-card" *ngFor="let contract of contracts">
+          <div class="contract-head">
+            <div>
+              <h6 class="mb-1">{{ contract.jobTitle || 'Contract' }}</h6>
+              <small class="text-muted">{{ contract.contractType }}</small>
+            </div>
+            <span class="status-pill" [ngClass]="statusClass(contract.status)">{{ contract.status }}</span>
+          </div>
+
+          <div class="details-grid">
+            <div><strong>Reference:</strong> {{ contract.contractReference || '-' }}</div>
+            <div><strong>Department:</strong> {{ contract.department || '-' }}</div>
+            <div><strong>Start Date:</strong> {{ contract.startDate || '-' }}</div>
+            <div><strong>End Date:</strong> {{ contract.endDate || '-' }}</div>
+            <div><strong>Hours/Week:</strong> {{ contract.hoursPerWeek }}</div>
+            <div><strong>Salary:</strong> {{ contract.salary }} {{ contract.currency || 'TND' }}</div>
+            <div class="full-row"><strong>Notes:</strong> {{ contract.notes || '-' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

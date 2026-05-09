@@ -1,0 +1,15 @@
+:host {
+  display: block;
+}
+
+.main {
+  min-height: 100vh;
+}
+
+#scroll-top {
+  cursor: pointer;
+}
+
+.dropdown-active {
+  display: block !important;
+}

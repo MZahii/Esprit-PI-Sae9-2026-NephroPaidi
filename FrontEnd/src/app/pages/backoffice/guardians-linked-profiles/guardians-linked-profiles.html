@@ -1,0 +1,186 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Guardians & Linked Profiles</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item">Guardians & Linked Profiles</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="row">
+    <div class="col-12">
+      <div class="card stretch stretch-full">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <h5 class="card-title mb-0">Guardians Overview</h5>
+        </div>
+
+        <div class="card-body">
+          <div *ngIf="errorMessage" class="alert alert-danger mb-3">
+            {{ errorMessage }}
+          </div>
+
+          <div class="stats-grid mb-3" *ngIf="!loading">
+            <div class="stats-card" [attr.data-stat-tooltip]="'100% of guardian records. Live total: ' + totalGuardians">
+              <div class="stats-label">Total Guardians</div>
+              <div class="stats-value" appCountUp>{{ totalGuardians }}</div>
+            </div>
+            <div class="stats-card" [attr.data-stat-tooltip]="'Linked guardian coverage: ' + linkedGuardianRate + '%'">
+              <div class="stats-label">With Linked Patients</div>
+              <div class="stats-value" appCountUp>{{ withPatientsCount }}</div>
+              <div class="stats-line">Without: {{ withoutPatientsCount }} | Coverage: {{ linkedGuardianRate }}%</div>
+            </div>
+            <div class="stats-card" [attr.data-stat-tooltip]="'Recent guardians: ' + (totalGuardians ? ((recentGuardiansCount * 100 / totalGuardians) | number:'1.0-0') : 0) + '% of guardians'">
+              <div class="stats-label">Recent Guardians</div>
+              <div class="stats-value" appCountUp>{{ recentGuardiansCount }}</div>
+              <div class="stats-line">Created in the last 30 days when available</div>
+            </div>
+            <div class="stats-card" [attr.data-stat-tooltip]="'Linked profiles per guardian average: ' + averageProfilesPerGuardian">
+              <div class="stats-label">Total Linked Profiles</div>
+              <div class="stats-value" appCountUp>{{ totalLinkedProfiles }}</div>
+              <div class="stats-line">Avg / Guardian: {{ averageProfilesPerGuardian }}</div>
+            </div>
+          </div>
+
+          <div class="filters mb-3">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Search guardian/patient names, email, phone, blood type, allergies..."
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onFiltersChanged()"
+            />
+
+            <select class="form-control" [(ngModel)]="linkedFilter" (ngModelChange)="onFiltersChanged()">
+              <option value="ALL">All Guardians</option>
+              <option value="WITH_PATIENTS">With Linked Patients</option>
+              <option value="WITHOUT_PATIENTS">Without Linked Patients</option>
+            </select>
+
+            <select class="form-control" [(ngModel)]="sexFilter" (ngModelChange)="onFiltersChanged()">
+              <option value="ALL">Any Patient Sex</option>
+              <option value="MALE">MALE</option>
+              <option value="FEMALE">FEMALE</option>
+            </select>
+
+            <select class="form-control" [(ngModel)]="sortDirection" (ngModelChange)="onFiltersChanged()">
+              <option value="asc">A -> Z / Low -> High</option>
+              <option value="desc">Z -> A / High -> Low</option>
+            </select>
+          </div>
+
+          <div *ngIf="loading" class="text-muted py-3">Loading guardian links...</div>
+
+          <div class="table-responsive" *ngIf="!loading">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Guardian</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Linked Profiles</th>
+                  <th>Patients</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngFor="let row of paginatedRows">
+                  <tr>
+                    <td>{{ guardianFullName(row.guardian) }}</td>
+                    <td>{{ row.guardian.email || '-' }}</td>
+                    <td>{{ row.guardian.phone || '-' }}</td>
+                    <td>
+                      <span class="count-pill">{{ row.patients.length }}</span>
+                    </td>
+                    <td>{{ patientNames(row) }}</td>
+                    <td>
+                      <button type="button" class="btn btn-sm btn-light" (click)="toggleRow(row)">
+                        {{ isExpanded(row) ? 'Hide' : 'View' }}
+                      </button>
+                    </td>
+                  </tr>
+                  <tr class="details-row" *ngIf="isExpanded(row)">
+                    <td colspan="6">
+                      <div class="details-card">
+                        <div class="details-title">Linked Patient Profiles</div>
+                        <div class="table-responsive">
+                          <table class="table table-sm align-middle mb-0">
+                            <thead>
+                              <tr>
+                                <th>Patient</th>
+                                <th>Date Of Birth</th>
+                                <th>Sex</th>
+                                <th>Blood Type</th>
+                                <th>Allergies</th>
+                                <th>Chronic Conditions</th>
+                                <th>Medical Notes</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr *ngFor="let patient of row.patients">
+                                <td>{{ patient.firstName }} {{ patient.lastName }}</td>
+                                <td>{{ patient.dateOfBirth }}</td>
+                                <td>{{ patient.sex }}</td>
+                                <td>{{ patient.bloodType || '-' }}</td>
+                                <td>{{ patient.allergies || '-' }}</td>
+                                <td>{{ patient.chronicConditions || '-' }}</td>
+                                <td>{{ patient.medicalNotes || '-' }}</td>
+                              </tr>
+                              <tr *ngIf="row.patients.length === 0">
+                                <td colspan="7" class="text-muted text-center py-2">
+                                  No linked patient profile.
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
+
+                <tr *ngIf="paginatedRows.length === 0">
+                  <td colspan="6" class="text-center text-muted py-4">
+                    No guardians found.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination-wrap mt-3" *ngIf="sortedRows.length > 0">
+            <div class="d-flex align-items-center gap-2">
+              <label class="mb-0">Rows:</label>
+              <select class="form-control page-size" [(ngModel)]="pageSize" (ngModelChange)="onFiltersChanged()">
+                <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+              </select>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+                Prev
+              </button>
+              <button
+                *ngFor="let p of pageNumbers"
+                class="btn btn-sm"
+                [ngClass]="p === currentPage ? 'btn-primary' : 'btn-light'"
+                type="button"
+                (click)="goToPage(p)"
+              >
+                {{ p }}
+              </button>
+              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+

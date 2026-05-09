@@ -1,0 +1,171 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Roles & Staff Details</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item">Roles & Staff Details</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="stats-grid mb-3">
+    <div class="stats-card" [attr.data-stat-tooltip]="'100% of staff records included in role overview: ' + totalStaffForStats">
+      <div class="stats-label">Total Staff</div>
+      <div class="stats-value" appCountUp>{{ totalStaffForStats }}</div>
+    </div>
+    <div class="stats-card" [attr.data-stat-tooltip]="'Active staff rate: ' + (totalStaffForStats ? ((activeStaffForStats * 100 / totalStaffForStats) | number:'1.0-0') : 0) + '%'">
+      <div class="stats-label">Active Staff</div>
+      <div class="stats-value" appCountUp>{{ activeStaffForStats }}</div>
+    </div>
+    <div class="stats-card" [attr.data-stat-tooltip]="'Without contract: ' + (totalStaffForStats ? ((withoutContractForStats * 100 / totalStaffForStats) | number:'1.0-0') : 0) + '% of staff'">
+      <div class="stats-label">Without Contract</div>
+      <div class="stats-value" appCountUp>{{ withoutContractForStats }}</div>
+    </div>
+    <div class="stats-card" [attr.data-stat-tooltip]="'Without placement: ' + (totalStaffForStats ? ((withoutPlacementForStats * 100 / totalStaffForStats) | number:'1.0-0') : 0) + '% of staff'">
+      <div class="stats-label">Without Placement</div>
+      <div class="stats-value" appCountUp>{{ withoutPlacementForStats }}</div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-xl-2 col-md-4 col-6" *ngFor="let stat of roleStats">
+      <div class="role-card" [attr.data-stat-tooltip]="stat.role + ' share: ' + (totalStaffForStats ? ((stat.total * 100 / totalStaffForStats) | number:'1.0-0') : 0) + '% of all staff'">
+        <h6>{{ stat.role }}</h6>
+        <div class="role-total" appCountUp>{{ stat.total }}</div>
+        <div class="role-meta">
+          <small>Active: {{ stat.active }}</small>
+          <small>Pending: {{ stat.pending }}</small>
+          <small>Inactive: {{ stat.inactive }}</small>
+          <small>No contract: {{ stat.withoutContract }}</small>
+          <small>No placement: {{ stat.withoutPlacement }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card stretch stretch-full">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <h5 class="card-title mb-0">Staff Details</h5>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="errorMessage" class="alert alert-danger mb-3">
+        {{ errorMessage }}
+      </div>
+
+      <div class="filters mb-3">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Server search: username, first/last name, email, phone..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="onFiltersChanged()"
+        />
+
+        <select class="form-control" [(ngModel)]="roleFilter" (ngModelChange)="onFiltersChanged()">
+          <option value="ALL">All Roles</option>
+          <option *ngFor="let role of staffRoles" [value]="role">{{ role }}</option>
+        </select>
+
+        <select class="form-control" [(ngModel)]="statusFilter" (ngModelChange)="onFiltersChanged()">
+          <option value="ALL">All Status</option>
+          <option value="PENDING_CONTRACT">PENDING_CONTRACT</option>
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="INACTIVE">INACTIVE</option>
+        </select>
+
+        <select class="form-control" [(ngModel)]="sortBy" (ngModelChange)="onFiltersChanged()">
+          <option value="firstName">Sort: First Name</option>
+          <option value="lastName">Sort: Last Name</option>
+          <option value="username">Sort: Username</option>
+          <option value="email">Sort: Email</option>
+        </select>
+
+        <select class="form-control" [(ngModel)]="sortDir" (ngModelChange)="onFiltersChanged()">
+          <option value="asc">Order: Asc</option>
+          <option value="desc">Order: Desc</option>
+        </select>
+      </div>
+
+      <div class="text-muted mb-2" *ngIf="!loading">
+        Server search results: {{ totalElements }}
+      </div>
+
+      <div *ngIf="loading" class="text-muted py-3">Loading staff details...</div>
+
+      <div class="table-responsive" *ngIf="!loading">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Account Status</th>
+              <th>Enabled</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of paginatedStaff">
+              <td>{{ user.username }}</td>
+              <td>{{ user.email || '-' }}</td>
+              <td>{{ user.role }}</td>
+              <td>
+                <span class="status-pill" [ngClass]="statusClass(user.accountStatus)">
+                  {{ user.accountStatus }}
+                </span>
+              </td>
+              <td>
+                <span class="status-pill" [ngClass]="enabledClass(user.enabled)">
+                  {{ user.enabled ? 'ENABLED' : 'DISABLED' }}
+                </span>
+              </td>
+              <td>
+                <a
+                  class="btn btn-sm btn-light"
+                  [routerLink]="['/backoffice/staff', user.id]"
+                  [queryParams]="{ returnTo: 'staff-details' }"
+                >
+                  Details
+                </a>
+              </td>
+            </tr>
+            <tr *ngIf="paginatedStaff.length === 0">
+              <td colspan="6" class="text-center text-muted py-4">
+                No staff details found.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination-row" *ngIf="!loading && totalElements > 0">
+        <div class="rows-per-page">
+          <span>Rows:</span>
+          <select class="form-control form-control-sm" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChanged()">
+            <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+          </select>
+        </div>
+
+        <div class="pagination-controls" *ngIf="totalPages > 1">
+          <button class="btn btn-sm btn-light" (click)="previousPage()" [disabled]="currentPage === 1">Prev</button>
+          <button
+            class="btn btn-sm"
+            *ngFor="let page of pageNumbers"
+            [ngClass]="page === currentPage ? 'btn-primary' : 'btn-light'"
+            (click)="goToPage(page)"
+          >
+            {{ page }}
+          </button>
+          <button class="btn btn-sm btn-light" (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+

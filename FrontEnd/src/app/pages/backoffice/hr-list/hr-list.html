@@ -1,0 +1,214 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">HR Accounts List</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item">HR Accounts</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="row">
+    <div class="col-12">
+      <div class="card stretch stretch-full">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <h5 class="card-title mb-0">HR Users</h5>
+        </div>
+
+        <div class="card-body">
+          <div *ngIf="errorMessage" class="alert alert-danger mb-3">
+            {{ errorMessage }}
+          </div>
+          <div *ngIf="actionMessage" class="alert alert-success mb-3">
+            {{ actionMessage }}
+          </div>
+
+          <div class="stats-grid mb-3" *ngIf="!loading">
+            <div class="stats-card" [attr.data-stat-tooltip]="'100% of HR records currently loaded. Live total: ' + totalHr">
+              <div class="stats-label">Total HR</div>
+              <div class="stats-value" appCountUp>{{ totalHr }}</div>
+            </div>
+            <div class="stats-card" [attr.data-stat-tooltip]="'Office coverage: ' + toPercent(withOfficeAssignmentHr, totalHr) + '% assigned, ' + toPercent(withoutOfficeAssignmentHr, totalHr) + '% without office'">
+              <div class="stats-label">Office Coverage</div>
+              <div class="stats-value" appCountUp>{{ withOfficeAssignmentHr }}</div>
+              <div class="stats-line">Without office assignment: {{ withoutOfficeAssignmentHr }}</div>
+            </div>
+            <div class="stats-card chart-card" [attr.data-stat-tooltip]="'Active HR accounts: ' + toPercent(activeHr, totalHr) + '%'">
+              <div class="stats-label">Account Status</div>
+              <div class="circle-wrap" [style.background]="circleStyle(toPercent(activeHr, totalHr), '#2563eb')">
+                <div class="circle-value" appCountUp>{{ toPercent(activeHr, totalHr) }}%</div>
+              </div>
+              <div class="chart-legend">Active {{ activeHr }} / Pending {{ pendingHr }} / Inactive {{ inactiveHr }}</div>
+            </div>
+            <div class="stats-card chart-card" [attr.data-stat-tooltip]="'HR contract coverage: ' + toPercent(withContractHr, totalHr) + '%'">
+              <div class="stats-label">Contract Coverage</div>
+              <div class="circle-wrap" [style.background]="circleStyle(toPercent(withContractHr, totalHr), '#14b8a6')">
+                <div class="circle-value" appCountUp>{{ toPercent(withContractHr, totalHr) }}%</div>
+              </div>
+              <div class="chart-legend">With {{ withContractHr }} / Without {{ withoutContractHr }}</div>
+            </div>
+            <div class="stats-card chart-card" [attr.data-stat-tooltip]="'Enabled access rate: ' + toPercent(enabledHr, totalHr) + '%'">
+              <div class="stats-label">Access State</div>
+              <div class="circle-wrap" [style.background]="circleStyle(toPercent(enabledHr, totalHr), '#22c55e')">
+                <div class="circle-value" appCountUp>{{ toPercent(enabledHr, totalHr) }}%</div>
+              </div>
+              <div class="chart-legend">Enabled {{ enabledHr }} / Disabled {{ disabledHr }}</div>
+            </div>
+          </div>
+
+          <div class="filters mb-3">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Search by username, name, email, phone..."
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onFiltersChanged()"
+            />
+
+            <select class="form-control" [(ngModel)]="statusFilter" (ngModelChange)="onFiltersChanged()">
+              <option value="ALL">All Status</option>
+              <option value="PENDING_CONTRACT">PENDING_CONTRACT</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+            </select>
+
+            <select class="form-control" [(ngModel)]="contractFilter" (ngModelChange)="onFiltersChanged()">
+              <option value="ALL">All Contract States</option>
+              <option value="WITH_CONTRACT">With Contract</option>
+              <option value="WITHOUT_CONTRACT">Without Contract</option>
+            </select>
+
+            
+
+            <select class="form-control" [(ngModel)]="sortDirection" (ngModelChange)="onFiltersChanged()">
+              <option value="asc">Name: A -> Z</option>
+              <option value="desc">Name: Z -> A</option>
+            </select>
+          </div>
+
+          <div *ngIf="loading" class="text-muted py-3">Loading HR accounts...</div>
+
+          <div class="table-responsive" *ngIf="!loading">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Full Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Account Status</th>
+                  <th>Enabled</th>
+                  <th>Archive State</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let user of paginatedHr">
+                  <td>{{ user.username }}</td>
+                  <td>{{ fullName(user) }}</td>
+                  <td>{{ user.email || '-' }}</td>
+                  <td>{{ user.phone || '-' }}</td>
+                  <td>
+                    <span class="status-pill" [ngClass]="statusClass(user.accountStatus)">
+                      {{ user.accountStatus }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="status-pill" [ngClass]="enabledClass(user.enabled)">
+                      {{ user.enabled ? 'ENABLED' : 'DISABLED' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="status-pill" [ngClass]="archivedClass(!!user.deleted)">
+                      {{ user.deleted ? 'ARCHIVED' : 'LIVE' }}
+                    </span>
+                  </td>
+                  <td class="d-flex gap-2 flex-wrap">
+                    <a
+                      *ngIf="!hasRunningContract(user.id) && !user.deleted"
+                      class="btn btn-sm btn-primary"
+                      [routerLink]="['/backoffice/contracts/create']"
+                      [queryParams]="{ staffUserId: user.id, staffName: fullName(user), from: 'hr-list' }"
+                    >
+                      Create Contract
+                    </a>
+                    <a
+                      class="btn btn-sm btn-light"
+                      [routerLink]="['/backoffice/staff', user.id]"
+                      [queryParams]="{ returnTo: 'hr-list' }"
+                    >
+                      User Details
+                    </a>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-light"
+                      [disabled]="actionLoadingUserId === user.id || !!user.deleted"
+                      (click)="toggleAccountStatus(user)"
+                    >
+                      {{ user.accountStatus === 'INACTIVE' ? 'Activate Account' : 'Deactivate Account' }}
+                    </button>
+                    <button
+                      *ngIf="canSoftDelete(user)"
+                      type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      [disabled]="actionLoadingUserId === user.id"
+                      (click)="softDeleteUser(user)"
+                    >
+                      Archive User
+                    </button>
+                    <button
+                      *ngIf="canRestore(user)"
+                      type="button"
+                      class="btn btn-sm btn-outline-success"
+                      [disabled]="actionLoadingUserId === user.id"
+                      (click)="restoreUser(user)"
+                    >
+                      Restore User
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="paginatedHr.length === 0">
+                  <td colspan="8" class="text-center text-muted py-4">
+                    No HR accounts found.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination-wrap mt-3" *ngIf="sortedHr.length > 0">
+            <div class="d-flex align-items-center gap-2">
+              <label class="mb-0">Rows:</label>
+              <select class="form-control page-size" [(ngModel)]="pageSize" (ngModelChange)="onFiltersChanged()">
+                <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+              </select>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+                Prev
+              </button>
+              <button
+                *ngFor="let p of pageNumbers"
+                class="btn btn-sm"
+                [ngClass]="p === currentPage ? 'btn-primary' : 'btn-light'"
+                type="button"
+                (click)="goToPage(p)"
+              >
+                {{ p }}
+              </button>
+              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+

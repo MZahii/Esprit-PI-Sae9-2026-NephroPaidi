@@ -1,0 +1,19 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: core-ops-service
+  config:
+    import: optional:configserver:http://config-server:8888
+  flyway:
+    outOfOrder: true
+    validateOnMigrate: false
+    repairOnMigrate: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://eureka:8761/eureka}
+  instance:
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:core-ops-service}

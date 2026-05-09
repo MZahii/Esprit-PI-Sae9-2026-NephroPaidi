@@ -1,0 +1,261 @@
+<section class="guardian-hero section">
+  <div class="container">
+    <div class="guardian-hero-box">
+      <div class="row align-items-center gy-4">
+        <div class="col-lg-7">
+          <span class="guardian-badge">
+            <i class="bi bi-shield-check"></i>
+            Guardian Portal
+          </span>
+
+          <h1>Welcome back, {{ displayName }}</h1>
+
+          <p class="hero-text">
+            This is your secure frontoffice space in <strong>NephrosPaidi</strong>.
+            Here, guardians can follow care information, prepare for future child health
+            modules, and stay connected with the medical team.
+          </p>
+
+          <div class="guardian-meta">
+            <div class="meta-chip">
+              <i class="bi bi-person-circle"></i>
+              <span>{{ displayName }}</span>
+            </div>
+
+            <div class="meta-chip" *ngIf="displayEmail">
+              <i class="bi bi-envelope"></i>
+              <span>{{ displayEmail }}</span>
+            </div>
+
+            <div class="meta-chip">
+              <i class="bi bi-person-badge"></i>
+              <span>Role: GUARDIAN</span>
+            </div>
+          </div>
+
+          <div class="guardian-actions">
+            <a routerLink="/services" class="btn guardian-btn-primary">
+              Explore Services
+            </a>
+
+            <a routerLink="/contact" class="btn guardian-btn-outline">
+              Contact Support
+            </a>
+          </div>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="guardian-image">
+            <img
+              src="assets/frontoffice/img/health/consultation-3.webp"
+              alt="Guardian portal"
+              class="img-fluid"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="guardian-patients section">
+  <div class="container">
+    <div class="section-header">
+      <h2>My Patients Profiles</h2>
+      <p>All child profiles linked to your guardian account.</p>
+    </div>
+
+    <div *ngIf="loadingPatients" class="patient-loading">Loading patient profiles...</div>
+    <div *ngIf="patientsError" class="patient-error">{{ patientsError }}</div>
+
+    <div class="empty-state" *ngIf="!loadingPatients && !patientsError && patientProfiles.length === 0">
+      No linked patient profiles found yet.
+    </div>
+
+    <div class="patient-filters" *ngIf="!loadingPatients && !patientsError && patientProfiles.length > 0">
+      <input
+        class="form-control"
+        type="text"
+        placeholder="Search by child name, sex, blood type or date of birth..."
+        [(ngModel)]="patientSearchTerm"
+        (ngModelChange)="onPatientFiltersChanged()"
+      />
+      
+      <select
+        class="form-control"
+        aria-label="Sort order"
+        [(ngModel)]="patientSortDirection"
+        (ngModelChange)="onPatientFiltersChanged()"
+      >
+        <option value="desc">Descending Z -> A </option>
+        <option value="asc">Ascending A -> Z </option>
+      </select>
+    </div>
+
+    <div class="patient-grid" *ngIf="!loadingPatients && !patientsError && patientProfiles.length > 0">
+      <article class="patient-card" *ngFor="let patient of filteredPatients; trackBy: trackByPatientId">
+        <div class="patient-head">
+          <h3>{{ fullPatientName(patient) }}</h3>
+        </div>
+
+        <div class="patient-details">
+          <div><strong>Age:</strong> {{ patientAge(patient.dateOfBirth) ?? '-' }}</div>
+          <div><strong>Date Of Birth:</strong> {{ patient.dateOfBirth || '-' }}</div>
+          <div><strong>Sex:</strong> {{ patient.sex || '-' }}</div>
+          <div><strong>Blood Type:</strong> {{ patient.bloodType || '-' }}</div>
+          <div><strong>Allergies:</strong> {{ patient.allergies || '-' }}</div>
+          <div><strong>Chronic Conditions:</strong> {{ patient.chronicConditions || '-' }}</div>
+        </div>
+
+        <div class="patient-actions">
+          <a class="btn guardian-btn-outline" [routerLink]="['/frontoffice/patients', patient.id]">
+            View Full Details
+          </a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="guardian-overview section">
+  <div class="container">
+    <div class="section-header">
+      <h2>Your Space</h2>
+      <p>
+        A calm and simple place for guardians to access essential features and future modules.
+      </p>
+    </div>
+
+    <div class="row gy-4">
+      <div class="col-md-6 col-xl-3">
+        <div class="guardian-card">
+          <div class="card-icon">
+            <i class="bi bi-heart-pulse"></i>
+          </div>
+          <h3>Health Follow-up</h3>
+          <p>Track your child’s kidney care progress and important follow-up information.</p>
+          <span class="status-badge">Coming soon</span>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-xl-3">
+        <div class="guardian-card">
+          <div class="card-icon">
+            <i class="bi bi-file-medical"></i>
+          </div>
+          <h3>Medical Records</h3>
+          <p>Access reports, prescriptions, and medical documents in a secure way.</p>
+          <span class="status-badge">Coming soon</span>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-xl-3">
+        <div class="guardian-card">
+          <div class="card-icon">
+            <i class="bi bi-calendar-check"></i>
+          </div>
+          <h3>Appointments</h3>
+          <p>Check consultations and prepare for future appointment management features.</p>
+          <span class="status-badge">Coming soon</span>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-xl-3">
+        <div class="guardian-card">
+          <div class="card-icon">
+            <i class="bi bi-chat-dots"></i>
+          </div>
+          <h3>Communication</h3>
+          <p>Stay connected with the platform and reach the support team more easily.</p>
+          <span class="status-badge">Coming soon</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="guardian-info section light-background">
+  <div class="container">
+    <div class="row gy-4">
+      <div class="col-lg-6">
+        <div class="info-box">
+          <div class="info-head">
+            <i class="bi bi-stars"></i>
+            <h3>What you can do here</h3>
+          </div>
+
+          <ul class="info-list">
+            <li>
+              <i class="bi bi-check-circle-fill"></i>
+              Access a dedicated guardian area
+            </li>
+            <li>
+              <i class="bi bi-check-circle-fill"></i>
+              Stay ready for child care follow-up features
+            </li>
+            <li>
+              <i class="bi bi-check-circle-fill"></i>
+              Use the same NephrosPaidi frontoffice experience
+            </li>
+            <li>
+              <i class="bi bi-check-circle-fill"></i>
+              Reach support quickly when needed
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="info-box support-box">
+          <div class="info-head">
+            <i class="bi bi-telephone-fill"></i>
+            <h3>Need help?</h3>
+          </div>
+
+          <p class="support-text">
+            Our team is available to help you with platform access, information, and future
+            child follow-up features.
+          </p>
+
+          <div class="support-items">
+            <div class="support-item">
+              <span>Medical Assistance</span>
+              <strong>+216 99-911-347</strong>
+            </div>
+
+            <div class="support-item">
+              <span>Email</span>
+              <strong>NephrosPaidi&#64;esprit.tn</strong>
+            </div>
+          </div>
+
+          <div class="support-actions">
+            <a routerLink="/contact" class="btn guardian-btn-primary">Contact Us</a>
+            <a routerLink="/about" class="btn guardian-btn-outline">Learn More</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="guardian-cta section">
+  <div class="container">
+    <div class="cta-box">
+      <div class="row align-items-center gy-3">
+        <div class="col-lg-8">
+          <h3>Your guardian account is active</h3>
+          <p>
+            We can now continue building the real guardian modules step by step:
+            child profile, reports, appointments, and communication.
+          </p>
+        </div>
+
+        <div class="col-lg-4 text-lg-end">
+          <a routerLink="/services" class="btn cta-light-btn me-2">View Services</a>
+          <a routerLink="/contact" class="btn cta-outline-btn">Contact Us</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,38 @@
+<section class="section guardian-consultation-details">
+  <div class="container">
+    <div class="details-header d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+      <div>
+        <h2 class="section-title mb-1">{{ consultationTitle }}</h2>
+        <p class="text-muted mb-0">Read-only consultation summary.</p>
+      </div>
+      <a class="btn btn-light" routerLink="/frontoffice/consultations">Back to list</a>
+    </div>
+
+    <div *ngIf="loading" class="alert alert-info">Loading consultation...</div>
+    <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+    <div class="details-card" *ngIf="!loading && !error">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div class="text-muted">
+          Scheduled {{ formatConsultationDate(consultation?.dateTime, 'medium') || '-' }}
+        </div>
+        <span [ngClass]="statusBadge(consultation?.status)">{{ consultation?.status || 'OPEN' }}</span>
+      </div>
+
+      <div class="detail-section">
+        <h6>Doctor Decision Summary</h6>
+        <p class="text-muted mb-0">{{ outcome?.treatmentPlan || 'Doctor decisions and follow-up instructions will appear here once available.' }}</p>
+      </div>
+
+      <div class="detail-section">
+        <h6>Clinical Notes</h6>
+        <p class="text-muted mb-0">No clinical notes shared yet.</p>
+      </div>
+
+      <div class="detail-section">
+        <h6>Prescriptions</h6>
+        <p class="text-muted mb-0">{{ outcome?.prescriptions || 'Prescriptions will be listed here after the consultation.' }}</p>
+      </div>
+    </div>
+  </div>
+</section>

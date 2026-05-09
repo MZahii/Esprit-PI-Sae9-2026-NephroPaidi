@@ -1,0 +1,301 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Surgical Workflow: Pre-Op / Post-Op</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Home</a></li>
+      <li class="breadcrumb-item">Procedure Service</li>
+      <li class="breadcrumb-item">Surgical Workflow</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="alert alert-success mb-3">{{ successMessage }}</div>
+  <div *ngIf="partialLoadWarnings.length" class="alert alert-warning mb-3">
+    <div *ngFor="let warning of partialLoadWarnings">{{ warning }}</div>
+  </div>
+  <div *ngIf="loading" class="empty-state">Loading surgical workflow...</div>
+
+  <div class="card mb-4" *ngIf="!loading">
+    <div class="card-body">
+      <label class="form-label">Selected Surgical Case</label>
+      <select class="form-select" [ngModel]="selectedCaseId" (ngModelChange)="onSelectedCaseChange($event)">
+        <option *ngFor="let c of surgicalCases" [value]="c.id">
+          {{ c.firstName || '-' }} {{ c.lastName || '' }} | {{ c.status }}
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <div class="row g-4" *ngIf="!loading">
+    <div class="col-xl-6">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong>Pre-Op Validation</strong>
+          <span class="badge" [ngClass]="preOpEligible ? 'bg-soft-success text-success' : 'bg-soft-danger text-danger'">
+            {{ preOpDecisionLabel }}
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="pre-hemo" [(ngModel)]="preOpForm.hemodynamicsOk" />
+            <label class="form-check-label" for="pre-hemo">Hemodynamics within safe range</label>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="pre-infection" [(ngModel)]="preOpForm.infectionScreenOk" />
+            <label class="form-check-label" for="pre-infection">Infection screen validated</label>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="pre-anesthesia" [(ngModel)]="preOpForm.anesthesiaClearanceOk" />
+            <label class="form-check-label" for="pre-anesthesia">Anesthesia clearance approved</label>
+          </div>
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="pre-consent" [(ngModel)]="preOpForm.consentSigned" />
+            <label class="form-check-label" for="pre-consent">Informed consent signed</label>
+          </div>
+
+          <label class="form-label">Clinical note (optional)</label>
+          <textarea class="form-control mb-3" rows="2" [(ngModel)]="preOpForm.note"></textarea>
+
+          <button type="button" class="btn btn-primary btn-sm" (click)="submitPreOp()" [disabled]="saving">
+            Validate Pre-Op Decision
+          </button>
+
+          <hr />
+          <h6 class="mb-2">Pre-Op History (Selected Case)</h6>
+          <div *ngIf="preOpHistoryForSelectedCase.length === 0" class="empty-state">No pre-op record yet.</div>
+          <div *ngFor="let item of preOpHistoryForSelectedCase" class="history-item">
+            <ng-container *ngIf="parseRecord(item.notes) as rec">
+              <div class="criteria-grid">
+                <span>Hemodynamics:</span><strong>{{ yesNo(rec['hemodynamicsOk']) }}</strong>
+                <span>Infection Screen:</span><strong>{{ yesNo(rec['infectionScreenOk']) }}</strong>
+                <span>Anesthesia Clearance:</span><strong>{{ yesNo(rec['anesthesiaClearanceOk']) }}</strong>
+                <span>Consent Signed:</span><strong>{{ yesNo(rec['consentSigned']) }}</strong>
+              </div>
+              <div class="decision-line">
+                <span class="text-muted">Decision:</span>
+                <span class="badge bg-soft-primary text-primary">{{ rec['decision'] || '-' }}</span>
+              </div>
+              <div class="note-line" *ngIf="rec['note']">
+                <span class="text-muted">Note:</span> {{ rec['note'] }}
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-6">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong>Post-Op Stability Check</strong>
+          <span class="badge" [ngClass]="postOpStable ? 'bg-soft-success text-success' : 'bg-soft-warning text-warning'">
+            {{ postOpDecisionLabel }}
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="post-hemo" [(ngModel)]="postOpForm.hemodynamicsStable" />
+            <label class="form-check-label" for="post-hemo">Hemodynamics stable</label>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="post-bleeding" [(ngModel)]="postOpForm.bleedingControlled" />
+            <label class="form-check-label" for="post-bleeding">Bleeding controlled</label>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="post-pain" [(ngModel)]="postOpForm.painControlled" />
+            <label class="form-check-label" for="post-pain">Pain controlled</label>
+          </div>
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="post-consciousness" [(ngModel)]="postOpForm.consciousnessNormal" />
+            <label class="form-check-label" for="post-consciousness">Consciousness normal</label>
+          </div>
+
+          <label class="form-label">Clinical note (optional)</label>
+          <textarea class="form-control mb-3" rows="2" [(ngModel)]="postOpForm.note"></textarea>
+
+          <button type="button" class="btn btn-primary btn-sm" (click)="submitPostOp()" [disabled]="saving">
+            Save Post-Op Decision
+          </button>
+
+          <hr />
+          <h6 class="mb-2">Post-Op History (Selected Case)</h6>
+          <div *ngIf="postOpHistoryForSelectedCase.length === 0" class="empty-state">No post-op record yet.</div>
+          <div *ngFor="let item of postOpHistoryForSelectedCase" class="history-item">
+            <ng-container *ngIf="parseRecord(item.notes) as rec">
+              <div class="criteria-grid">
+                <span>Hemodynamics Stable:</span><strong>{{ yesNo(rec['hemodynamicsStable']) }}</strong>
+                <span>Bleeding Controlled:</span><strong>{{ yesNo(rec['bleedingControlled']) }}</strong>
+                <span>Pain Controlled:</span><strong>{{ yesNo(rec['painControlled']) }}</strong>
+                <span>Consciousness Normal:</span><strong>{{ yesNo(rec['consciousnessNormal']) }}</strong>
+              </div>
+              <div class="decision-line">
+                <span class="text-muted">Decision:</span>
+                <span class="badge bg-soft-primary text-primary">{{ rec['decision'] || '-' }}</span>
+              </div>
+              <div class="note-line" *ngIf="rec['note']">
+                <span class="text-muted">Note:</span> {{ rec['note'] }}
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <strong>Complication Tracking</strong>
+            <div class="text-muted small">Record and update surgical complications for the selected case.</div>
+          </div>
+          <span class="badge bg-soft-danger text-danger">
+            {{ complicationsForSelectedCase.length }} complication{{ complicationsForSelectedCase.length === 1 ? '' : 's' }}
+          </span>
+        </div>
+        <div class="card-body">
+          <label class="form-label">Complication Description</label>
+          <textarea
+            class="form-control mb-3"
+            rows="3"
+            [(ngModel)]="complicationForm.description"
+            placeholder="Describe the complication, severity, and any immediate response..."
+          ></textarea>
+
+          <div class="d-flex gap-2 mb-4">
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              (click)="submitComplication()"
+              [disabled]="saving"
+            >
+              {{ saving ? 'Saving...' : (editingComplicationId ? 'Update Complication' : 'Add Complication') }}
+            </button>
+            <button
+              *ngIf="editingComplicationId"
+              type="button"
+              class="btn btn-light btn-sm"
+              (click)="cancelComplicationEdit()"
+              [disabled]="saving"
+            >
+              Cancel
+            </button>
+          </div>
+
+          <h6 class="mb-2">Complications History (Selected Case)</h6>
+          <div *ngIf="complicationsForSelectedCase.length === 0" class="empty-state">No complication recorded for this case.</div>
+
+          <div *ngFor="let item of complicationsForSelectedCase" class="history-item complication-item">
+            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+              <div class="complication-text">
+                {{ item.description }}
+              </div>
+              <button
+                type="button"
+                class="btn btn-sm btn-light-brand"
+                (click)="startComplicationEdit(item)"
+                [disabled]="saving"
+              >
+                Edit
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <strong>Care Task Assignment / Tracking</strong>
+            <div class="text-muted small">Assign follow-up care tasks and track whether they are still open or completed.</div>
+          </div>
+          <span class="badge bg-soft-primary text-primary">
+            {{ careTasksForSelectedCase.length }} task{{ careTasksForSelectedCase.length === 1 ? '' : 's' }}
+          </span>
+        </div>
+        <div class="card-body">
+          <label class="form-label">Care Task Title</label>
+          <input
+            type="text"
+            class="form-control mb-3"
+            [(ngModel)]="careTaskForm.title"
+            placeholder="Enter the follow-up action to assign..."
+          />
+
+          <div class="form-check mb-3" *ngIf="editingCareTaskId">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="care-task-done"
+              [(ngModel)]="careTaskForm.done"
+            />
+            <label class="form-check-label" for="care-task-done">
+              Mark this task as completed
+            </label>
+          </div>
+
+          <div class="d-flex gap-2 mb-4">
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              (click)="submitCareTask()"
+              [disabled]="saving"
+            >
+              {{ saving ? 'Saving...' : (editingCareTaskId ? 'Update Care Task' : 'Add Care Task') }}
+            </button>
+            <button
+              *ngIf="editingCareTaskId"
+              type="button"
+              class="btn btn-light btn-sm"
+              (click)="cancelCareTaskEdit()"
+              [disabled]="saving"
+            >
+              Cancel
+            </button>
+          </div>
+
+          <h6 class="mb-2">Care Task History (Selected Case)</h6>
+          <div *ngIf="careTasksForSelectedCase.length === 0" class="empty-state">No care task recorded for this case.</div>
+
+          <div *ngFor="let item of careTasksForSelectedCase" class="history-item care-task-item">
+            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+              <div class="care-task-content">
+                <div class="care-task-title">{{ item.title }}</div>
+                <span class="badge" [ngClass]="item.done ? 'bg-soft-success text-success' : 'bg-soft-warning text-warning'">
+                  {{ item.done ? 'DONE' : 'OPEN' }}
+                </span>
+              </div>
+
+              <div class="d-flex gap-2 flex-wrap">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-light-brand"
+                  (click)="startCareTaskEdit(item)"
+                  [disabled]="saving"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  [ngClass]="item.done ? 'btn-light' : 'btn-success'"
+                  (click)="toggleCareTaskDone(item)"
+                  [disabled]="saving"
+                >
+                  {{ item.done ? 'Reopen' : 'Mark Done' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

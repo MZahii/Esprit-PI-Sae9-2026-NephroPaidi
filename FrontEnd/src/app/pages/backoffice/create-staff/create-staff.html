@@ -1,0 +1,201 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Create Staff Account</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item">Create Staff Account</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="row justify-content-center">
+    <div class="col-xxl-8 col-xl-10">
+      <div class="card stretch stretch-full">
+        <div class="card-header">
+          <h5 class="card-title">New Staff Account</h5>
+        </div>
+
+        <div class="card-body">
+          <div *ngIf="successMessage" class="alert alert-success">
+            {{ successMessage }}
+          </div>
+
+          <div *ngIf="errorMessage" class="alert alert-danger">
+            {{ errorMessage }}
+          </div>
+
+          <form (ngSubmit)="createStaff()" #staffFormRef="ngForm">
+            <div class="row">
+              <div class="col-md-6 mb-4">
+                <label class="form-label fw-semibold">Username</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="username"
+                  [(ngModel)]="staffForm.username"
+                  placeholder="Enter username"
+                  minlength="3"
+                  required
+                />
+                <small class="text-muted">Minimum 3 characters. Must be unique among staff accounts.</small>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <label class="form-label fw-semibold">CIN</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="cin"
+                  [(ngModel)]="staffForm.cin"
+                  placeholder="Enter CIN"
+                  inputmode="numeric"
+                  minlength="8"
+                  maxlength="9"
+                  pattern="[0-9]{8,9}"
+                  required
+                />
+                <small class="text-muted">
+                  CIN must be 8 to 9 digits. Initial password is CIN.
+                </small>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <label class="form-label fw-semibold">First Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="firstName"
+                  [(ngModel)]="staffForm.firstName"
+                  placeholder="Enter first name"
+                  minlength="3"
+                  required
+                />
+                <small class="text-muted">Minimum 3 letters.</small>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <label class="form-label fw-semibold">Last Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="lastName"
+                  [(ngModel)]="staffForm.lastName"
+                  placeholder="Enter last name"
+                  minlength="3"
+                  required
+                />
+                <small class="text-muted">Minimum 3 letters.</small>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <label class="form-label fw-semibold">Email</label>
+                <input
+                  type="email"
+                  class="form-control"
+                  name="email"
+                  [(ngModel)]="staffForm.email"
+                  placeholder="Enter email"
+                  required
+                />
+                <small class="text-muted">Use a valid email format (example: name@domain.com).</small>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <label class="form-label fw-semibold">Phone</label>
+                <div class="phone-group">
+                  <span class="phone-prefix">+216</span>
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="phone"
+                    [(ngModel)]="staffForm.phone"
+                    placeholder="8-digit phone number"
+                    inputmode="numeric"
+                    minlength="8"
+                    maxlength="8"
+                    pattern="[2459][0-9]{7}"
+                    required
+                  />
+                </div>
+                <small class="text-muted">Exactly 8 digits. Must start with 2, 4, 5, or 9.</small>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <label class="form-label fw-semibold">Date of Birth</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  name="dateOfBirth"
+                  [(ngModel)]="staffForm.dateOfBirth"
+                  [max]="maxBirthDate"
+                  required
+                />
+                <small class="text-muted">Staff user must be at least 18 years old.</small>
+              </div>
+
+              <div class="col-md-3 mb-4">
+                <label class="form-label fw-semibold">Sex</label>
+                <select
+                  class="form-control"
+                  name="sex"
+                  [(ngModel)]="staffForm.sex"
+                  required
+                >
+                  <option value="" disabled>Select sex</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                </select>
+              </div>
+
+              <div class="col-md-3 mb-4">
+                <label class="form-label fw-semibold">Role</label>
+                <select
+                  class="form-control"
+                  name="role"
+                  [(ngModel)]="staffForm.role"
+                  required
+                >
+                  <option value="" disabled>Select role</option>
+                  <option *ngFor="let role of roleOptions" [value]="role">
+                    {{ role }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <label class="form-label fw-semibold">Avatar URL</label>
+                <input
+                  type="url"
+                  class="form-control"
+                  name="avatarUrl"
+                  [(ngModel)]="staffForm.avatarUrl"
+                  placeholder="https://example.com/doctor-photo.jpg"
+                />
+                <small class="text-muted">Optional. This image is used in doctor listings and profile cards.</small>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="loading || loadingUsers || staffFormRef.invalid"
+              >
+                {{ loading ? 'CREATING...' : 'CREATE STAFF ACCOUNT' }}
+              </button>
+
+              <a routerLink="/backoffice/staff" class="btn btn-light-brand">
+                BACK TO STAFF LIST
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

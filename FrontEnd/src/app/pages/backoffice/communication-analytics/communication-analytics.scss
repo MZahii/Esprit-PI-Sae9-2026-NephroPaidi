@@ -1,0 +1,91 @@
+:host {
+  display: block;
+}
+
+.progress-sm {
+  height: 8px;
+}
+
+.line-chart-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.line-chart-svg {
+  width: 100%;
+  min-width: 680px;
+  max-height: 280px;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.pie-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.pie-svg {
+  width: 220px;
+  height: 220px;
+}
+
+.pie-svg path {
+  cursor: pointer;
+  opacity: 0.9;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform-origin: center;
+}
+
+.pie-svg path:hover,
+.pie-svg path.active-slice {
+  opacity: 1;
+}
+
+.bar-chart {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  gap: 10px;
+  align-items: end;
+  min-height: 280px;
+}
+
+.bar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.bar-track {
+  width: 100%;
+  max-width: 46px;
+  height: 180px;
+  background: #edf2f7;
+  border-radius: 8px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.bar-fill {
+  width: 100%;
+  border-radius: 8px;
+  min-height: 6px;
+}
+
+.bar-value {
+  font-weight: 600;
+}
+
+.bar-label {
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.2;
+}

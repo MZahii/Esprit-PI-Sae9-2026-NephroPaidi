@@ -1,0 +1,348 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">{{ pageTitle }}</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item"><a [routerLink]="backRoute">{{ backLabel }}</a></li>
+      <li class="breadcrumb-item">User Details</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="row">
+    <div class="col-12">
+      <div class="card stretch stretch-full">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <h5 class="card-title mb-0">Profile</h5>
+          <a class="btn btn-sm btn-light" [routerLink]="backRoute">{{ backLabel }}</a>
+        </div>
+
+        <div class="card-body">
+          <div *ngIf="errorMessage" class="alert alert-danger mb-3">
+            {{ errorMessage }}
+          </div>
+          <div *ngIf="successMessage" class="alert alert-success mb-3">
+            {{ successMessage }}
+          </div>
+
+          <div *ngIf="loading" class="text-muted py-3">Loading user details...</div>
+
+          <ng-container *ngIf="!loading && user">
+            <div class="stats-grid mb-4">
+              <div class="stats-card">
+                <div class="stats-label">Profile Completeness</div>
+                <div class="stats-value">{{ profileCompleteness }}%</div>
+              </div>
+              <div class="stats-card">
+                <div class="stats-label">Active Contracts</div>
+                <div class="stats-value">{{ activeContractCount }}</div>
+                <div class="stats-line">Historical/ended: {{ endedContractCount }}</div>
+              </div>
+              <div class="stats-card">
+                <div class="stats-label">Latest Contract State</div>
+                <div class="stats-value">{{ latestContractStatus }}</div>
+              </div>
+              <div class="stats-card">
+                <div class="stats-label">Audit Events</div>
+                <div class="stats-value">{{ auditEventCount }}</div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="mb-0">User Profile</h6>
+              <div class="d-flex gap-2">
+                <button
+                  *ngIf="canEditProfile && !editProfile"
+                  type="button"
+                  class="btn btn-sm btn-light-brand"
+                  (click)="startProfileEdit()"
+                >
+                  Edit Profile
+                </button>
+                <button
+                  *ngIf="canToggleAccountStatus"
+                  type="button"
+                  class="btn btn-sm btn-light"
+                  [disabled]="lifecycleLoading || !!user.deleted"
+                  (click)="toggleUserAccountStatus()"
+                >
+                  {{ user.accountStatus === 'INACTIVE' ? 'Activate Account' : 'Deactivate Account' }}
+                </button>
+                <button
+                  *ngIf="canArchiveUser"
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  [disabled]="lifecycleLoading"
+                  (click)="softDeleteUser()"
+                >
+                  Archive User
+                </button>
+                <button
+                  *ngIf="canRestoreUser"
+                  type="button"
+                  class="btn btn-sm btn-outline-success"
+                  [disabled]="lifecycleLoading"
+                  (click)="restoreUser()"
+                >
+                  Restore User
+                </button>
+              </div>
+            </div>
+
+            <div class="details-grid mb-3">
+              <div><strong>Username:</strong> {{ user.username }}</div>
+              <div><strong>CIN:</strong> {{ user.cin || '-' }}</div>
+              <div><strong>Account Status:</strong> {{ user.accountStatus }}</div>
+              <div><strong>Enabled:</strong> {{ user.enabled ? 'ENABLED' : 'DISABLED' }}</div>
+              <div><strong>Archive State:</strong> {{ user.deleted ? 'ARCHIVED' : 'LIVE' }}</div>
+            </div>
+
+            <div class="details-grid mb-4" *ngIf="!editProfile">
+              <div><strong>Full Name:</strong> {{ fullName }}</div>
+              <div><strong>Email:</strong> {{ user.email || '-' }}</div>
+              <div><strong>Phone:</strong> {{ user.phone || '-' }}</div>
+              <div><strong>Avatar URL:</strong> {{ user.avatarUrl || '-' }}</div>
+              <div><strong>Date Of Birth:</strong> {{ user.dateOfBirth || '-' }}</div>
+              <div><strong>Sex:</strong> {{ user.sex || '-' }}</div>
+              <div><strong>Role:</strong> {{ user.role }}</div>
+            </div>
+
+            <div class="details-grid mb-4" *ngIf="editProfile">
+              <div>
+                <label class="form-label">First Name</label>
+                <input class="form-control" [(ngModel)]="profileForm.firstName" />
+              </div>
+              <div>
+                <label class="form-label">Last Name</label>
+                <input class="form-control" [(ngModel)]="profileForm.lastName" />
+              </div>
+              <div>
+                <label class="form-label">Email</label>
+                <input class="form-control" [(ngModel)]="profileForm.email" />
+              </div>
+              <div>
+                <label class="form-label">Avatar URL</label>
+                <input class="form-control" type="url" [(ngModel)]="profileForm.avatarUrl" placeholder="https://example.com/photo.jpg" />
+              </div>
+              <div>
+                <label class="form-label">Date Of Birth</label>
+                <input class="form-control" type="date" [(ngModel)]="profileForm.dateOfBirth" />
+              </div>
+              <div>
+                <label class="form-label">Sex</label>
+                <select class="form-control" [(ngModel)]="profileForm.sex">
+                  <option *ngFor="let sex of sexOptions" [ngValue]="sex">{{ sex }}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-4" *ngIf="editProfile">
+              <button class="btn btn-primary btn-sm" type="button" [disabled]="savingProfile" (click)="saveProfile()">
+                {{ savingProfile ? 'Saving...' : 'Save Profile' }}
+              </button>
+              <button class="btn btn-light btn-sm" type="button" [disabled]="savingProfile" (click)="cancelProfileEdit()">
+                Cancel
+              </button>
+            </div>
+
+            <h6 class="mb-2">Contracts</h6>
+            <div *ngIf="contracts.length === 0" class="text-muted">No contract found for this user.</div>
+
+            <div class="contract-list" *ngIf="contracts.length > 0">
+              <div class="contract-card" *ngFor="let contract of contracts">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                  <div class="contract-title"><strong>Contract</strong></div>
+                  <div class="d-flex gap-2">
+                    <span class="badge bg-light text-dark">{{ contract.contractType }}</span>
+                    <span class="badge bg-light text-dark">{{ contract.status }}</span>
+                  </div>
+                </div>
+
+                <div *ngIf="editingContractId !== contract.id" class="details-grid">
+                  <div><strong>Job Title:</strong> {{ contract.jobTitle }}</div>
+                  <div><strong>Department:</strong> {{ contract.department || '-' }}</div>
+                  <div><strong>Period:</strong> {{ contract.startDate }} -> {{ contract.endDate }}</div>
+                  <div><strong>Salary:</strong> {{ contract.salary }} TND</div>
+                  <div><strong>Hours/Week:</strong> {{ contract.hoursPerWeek }}</div>
+                  <div><strong>Notes:</strong> {{ contract.notes || '-' }}</div>
+                </div>
+
+                <div *ngIf="editingContractId === contract.id" class="details-grid">
+                  <div>
+                    <label class="form-label">Contract Type</label>
+                    <select class="form-control" [(ngModel)]="contractForm.contractType" (ngModelChange)="onContractTypeChange()">
+                      <option *ngFor="let type of contractTypeOptions" [ngValue]="type">{{ type }}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label">Job Title</label>
+                    <input class="form-control" [value]="fixedContractJobTitle" readonly />
+                  </div>
+                  <div>
+                    <label class="form-label">Department</label>
+                    <input class="form-control" [value]="fixedContractDepartment" readonly />
+                  </div>
+                  <div>
+                    <label class="form-label">Start Date</label>
+                    <input class="form-control" type="date" [(ngModel)]="contractForm.startDate" />
+                  </div>
+                  <div>
+                    <label class="form-label">End Date</label>
+                    <input class="form-control" type="date" [(ngModel)]="contractForm.endDate" />
+                  </div>
+                  <div>
+                    <label class="form-label">Salary (TND)</label>
+                    <input class="form-control" type="number" min="0.01" step="0.01" [(ngModel)]="contractForm.salary" />
+                    <small class="text-muted">Enter a positive salary amount only (greater than 0).</small>
+                  </div>
+                  <div>
+                    <label class="form-label">Hours/Week</label>
+                    <select class="form-control" [(ngModel)]="contractForm.hoursPerWeek">
+                      <option [ngValue]="''" disabled>Select hours/week</option>
+                      <option *ngFor="let hours of hoursPerWeekOptions" [ngValue]="hours">{{ hours }}</option>
+                    </select>
+                  </div>
+                  <div class="full-row">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control" rows="3" [(ngModel)]="contractForm.notes"></textarea>
+                  </div>
+                </div>
+
+            <div class="d-flex gap-2 mt-3" *ngIf="canManageContracts">
+                  <button
+                    *ngIf="editingContractId !== contract.id"
+                    class="btn btn-sm btn-light-brand"
+                    type="button"
+                    (click)="startContractEdit(contract)"
+                  >
+                    Edit Contract
+                  </button>
+                  <button
+                    *ngIf="editingContractId !== contract.id && contract.status === 'ACTIVE'"
+                    class="btn btn-sm btn-light-brand"
+                    type="button"
+                    (click)="runContractAction(contract.id, 'suspend')"
+                  >
+                    Suspend
+                  </button>
+                  <button
+                    *ngIf="editingContractId !== contract.id && contract.status === 'SUSPENDED'"
+                    class="btn btn-sm btn-light-brand"
+                    type="button"
+                    (click)="runContractAction(contract.id, 'resume')"
+                  >
+                    Resume
+                  </button>
+                  <button
+                    *ngIf="editingContractId !== contract.id && (contract.status === 'ACTIVE' || contract.status === 'SUSPENDED')"
+                    class="btn btn-sm btn-light"
+                    type="button"
+                    (click)="runContractAction(contract.id, 'end')"
+                  >
+                    End
+                  </button>
+                  <button
+                    *ngIf="editingContractId === contract.id"
+                    class="btn btn-sm btn-primary"
+                    type="button"
+                    [disabled]="savingContractId === contract.id"
+                    (click)="saveContract(contract.id)"
+                  >
+                    {{ savingContractId === contract.id ? 'Saving...' : 'Save Contract' }}
+                  </button>
+                  <button
+                    *ngIf="editingContractId === contract.id"
+                    class="btn btn-sm btn-light"
+                    type="button"
+                    [disabled]="savingContractId === contract.id"
+                    (click)="cancelContractEdit()"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="audit-section mt-4" *ngIf="canViewAudit">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div>
+                  <h6 class="mb-1">User Audit Trail</h6>
+                  <div class="text-muted small">
+                    Review account lifecycle and profile changes recorded for this user.
+                  </div>
+                </div>
+                <span class="badge bg-soft-primary text-primary">
+                  {{ filteredAuditLogs.length }} visible
+                </span>
+              </div>
+
+              <div class="audit-filters mb-3">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Search by action, actor, field change, or timestamp..."
+                  [(ngModel)]="auditSearch"
+                  (ngModelChange)="onAuditFiltersChanged()"
+                />
+                <select class="form-control" [(ngModel)]="auditActionFilter" (ngModelChange)="onAuditFiltersChanged()">
+                  <option value="ALL">All Actions</option>
+                  <option *ngFor="let action of auditActions" [value]="action">{{ action }}</option>
+                </select>
+              </div>
+
+              <div *ngIf="auditLoading" class="text-muted py-3">Loading audit trail...</div>
+
+              <div class="audit-list" *ngIf="!auditLoading">
+                <div *ngIf="filteredAuditLogs.length === 0" class="text-muted">
+                  No user audit records match the current filters.
+                </div>
+
+                <div class="audit-card" *ngFor="let log of filteredAuditLogs">
+                  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                    <div>
+                      <div class="audit-action">{{ log.action }}</div>
+                      <div class="audit-meta">
+                        {{ log.createdAt | date:'yyyy-MM-dd HH:mm:ss' }} | Actor: {{ log.actor || '-' }}
+                      </div>
+                    </div>
+                    <span class="badge bg-light text-dark">User #{{ log.userId }}</span>
+                  </div>
+
+                  <ng-container *ngIf="getChangedFields(log).length > 0; else rawAuditDetails">
+                    <div class="diff-list">
+                      <div class="diff-item" *ngFor="let diff of getChangedFields(log)">
+                        <div class="diff-field">{{ diff.field }}</div>
+                        <div class="diff-values">
+                          <span class="diff-old">{{ diff.oldValue }}</span>
+                          <span class="diff-arrow">-></span>
+                          <span class="diff-new">{{ diff.newValue }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </ng-container>
+
+                  <ng-template #rawAuditDetails>
+                    <div *ngIf="hasParsedAuditDetails(log)" class="text-muted">No field-level change captured.</div>
+                    <div *ngIf="!hasParsedAuditDetails(log) && hasRawAuditDetails(log)" class="raw-details">
+                      <div><strong>Old:</strong> {{ getRawOld(log) }}</div>
+                      <div><strong>New:</strong> {{ getRawNew(log) }}</div>
+                    </div>
+                    <div *ngIf="!hasParsedAuditDetails(log) && !hasRawAuditDetails(log)" class="text-muted">
+                      No field changes captured.
+                    </div>
+                  </ng-template>
+                </div>
+              </div>
+            </div>
+
+          </ng-container>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

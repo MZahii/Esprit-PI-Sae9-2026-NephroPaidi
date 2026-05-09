@@ -1,0 +1,36 @@
+.page-header {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  padding: 20px 30px;
+  margin-bottom: 30px;
+}
+
+.section-title {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.phone-group {
+  display: flex;
+  align-items: center;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.phone-prefix {
+  background: #f8fafc;
+  border-right: 1px solid #dbe2ea;
+  color: #334155;
+  font-weight: 600;
+  padding: 0 12px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.phone-group .form-control {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}

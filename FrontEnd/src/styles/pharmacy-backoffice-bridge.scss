@@ -1,0 +1,211 @@
+body.backoffice-body.admin-redesign {
+  --phx-surface: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 255, 0.98));
+  --phx-surface-soft: linear-gradient(180deg, #fbfdff 0%, #f4f8fc 100%);
+  --phx-border: #dce8f5;
+  --phx-border-soft: #e5edf7;
+  --phx-shadow: 0 12px 34px rgba(28, 54, 83, 0.06);
+  --phx-text: #10233f;
+  --phx-text-soft: #60728c;
+  --phx-accent: #2563eb;
+  --phx-accent-soft: rgba(37, 99, 235, 0.08);
+}
+
+body.backoffice-body.admin-redesign .phx-page {
+  padding: 0 !important;
+  background: transparent !important;
+  min-height: auto !important;
+  color: var(--phx-text);
+}
+
+body.backoffice-body.admin-redesign .phx-header,
+body.backoffice-body.admin-redesign .phx-card,
+body.backoffice-body.admin-redesign .phx-stat-card,
+body.backoffice-body.admin-redesign .phx-info-box,
+body.backoffice-body.admin-redesign .phx-alert,
+body.backoffice-body.admin-redesign .phx-alert-banner,
+body.backoffice-body.admin-redesign .phx-rx-notice,
+body.backoffice-body.admin-redesign .phx-tabs,
+body.backoffice-body.admin-redesign .phx-modal-card,
+body.backoffice-body.admin-redesign .phx-panel,
+body.backoffice-body.admin-redesign .phx-empty-state {
+  border: 1px solid var(--phx-border) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--phx-shadow) !important;
+}
+
+body.backoffice-body.admin-redesign .phx-header,
+body.backoffice-body.admin-redesign .phx-card,
+body.backoffice-body.admin-redesign .phx-stat-card,
+body.backoffice-body.admin-redesign .phx-modal-card,
+body.backoffice-body.admin-redesign .phx-panel {
+  background: var(--phx-surface) !important;
+}
+
+body.backoffice-body.admin-redesign .phx-header {
+  margin-bottom: 18px !important;
+  padding: 18px 24px !important;
+}
+
+body.backoffice-body.admin-redesign .phx-header-left {
+  align-items: center;
+}
+
+body.backoffice-body.admin-redesign .phx-header-icon,
+body.backoffice-body.admin-redesign .phx-stat-icon {
+  border-radius: 8px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+body.backoffice-body.admin-redesign .phx-title,
+body.backoffice-body.admin-redesign .phx-section-title,
+body.backoffice-body.admin-redesign .phx-card-header .fw-700,
+body.backoffice-body.admin-redesign .phx-card-header strong,
+body.backoffice-body.admin-redesign .phx-stat-value {
+  color: var(--phx-text) !important;
+}
+
+body.backoffice-body.admin-redesign .phx-title {
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+}
+
+body.backoffice-body.admin-redesign .phx-section-title,
+body.backoffice-body.admin-redesign .phx-stat-label,
+body.backoffice-body.admin-redesign .phx-stat-sub,
+body.backoffice-body.admin-redesign .phx-empty,
+body.backoffice-body.admin-redesign .phx-empty p,
+body.backoffice-body.admin-redesign .phx-time,
+body.backoffice-body.admin-redesign .phx-table th,
+body.backoffice-body.admin-redesign .phx-table td.text-muted,
+body.backoffice-body.admin-redesign .phx-card .text-muted,
+body.backoffice-body.admin-redesign .phx-page .text-muted,
+body.backoffice-body.admin-redesign .phx-date-input,
+body.backoffice-body.admin-redesign .breadcrumb,
+body.backoffice-body.admin-redesign .breadcrumb-item,
+body.backoffice-body.admin-redesign .breadcrumb-item a {
+  color: var(--phx-text-soft) !important;
+}
+
+body.backoffice-body.admin-redesign .phx-card-header {
+  background: var(--phx-surface-soft) !important;
+  border-bottom: 1px solid var(--phx-border-soft) !important;
+  padding: 16px 20px !important;
+}
+
+body.backoffice-body.admin-redesign .phx-card-body {
+  padding: 18px 20px;
+}
+
+body.backoffice-body.admin-redesign .phx-btn,
+body.backoffice-body.admin-redesign .phx-link-btn,
+body.backoffice-body.admin-redesign .phx-link-rx,
+body.backoffice-body.admin-redesign .phx-tab {
+  border-radius: 8px !important;
+}
+
+body.backoffice-body.admin-redesign .phx-btn.phx-btn-ghost {
+  background: #fff !important;
+  border: 1px solid var(--phx-border) !important;
+  color: var(--phx-text) !important;
+}
+
+body.backoffice-body.admin-redesign .phx-btn.phx-btn-primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+}
+
+body.backoffice-body.admin-redesign .phx-btn:hover,
+body.backoffice-body.admin-redesign .phx-tab:hover,
+body.backoffice-body.admin-redesign .phx-stat-card:hover,
+body.backoffice-body.admin-redesign .phx-rx-notice:hover {
+  transform: translateY(-1px);
+}
+
+body.backoffice-body.admin-redesign .phx-table {
+  width: 100%;
+  background: transparent !important;
+}
+
+body.backoffice-body.admin-redesign .phx-table thead tr,
+body.backoffice-body.admin-redesign .phx-table thead th {
+  background: var(--phx-surface-soft) !important;
+}
+
+body.backoffice-body.admin-redesign .phx-table th {
+  border-bottom: 1px solid var(--phx-border-soft) !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+}
+
+body.backoffice-body.admin-redesign .phx-table td {
+  color: #31435c !important;
+  border-bottom: 1px solid #edf3fa !important;
+}
+
+body.backoffice-body.admin-redesign .phx-table tbody tr:hover {
+  background: rgba(37, 99, 235, 0.04) !important;
+}
+
+body.backoffice-body.admin-redesign .phx-tabs {
+  padding: 8px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f6faff 100%) !important;
+}
+
+body.backoffice-body.admin-redesign .phx-tab {
+  border: 1px solid transparent !important;
+}
+
+body.backoffice-body.admin-redesign .phx-tab.phx-tab-active,
+body.backoffice-body.admin-redesign .phx-stat-active {
+  background: var(--phx-accent-soft) !important;
+  border-color: rgba(37, 99, 235, 0.18) !important;
+}
+
+body.backoffice-body.admin-redesign .phx-info-box,
+body.backoffice-body.admin-redesign .phx-alert-banner,
+body.backoffice-body.admin-redesign .phx-rx-notice {
+  background: linear-gradient(180deg, #f9fcff 0%, #f1f7ff 100%) !important;
+}
+
+body.backoffice-body.admin-redesign .phx-date-input,
+body.backoffice-body.admin-redesign .phx-search,
+body.backoffice-body.admin-redesign .phx-select,
+body.backoffice-body.admin-redesign .phx-input,
+body.backoffice-body.admin-redesign input,
+body.backoffice-body.admin-redesign select,
+body.backoffice-body.admin-redesign textarea {
+  border-color: var(--phx-border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+body.backoffice-body.admin-redesign.np-theme-dark {
+  --phx-surface: linear-gradient(145deg, rgba(17, 24, 39, 0.98), rgba(12, 25, 43, 0.98));
+  --phx-surface-soft: linear-gradient(180deg, #132238, #0f1d31);
+  --phx-border: #2a3d58;
+  --phx-border-soft: #223149;
+  --phx-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+  --phx-text: #f8fbff;
+  --phx-text-soft: #b8c7dc;
+  --phx-accent-soft: rgba(20, 184, 166, 0.16);
+}
+
+body.backoffice-body.admin-redesign.np-theme-dark .phx-table td,
+body.backoffice-body.admin-redesign.np-theme-dark .phx-patient-cell,
+body.backoffice-body.admin-redesign.np-theme-dark .phx-page .fw-700,
+body.backoffice-body.admin-redesign.np-theme-dark .phx-page .fw-600 {
+  color: #dbeafe !important;
+}
+
+body.backoffice-body.admin-redesign.np-theme-dark .phx-btn.phx-btn-ghost,
+body.backoffice-body.admin-redesign.np-theme-dark .phx-date-input,
+body.backoffice-body.admin-redesign.np-theme-dark .phx-search,
+body.backoffice-body.admin-redesign.np-theme-dark .phx-select,
+body.backoffice-body.admin-redesign.np-theme-dark .phx-input,
+body.backoffice-body.admin-redesign.np-theme-dark input,
+body.backoffice-body.admin-redesign.np-theme-dark select,
+body.backoffice-body.admin-redesign.np-theme-dark textarea {
+  background: #0b1728 !important;
+  color: #e5edf7 !important;
+}

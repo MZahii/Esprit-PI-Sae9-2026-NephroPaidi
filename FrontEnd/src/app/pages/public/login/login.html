@@ -1,0 +1,221 @@
+<div class="page-title">
+  <div class="breadcrumbs">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+          <a routerLink="/"><i class="bi bi-house"></i> Home</a>
+        </li>
+        <li class="breadcrumb-item active current">Login</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="title-wrapper">
+    <h1>Secure Login</h1>
+    <p>Access your medical dashboard to manage appointments, lab results, and treatment follow-ups.</p>
+  </div>
+</div>
+
+<section id="login" class="appointmnet section">
+  <div class="container" data-aos="fade-up" data-aos-delay="100">
+    <div class="row gy-4 align-items-start">
+
+      <!-- LEFT SIDE -->
+      <div class="col-lg-6">
+        <div class="appointment-info">
+          <h3>Secure Patient Access</h3>
+          <p class="mb-4">
+            Login to your personal medical space to access appointments, lab results,
+            treatment history, and communicate securely with doctors.
+          </p>
+
+          <div class="info-items">
+            <div class="info-item d-flex align-items-center mb-3">
+              <div class="icon-wrapper me-3">
+                <i class="bi bi-person-lock"></i>
+              </div>
+              <div>
+                <h5>Private Medical Dashboard</h5>
+                <p class="mb-0">Access your personal health records and treatment history securely</p>
+              </div>
+            </div>
+
+            <div class="info-item d-flex align-items-center mb-3">
+              <div class="icon-wrapper me-3">
+                <i class="bi bi-file-earmark-medical"></i>
+              </div>
+              <div>
+                <h5>Lab Results & Reports</h5>
+                <p class="mb-0">View and track kidney test results and medical documents</p>
+              </div>
+            </div>
+
+            <div class="info-item d-flex align-items-center mb-3">
+              <div class="icon-wrapper me-3">
+                <i class="bi bi-shield-lock"></i>
+              </div>
+              <div>
+                <h5>Secure Data Protection</h5>
+                <p class="mb-0">All patient information is encrypted and safely stored</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="emergency-contact mt-4">
+            <div class="emergency-card p-3">
+              <h6 class="mb-2">
+                <i class="bi bi-telephone-fill me-2"></i>Emergency Contact
+              </h6>
+              <p class="mb-0">
+                Call <strong>+216 99-911-347</strong> for urgent pediatric nephrology support
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT SIDE -->
+      <div class="col-lg-6">
+        <div class="appointment-form-wrapper" data-aos="fade-up" data-aos-delay="200">
+          <form class="appointment-form" (ngSubmit)="submit()" #loginFormRef="ngForm">
+
+            <h3 class="mb-3">{{ forgotMode ? 'Reset Password' : 'Secure Login' }}</h3>
+            <p class="mb-4">
+              {{ forgotMode ? 'Enter your email or username to receive a secure password reset link.' : 'Enter your credentials to access your medical space.' }}
+            </p>
+
+            <div *ngIf="errorMessage" class="alert alert-danger mb-3">
+              {{ errorMessage }}
+            </div>
+            <div *ngIf="infoMessage" class="alert alert-success mb-3">
+              {{ infoMessage }}
+            </div>
+
+            <div class="row gy-3">
+              <div class="col-12" *ngIf="!forgotMode">
+                <input
+                  type="text"
+                  name="identifier"
+                  class="form-control"
+                  placeholder="Email Address or Username"
+                  [(ngModel)]="form.identifier"
+                  required
+                >
+              </div>
+
+              <div class="col-12" *ngIf="!forgotMode">
+                <input
+                  type="password"
+                  name="password"
+                  class="form-control"
+                  placeholder="Password"
+                  [(ngModel)]="form.password"
+                  required
+                >
+              </div>
+
+              <div class="col-12 d-flex justify-content-between align-items-center" *ngIf="!forgotMode">
+                <div>
+                  <input
+                    type="checkbox"
+                    id="remember"
+                    name="rememberMe"
+                    [(ngModel)]="form.rememberMe"
+                  >
+                  <label for="remember"> Remember me</label>
+                </div>
+
+                <button type="button" class="btn btn-link p-0 small" (click)="showForgotPassword()">Forgot password?</button>
+              </div>
+
+              <div class="col-12" *ngIf="forgotMode">
+                <input
+                  type="text"
+                  name="forgotIdentifier"
+                  class="form-control"
+                  placeholder="Email Address or Username"
+                  [(ngModel)]="form.forgotIdentifier"
+                  required
+                >
+              </div>
+
+              <div class="col-12 d-flex justify-content-end" *ngIf="forgotMode">
+                <button type="button" class="btn btn-link p-0 small" (click)="backToLogin()">Back to login</button>
+              </div>
+
+              <div class="col-12">
+                <button
+                  type="submit"
+                  class="btn btn-appointment w-100"
+                  [disabled]="loading || (forgotMode ? !form.forgotIdentifier.trim() : loginFormRef.invalid)"
+                >
+                  <i class="bi bi-box-arrow-in-right me-2"></i>
+                  {{ loading ? (forgotMode ? 'Sending...' : 'Signing in...') : (forgotMode ? 'Send reset link' : 'Login') }}
+                </button>
+              </div>
+
+              <div class="col-12 text-center">
+                <p class="text-muted small mt-2">
+                  Appointment booking is available after login.
+                </p>
+              </div>
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- STEPS -->
+    <div class="process-steps mt-5" data-aos="fade-up" data-aos-delay="300">
+      <div class="row text-center gy-4">
+
+        <div class="col-lg-3 col-md-6">
+          <div class="step-item">
+            <div class="step-number">1</div>
+            <div class="step-icon">
+              <i class="bi bi-box-arrow-in-right"></i>
+            </div>
+            <h5>Login Securely</h5>
+            <p>Enter your email and password to access your protected account</p>
+          </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+          <div class="step-item">
+            <div class="step-number">2</div>
+            <div class="step-icon">
+              <i class="bi bi-speedometer2"></i>
+            </div>
+            <h5>Access Dashboard</h5>
+            <p>View your medical profile, appointments, and follow-ups</p>
+          </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+          <div class="step-item">
+            <div class="step-number">3</div>
+            <div class="step-icon">
+              <i class="bi bi-calendar-check"></i>
+            </div>
+            <h5>Manage Appointments</h5>
+            <p>Book, edit, or track consultations with specialists</p>
+          </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+          <div class="step-item">
+            <div class="step-number">4</div>
+            <div class="step-icon">
+              <i class="bi bi-heart-pulse"></i>
+            </div>
+            <h5>Follow Treatment</h5>
+            <p>Monitor kidney health, medications, and lab progress</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>

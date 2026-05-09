@@ -1,0 +1,31 @@
+.guardian-consultations {
+  .section-title {
+    font-weight: 700;
+  }
+
+  .filter-controls {
+    min-width: 240px;
+  }
+
+  .consultation-list {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .consultation-card {
+    background: #fff;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .consultation-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+}

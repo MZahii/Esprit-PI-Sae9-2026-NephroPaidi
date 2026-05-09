@@ -1,0 +1,67 @@
+:host {
+  display: block;
+}
+
+.contract-list {
+  display: grid;
+  gap: 12px;
+}
+
+.contract-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px;
+  background: #fff;
+}
+
+.contract-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+
+.full-row {
+  grid-column: 1 / -1;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badge-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-suspended {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-ended {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-default {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+@media (max-width: 992px) {
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+}

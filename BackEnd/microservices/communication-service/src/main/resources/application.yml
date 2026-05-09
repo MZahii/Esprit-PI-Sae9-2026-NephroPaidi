@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: communication-service
+  config:
+    import: optional:configserver:http://config-server:8888
+  flyway:
+    outOfOrder: true
+    validateOnMigrate: false
+    repairOnMigrate: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://eureka:8761/eureka}
+  instance:
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:communication-service}
+
+# Resilience4j Circuit Breaker
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: 2000
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 10000
+    instances:
+      default:
+        baseConfig: default
+  
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 100
+    instances:
+      default:
+        baseConfig: default
+
+# Management/Actuator
+management:
+  endpoints:
+    web:
+      include: health,circuitbreakers
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true

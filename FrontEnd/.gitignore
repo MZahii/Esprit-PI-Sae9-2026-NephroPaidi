@@ -1,0 +1,35 @@
+# Node modules - reinstalled via npm install
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+out-tsc/
+
+# Angular cache
+.angular/
+.angular/cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+# NOTE: package-lock.json IS tracked in git for dependency consistency
+
+# Testing
+coverage/

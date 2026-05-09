@@ -1,0 +1,155 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">{{ pageTitle }}</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item"><a [routerLink]="backRoute">{{ isAdmin ? 'HR List' : 'Contracts' }}</a></li>
+      <li class="breadcrumb-item">{{ contractId ? 'Edit Contract' : 'Create Contract' }}</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="row justify-content-center">
+    <div class="col-xxl-9 col-xl-10">
+      <div class="card stretch stretch-full">
+        <div class="card-header">
+          <h5 class="card-title">{{ cardTitle }}</h5>
+        </div>
+
+        <div class="card-body">
+          <div *ngIf="successMessage" class="alert alert-success mb-3">
+            {{ successMessage }}
+          </div>
+          <div *ngIf="errorMessage" class="alert alert-danger mb-3">
+            {{ errorMessage }}
+          </div>
+
+          <form (ngSubmit)="submit()" #f="ngForm">
+            <div class="row">
+              <div class="col-md-6 mb-3" *ngIf="!isStaffLocked; else lockedStaffBlock">
+                <label class="form-label fw-semibold">{{ selectedAccountLabel }}</label>
+                <select
+                  class="form-control"
+                  name="staffUserId"
+                  [(ngModel)]="form.staffUserId"
+                  (ngModelChange)="onStaffUserChange()"
+                  required
+                  [disabled]="loadingStaff"
+                >
+                  <option value="" disabled>Select {{ selectedAccountLabel.toLowerCase() }}</option>
+                  <option *ngFor="let user of staffUsers" [ngValue]="user.id">
+                    {{ fullName(user) }} ({{ user.role }})
+                  </option>
+                </select>
+              </div>
+
+              <ng-template #lockedStaffBlock>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-semibold">{{ selectedAccountLabel }}</label>
+                  <input class="form-control" [value]="selectedStaffDisplayName" readonly />
+                  <small class="text-muted">This contract is being created for the selected HR account only.</small>
+                </div>
+              </ng-template>
+
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Contract Type</label>
+                <select
+                  class="form-control"
+                  name="contractType"
+                  [(ngModel)]="form.contractType"
+                  (ngModelChange)="onContractTypeChange()"
+                  required
+                >
+                  <option value="" disabled>Select contract type</option>
+                  <option *ngFor="let type of contractTypes" [value]="type">{{ type }}</option>
+                </select>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Job Title</label>
+                <input class="form-control" name="jobTitle" [value]="fixedJobTitle" readonly />
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Department</label>
+                <input class="form-control" name="department" [value]="fixedDepartment" readonly />
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Hours / Week</label>
+                <select
+                  class="form-control"
+                  name="hoursPerWeek"
+                  [(ngModel)]="form.hoursPerWeek"
+                  [disabled]="!form.contractType"
+                  required
+                >
+                  <option value="" disabled>Select hours / week</option>
+                  <option *ngFor="let hours of hoursPerWeekOptions" [ngValue]="hours">{{ hours }}</option>
+                </select>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Start Date</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  name="startDate"
+                  [(ngModel)]="form.startDate"
+                  required
+                />
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">End Date</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  name="endDate"
+                  [(ngModel)]="form.endDate"
+                  required
+                />
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Salary (TND)</label>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  class="form-control"
+                  name="salary"
+                  [(ngModel)]="form.salary"
+                  required
+                />
+                <small class="text-muted">Enter a positive salary amount only (greater than 0).</small>
+              </div>
+
+              <div class="col-12 mb-3">
+                <label class="form-label fw-semibold">Notes</label>
+                <textarea
+                  class="form-control"
+                  rows="3"
+                  name="notes"
+                  [(ngModel)]="form.notes"
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+              <button class="btn btn-primary" type="submit" [disabled]="loading || loadingStaff || f.invalid">
+                {{ loading ? (contractId ? 'UPDATING...' : 'CREATING...') : (contractId ? 'UPDATE CONTRACT' : 'CREATE CONTRACT') }}
+              </button>
+              <button type="button" class="btn btn-light-brand" [disabled]="loading" (click)="goToBackRoute()">{{ backLabel }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

@@ -1,0 +1,242 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Communication Analytics</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item"><a routerLink="/backoffice/communication/inbox">Communication</a></li>
+      <li class="breadcrumb-item">Analytics</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="card stretch stretch-full mb-3">
+    <div class="card-body d-flex justify-content-between align-items-end flex-wrap gap-3">
+      <div class="d-flex align-items-end flex-wrap gap-2">
+        <div>
+          <label class="form-label fw-semibold">Date Range</label>
+          <select class="form-control" [(ngModel)]="selectedPreset" (ngModelChange)="onPresetChange()">
+            <option *ngFor="let preset of presets" [value]="preset.value">{{ preset.label }}</option>
+          </select>
+        </div>
+
+        <div *ngIf="isCustomRange">
+          <label class="form-label fw-semibold">From</label>
+          <input class="form-control" type="date" [(ngModel)]="customFrom" (ngModelChange)="onCustomRangeChange()" />
+        </div>
+
+        <div *ngIf="isCustomRange">
+          <label class="form-label fw-semibold">To</label>
+          <input class="form-control" type="date" [(ngModel)]="customTo" (ngModelChange)="onCustomRangeChange()" />
+        </div>
+
+        <div class="ms-2">
+          <small class="text-muted d-block">Active Range</small>
+          <strong>{{ dateRangeLabel }}</strong>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" type="button" (click)="exportCsv()" [disabled]="loading">Export CSV</button>
+    </div>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
+
+  <div *ngIf="loading" class="card stretch stretch-full">
+    <div class="card-body">
+      <div class="placeholder-glow">
+        <p class="placeholder col-12"></p>
+        <p class="placeholder col-12"></p>
+        <p class="placeholder col-8"></p>
+      </div>
+    </div>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <div class="row g-3 mb-3">
+      <div class="col-xl-3 col-md-6">
+        <div class="card stretch stretch-full h-100" [ngClass]="averageResponseCardClass">
+          <div class="card-body">
+            <small class="text-muted d-block mb-1">Average Response Time</small>
+            <h4 class="mb-1">{{ averageResponseLabel }}</h4>
+            <small class="text-muted">Based on first staff response in selected range.</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-md-6">
+        <div class="card stretch stretch-full h-100">
+          <div class="card-body">
+            <small class="text-muted d-block mb-2">SLA Compliance</small>
+
+            <div class="mb-2">
+              <div class="d-flex justify-content-between">
+                <small>HIGH priority ≤ 2h</small>
+                <small>{{ highSlaPercent | number:'1.0-1' }}%</small>
+              </div>
+              <div class="progress progress-sm">
+                <div class="progress-bar" [ngClass]="getSlaBarClass(highSlaPercent)" [style.width.%]="highSlaPercent"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="d-flex justify-content-between">
+                <small>NORMAL priority ≤ 24h</small>
+                <small>{{ normalSlaPercent | number:'1.0-1' }}%</small>
+              </div>
+              <div class="progress progress-sm">
+                <div class="progress-bar" [ngClass]="getSlaBarClass(normalSlaPercent)" [style.width.%]="normalSlaPercent"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-md-6">
+        <div class="card stretch stretch-full h-100">
+          <div class="card-body">
+            <small class="text-muted d-block mb-1">Total Messages</small>
+            <h4 class="mb-2">{{ totalMessages }}</h4>
+            <small class="d-block text-muted">Created: {{ createdCount }}</small>
+            <small class="d-block text-muted">Responded: {{ respondedCount }}</small>
+            <small class="d-block text-muted">Closed: {{ closedCount }}</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-md-6">
+        <div class="card stretch stretch-full h-100">
+          <div class="card-body">
+            <small class="text-muted d-block mb-1">Escalation Rate</small>
+            <h4 class="mb-1">{{ escalationRatePercent | number:'1.0-1' }}%</h4>
+            <small class="d-flex align-items-center gap-1"
+              [ngClass]="escalationTrendDirection === 'up' ? 'text-danger' : escalationTrendDirection === 'down' ? 'text-success' : 'text-muted'">
+              <span *ngIf="escalationTrendDirection === 'up'">▲</span>
+              <span *ngIf="escalationTrendDirection === 'down'">▼</span>
+              <span *ngIf="escalationTrendDirection === 'flat'">●</span>
+              {{ escalationTrendDelta >= 0 ? '+' : '' }}{{ escalationTrendDelta | number:'1.0-1' }} pts vs previous period
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-xl-8">
+        <div class="card stretch stretch-full h-100">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Messages Over Time</h5>
+          </div>
+          <div class="card-body">
+            <div class="line-chart-wrap">
+              <svg [attr.viewBox]="'0 0 ' + (chartWidth + chartPadding * 2) + ' ' + lineChartHeight" class="line-chart-svg">
+                <polyline [attr.points]="createdLinePoints" fill="none" stroke="#2563eb" stroke-width="2"></polyline>
+                <polyline [attr.points]="respondedLinePoints" fill="none" stroke="#16a34a" stroke-width="2"></polyline>
+                <polyline [attr.points]="closedLinePoints" fill="none" stroke="#6b7280" stroke-width="2"></polyline>
+              </svg>
+            </div>
+
+            <div class="d-flex gap-3 mt-2 flex-wrap">
+              <small><span class="legend-dot bg-primary"></span> Created</small>
+              <small><span class="legend-dot bg-success"></span> Responded</small>
+              <small><span class="legend-dot bg-secondary"></span> Closed</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-4">
+        <div class="card stretch stretch-full h-100">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Distribution by Type</h5>
+            <button class="btn btn-sm btn-light-brand" *ngIf="activeTypeFilter !== 'ALL'" (click)="clearTypeFilter()">Clear Type Filter</button>
+          </div>
+          <div class="card-body">
+            <div class="pie-wrap">
+              <svg viewBox="0 0 220 220" class="pie-svg">
+                <path
+                  *ngFor="let slice of pieSlices"
+                  [attr.d]="slice.path"
+                  [attr.fill]="slice.color"
+                  [class.active-slice]="activeTypeFilter === slice.type"
+                  (click)="onSliceClick(slice.type)">
+                </path>
+                <circle cx="110" cy="110" r="42" fill="#fff"></circle>
+              </svg>
+            </div>
+
+            <div class="mt-2" *ngFor="let slice of pieSlices">
+              <button class="btn btn-sm w-100 text-start d-flex justify-content-between align-items-center"
+                [class.btn-light-brand]="activeTypeFilter !== slice.type"
+                [class.btn-primary]="activeTypeFilter === slice.type"
+                type="button"
+                (click)="onSliceClick(slice.type)">
+                <span>{{ slice.type }}</span>
+                <span>{{ slice.percentage | number:'1.0-1' }}%</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card stretch stretch-full mb-3">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Response Time by Staff Member</h5>
+      </div>
+      <div class="card-body">
+        <div class="bar-chart">
+          <div class="bar-item" *ngFor="let bar of responseTimeBars; let idx = index">
+            <div class="bar-track" [attr.title]="bar.avgHours.toFixed(2) + ' hours'">
+              <div class="bar-fill" [ngClass]="bar.colorClass" [style.height.%]="bar.percent"></div>
+            </div>
+            <small class="bar-value">{{ bar.avgHours | number:'1.1-2' }}h</small>
+            <small class="bar-label">{{ trackBarLabel(idx) }}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card stretch stretch-full">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Staff Performance Ranking</h5>
+        <small class="text-muted">Type filter: {{ filteredTypeBadge }}</small>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Staff Name</th>
+                <th>Messages Handled</th>
+                <th>Average Response Time</th>
+                <th>Messages Closed</th>
+                <th>Messages Escalated</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of staffRows; let i = index">
+                <td>{{ i + 1 }}</td>
+                <td>{{ row.staffName }}</td>
+                <td>{{ row.messagesHandled }}</td>
+                <td [ngClass]="getAvgClass(row.averageResponseHours)">
+                  {{ row.averageResponseHours === null ? '-' : (row.averageResponseHours | number:'1.1-2') + ' h' }}
+                </td>
+                <td>{{ row.messagesClosed }}</td>
+                <td>{{ row.messagesEscalated }}</td>
+              </tr>
+              <tr *ngIf="staffRows.length === 0">
+                <td colspan="6" class="text-center text-muted py-4">No staff performance data available for this range.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>
+
+

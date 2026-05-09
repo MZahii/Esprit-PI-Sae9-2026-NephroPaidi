@@ -1,0 +1,299 @@
+﻿<!-- SIDEBAR -->
+<nav class="nxl-navigation">
+  <div class="navbar-wrapper">
+    <div class="m-header">
+      <a [routerLink]="homeRoute" class="b-brand">
+        <img [src]="logoPath" alt="logo" class="logo logo-lg" />
+        <img [src]="logoPath" alt="logo" class="logo logo-sm" />
+      </a>
+    </div>
+
+    <div class="navbar-content">
+      <ul class="nxl-navbar">
+        <li class="nxl-item nxl-caption">
+          <label>Navigation</label>
+        </li>
+
+        <ng-container *ngFor="let item of navigationItems">
+          <!-- SIMPLE LINK -->
+          <li
+            class="nxl-item"
+            *ngIf="!item.children?.length"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+          >
+            <a [routerLink]="item.route!" class="nxl-link">
+              <span class="nxl-micon"><i [class]="item.icon"></i></span>
+              <span class="nxl-mtext">{{ item.label }}</span>
+            </a>
+          </li>
+
+          <!-- DROPDOWN -->
+          <li
+            class="nxl-item nxl-hasmenu"
+            *ngIf="item.children?.length"
+            [class.nxl-trigger]="isMenuOpen(item.key)"
+            [class.route-active]="isItemRouteActive(item)"
+          >
+            <button
+              type="button"
+              class="nxl-link menu-toggle-btn"
+              (click)="toggleMenu($event, item.key)"
+              [attr.aria-expanded]="isMenuOpen(item.key)"
+              [class.active]="isItemRouteActive(item)"
+            >
+              <span class="d-flex align-items-center gap-2">
+                <span class="nxl-micon"><i [class]="item.icon"></i></span>
+                <span class="nxl-mtext">{{ item.label }}</span>
+              </span>
+
+              <span class="nxl-arrow">
+                <i class="feather-chevron-right"></i>
+              </span>
+            </button>
+
+            <ul class="nxl-submenu">
+              <li
+                class="nxl-item"
+                *ngFor="let child of item.children"
+                [class.active]="isChildRouteActive(child)"
+              >
+                <a
+                  *ngIf="child.implemented && child.route"
+                  class="nxl-link"
+                  [routerLink]="child.route"
+                  [queryParams]="child.queryParams"
+                  [class.active]="isChildRouteActive(child)"
+                  [attr.aria-current]="isChildRouteActive(child) ? 'page' : null"
+                >
+                  {{ child.label }}
+                </a>
+
+                <div
+                  *ngIf="!child.implemented || !child.route"
+                  class="nxl-link disabled-link"
+                >
+                  <span class="submenu-title">{{ child.label }}</span>
+                  <small *ngIf="child.note">{{ child.note }}</small>
+                </div>
+              </li>
+            </ul>
+          </li>
+        </ng-container>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- HEADER -->
+<header class="nxl-header">
+  <div class="header-wrapper">
+    <div class="header-left d-flex align-items-center gap-4">
+      <a href="#" class="nxl-head-mobile-toggler" id="mobile-collapse">
+        <div class="hamburger hamburger--arrowturn">
+          <div class="hamburger-box">
+            <div class="hamburger-inner"></div>
+          </div>
+        </div>
+      </a>
+
+      <div class="nxl-navigation-toggle">
+        <a href="#" id="menu-mini-button">
+          <i class="feather-align-left"></i>
+        </a>
+      </div>
+    </div>
+
+    <div class="header-filter-dock" aria-label="Page search and filters"></div>
+
+    <div class="header-right ms-auto">
+      <div class="header-actions">
+        <div class="notifications-menu" [class.open]="notificationsOpen">
+          <button
+            type="button"
+            class="notifications-trigger"
+            [class.has-unread]="unreadCount > 0"
+            [class.glow]="hasNewNotificationPulse"
+            (click)="toggleNotifications($event)"
+            title="Notifications"
+          >
+            <img
+              src="assets/frontoffice/img/notification.png"
+              alt="Notifications"
+              class="header-action-img"
+            />
+            <span class="unread-badge" *ngIf="unreadCount > 0">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+          </button>
+
+          <div class="notifications-dropdown" *ngIf="notificationsOpen">
+            <div class="notifications-head">
+              <h6 class="mb-0">Notifications</h6>
+              <small class="text-muted">{{ unreadCount }} unread</small>
+            </div>
+
+            <div class="notifications-body">
+              <div class="notifications-loading" *ngIf="loadingNotifications">Loading...</div>
+
+              <button
+                *ngFor="let n of notifications"
+                type="button"
+                class="notification-item"
+                [class.unread]="!n.read"
+                (click)="markAsRead(n.id)"
+              >
+                <div class="notification-top">
+                  <span class="notification-title">{{ n.title }}</span>
+                  <small>{{ n.createdAt | date:'MM-dd HH:mm' }}</small>
+                </div>
+                <div class="notification-message">{{ n.message }}</div>
+              </button>
+
+              <div class="notifications-empty" *ngIf="!loadingNotifications && notifications.length === 0">
+                No notifications yet.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="user-menu" [class.open]="userMenuOpen">
+          <button
+            type="button"
+            class="user-menu-trigger"
+            (click)="toggleUserMenu($event)"
+          >
+            <img
+              [src]="avatarPath"
+              alt="user-image"
+              class="header-action-img"
+            />
+          </button>
+
+          <div class="user-menu-dropdown" *ngIf="userMenuOpen">
+            <div class="user-menu-header">
+              <img
+                [src]="avatarPath"
+                alt="user-image"
+                class="img-fluid user-avtar"
+              />
+
+              <div class="user-meta">
+                <h6 class="mb-1">{{ displayName }}</h6>
+                <span class="d-block">{{ displayEmail }}</span>
+                <span class="badge mt-2" [ngClass]="roleBadgeClass">{{ role }}</span>
+              </div>
+            </div>
+
+            <div class="user-menu-divider"></div>
+
+            <a
+              *ngIf="isAdmin"
+              class="user-menu-item"
+              routerLink="/backoffice/logs-center"
+              (click)="userMenuOpen = false"
+            >
+              <i class="feather-activity"></i>
+              <div>
+                <span>Logs</span>
+                <small>Audit and clinical activity logs</small>
+              </div>
+            </a>
+
+            <a
+              *ngIf="canViewMyContract"
+              class="user-menu-item"
+              routerLink="/backoffice/my-contract"
+              (click)="userMenuOpen = false"
+            >
+              <i class="feather-file-text"></i>
+              <div>
+                <span>My Contract</span>
+                <small>View your contract details</small>
+              </div>
+            </a>
+
+            <a
+              class="user-menu-item"
+              routerLink="/backoffice/account-settings"
+              (click)="userMenuOpen = false"
+            >
+              <i class="feather-settings"></i>
+              <div>
+                <span>Account Settings</span>
+                <small>Manage your profile, security, and preferences</small>
+              </div>
+            </a>
+
+            <button type="button" class="user-menu-item logout-item" (click)="onLogout()">
+              <i class="feather-log-out"></i>
+              <div>
+                <span>Logout</span>
+                <small>Sign out from backoffice</small>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN CONTENT -->
+<main class="nxl-container">
+  <div class="nxl-content">
+    <div class="page-statistics-tools" *ngIf="hasPageStats">
+      <button
+        type="button"
+        class="statistics-trigger"
+        (click)="openStatsPanel($event)"
+        title="Statistics"
+      >
+        <i class="feather-bar-chart-2"></i>
+        <span>Statistics</span>
+      </button>
+    </div>
+
+    <router-outlet></router-outlet>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <p class="fs-11 text-muted fw-medium text-uppercase mb-0 copyright">
+      <span>Copyright ©</span>
+      <span>2026</span>
+    </p>
+
+    <p>
+      <span>
+        {{ isAdmin ? 'NephrosPaidi Admin Dashboard' : isHr ? 'NephrosPaidi HR Dashboard' : isPharmacist ? 'NephrosPaidi Pharmacy Workspace' : isSurgeon ? 'NephrosPaidi Procedure Dashboard' : isLabAgent ? 'NephrosPaidi Lab Workflow' : 'NephrosPaidi Backoffice' }}
+      </span>
+    </p>
+
+    <div class="d-flex align-items-center gap-4">
+      <a href="#" class="fs-11 fw-semibold text-uppercase">Help</a>
+      <a href="#" class="fs-11 fw-semibold text-uppercase">Terms</a>
+      <a href="#" class="fs-11 fw-semibold text-uppercase">Privacy</a>
+    </div>
+  </footer>
+</main>
+
+<div class="statistics-backdrop" *ngIf="statsPanelOpen" (click)="closeStatsPanel()"></div>
+
+<aside
+  class="statistics-modal"
+  [class.open]="statsPanelOpen"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Page statistics"
+  [attr.aria-hidden]="statsPanelOpen ? null : 'true'"
+>
+  <div class="statistics-modal-head">
+    <div>
+      <span class="statistics-kicker">Page overview</span>
+      <h5>Statistics</h5>
+    </div>
+    <button type="button" class="statistics-close" (click)="closeStatsPanel()" title="Close statistics">
+      <i class="feather-x"></i>
+    </button>
+  </div>
+  <div class="statistics-modal-body"></div>
+</aside>

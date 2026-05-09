@@ -1,0 +1,99 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Dialysis Sessions</h5>
+    </div>
+
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a routerLink="/backoffice/dashboard">Home</a>
+      </li>
+      <li class="breadcrumb-item">Procedure Service</li>
+      <li class="breadcrumb-item">Dialysis Sessions</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="row g-4">
+    <div class="col-12 col-xl-4">
+      <div class="card stretch stretch-full">
+        <div class="card-header">
+          <h5 class="card-title">Generate Sessions From Plan</h5>
+        </div>
+
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Dialysis Plan</label>
+            <select class="form-select" [(ngModel)]="selectedPlanId">
+              <option *ngFor="let plan of plans" [value]="plan.id">
+                {{ plan.firstName || '-' }} {{ plan.lastName || '' }} ({{ plan.status }})
+              </option>
+            </select>
+          </div>
+
+          <div class="plan-summary" *ngIf="selectedPlan as p">
+            <div><strong>Type:</strong> {{ p.dialysisType || '-' }}</div>
+            <div><strong>Frequency:</strong> {{ p.sessionsPerWeek || '-' }}/week, {{ p.sessionDurationMinutes || '-' }} min</div>
+            <div><strong>Days:</strong> {{ p.daysOfWeek || '-' }}</div>
+            <div><strong>Period:</strong> {{ p.startDate || '-' }}<span *ngIf="p.endDate"> → {{ p.endDate }}</span></div>
+          </div>
+
+          <button type="button" class="btn btn-primary w-100" (click)="generateSessionsFromPlan()" [disabled]="saving">
+            {{ saving ? 'Generating...' : 'Generate Sessions' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-xl-8">
+      <div class="card stretch stretch-full">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">Sessions List</h5>
+          <button type="button" class="btn btn-light btn-sm" (click)="loadInitialData()">
+            Refresh
+          </button>
+        </div>
+
+        <div class="card-body">
+          <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
+          <div *ngIf="successMessage" class="alert alert-success mb-3">{{ successMessage }}</div>
+          <div *ngIf="loading" class="empty-state">Loading sessions...</div>
+
+          <div class="mb-3" *ngIf="!loading">
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="searchTerm"
+              placeholder="Filter by patient name"
+            />
+          </div>
+
+          <div class="table-responsive" *ngIf="!loading">
+            <table class="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Session Date</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="filteredSessions.length === 0">
+                  <td colspan="3" class="empty-state">No dialysis sessions found yet.</td>
+                </tr>
+                <tr *ngFor="let session of filteredSessions">
+                  <td>{{ getPlanDisplay(session.planId) }}</td>
+                  <td>{{ session.sessionDate | date: 'yyyy-MM-dd HH:mm' }}</td>
+                  <td>{{ session.notes || '-' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

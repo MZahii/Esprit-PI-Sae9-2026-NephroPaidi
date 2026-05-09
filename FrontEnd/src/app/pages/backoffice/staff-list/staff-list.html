@@ -1,0 +1,300 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Staff Accounts List</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item">Staff Accounts</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="row">
+    <div class="col-12">
+      <div class="card stretch stretch-full">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <h5 class="card-title mb-0">Staff Users</h5>
+        </div>
+
+        <div class="card-body">
+          <div *ngIf="errorMessage" class="alert alert-danger mb-3">
+            {{ errorMessage }}
+          </div>
+          <div *ngIf="actionMessage" class="alert alert-success mb-3">
+            {{ actionMessage }}
+          </div>
+
+          <div class="quick-filters mb-3" *ngIf="!loading">
+            <button type="button" class="btn btn-sm btn-light-brand" (click)="applyQuickFilter('PENDING_WITHOUT_CONTRACT')">
+              Pending Without Contract
+            </button>
+            <button type="button" class="btn btn-sm btn-light" (click)="applyQuickFilter('NO_RUNNING_CONTRACT')">
+              No Running Contract
+            </button>
+            <button type="button" class="btn btn-sm btn-light" (click)="applyQuickFilter('INACTIVE')">
+              Inactive Accounts
+            </button>
+            <button type="button" class="btn btn-sm btn-light" (click)="applyQuickFilter('ARCHIVED')">
+              Archived In Session
+            </button>
+            <button
+              *ngIf="hasActiveFilters"
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              (click)="resetFilters()"
+            >
+              Reset Filters
+            </button>
+          </div>
+
+          <div class="hr-summary-grid mb-3" *ngIf="!loading">
+            <div class="hr-summary-card primary">
+              <div>
+                <div class="stats-label">Total Staff</div>
+                <div class="stats-value" appCountUp>{{ totalStaff }}</div>
+              </div>
+              <div class="summary-lines">
+                <span>{{ activeStaff }} active</span>
+                <span>{{ pendingStaff }} pending</span>
+                <span>{{ inactiveStaff }} inactive</span>
+              </div>
+            </div>
+
+            <div class="hr-summary-card chart-card">
+              <div class="stats-label">Account Health</div>
+              <div class="circle-wrap" [style.background]="circleStyle(toPercent(activeStaff, totalStaff), '#2563eb')">
+                <div class="circle-value" appCountUp>{{ toPercent(activeStaff, totalStaff) }}%</div>
+              </div>
+              <div class="chart-legend">Active accounts</div>
+            </div>
+
+            <div class="hr-summary-card chart-card">
+              <div class="stats-label">Contract Coverage</div>
+              <div class="circle-wrap" [style.background]="circleStyle(toPercent(withContractStaff, totalStaff), '#14b8a6')">
+                <div class="circle-value" appCountUp>{{ toPercent(withContractStaff, totalStaff) }}%</div>
+              </div>
+              <div class="chart-legend">{{ withContractStaff }} with / {{ withoutContractStaff }} without</div>
+            </div>
+
+            <div class="hr-summary-card chart-card">
+              <div class="stats-label">Access Enabled</div>
+              <div class="circle-wrap" [style.background]="circleStyle(toPercent(enabledStaff, totalStaff), '#22c55e')">
+                <div class="circle-value" appCountUp>{{ toPercent(enabledStaff, totalStaff) }}%</div>
+              </div>
+              <div class="chart-legend">{{ enabledStaff }} enabled / {{ disabledStaff }} disabled</div>
+            </div>
+          </div>
+
+          <div class="role-stats-grid mb-3" *ngIf="!loading">
+            <div class="role-card" *ngFor="let rs of roleStats" [attr.data-stat-tooltip]="rs.role + ' share: ' + toPercent(rs.total, totalStaff) + '% of staff'">
+              <div class="role-title">{{ rs.role }}</div>
+              <div class="role-total" appCountUp>{{ rs.total }}</div>
+              <div class="role-line">Active: {{ rs.active }}</div>
+              <div class="role-line">Pending: {{ rs.pending }}</div>
+              <div class="role-line">Inactive: {{ rs.inactive }}</div>
+              <div class="role-line">With Contract: {{ rs.withContract }}</div>
+            </div>
+          </div>
+
+          <div class="filters-panel staff-filter-panel mb-3">
+            <div class="filters-header">
+              <div>
+                <h6 class="mb-1">Advanced Search & Filters</h6>
+                <div class="text-muted small">
+                  Search across identity fields, contract metadata, account state, and archive state.
+                </div>
+              </div>
+              <div class="results-summary">
+                {{ filteredStaff.length }} result{{ filteredStaff.length === 1 ? '' : 's' }}
+              </div>
+            </div>
+
+            <div class="filters staff-filters">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Search by username, full name, CIN, email, phone, role, contract reference, job title, or state..."
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onFiltersChanged()"
+            />
+
+            <select class="form-control" [(ngModel)]="roleFilter" (ngModelChange)="onFiltersChanged()">
+              <option value="ALL">All Roles</option>
+              <option *ngFor="let role of staffRoles" [value]="role">{{ role }}</option>
+            </select>
+
+            <select class="form-control" [(ngModel)]="statusFilter" (ngModelChange)="onFiltersChanged()">
+              <option value="ALL">All Status</option>
+              <option value="PENDING_CONTRACT">PENDING_CONTRACT</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+            </select>
+
+            <select class="form-control" [(ngModel)]="accessFilter" (ngModelChange)="onFiltersChanged()">
+              <option value="ALL">All Access States</option>
+              <option value="ENABLED">Enabled</option>
+              <option value="DISABLED">Disabled</option>
+            </select>
+
+            <select class="form-control" [(ngModel)]="contractFilter" (ngModelChange)="onFiltersChanged()">
+              <option value="ALL">All Contract States</option>
+              <option value="WITH_CONTRACT">With Any Contract</option>
+              <option value="WITHOUT_CONTRACT">Without Any Contract</option>
+              <option value="RUNNING_CONTRACT">With Running Contract</option>
+              <option value="NO_RUNNING_CONTRACT">No Running Contract</option>
+            </select>
+
+            <select class="form-control" [(ngModel)]="archiveFilter" (ngModelChange)="onFiltersChanged()">
+              <option value="ALL">All Archive States</option>
+              <option value="LIVE">Live Only</option>
+              <option value="ARCHIVED">Archived Only</option>
+            </select>
+
+            <select class="form-control" [(ngModel)]="sortField" (ngModelChange)="onFiltersChanged()">
+              <option value="username">Sort: Username</option>
+              <option value="name">Sort: Full Name</option>
+              <option value="role">Sort: Role</option>
+              <option value="status">Sort: Account Status</option>
+              <option value="contract">Sort: Contract Summary</option>
+            </select>
+
+            <select class="form-control" [(ngModel)]="sortDirection" (ngModelChange)="onFiltersChanged()">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </div>
+          </div>
+
+          <div *ngIf="loading" class="text-muted py-3">Loading staff accounts...</div>
+
+          <div class="table-responsive" *ngIf="!loading">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Account Status</th>
+                  <th>Enabled</th>
+                  <th>Contract</th>
+                  <th>Archive State</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngFor="let user of paginatedStaff">
+                  <tr>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.email || '-' }}</td>
+                    <td>{{ user.role }}</td>
+                    <td>
+                      <span class="status-pill" [ngClass]="statusClass(user.accountStatus)">
+                        {{ user.accountStatus }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="status-pill" [ngClass]="enabledClass(isEnabledFromStatus(user))">
+                        {{ isEnabledFromStatus(user) ? 'ENABLED' : 'DISABLED' }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="status-pill" [ngClass]="contractStateClass(user)">
+                        {{ contractSummary(user) }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="status-pill" [ngClass]="archivedClass(!!user.deleted)">
+                        {{ user.deleted ? 'ARCHIVED' : 'LIVE' }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="action-stack">
+                      <a
+                        class="btn btn-sm btn-light"
+                        [routerLink]="['/backoffice/staff', user.id]"
+                      >
+                        Check User Details
+                      </a>
+                      <button
+                        *ngIf="isHr"
+                        type="button"
+                        class="btn btn-sm btn-light"
+                        [disabled]="actionLoadingUserId === user.id || !!user.deleted"
+                        (click)="toggleAccountStatus(user)"
+                      >
+                        {{ user.accountStatus === 'INACTIVE' ? 'Activate Account' : 'Deactivate Account' }}
+                      </button>
+                      <button
+                        *ngIf="canSoftDelete(user)"
+                        type="button"
+                        class="btn btn-sm btn-outline-danger"
+                        [disabled]="actionLoadingUserId === user.id"
+                        (click)="softDeleteUser(user)"
+                      >
+                        Archive User
+                      </button>
+                      <button
+                        *ngIf="canRestore(user)"
+                        type="button"
+                        class="btn btn-sm btn-outline-success"
+                        [disabled]="actionLoadingUserId === user.id"
+                        (click)="restoreUser(user)"
+                      >
+                        Restore User
+                      </button>
+                      <a
+                        *ngIf="isHr && !hasAnyContract(user.id) && !user.deleted"
+                        class="btn btn-sm btn-light-brand"
+                        [routerLink]="['/backoffice/contracts/create']"
+                        [queryParams]="{ staffUserId: user.id, staffName: fullName(user) }"
+                      >
+                        Create Contract
+                      </a>
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
+                <tr *ngIf="paginatedStaff.length === 0">
+                  <td colspan="9" class="text-center text-muted py-4">
+                    {{ emptyStateMessage }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination-wrap mt-3" *ngIf="sortedStaff.length > 0">
+            <div class="d-flex align-items-center gap-2">
+              <label class="mb-0">Rows:</label>
+              <select class="form-control page-size" [(ngModel)]="pageSize" (ngModelChange)="onFiltersChanged()">
+                <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+              </select>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+                Prev
+              </button>
+              <button
+                *ngFor="let p of pageNumbers"
+                class="btn btn-sm"
+                [ngClass]="p === currentPage ? 'btn-primary' : 'btn-light'"
+                type="button"
+                (click)="goToPage(p)"
+              >
+                {{ p }}
+              </button>
+              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+

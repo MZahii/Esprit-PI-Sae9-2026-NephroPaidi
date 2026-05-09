@@ -1,0 +1,246 @@
+.consultation-workspace {
+  .consultation-side-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .side-card {
+    margin-top: 0 !important;
+  }
+
+  .side-card-featured {
+    grid-column: 1 / -1;
+    background:
+      linear-gradient(135deg, rgba(13, 110, 253, 0.08), rgba(14, 165, 233, 0.02)),
+      #ffffff;
+    border: 1px solid #d9e8ff;
+  }
+
+  .side-card-ai-egfr {
+    border: 1px solid #dbeafe;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.06), rgba(16, 185, 129, 0.02)), #ffffff;
+  }
+
+  .snapshot-patient-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #15345b;
+    margin-bottom: 0.25rem;
+  }
+
+  .snapshot-meta {
+    font-size: 0.84rem;
+    color: #64748b;
+  }
+
+  .snapshot-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .workflow-command-center {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr);
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    margin-bottom: 1.25rem;
+    border-radius: 18px;
+    background:
+      linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(16, 185, 129, 0.04)),
+      #f8fbff;
+    border: 1px solid #d9e8ff;
+  }
+
+  .workflow-eyebrow {
+    display: inline-block;
+    margin-bottom: 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #2563eb;
+  }
+
+  .workflow-command-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .workflow-action {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    min-height: 122px;
+    padding: 0.9rem 1rem;
+    border-radius: 16px;
+    border: 1px solid transparent;
+    text-align: left;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  }
+
+  .workflow-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+  }
+
+  .workflow-action-title {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .workflow-action-subtitle {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    opacity: 0.9;
+  }
+
+  .workflow-action-lab {
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+  }
+
+  .workflow-action-followup {
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    border-color: #bbf7d0;
+    color: #15803d;
+  }
+
+  .workflow-action-hospitalize {
+    background: linear-gradient(135deg, #fff7ed, #ffedd5);
+    border-color: #fed7aa;
+    color: #c2410c;
+  }
+
+  .consultation-tabs {
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .tab-content {
+    padding-top: 1.5rem;
+  }
+
+  .tab-pane {
+    display: none;
+  }
+
+  .tab-pane.active {
+    display: block;
+  }
+
+  textarea.form-control {
+    resize: vertical;
+  }
+
+  .info-line,
+  .metric-row,
+  .score-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    color: #475569;
+    padding-bottom: 8px;
+  }
+
+  .alert-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .alert-item {
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    font-size: 12px;
+    color: #9a3412;
+  }
+
+  .history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid #eef2f7;
+  }
+
+  .history-item:last-child {
+    border-bottom: none;
+  }
+
+  .trend-list {
+    border-top: 1px solid #eef2f7;
+    padding-top: 10px;
+  }
+
+  .trend-title {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  .trend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 4px 0;
+    color: #475569;
+  }
+
+  .diagnosis-item,
+  .lab-item,
+  .prescription-item {
+    border: 1px solid #e9eef5;
+    border-radius: 14px;
+    padding: 12px;
+    background: #ffffff;
+    margin-bottom: 12px;
+  }
+
+  .followup-card {
+    border: 1px dashed #cfe0ff;
+    border-radius: 12px;
+    padding: 12px;
+    background: #f8fbff;
+  }
+
+  .adherence-summary {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: #475569;
+    background: #f8fbff;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+
+  @media (max-width: 1399.98px) {
+    .consultation-side-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 1199.98px) {
+    .workflow-command-center {
+      grid-template-columns: 1fr;
+    }
+
+    .workflow-command-actions {
+      grid-template-columns: 1fr;
+    }
+  }
+}

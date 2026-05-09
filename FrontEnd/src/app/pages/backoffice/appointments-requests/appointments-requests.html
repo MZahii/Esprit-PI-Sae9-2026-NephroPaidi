@@ -1,0 +1,346 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Appointment Requests</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item">Appointments</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="toast-holder" *ngIf="toastMessage">
+    <div class="alert alert-success shadow-sm mb-0">{{ toastMessage }}</div>
+  </div>
+
+  <div class="toast-holder" *ngIf="doctorFollowToast" style="top: 160px;">
+    <div class="alert shadow-sm mb-0" [ngClass]="doctorFollowToastIsError ? 'alert-danger' : 'alert-success'">
+      {{ doctorFollowToast }}
+    </div>
+  </div>
+
+  <div class="card stretch stretch-full mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <h5 class="card-title mb-0">Doctor follow-up requests</h5>
+      <button class="btn btn-light-brand" type="button" [disabled]="doctorFollowUpLoading" (click)="loadDoctorFollowUps()">
+        {{ doctorFollowUpLoading ? 'Refreshing…' : 'Refresh' }}
+      </button>
+    </div>
+    <div class="card-body">
+      <p class="text-muted small mb-3">
+        When a doctor requests a return visit from the consultation workspace, the suggested date appears here. Book the slot to create the appointment and close the request.
+      </p>
+      <div *ngIf="doctorFollowUpError" class="alert alert-warning">{{ doctorFollowUpError }}</div>
+
+      <div *ngIf="doctorFollowUpLoading" class="placeholder-glow">
+        <p class="placeholder col-12"></p>
+        <p class="placeholder col-10"></p>
+      </div>
+
+      <div class="table-responsive" *ngIf="!doctorFollowUpLoading">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>Suggested date</th>
+              <th>Return in</th>
+              <th>Doctor</th>
+              <th>Notes</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of doctorFollowUps">
+              <td>{{ getPatientDisplay(row.patientId) }}</td>
+              <td>
+                <span *ngIf="row.computedReturnDate">{{ row.computedReturnDate | date:'mediumDate' }}</span>
+                <span *ngIf="!row.computedReturnDate">—</span>
+              </td>
+              <td>{{ formatOffset(row) }}</td>
+              <td>{{ doctorLabel(row.doctorId) }}</td>
+              <td class="text-muted small">{{ row.notes || '—' }}</td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-success" type="button" (click)="openDoctorFollowConfirm(row)">Book slot</button>
+              </td>
+            </tr>
+            <tr *ngIf="doctorFollowUps.length === 0">
+              <td colspan="6" class="text-center text-muted py-4">No pending doctor follow-up requests.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card stretch stretch-full">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <h5 class="card-title mb-0">Appointment Queue</h5>
+      <div class="d-flex align-items-center gap-2">
+        <label class="visually-hidden" for="requestsStatusFilter">Status Filter</label>
+        <select id="requestsStatusFilter" name="requestsStatusFilter" class="form-control" [(ngModel)]="statusFilter" (change)="load(); onFiltersChange()">
+          <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+        </select>
+        <button class="btn btn-light-brand" type="button" (click)="load()">Refresh</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+      <div *ngIf="errorMessage" class="alert alert-danger d-flex justify-content-between align-items-center">
+        <span>{{ errorMessage }}</span>
+        <button class="btn btn-sm btn-light-brand" type="button" (click)="load()">Retry</button>
+      </div>
+
+      <div class="row g-2 mb-3">
+        <div class="col-md-6">
+          <label class="visually-hidden" for="requestsSearch">Search Requests</label>
+          <input id="requestsSearch" name="requestsSearch" class="form-control" type="text" placeholder="Search by patient, status, or request reason" [(ngModel)]="search" (ngModelChange)="onFiltersChange()" />
+        </div>
+        <div class="col-md-3">
+          <label class="visually-hidden" for="requestsDateFilter">Date Filter</label>
+          <input id="requestsDateFilter" name="requestsDateFilter" class="form-control" type="date" [(ngModel)]="dateFilter" (ngModelChange)="onFiltersChange()" />
+        </div>
+      </div>
+
+      <div *ngIf="loading" class="placeholder-glow">
+        <p class="placeholder col-12"></p>
+        <p class="placeholder col-12"></p>
+        <p class="placeholder col-10"></p>
+      </div>
+
+      <div class="table-responsive" *ngIf="!loading">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th><button class="sort-btn" type="button" (click)="setSort('patient')">Patient Name</button></th>
+              <th><button class="sort-btn" type="button" (click)="setSort('type')">Request Type</button></th>
+              <th><button class="sort-btn" type="button" (click)="setSort('requestedDate')">Requested Date</button></th>
+              <th><button class="sort-btn" type="button" (click)="setSort('preferredTime')">Preferred Time</button></th>
+              <th><button class="sort-btn" type="button" (click)="setSort('status')">Status</button></th>
+              <th class="text-end">Workflow Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of pagedItems">
+              <td>{{ getPatientDisplay(item.patientId) }}</td>
+              <td>{{ getRequestType(item) }}</td>
+              <td>{{ item.requestedDate ? (item.requestedDate | date:'mediumDate') : '-' }}</td>
+              <td>{{ getPreferredTime(item) }}</td>
+              <td><span class="badge" [ngClass]="getStatusBadgeClass(item.status)">{{ item.status }}</span></td>
+              <td class="text-end">
+                <div class="d-flex gap-2 justify-content-end flex-wrap">
+                  <button class="btn btn-sm btn-outline-primary" type="button" (click)="openDetailsModal(item.id)">Open Details</button>
+                  <button class="btn btn-sm btn-success" type="button" [disabled]="actionLoading" *ngIf="item.status === 'REQUESTED'" (click)="openApproveModal(item.id)">Approve</button>
+                  <button class="btn btn-sm btn-danger" type="button" [disabled]="actionLoading" *ngIf="item.status === 'REQUESTED'" (click)="openRejectModal(item.id)">Reject</button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="filteredItems.length === 0">
+              <td colspan="6" class="text-center text-muted py-4">No appointment requests match the current filters.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="filteredItems.length > 0 && !loading">
+        <small class="text-muted">Page {{ page }} / {{ totalPages }}</small>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-light-brand" type="button" [disabled]="page <= 1" (click)="previousPage()">Previous</button>
+          <button class="btn btn-sm btn-light-brand" type="button" [disabled]="page >= totalPages" (click)="nextPage()">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade show d-block" tabindex="-1" *ngIf="detailsModalOpen && selectedRequest as request">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Request Details</h5>
+          <button type="button" class="btn-close" (click)="closeDetailsModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6"><strong>Patient:</strong> {{ getPatientDisplay(request.patientId) }}</div>
+            <div class="col-md-6"><strong>Request Type:</strong> {{ getRequestType(request) }}</div>
+            <div class="col-md-6"><strong>Requested Date:</strong> {{ request.requestedDate ? (request.requestedDate | date:'medium') : '-' }}</div>
+            <div class="col-md-6"><strong>Preferred Time:</strong> {{ getPreferredTime(request) }}</div>
+            <div class="col-12"><strong>Reason:</strong><br />{{ getDisplayReason(request) }}</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-light" type="button" (click)="closeDetailsModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show" *ngIf="detailsModalOpen"></div>
+
+  <div class="modal fade show d-block" tabindex="-1" *ngIf="approveModalOpen && selectedRequest as request">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Approve Request</h5>
+          <button type="button" class="btn-close" (click)="closeApproveModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="p-3 border rounded bg-light-subtle mb-3">
+            <div><strong>Patient:</strong> {{ getPatientDisplay(request.patientId) }}</div>
+            <div><strong>Request Type:</strong> {{ getRequestType(request) }}</div>
+            <div><strong>Requested Date:</strong> {{ request.requestedDate ? (request.requestedDate | date:'medium') : '-' }}</div>
+            <div><strong>Preferred Time:</strong> {{ getPreferredTime(request) }}</div>
+            <div class="mt-2"><strong>Reason:</strong> {{ getDisplayReason(request) }}</div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="approveScheduledDate">Scheduled Date</label>
+              <input id="approveScheduledDate" name="approveScheduledDate" type="date" class="form-control" [(ngModel)]="scheduledDate" [min]="minDateTimeLocal.slice(0,10)" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="approveScheduledTime">Scheduled Time</label>
+              <input id="approveScheduledTime" name="approveScheduledTime" type="time" class="form-control" [(ngModel)]="scheduledTime" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="approveAssignedDoctor">Assigned Doctor</label>
+              <select id="approveAssignedDoctor" name="approveAssignedDoctor" class="form-control" [(ngModel)]="assignedDoctorId" [disabled]="doctorLoading">
+                <option value="">Select a doctor</option>
+                <option *ngFor="let doctor of doctorOptions" [value]="doctor.id">{{ doctor.label }}</option>
+              </select>
+              <small class="text-muted d-block mt-1" *ngIf="doctorLoading">Loading doctors...</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="approveLocation">Location / Room (optional)</label>
+              <input id="approveLocation" name="approveLocation" type="text" class="form-control" [(ngModel)]="location" placeholder="Room A-12" />
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold" for="approveNotes">Receptionist Notes (optional)</label>
+              <textarea id="approveNotes" name="approveNotes" class="form-control" rows="3" maxlength="500" [(ngModel)]="approvalNotes"></textarea>
+              <div class="d-flex justify-content-end"><small class="text-muted">{{ approvalNotesLength }} / 500</small></div>
+            </div>
+          </div>
+
+          <div class="text-danger small mt-2" *ngIf="isScheduledDateInvalid && scheduledDate && scheduledTime">
+            Scheduled date and time must be in the future.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-light" type="button" (click)="closeApproveModal()">Cancel</button>
+          <button class="btn btn-success" type="button" [disabled]="isApproveFormInvalid || actionLoading" (click)="approve()">
+            {{ actionLoading ? 'Approving...' : 'Approve Request' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show" *ngIf="approveModalOpen"></div>
+
+  <div class="modal fade show d-block" tabindex="-1" *ngIf="rejectModalOpen">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Reject Request</h5>
+          <button type="button" class="btn-close" (click)="closeRejectModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning">
+            This action rejects the request and sends a notification to the guardian.
+          </div>
+
+          <label class="form-label fw-semibold" for="rejectReason">Rejection Reason</label>
+          <select id="rejectReason" name="rejectReason" class="form-control" [(ngModel)]="rejectReason">
+            <option value="">Select a rejection reason</option>
+            <option *ngFor="let reason of rejectReasons" [value]="reason">{{ reason }}</option>
+          </select>
+
+          <label class="form-label fw-semibold mt-3" for="rejectNotes">Additional Notes (required)</label>
+          <textarea id="rejectNotes" name="rejectNotes" class="form-control" rows="4" maxlength="500" [(ngModel)]="rejectNotes" placeholder="Explain clearly why the request is being rejected."></textarea>
+          <div class="d-flex justify-content-between">
+            <small class="text-danger" *ngIf="!rejectNotes.trim()">Notes are required.</small>
+            <small class="text-muted ms-auto">{{ rejectNotesLength }} / 500</small>
+          </div>
+
+          <div class="form-check mt-3">
+            <input class="form-check-input" type="checkbox" id="confirmReject" [(ngModel)]="rejectConfirmed" />
+            <label class="form-check-label" for="confirmReject">I confirm this rejection decision.</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-light" type="button" (click)="closeRejectModal()">Cancel</button>
+          <button class="btn btn-danger" type="button" [disabled]="isRejectFormInvalid || actionLoading" (click)="reject()">
+            {{ actionLoading ? 'Rejecting...' : 'Reject Request' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show" *ngIf="rejectModalOpen"></div>
+
+  <div class="modal fade show d-block" tabindex="-1" *ngIf="doctorFollowModalOpen && selectedDoctorFollow as fu">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Book follow-up slot</h5>
+          <button type="button" class="btn-close" (click)="closeDoctorFollowModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="p-3 border rounded bg-light-subtle mb-3">
+            <div><strong>Patient:</strong> {{ getPatientDisplay(fu.patientId) }}</div>
+            <div><strong>Suggested date:</strong> {{ fu.computedReturnDate ? (fu.computedReturnDate | date:'mediumDate') : '—' }}</div>
+            <div><strong>Return in:</strong> {{ formatOffset(fu) }}</div>
+            <div><strong>Consultation:</strong> {{ fu.consultationId }}</div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="fuScheduledAt">Scheduled date &amp; time</label>
+              <input
+                id="fuScheduledAt"
+                name="fuScheduledAt"
+                type="datetime-local"
+                class="form-control"
+                [(ngModel)]="doctorFollowScheduledAt"
+                [min]="minDateTimeLocal"
+              />
+              <small class="text-muted">Prefilled from the suggested date (09:00); adjust as needed.</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="fuDoctor">Doctor</label>
+              <select id="fuDoctor" name="fuDoctor" class="form-control" [(ngModel)]="doctorFollowDoctorId" [disabled]="doctorLoading">
+                <option value="">Select a doctor</option>
+                <option *ngFor="let doctor of doctorOptions" [value]="doctor.id">{{ doctor.label }}</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="fuDuration">Duration (minutes)</label>
+              <input id="fuDuration" name="fuDuration" type="number" class="form-control" [(ngModel)]="doctorFollowDuration" min="10" max="180" />
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold" for="fuReason">Reason (optional)</label>
+              <textarea id="fuReason" name="fuReason" class="form-control" rows="2" [(ngModel)]="doctorFollowReason"></textarea>
+            </div>
+          </div>
+
+          <div class="text-danger small mt-2" *ngIf="doctorFollowScheduledAt && isDoctorFollowConfirmInvalid && doctorFollowDoctorId">
+            Choose a date and time in the future (must be after now).
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-light" type="button" (click)="closeDoctorFollowModal()">Cancel</button>
+          <button
+            class="btn btn-success"
+            type="button"
+            [disabled]="isDoctorFollowConfirmInvalid || doctorFollowSubmitting"
+            (click)="submitDoctorFollowConfirm()"
+          >
+            {{ doctorFollowSubmitting ? 'Booking…' : 'Confirm &amp; create appointment' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show" *ngIf="doctorFollowModalOpen"></div>
+</div>
+
+

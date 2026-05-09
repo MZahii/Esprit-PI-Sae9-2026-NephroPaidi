@@ -1,0 +1,230 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">{{ isAdmin ? 'HR Contracts' : 'Staff Contracts' }}</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item">Contracts</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="row">
+    <div class="col-12">
+      <div class="card stretch stretch-full">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <h5 class="card-title mb-0">{{ contractListTitle }}</h5>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-light btn-sm" type="button" (click)="printContracts()">Print Report</button>
+            <button class="btn btn-primary btn-sm" type="button" (click)="exportContractsPdf()">Export PDF</button>
+            <a *ngIf="isHr || (isAdmin && contractScope === 'HR')" class="btn btn-primary" routerLink="/backoffice/contracts/create">Create Contract</a>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div *ngIf="errorMessage" class="alert alert-danger mb-3">
+            {{ errorMessage }}
+          </div>
+          <div *ngIf="actionMessage" class="alert alert-success mb-3">
+            {{ actionMessage }}
+          </div>
+
+          <div class="stats-grid mb-3" *ngIf="!loading">
+            <div class="stats-card" [attr.data-stat-tooltip]="'100% of displayed contracts. Live total: ' + totalContracts">
+              <div class="stats-label">Total Contracts</div>
+              <div class="stats-value" appCountUp>{{ totalContracts }}</div>
+            </div>
+            <div class="stats-card" [attr.data-stat-tooltip]="'Ending soon: ' + toPercent(endingSoonContracts, totalContracts) + '% of displayed contracts'">
+              <div class="stats-label">Ending Soon</div>
+              <div class="stats-value" appCountUp>{{ endingSoonContracts }}</div>
+              <div class="stats-line">Active/suspended contracts ending in 30 days</div>
+            </div>
+            <div class="stats-card chart-card" [attr.data-stat-tooltip]="'Active contract rate: ' + toPercent(activeContracts, totalContracts) + '%'">
+              <div class="stats-label">Contract Status</div>
+              <div class="circle-wrap" [style.background]="circleStyle(toPercent(activeContracts, totalContracts), '#2563eb')">
+                <div class="circle-value" appCountUp>{{ toPercent(activeContracts, totalContracts) }}%</div>
+              </div>
+              <div class="chart-legend">Active {{ activeContracts }} / Suspended {{ suspendedContracts }} / Ended {{ endedContracts }}</div>
+            </div>
+            <div class="stats-card chart-card" [attr.data-stat-tooltip]="'Account active access rate: ' + toPercent(userActiveAccessContracts, totalContracts) + '%'">
+              <div class="stats-label">Account Access</div>
+              <div class="circle-wrap" [style.background]="circleStyle(toPercent(userActiveAccessContracts, totalContracts), '#22c55e')">
+                <div class="circle-value" appCountUp>{{ toPercent(userActiveAccessContracts, totalContracts) }}%</div>
+              </div>
+              <div class="chart-legend">User Active {{ userActiveAccessContracts }} / User Inactive {{ userInactiveAccessContracts }}</div>
+            </div>
+          </div>
+
+          <div class="filters mb-3">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Search by account name, username, role, reference, type, status, title..."
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onFiltersChanged()"
+            />
+
+            <select
+              *ngIf="contractScope !== 'HR'"
+              class="form-control"
+              [(ngModel)]="roleFilter"
+              (ngModelChange)="onFiltersChanged()"
+            >
+              <option value="ALL">All Roles</option>
+              <option value="DOCTOR">DOCTOR</option>
+              <option value="NURSE">NURSE</option>
+              <option value="SURGEON">SURGEON</option>
+              <option value="PHARMACIST">PHARMACIST</option>
+              <option value="RECEPTIONIST">RECEPTIONIST</option>
+              <option value="LAB_AGENT">LAB_AGENT</option>
+            </select>
+
+            <select class="form-control" [(ngModel)]="statusFilter" (ngModelChange)="onFiltersChanged()">
+              <option value="ALL">All Status</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="SUSPENDED">SUSPENDED</option>
+              <option value="ENDED">ENDED</option>
+              <option value="EXPIRED">EXPIRED</option>
+            </select>
+          </div>
+
+          <div class="filters mb-3">
+            <select class="form-control" [(ngModel)]="sortField" (ngModelChange)="onFiltersChanged()">
+              <option value="name">Sort By Name</option>
+              <option value="startDate">Sort: Start Date</option>
+              <option value="endDate">Sort: End Date</option>
+            </select>
+            <select class="form-control" [(ngModel)]="sortDirection" (ngModelChange)="onFiltersChanged()">
+              <option value="asc">Name: A -> Z</option>
+              <option value="desc">Name: Z -> A</option>
+            </select>
+            <div></div>
+          </div>
+
+          <div *ngIf="loading" class="text-muted py-3">Loading contracts...</div>
+
+          <div class="table-responsive" *ngIf="!loading">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Account</th>
+                  <th>Role</th>
+                  <th>Type</th>
+                  <th>Contract Status</th>
+                  <th>Account Access</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let contract of paginatedContracts">
+                  <td>{{ staffDisplay(contract) }}</td>
+                  <td>{{ staffRole(contract) }}</td>
+                  <td>{{ contract.contractType }}</td>
+                  <td>
+                    <span class="status-pill" [ngClass]="contractStateClass(contract)">
+                      {{ contractStateLabel(contract) }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="status-pill" [ngClass]="accountAccessClass(contract)">
+                      {{ accountAccessStatus(contract) === 'USER_ACTIVE' ? 'USER ACTIVE' : 'USER INACTIVE' }}
+                    </span>
+                  </td>
+                  <td class="d-flex gap-2 flex-wrap">
+                    <a
+                      type="button"
+                      class="btn btn-sm btn-light"
+                      [routerLink]="['/backoffice/staff', contract.staffUserId]"
+                      [queryParams]="{ returnTo: 'contracts' }"
+                    >
+                      Details
+                    </a>
+                    <button
+                      *ngIf="canManageContract(contract) && contract.status === 'ACTIVE'"
+                      type="button"
+                      class="btn btn-sm btn-light-brand"
+                      (click)="runAction(contract.id, 'suspend')"
+                    >
+                      Suspend
+                    </button>
+                    <button
+                      *ngIf="canManageContract(contract) && contract.status === 'SUSPENDED'"
+                      type="button"
+                      class="btn btn-sm btn-light-brand"
+                      (click)="runAction(contract.id, 'resume')"
+                    >
+                      Resume
+                    </button>
+                    <button
+                      *ngIf="canManageContract(contract) && (contract.status === 'ACTIVE' || contract.status === 'SUSPENDED')"
+                      type="button"
+                      class="btn btn-sm btn-light"
+                      (click)="runAction(contract.id, 'end')"
+                    >
+                      End
+                    </button>
+                    <button
+                      *ngIf="canArchiveContract(contract)"
+                      type="button"
+                      class="btn btn-sm btn-light"
+                      (click)="runArchive(contract.id)"
+                    >
+                      Archive
+                    </button>
+                    <button
+                      *ngIf="canRestoreContract(contract)"
+                      type="button"
+                      class="btn btn-sm btn-primary"
+                      (click)="runRestore(contract.id)"
+                    >
+                      Restore
+                    </button>
+                  </td>
+                </tr>
+
+                <tr *ngIf="paginatedContracts.length === 0">
+                  <td colspan="6" class="text-center text-muted py-4">
+                    No contracts found.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination-wrap mt-3" *ngIf="sortedContracts.length > 0">
+            <div class="d-flex align-items-center gap-2">
+              <label class="mb-0">Rows:</label>
+              <select class="form-control page-size" [(ngModel)]="pageSize" (ngModelChange)="onFiltersChanged()">
+                <option [ngValue]="5">5</option>
+                <option [ngValue]="10">10</option>
+                <option [ngValue]="20">20</option>
+              </select>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+                Prev
+              </button>
+              <button
+                *ngFor="let p of pageNumbers"
+                class="btn btn-sm"
+                [ngClass]="p === currentPage ? 'btn-primary' : 'btn-light'"
+                type="button"
+                (click)="goToPage(p)"
+              >
+                {{ p }}
+              </button>
+              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+

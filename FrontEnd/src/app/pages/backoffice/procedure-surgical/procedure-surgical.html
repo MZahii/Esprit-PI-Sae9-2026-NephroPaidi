@@ -1,0 +1,801 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">{{ pageTitle }}</h5>
+    </div>
+
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a routerLink="/backoffice/dashboard">Home</a>
+      </li>
+      <li class="breadcrumb-item">Procedure Service</li>
+      <li class="breadcrumb-item">Surgical</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content surgical-management-page">
+  <div class="row g-3">
+    <div class="col-12 col-xl-5 col-xxl-4" *ngIf="isReceptionist">
+      <div class="card stretch stretch-full">
+        <div class="card-header">
+          <h5 class="card-title">{{ intakeTitle }}</h5>
+        </div>
+
+        <div class="card-body compact-form">
+          <div class="alert alert-light border compact-alert mb-3">
+            <div class="fw-semibold mb-1">{{ intakeSummaryTitle }}</div>
+            <div class="small text-muted">
+              {{ intakeSummaryText }}
+            </div>
+          </div>
+
+          <div class="planning-empty-state mb-3" *ngIf="!selectedPlanningRequest">
+            <div class="fw-semibold mb-1">No request selected</div>
+            <div class="small text-muted">
+              Start from the planning queue on the right. Choose a pending referral, click <strong>Plan</strong>, then complete the scheduling details here.
+            </div>
+          </div>
+
+          <div class="alert alert-primary compact-alert mb-3" *ngIf="selectedPlanningRequest as planningRequest">
+            <div class="fw-semibold mb-1">Planning surgery request #{{ planningRequest.id }}</div>
+            <div class="small">
+              This surgical case will be linked to consultation <strong>{{ planningRequest.consultationId }}</strong> and the request will move to <strong>PLANNED</strong> when saved.
+            </div>
+            <div class="planning-request-meta mt-2">
+              <span><strong>Patient</strong> {{ planningRequest.patientFirstName }} {{ planningRequest.patientLastName }}</span>
+              <span><strong>Urgency</strong> {{ labelFrom(urgencyLabels, planningRequest.urgencyLevel) }}</span>
+            </div>
+            <div class="small mt-2">{{ planningRequest.reason }}</div>
+            <button type="button" class="btn btn-link btn-sm px-0 mt-1" (click)="clearPlanningRequest()">Clear request link</button>
+          </div>
+
+          <h6 class="section-title">Patient Information</h6>
+          <div class="mb-3">
+            <label class="form-label">Select Existing Patient</label>
+            <select
+              class="form-select"
+              [class.is-invalid]="isFieldInvalid('patientId')"
+              [ngModel]="createForm.patientId"
+              (ngModelChange)="onPatientSelectionChange($event)"
+              [disabled]="patientLoading || !!createForm.surgeryRequestId"
+            >
+              <option value="">Choose a patient</option>
+              <option *ngFor="let patient of availablePatients" [value]="patient.id">
+                {{ formatPatientLabel(patient) }}
+              </option>
+            </select>
+            <small class="text-muted d-block mt-1">
+              {{ createForm.surgeryRequestId ? 'Patient is locked from the selected surgery request.' : 'Choose an existing pediatric patient from the registered list.' }}
+            </small>
+            <small class="text-danger d-block mt-1" *ngIf="fieldError('surgeryRequestId')">{{ fieldError('surgeryRequestId') }}</small>
+            <small class="text-danger d-block mt-1" *ngIf="fieldError('patientId')">{{ fieldError('patientId') }}</small>
+            <small class="text-danger d-block mt-1" *ngIf="patientError">{{ patientError }}</small>
+            <div class="small text-muted mt-2" *ngIf="patientLoading">Loading patients...</div>
+          </div>
+
+          <div class="alert alert-light border small mb-3" *ngIf="selectedPatient">
+            Selected patient: <strong>{{ formatPatientLabel(selectedPatient) }}</strong>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">First Name</label>
+              <input
+                type="text"
+                class="form-control"
+                [class.is-invalid]="isFieldInvalid('firstName')"
+                [(ngModel)]="createForm.firstName"
+                [readonly]="true"
+                placeholder="Ali"
+              />
+              <small class="text-danger d-block mt-1" *ngIf="fieldError('firstName')">{{ fieldError('firstName') }}</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Last Name</label>
+              <input
+                type="text"
+                class="form-control"
+                [class.is-invalid]="isFieldInvalid('lastName')"
+                [(ngModel)]="createForm.lastName"
+                [readonly]="true"
+                placeholder="Ben Salah"
+              />
+              <small class="text-danger d-block mt-1" *ngIf="fieldError('lastName')">{{ fieldError('lastName') }}</small>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Age</label>
+              <input type="number" class="form-control" [class.is-invalid]="isFieldInvalid('age')" [(ngModel)]="createForm.age" [readonly]="true" />
+              <small class="text-muted d-block mt-1">Pediatric range only: newborn to 17 years.</small>
+              <small class="text-danger d-block mt-1" *ngIf="fieldError('age')">{{ fieldError('age') }}</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Gender</label>
+              <select class="form-select" [class.is-invalid]="isFieldInvalid('gender')" [(ngModel)]="createForm.gender" [disabled]="true">
+                <option *ngFor="let g of genders" [value]="g">{{ labelFrom(genderLabels, g) }}</option>
+              </select>
+              <small class="text-danger d-block mt-1" *ngIf="fieldError('gender')">{{ fieldError('gender') }}</small>
+            </div>
+          </div>
+
+          <div class="alert alert-light border small compact-alert mb-3">
+            Patient reference: <strong>{{ generatedPatientReference }}</strong>
+          </div>
+
+          <h6 class="section-title">Operation Information</h6>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Surgery Type</label>
+              <select
+                class="form-select"
+                [class.is-invalid]="isFieldInvalid('surgeryType')"
+                [ngModel]="createForm.surgeryType"
+                (ngModelChange)="onSurgeryTypeChange($event)"
+              >
+                <option value="">Select surgery type</option>
+                <option *ngFor="let item of surgeryCatalog" [value]="item.type">{{ item.type }}</option>
+              </select>
+              <small class="text-danger d-block mt-1" *ngIf="fieldError('surgeryType')">{{ fieldError('surgeryType') }}</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Procedure Name</label>
+              <select
+                class="form-select"
+                [class.is-invalid]="isFieldInvalid('procedureName')"
+                [ngModel]="createForm.procedureName"
+                (ngModelChange)="onProcedureNameChange($event)"
+                [disabled]="!createForm.surgeryType"
+              >
+                <option value="">Select procedure</option>
+                <option *ngFor="let procedure of availableProcedureNames" [value]="procedure">{{ procedure }}</option>
+              </select>
+              <small class="text-danger d-block mt-1" *ngIf="fieldError('procedureName')">{{ fieldError('procedureName') }}</small>
+            </div>
+          </div>
+
+          <div class="mb-3" *ngIf="requiresCustomProcedureName">
+            <label class="form-label">Custom Procedure Name</label>
+            <input
+              type="text"
+              class="form-control"
+              [class.is-invalid]="isFieldInvalid('procedureName')"
+              [(ngModel)]="createForm.customProcedureName"
+              placeholder="Enter the exact operation name"
+            />
+            <small class="text-muted d-block mt-1">Use this only when the planned operation is not listed.</small>
+            <small class="text-danger d-block mt-1" *ngIf="fieldError('procedureName')">{{ fieldError('procedureName') }}</small>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Category</label>
+              <select class="form-select" [class.is-invalid]="isFieldInvalid('surgeryCategory')" [(ngModel)]="createForm.surgeryCategory">
+                <option *ngFor="let c of surgeryCategories" [value]="c">{{ labelFrom(surgeryCategoryLabels, c) }}</option>
+              </select>
+              <small class="text-danger d-block mt-1" *ngIf="fieldError('surgeryCategory')">{{ fieldError('surgeryCategory') }}</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Urgency</label>
+              <select class="form-select" [class.is-invalid]="isFieldInvalid('urgencyLevel')" [(ngModel)]="createForm.urgencyLevel">
+                <option *ngFor="let u of urgencyLevels" [value]="u">{{ labelFrom(urgencyLabels, u) }}</option>
+              </select>
+              <small class="text-danger d-block mt-1" *ngIf="fieldError('urgencyLevel')">{{ fieldError('urgencyLevel') }}</small>
+            </div>
+          </div>
+
+          <h6 class="section-title">Medical Team</h6>
+          <div class="row g-2 mb-3">
+            <div class="col-12">
+              <label class="form-label">Lead Surgeon</label>
+              <select
+                class="form-select"
+                [class.is-invalid]="isFieldInvalid('surgeonId')"
+                [ngModel]="createForm.surgeonId"
+                (ngModelChange)="onSurgeonSelectionChange($event)"
+                [disabled]="surgeonLoading"
+              >
+                <option value="">Select a surgeon</option>
+                <option *ngFor="let surgeon of availableSurgeons" [value]="surgeon.keycloakId || surgeon.id">
+                  {{ formatStaffLabel(surgeon) }}
+                </option>
+              </select>
+              <small class="text-danger d-block mt-1" *ngIf="fieldError('surgeonId')">{{ fieldError('surgeonId') }}</small>
+              <small class="text-danger d-block mt-1" *ngIf="surgeonError">{{ surgeonError }}</small>
+              <div class="small text-muted mt-2" *ngIf="surgeonLoading">Loading surgeons...</div>
+            </div>
+          </div>
+          <div class="alert alert-light border small mb-3" *ngIf="selectedSurgeon">
+            Selected surgeon: <strong>{{ formatStaffLabel(selectedSurgeon) }}</strong>
+          </div>
+          <small class="text-muted d-block mt-n2 mb-3">Select the responsible surgeon from the registered surgical staff.</small>
+
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Assistant Surgeon Reference (optional)</label>
+              <input type="text" class="form-control" [(ngModel)]="createForm.assistantSurgeonId" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Anesthesiologist Reference (optional)</label>
+              <input type="text" class="form-control" [(ngModel)]="createForm.anesthesiologistId" />
+            </div>
+          </div>
+
+          <h6 class="section-title">Intervention Planning</h6>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Scheduled Date</label>
+              <input type="date" class="form-control" [class.is-invalid]="isFieldInvalid('scheduledDate')" [(ngModel)]="createForm.scheduledDate" />
+              <small class="text-danger d-block mt-1" *ngIf="fieldError('scheduledDate')">{{ fieldError('scheduledDate') }}</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Start Time</label>
+              <input type="time" class="form-control" [class.is-invalid]="isFieldInvalid('scheduledStartTime')" [(ngModel)]="createForm.scheduledStartTime" />
+              <small class="text-danger d-block mt-1" *ngIf="fieldError('scheduledStartTime')">{{ fieldError('scheduledStartTime') }}</small>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Estimated Duration (minutes)</label>
+              <input type="number" class="form-control" [class.is-invalid]="isFieldInvalid('estimatedDurationMinutes')" [(ngModel)]="createForm.estimatedDurationMinutes" />
+              <small class="text-danger d-block mt-1" *ngIf="fieldError('estimatedDurationMinutes')">{{ fieldError('estimatedDurationMinutes') }}</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Operating Room (optional)</label>
+              <input type="text" class="form-control" [class.is-invalid]="isFieldInvalid('operatingRoom')" [(ngModel)]="createForm.operatingRoom" placeholder="OR-2" />
+              <small class="text-danger d-block mt-1" *ngIf="fieldError('operatingRoom')">{{ fieldError('operatingRoom') }}</small>
+            </div>
+          </div>
+
+          <div class="alert alert-light border small compact-alert mb-3">
+            New case starts with status: <strong>Open</strong>. The status will evolve after pre-op and post-op updates.
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-primary w-100"
+            (click)="createCase()"
+            [disabled]="saving || !createForm.surgeryRequestId"
+          >
+            {{ saving ? 'Saving...' : 'Create Case' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12" [ngClass]="isReceptionist ? 'col-xl-7 col-xxl-8' : 'col-xl-12'">
+      <div class="card stretch stretch-full mb-3" *ngIf="isReceptionist">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Receptionist Planning Queue</h5>
+        </div>
+        <div class="card-body queue-overview">
+          <div class="queue-stat">
+            <span class="queue-label">Pending Requests</span>
+            <strong>{{ planningQueueCount }}</strong>
+          </div>
+          <div class="queue-stat">
+            <span class="queue-label">Planned Requests</span>
+            <strong>{{ plannedRequestsCount }}</strong>
+          </div>
+          <div class="queue-note">
+            Review incoming surgery referrals, open the planning form with <strong>Plan</strong>, then create the surgical case for surgeon handoff.
+          </div>
+        </div>
+      </div>
+
+      <div class="card stretch stretch-full mb-3" *ngIf="isSurgeon">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h5 class="card-title mb-0">My Surgical Schedule</h5>
+            <div class="text-muted small">Cases assigned to you, ordered by scheduled time.</div>
+          </div>
+          <div class="d-flex gap-2 flex-wrap">
+            <span class="badge bg-soft-primary text-primary">Today {{ myTodayCases.length }}</span>
+            <span class="badge bg-soft-success text-success">Upcoming {{ myUpcomingCases.length }}</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div *ngIf="myScheduledCases.length === 0" class="empty-state">No surgical cases are currently assigned to you.</div>
+          <div class="schedule-groups" *ngIf="myScheduledCases.length > 0">
+            <div class="schedule-group">
+              <div class="schedule-group-title">Needs Attention</div>
+              <div *ngIf="needsAttentionCases.length === 0" class="text-muted small">No urgent or blocked items at the moment.</div>
+              <div *ngFor="let surgicalCase of needsAttentionCases | slice:0:4" class="schedule-item attention">
+                <div>
+                  <div class="fw-semibold">{{ surgicalCase.firstName }} {{ surgicalCase.lastName }}</div>
+                  <div class="text-muted small">
+                    {{ formatDateTime(surgicalCase.scheduledDate, surgicalCase.scheduledStartTime) }} | {{ surgicalCase.procedureName }}
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <span class="badge urgency-badge" [class.urgent]="surgicalCase.urgencyLevel === 'URGENT'">
+                    {{ labelFrom(urgencyLabels, surgicalCase.urgencyLevel) }}
+                  </span>
+                  <button type="button" class="btn btn-outline-success btn-sm" (click)="openWorkspace(surgicalCase)">Review</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="schedule-group">
+              <div class="schedule-group-title">Today</div>
+              <div *ngIf="myTodayCases.length === 0" class="text-muted small">No intervention scheduled for today.</div>
+              <div *ngFor="let surgicalCase of myTodayCases | slice:0:4" class="schedule-item">
+                <div>
+                  <div class="fw-semibold">{{ surgicalCase.firstName }} {{ surgicalCase.lastName }}</div>
+                  <div class="text-muted small">
+                    {{ formatDateTime(surgicalCase.scheduledDate, surgicalCase.scheduledStartTime) }} | {{ surgicalCase.procedureName }}
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <span class="badge" [ngClass]="statusToneClass(surgicalCase.status)">{{ labelFrom(caseStatusLabels, surgicalCase.status) }}</span>
+                  <button type="button" class="btn btn-outline-success btn-sm" (click)="openWorkspace(surgicalCase)">Open Workspace</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="schedule-group">
+              <div class="schedule-group-title">Upcoming</div>
+              <div *ngIf="myUpcomingCases.length === 0" class="text-muted small">No upcoming intervention scheduled.</div>
+              <div *ngFor="let surgicalCase of myUpcomingCases | slice:0:4" class="schedule-item">
+                <div>
+                  <div class="fw-semibold">{{ surgicalCase.firstName }} {{ surgicalCase.lastName }}</div>
+                  <div class="text-muted small">
+                    {{ formatDateTime(surgicalCase.scheduledDate, surgicalCase.scheduledStartTime) }} | {{ surgicalCase.procedureName }}
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <span class="badge" [ngClass]="statusToneClass(surgicalCase.status)">{{ labelFrom(caseStatusLabels, surgicalCase.status) }}</span>
+                  <button type="button" class="btn btn-outline-success btn-sm" (click)="openWorkspace(surgicalCase)">Open Workspace</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card stretch stretch-full mb-3" *ngIf="isReceptionist">
+        <div class="card-header d-flex justify-content-between align-items-center gap-2">
+          <h5 class="card-title mb-0">Planning Steps</h5>
+          <button
+            type="button"
+            class="btn btn-success btn-sm workflow-whatsapp-btn"
+            (click)="sendWhatsAppTest()"
+            [disabled]="sendingWhatsAppTest"
+            *ngIf="!isReceptionist"
+          >
+            {{ sendingWhatsAppTest ? 'Sending...' : 'Test WhatsApp' }}
+          </button>
+        </div>
+        <div class="card-body compact-workflow">
+          <div class="row g-2">
+            <div class="col-md" *ngFor="let step of currentWorkflowSteps">
+              <div class="border rounded-3 workflow-card h-100">
+                <div class="small text-muted">Step</div>
+                <div class="fw-semibold">{{ step.label }}</div>
+                <div class="small text-muted mt-1">{{ step.detail }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card stretch stretch-full mb-3" *ngIf="isReceptionist">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <h5 class="card-title mb-0">Surgery Requests Intake</h5>
+          <div class="d-flex gap-2 align-items-center">
+            <select class="form-select form-select-sm request-filter" [(ngModel)]="requestStatusFilter">
+              <option value="ALL">All request statuses</option>
+              <option *ngFor="let status of surgeryRequestStatuses" [value]="status">{{ status }}</option>
+            </select>
+            <button type="button" class="btn btn-light btn-sm" (click)="loadSurgeryRequests()">Refresh</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div *ngIf="filteredSurgeryRequests.length === 0" class="empty-state">No surgery requests available.</div>
+          <div *ngFor="let request of filteredSurgeryRequests" class="request-item" [class.selected]="isPlanningRequestSelected(request)">
+            <div class="request-main">
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <div class="fw-semibold">#{{ request.id }} - {{ request.patientFirstName }} {{ request.patientLastName }}</div>
+                <span class="badge" [ngClass]="surgeryRequestStatusClass(request.status)">{{ request.status }}</span>
+                <span class="badge urgency-badge" [class.urgent]="request.urgencyLevel === 'URGENT'">{{ labelFrom(urgencyLabels, request.urgencyLevel) }}</span>
+              </div>
+              <div class="small text-muted mt-1">
+                Consultation {{ request.consultationId }} | Patient #{{ request.patientId }} | Doctor {{ request.requestedByDoctorId }}
+              </div>
+              <div class="mt-2">{{ request.reason }}</div>
+              <div class="small text-muted mt-2" *ngIf="request.clinicalNote">{{ request.clinicalNote }}</div>
+            </div>
+            <div class="request-actions">
+              <select class="form-select form-select-sm status-select" [(ngModel)]="editRequestStatus[request.id]">
+                <option *ngFor="let status of surgeryRequestStatuses" [value]="status">{{ status }}</option>
+              </select>
+              <button
+                type="button"
+                class="btn btn-success btn-sm"
+                (click)="startPlanningRequest(request)"
+                [disabled]="request.status === 'PLANNED'"
+              >
+                {{ isPlanningRequestSelected(request) ? 'Selected' : 'Plan' }}
+              </button>
+              <button type="button" class="btn btn-outline-primary btn-sm" (click)="updateSurgeryRequestStatus(request)">
+                Update
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-2 mb-3 surgical-stats">
+        <div class="col-md-3 col-6">
+          <div class="card stretch stretch-full">
+            <div class="card-body stat-card">
+              <div class="small text-muted">Total Cases</div>
+              <div class="fs-4 fw-bold">{{ totalCases }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="card stretch stretch-full">
+            <div class="card-body stat-card">
+              <div class="small text-muted">Planned / Open</div>
+              <div class="fs-4 fw-bold">{{ plannedCasesCount }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="card stretch stretch-full">
+            <div class="card-body stat-card">
+              <div class="small text-muted">Today</div>
+              <div class="fs-4 fw-bold text-primary">{{ todayCasesCount }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="card stretch stretch-full">
+            <div class="card-body stat-card">
+              <div class="small text-muted">Upcoming</div>
+              <div class="fs-4 fw-bold">{{ upcomingCasesCount }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card stretch stretch-full mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h5 class="card-title mb-0">{{ workspaceTitle }}</h5>
+            <div class="text-muted small">{{ workspaceSubtitle }}</div>
+          </div>
+          <select class="form-select workspace-select" [ngModel]="selectedWorkspaceCaseId" (ngModelChange)="selectedWorkspaceCaseId = $event">
+            <option *ngFor="let item of roleScopedCases" [value]="item.id">
+              {{ item.firstName }} {{ item.lastName }} | {{ formatDateTime(item.scheduledDate, item.scheduledStartTime) }}
+            </option>
+          </select>
+        </div>
+        <div class="card-body" *ngIf="selectedWorkspaceCase as workspaceCase; else noWorkspaceCase">
+          <div class="workspace-hero mb-3">
+            <div>
+              <div class="workspace-title">{{ selectedWorkspacePatientName }}</div>
+              <div class="workspace-meta">
+                Case #{{ workspaceCase.id }} | {{ workspaceCase.procedureName }} | {{ formatDateTime(workspaceCase.scheduledDate, workspaceCase.scheduledStartTime) }}
+              </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <span class="badge" [ngClass]="statusToneClass(workspaceCase.status)">{{ labelFrom(caseStatusLabels, workspaceCase.status) }}</span>
+              <span class="badge urgency-badge" [class.urgent]="workspaceCase.urgencyLevel === 'URGENT'">{{ labelFrom(urgencyLabels, workspaceCase.urgencyLevel) }}</span>
+            </div>
+          </div>
+
+          <div class="workspace-tabs mb-3">
+            <button class="btn btn-light btn-sm" [class.active]="workspaceSection === 'overview'" (click)="setWorkspaceSection('overview')">Overview</button>
+            <button class="btn btn-light btn-sm" [class.active]="workspaceSection === 'patient'" (click)="setWorkspaceSection('patient')">Patient File</button>
+            <button class="btn btn-light btn-sm" [class.active]="workspaceSection === 'referral'" (click)="setWorkspaceSection('referral')">Referral Context</button>
+            <button class="btn btn-light btn-sm" [class.active]="workspaceSection === 'planning'" (click)="setWorkspaceSection('planning')">Planning</button>
+          </div>
+
+          <div class="row g-3" *ngIf="workspaceSection === 'overview'">
+            <div class="col-xl-5">
+              <div class="workspace-panel">
+                <div class="workspace-section-label">{{ isReceptionist ? 'Planning Snapshot' : 'Operation Summary' }}</div>
+                <div class="workspace-grid">
+                  <ng-container *ngFor="let item of selectedWorkspaceOperationSummary">
+                    <span>{{ item.label }}</span><strong>{{ item.value }}</strong>
+                  </ng-container>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-7">
+              <div class="workspace-panel">
+                <div class="workspace-section-label">{{ isReceptionist ? 'Scheduling Attention Points' : 'Clinical Attention Points' }}</div>
+                <div *ngIf="selectedWorkspaceAttentionItems.length === 0" class="workspace-note">
+                  {{ isReceptionist ? 'No scheduling blocker is currently surfaced for this case.' : 'No blocking issue is currently surfaced in the surgical workspace.' }}
+                </div>
+                <div *ngFor="let item of selectedWorkspaceAttentionItems" class="attention-item">
+                  {{ item }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3" *ngIf="workspaceSection === 'patient'">
+            <div class="col-xl-6">
+              <div class="workspace-panel">
+                <div class="workspace-section-label">Patient Summary</div>
+                <div class="workspace-grid">
+                  <span>Full name</span><strong>{{ selectedWorkspacePatientName }}</strong>
+                  <span>Patient ID</span><strong>{{ workspaceCase.patientId }}</strong>
+                  <span>Date of birth</span><strong>{{ selectedWorkspaceDob }}</strong>
+                  <span>Age</span><strong>{{ selectedWorkspacePatientAge }}</strong>
+                  <span>Gender</span><strong>{{ labelFrom(genderLabels, workspaceCase.gender) }}</strong>
+                  <span>Patient reference</span><strong>{{ workspaceCase.medicalRecordNumber || '-' }}</strong>
+                  <span>Blood type</span><strong>{{ selectedWorkspacePatient?.bloodType || '-' }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-6">
+              <div class="workspace-panel">
+                <div class="workspace-section-label">Patient Safety</div>
+                <div class="workspace-note">
+                  <div class="small text-muted mb-2">Allergies</div>
+                  <div>{{ selectedWorkspacePatient?.allergies || 'No allergy data available in procedure workspace.' }}</div>
+                </div>
+                <div class="workspace-note mt-3">
+                  <div class="small text-muted mb-2">Care context</div>
+                  <div>This workspace uses the surgical snapshot and referral context. Broader clinical history remains owned by the clinical domain.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3" *ngIf="workspaceSection === 'referral'">
+            <div class="col-12">
+              <div class="workspace-panel">
+                <div class="workspace-section-label">Referral Context</div>
+                <div *ngIf="selectedWorkspaceRequest as linkedRequest; else noLinkedRequest">
+                  <div class="workspace-title">Request #{{ linkedRequest.id }}</div>
+                  <div class="workspace-meta">Consultation {{ linkedRequest.consultationId }} | Doctor {{ linkedRequest.requestedByDoctorId }}</div>
+                  <div class="row g-3 mt-1">
+                    <div class="col-xl-6">
+                      <div class="workspace-note">
+                        <div class="small text-muted mb-2">Reason for surgery</div>
+                        <div>{{ linkedRequest.reason }}</div>
+                      </div>
+                    </div>
+                    <div class="col-xl-6">
+                      <div class="workspace-note">
+                        <div class="small text-muted mb-2">Clinical note</div>
+                        <div>{{ linkedRequest.clinicalNote || 'No additional clinical note attached to the request.' }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <ng-template #noLinkedRequest>
+                  <div class="workspace-note">
+                    No linked surgery request found for this case. This usually means the case was created directly from the intake form.
+                  </div>
+                </ng-template>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3" *ngIf="workspaceSection === 'planning'">
+            <div class="col-xl-6">
+              <div class="workspace-panel">
+                <div class="workspace-section-label">Operation Plan</div>
+                <div class="workspace-grid">
+                  <span>Surgery type</span><strong>{{ workspaceCase.surgeryType || '-' }}</strong>
+                  <span>Procedure</span><strong>{{ workspaceCase.procedureName || '-' }}</strong>
+                  <span>Urgency</span><strong>{{ labelFrom(urgencyLabels, workspaceCase.urgencyLevel) }}</strong>
+                  <span>Category</span><strong>{{ labelFrom(surgeryCategoryLabels, workspaceCase.surgeryCategory) }}</strong>
+                  <span>Lead surgeon</span><strong>{{ workspaceCase.surgeonId || '-' }}</strong>
+                  <span>Assistant</span><strong>{{ workspaceCase.assistantSurgeonId || '-' }}</strong>
+                  <span>Anesthesia</span><strong>{{ workspaceCase.anesthesiologistId || '-' }}</strong>
+                  <span>Nurse team</span><strong>{{ workspaceCase.nurseTeam || '-' }}</strong>
+                  <span>Duration</span><strong>{{ workspaceCase.estimatedDurationMinutes || '-' }} min</strong>
+                  <span>Operating room</span><strong>{{ workspaceCase.operatingRoom || '-' }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-6">
+              <div class="workspace-panel">
+                <div class="workspace-section-label">Scheduling Checklist</div>
+                <div *ngFor="let item of selectedWorkspacePlanningChecklist" class="checklist-item">
+                  <span class="check-dot" [class.done]="item.done"></span>
+                  <div>
+                    <div class="fw-semibold">{{ item.label }}</div>
+                    <div class="text-muted small">{{ item.value }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ng-template #noWorkspaceCase>
+          <div class="card-body">
+            <div class="empty-state">No surgical case available for workspace review.</div>
+          </div>
+        </ng-template>
+      </div>
+
+      <div class="card stretch stretch-full">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="card-title mb-0">{{ boardTitle }}</h5>
+            <div class="text-muted small">{{ boardSubtitle }}</div>
+          </div>
+          <button type="button" class="btn btn-light btn-sm" (click)="loadCases()">Refresh</button>
+        </div>
+
+        <div class="card-body">
+          <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
+          <div *ngIf="successMessage" class="alert alert-success mb-3">{{ successMessage }}</div>
+          <div *ngIf="loading" class="empty-state">Loading surgical cases...</div>
+
+          <div class="row g-2 mb-3 align-items-center" *ngIf="!loading">
+            <div class="col-lg-4 col-md-5">
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="searchTerm"
+                placeholder="Search patient, reference or procedure"
+              />
+            </div>
+            <div class="col-lg-3 col-md-4">
+              <select class="form-select" [(ngModel)]="caseStatusFilter">
+                <option value="ALL">All case statuses</option>
+                <option *ngFor="let status of caseStatuses" [value]="status">
+                  {{ labelFrom(caseStatusLabels, status) }}
+                </option>
+              </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-center">
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="showArchivedSurgical"
+                  [(ngModel)]="showArchived"
+                />
+                <label class="form-check-label small" for="showArchivedSurgical">Archived</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive" *ngIf="!loading">
+            <table class="table table-hover align-middle mb-0 surgical-table">
+              <thead>
+              <tr>
+                <th class="patient-col">Patient</th>
+                <th class="procedure-col">Procedure</th>
+                <th class="urgency-col">Urgency</th>
+                <th class="planning-col">Planning</th>
+                <th class="team-col">Team</th>
+                <th class="planning-col">Operational Note</th>
+                <th class="status-col" *ngIf="canManageWorkflow">Case Status</th>
+                <th class="status-col" *ngIf="canManageWorkflow">Offer Status</th>
+                <th class="text-end actions-col">Actions</th>
+              </tr>
+              </thead>
+
+              <tbody>
+              <tr *ngIf="filteredCases.length === 0">
+                <td [attr.colspan]="canManageWorkflow ? 9 : 7" class="empty-state">No surgical cases found yet.</td>
+              </tr>
+
+              <tr *ngFor="let surgicalCase of filteredCases">
+                <td>
+                  <div class="fw-semibold">{{ surgicalCase.firstName || '-' }} {{ surgicalCase.lastName || '' }}</div>
+                  <small class="text-muted">Ref: {{ surgicalCase.medicalRecordNumber || '-' }} | {{ surgicalCase.age || '-' }}y | {{ labelFrom(genderLabels, surgicalCase.gender) }}</small>
+                </td>
+                <td>
+                  <div class="fw-semibold">{{ surgicalCase.surgeryType || '-' }}</div>
+                  <small class="text-muted">{{ surgicalCase.procedureName || '-' }} | {{ labelFrom(surgeryCategoryLabels, surgicalCase.surgeryCategory) }}</small>
+                </td>
+                <td>
+                  <span class="badge urgency-badge" [class.urgent]="surgicalCase.urgencyLevel === 'URGENT'">
+                    {{ labelFrom(urgencyLabels, surgicalCase.urgencyLevel) }}
+                  </span>
+                </td>
+                <td>
+                  <div>{{ formatDateTime(surgicalCase.scheduledDate, surgicalCase.scheduledStartTime) }}</div>
+                  <small class="text-muted">{{ surgicalCase.estimatedDurationMinutes || '-' }} min | {{ surgicalCase.operatingRoom || '-' }}</small>
+                </td>
+                <td>
+                  <div class="small fw-semibold">{{ teamSummary(surgicalCase) }}</div>
+                  <small class="text-muted">{{ surgicalCase.nurseTeam || 'Nurse team not specified' }}</small>
+                </td>
+                <td>
+                  <span class="badge rounded-pill mb-2" [ngClass]="statusToneClass(surgicalCase.status)">
+                    {{ workflowStepLabel(surgicalCase) }}
+                  </span>
+                  <div class="small text-muted">{{ nextActionLabel(surgicalCase) }}</div>
+                </td>
+                <td *ngIf="canManageWorkflow">
+                  <select
+                    class="form-select form-select-sm status-select"
+                    [(ngModel)]="editStatus[surgicalCase.id]"
+                    [disabled]="isLockedCase(surgicalCase)"
+                  >
+                    <option *ngFor="let status of availableStatusesFor(surgicalCase)" [value]="status">
+                      {{ labelFrom(caseStatusLabels, status) }}
+                    </option>
+                  </select>
+                  <small class="text-danger d-block mt-1" *ngIf="isLockedCase(surgicalCase)">
+                    Locked case (Pre-Op blocked or Post-Op unstable)
+                  </small>
+                  <small class="text-muted d-block mt-1" *ngIf="!isLockedCase(surgicalCase)">
+                    {{ caseDecisionHint(surgicalCase) }}
+                  </small>
+                </td>
+                <td *ngIf="canManageWorkflow">
+                  <select class="form-select form-select-sm status-select" [(ngModel)]="editOfferStatus[surgicalCase.id]">
+                    <option *ngFor="let status of offerStatuses" [value]="status">
+                      {{ labelFrom(offerStatusLabels, status) }}
+                    </option>
+                  </select>
+                  <small class="text-muted d-block mt-1">
+                    {{ offerDecisionHint(surgicalCase) }}
+                  </small>
+                </td>
+                <td class="text-end actions-cell">
+                  <div class="d-flex justify-content-end gap-1 flex-wrap action-stack">
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary btn-sm"
+                      (click)="updateStatus(surgicalCase)"
+                      [disabled]="isLockedCase(surgicalCase)"
+                      *ngIf="canManageWorkflow"
+                    >
+                      {{ caseDecisionLabel(surgicalCase) }}
+                    </button>
+
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary btn-sm"
+                      (click)="updateOffer(surgicalCase)"
+                      *ngIf="canManageWorkflow"
+                    >
+                      {{ offerDecisionLabel(surgicalCase) }}
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-dark btn-sm"
+                      (click)="downloadCasePdf(surgicalCase)"
+                      [disabled]="downloadingPdfId === surgicalCase.id"
+                    >
+                      {{ downloadingPdfId === surgicalCase.id ? 'Exporting...' : 'Export PDF' }}
+                    </button>
+
+                    <button
+                      type="button"
+                      class="btn btn-outline-success btn-sm"
+                      (click)="openWorkspace(surgicalCase)"
+                    >
+                      Workspace
+                    </button>
+
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger btn-sm"
+                      (click)="archiveCase(surgicalCase)"
+                      [disabled]="!canArchiveCase(surgicalCase)"
+                      *ngIf="canManageWorkflow"
+                    >
+                      Archive
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

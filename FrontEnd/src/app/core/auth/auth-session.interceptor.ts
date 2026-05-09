@@ -1,0 +1,59 @@
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { catchError, throwError } from 'rxjs';
+
+function mapFriendlyMessage(status: number): string {
+  switch (status) {
+    case 0:
+      return 'Unable to connect to the server. Please check your internet connection and try again.';
+    case 401:
+      return 'You are not authorized to open this resource with the current account.';
+    case 403:
+      return 'You do not have permission to perform this action.';
+    case 404:
+      return 'The requested resource was not found.';
+    case 500:
+      return 'A server error occurred. Please try again in a moment.';
+    default:
+      return 'An unexpected error occurred. Please try again.';
+  }
+}
+
+function buildFriendlyError(error: HttpErrorResponse): HttpErrorResponse {
+  const payload = error?.error;
+  const backendMessage =
+    payload && typeof payload === 'object'
+      ? (payload as Record<string, unknown>)['message']
+      : undefined;
+  const shouldKeepBackendMessage =
+    typeof backendMessage === 'string' &&
+    backendMessage.trim().length > 0 &&
+    [400, 404, 409, 422].includes(error.status);
+  const resolvedMessage = shouldKeepBackendMessage
+    ? backendMessage as string
+    : mapFriendlyMessage(error.status);
+  const normalizedPayload = payload && typeof payload === 'object'
+    ? { ...(payload as Record<string, unknown>), message: resolvedMessage }
+    : { message: resolvedMessage };
+
+  return new HttpErrorResponse({
+    error: normalizedPayload,
+    headers: error.headers,
+    status: error.status,
+    statusText: error.statusText,
+    url: error.url ?? undefined
+  });
+}
+
+export const authSessionInterceptor: HttpInterceptorFn = (req, next) => {
+  const isLoginRequest = req.url.endsWith('/api/auth/login');
+
+  if (isLoginRequest) {
+    return next(req);
+  }
+
+  return next(req).pipe(
+    catchError((error: HttpErrorResponse) => {
+      return throwError(() => buildFriendlyError(error));
+    })
+  );
+};

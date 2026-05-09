@@ -1,0 +1,31 @@
+<section class="patient-details-page section">
+  <div class="container">
+    <div class="details-shell">
+      <div class="details-head">
+        <h2>Patient Profile Details</h2>
+        <a class="btn back-btn" routerLink="/frontoffice/home">Back To Guardian Home</a>
+      </div>
+
+      <div *ngIf="loading" class="info-loading">Loading patient profile...</div>
+      <div *ngIf="!loading && errorMessage" class="info-error">{{ errorMessage }}</div>
+
+      <div class="details-card" *ngIf="!loading && !errorMessage && patient">
+        <div class="details-title">
+          <h3>{{ fullName }}</h3>
+        </div>
+
+        <div class="details-grid">
+          <div><strong>Age:</strong> {{ age ?? '-' }}</div>
+          <div><strong>Date Of Birth:</strong> {{ patient.dateOfBirth || '-' }}</div>
+          <div><strong>Sex:</strong> {{ patient.sex || '-' }}</div>
+          <div><strong>Blood Type:</strong> {{ patient.bloodType || '-' }}</div>
+          <div><strong>Allergies:</strong> {{ patient.allergies || '-' }}</div>
+          <div><strong>Chronic Conditions:</strong> {{ patient.chronicConditions || '-' }}</div>
+          <div class="full"><strong>Medical Notes:</strong> {{ patient.medicalNotes || '-' }}</div>
+          <div><strong>Created:</strong> {{ patient.createdAt ? (patient.createdAt | date:'yyyy-MM-dd HH:mm') : '-' }}</div>
+          <div><strong>Updated:</strong> {{ patient.updatedAt ? (patient.updatedAt | date:'yyyy-MM-dd HH:mm') : '-' }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

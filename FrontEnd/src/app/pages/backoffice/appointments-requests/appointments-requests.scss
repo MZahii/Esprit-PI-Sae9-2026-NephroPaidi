@@ -1,0 +1,23 @@
+:host {
+  display: block;
+}
+
+.sort-btn {
+  background: transparent;
+  border: 0;
+  font-weight: 600;
+  color: #1f2937;
+  padding: 0;
+}
+
+.sort-btn:hover {
+  color: #2563eb;
+}
+
+.toast-holder {
+  position: fixed;
+  top: 90px;
+  right: 24px;
+  z-index: 1200;
+  min-width: 320px;
+}

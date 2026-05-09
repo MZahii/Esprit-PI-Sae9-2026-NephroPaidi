@@ -1,0 +1,44 @@
+.my-dossiers {
+  .dossier-card {
+    width: 100%;
+    border: 1px solid #e9eef5;
+    background: #fff;
+    border-radius: 14px;
+    text-align: left;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .dossier-card:hover {
+    border-color: #c9dcff;
+    box-shadow: 0 12px 22px rgba(15, 23, 42, 0.08);
+  }
+
+  .dossier-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .dossier-id {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 13px;
+  }
+
+  .dossier-line {
+    color: #475569;
+    font-size: 13px;
+  }
+
+  .open-link {
+    font-size: 12px;
+    font-weight: 700;
+    color: #2563eb;
+    margin-top: 4px;
+  }
+}

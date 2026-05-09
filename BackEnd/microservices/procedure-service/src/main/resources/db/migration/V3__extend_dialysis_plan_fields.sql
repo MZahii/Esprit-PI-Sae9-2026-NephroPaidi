@@ -1,0 +1,14 @@
+ALTER TABLE dialysis_plans
+    ADD COLUMN IF NOT EXISTS doctor_id VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS dialysis_type VARCHAR(80),
+    ADD COLUMN IF NOT EXISTS sessions_per_week INTEGER,
+    ADD COLUMN IF NOT EXISTS session_duration_minutes INTEGER,
+    ADD COLUMN IF NOT EXISTS start_date DATE,
+    ADD COLUMN IF NOT EXISTS end_date DATE,
+    ADD COLUMN IF NOT EXISTS days_of_week VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS blood_flow_rate INTEGER,
+    ADD COLUMN IF NOT EXISTS dialysate_flow_rate INTEGER,
+    ADD COLUMN IF NOT EXISTS ultrafiltration_goal INTEGER,
+    ADD COLUMN IF NOT EXISTS dialysis_center_id VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS room_number VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS machine_id VARCHAR(255);

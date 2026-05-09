@@ -1,0 +1,436 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Appointments</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item">Appointments</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="row">
+    <div class="col-12">
+      <div class="card stretch stretch-full">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <h5 class="card-title mb-0">Scheduling</h5>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-light" type="button" (click)="loadAppointments()" [disabled]="loading">
+              Refresh
+            </button>
+            <button class="btn btn-primary" type="button" (click)="openCreateModal()">
+              New Appointment
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div *ngIf="errorMessage" class="alert alert-danger mb-3">
+            {{ errorMessage }}
+          </div>
+
+          <div class="patient-filter mb-3">
+            <label class="form-label" for="appointmentsPatientFilterSearch">Search Patient</label>
+            <input
+              id="appointmentsPatientFilterSearch"
+              name="appointmentsPatientFilterSearch"
+              class="form-control"
+              placeholder="Type patient name or id..."
+              [(ngModel)]="patientFilterSearch"
+              (ngModelChange)="onPatientFilterInput($event)"
+            />
+            <small class="text-muted d-block mt-2" *ngIf="patientFilterSearch.trim().length < 2">
+              Type at least 2 characters to search.
+            </small>
+            <small class="text-muted d-block mt-2" *ngIf="patientFilterLoading">Searching patients...</small>
+            <small class="text-danger d-block mt-2" *ngIf="patientFilterError">{{ patientFilterError }}</small>
+
+            <div class="suggestions-panel" *ngIf="patientFilterSearch.trim().length >= 2 && !selectedPatientFilter">
+              <div class="suggestion-empty" *ngIf="patientFilterNoMatches && !patientFilterLoading">
+                No matches found.
+              </div>
+              <button
+                type="button"
+                class="patient-suggestion"
+                *ngFor="let p of patientFilterSuggestions"
+                (click)="selectPatientFilter(p)"
+              >
+                <div class="suggestion-title">{{ p.firstName }} {{ p.lastName }}</div>
+                <div class="suggestion-meta">ID: {{ p.id }} • {{ p.sex }} • DOB: {{ p.dateOfBirth }}</div>
+              </button>
+            </div>
+
+            <div class="selected-patient" *ngIf="selectedPatientFilter">
+              <div class="d-flex align-items-center justify-content-between">
+                <div>
+                  <div class="fw-semibold">{{ selectedPatientFilter.firstName }} {{ selectedPatientFilter.lastName }}</div>
+                  <div class="text-muted">Patient ID: {{ selectedPatientFilter.id }}</div>
+                </div>
+                <button type="button" class="btn btn-light btn-sm" (click)="clearPatientFilter()">
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="filters mb-3">
+            <label class="visually-hidden" for="appointmentsStatusFilter">Status</label>
+            <select id="appointmentsStatusFilter" name="appointmentsStatusFilter" class="form-control" [(ngModel)]="filters.status">
+              <option value="ALL">All Status</option>
+              <option value="SCHEDULED">SCHEDULED</option>
+              <option value="CONFIRMED">CONFIRMED</option>
+              <option value="CANCELLED">CANCELLED</option>
+              <option value="NO_SHOW">NO_SHOW</option>
+            </select>
+
+            <label class="visually-hidden" for="appointmentsDoctorFilter">Doctor</label>
+            <select id="appointmentsDoctorFilter" name="appointmentsDoctorFilter" class="form-control" [(ngModel)]="filters.doctorId">
+              <option value="">All Doctors</option>
+              <option *ngFor="let d of doctors" [value]="d.keycloakId">
+                {{ getDoctorLabel(d.keycloakId) }}
+              </option>
+            </select>
+
+            <button class="btn btn-light" type="button" (click)="loadAppointments()">
+              Apply
+            </button>
+            <button class="btn btn-outline-light" type="button" (click)="clearFilters()">
+              Clear
+            </button>
+          </div>
+
+          <div *ngIf="loading" class="text-muted py-3">Loading appointments...</div>
+
+          <div class="calendar-container" *ngIf="!loading">
+            <div class="calendar-toolbar">
+              <button class="btn btn-light btn-sm" (click)="prevMonth()">Prev</button>
+              <div class="calendar-title">{{ calendarMonthLabel }}</div>
+              <button class="btn btn-light btn-sm" (click)="nextMonth()">Next</button>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-lg-7">
+                <div class="calendar-grid">
+                  <div class="calendar-weekday" *ngFor="let day of ['S','M','T','W','T','F','S']">
+                    {{ day }}
+                  </div>
+                  <button
+                    type="button"
+                    class="calendar-cell"
+                    *ngFor="let day of calendarDays"
+                    [class.outside]="!day.inMonth"
+                    [class.today]="day.isToday"
+                    [class.selected]="day.date && dateKey(day.date) === dateKey(selectedDate)"
+                    (click)="selectCalendarDay(day)"
+                  >
+                    <span class="calendar-number">{{ day.date ? (day.date | date:'d') : '' }}</span>
+                    <span class="calendar-count" *ngIf="day.count">{{ day.count }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="col-lg-5">
+                <div class="day-panel">
+                  <div class="day-header">{{ selectedDateLabel }}</div>
+
+                  <div *ngIf="dayAppointments.length === 0" class="text-muted py-3">
+                    No appointments for this day.
+                  </div>
+
+                  <div class="day-appointment" *ngFor="let item of dayAppointments">
+                    <div class="day-time">{{ item.scheduledAt | date:'shortTime' }}</div>
+                    <div class="day-details">
+                      <div class="fw-semibold">{{ getPatientLabel(item.patientId) }}</div>
+                      <div class="text-muted">{{ getDoctorLabel(item.doctorId) }} • {{ item.durationMinutes }} min</div>
+                      <div class="text-muted small" *ngIf="item.status === 'SCHEDULED'">
+                        {{ getAppointmentCountdown(item) }}
+                      </div>
+                    </div>
+                    <div class="day-actions" *ngIf="!isReceptionist">
+                      <button 
+                        type="button" 
+                        class="btn btn-sm btn-success"
+                        *ngIf="canStartAppointment(item)"
+                        (click)="startConsultation(item.id)"
+                        [disabled]="startingAppointmentId === item.id">
+                        <span *ngIf="startingAppointmentId !== item.id">Start</span>
+                        <span *ngIf="startingAppointmentId === item.id">
+                          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Starting...
+                        </span>
+                      </button>
+                      <button 
+                        type="button" 
+                        class="btn btn-sm btn-warning"
+                        (click)="openEditModal(item)">
+                        Edit
+                      </button>
+                      <button 
+                        type="button" 
+                        class="btn btn-sm btn-danger"
+                        (click)="openCancelModal(item)">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+<!-- CREATE MODAL -->
+<div class="modal-backdrop fade show" *ngIf="showCreateModal"></div>
+<div class="modal d-block" tabindex="-1" *ngIf="showCreateModal">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">New Appointment</h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-section">
+          <label class="form-label" for="createPatientSearch">Find Patient</label>
+          <input
+            id="createPatientSearch"
+            name="createPatientSearch"
+            class="form-control"
+            placeholder="Search by name, id, blood type, allergies..."
+            [(ngModel)]="patientSearch"
+            (ngModelChange)="onPatientSearchInput($event)"
+          />
+          <small class="text-muted d-block mt-2" *ngIf="patientSearch.trim().length < 2">
+            Type at least 2 characters to search.
+          </small>
+          <small class="text-muted d-block mt-2" *ngIf="patientLoading">Searching patients...</small>
+          <small class="text-danger d-block mt-2" *ngIf="patientError">{{ patientError }}</small>
+
+          <div class="suggestions-panel" *ngIf="patientSearch.trim().length >= 2 && !selectedPatient">
+            <div class="suggestion-empty" *ngIf="patientNoMatches && !patientLoading">
+              No matches found.
+            </div>
+            <button
+              type="button"
+              class="patient-suggestion"
+              *ngFor="let p of patientSuggestions"
+              (click)="selectPatient(p)"
+            >
+              <div class="suggestion-title">{{ p.firstName }} {{ p.lastName }}</div>
+              <div class="suggestion-meta">ID: {{ p.id }} • {{ p.sex }} • DOB: {{ p.dateOfBirth }}</div>
+            </button>
+          </div>
+
+          <div class="selected-patient" *ngIf="selectedPatient">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="fw-semibold">{{ selectedPatient.firstName }} {{ selectedPatient.lastName }}</div>
+                <div class="text-muted">Patient ID: {{ selectedPatient.id }}</div>
+              </div>
+              <button type="button" class="btn btn-light btn-sm" (click)="clearSelectedPatient()">
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 mt-3">
+          <div class="col-md-6">
+            <label class="form-label" for="createScheduledAt">Scheduled At</label>
+            <input
+              id="createScheduledAt"
+              name="createScheduledAt"
+              type="datetime-local"
+              class="form-control"
+              [min]="minScheduledAt"
+              [(ngModel)]="createForm.scheduledAt"
+              (ngModelChange)="onScheduledAtChange($event)"
+            />
+            <small class="text-danger d-block mt-2" *ngIf="scheduledAtError">{{ scheduledAtError }}</small>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="createDurationMinutes">Duration (min)</label>
+            <input
+              id="createDurationMinutes"
+              name="createDurationMinutes"
+              type="number"
+              min="10"
+              max="180"
+              class="form-control"
+              [(ngModel)]="createForm.durationMinutes"
+              (ngModelChange)="onDurationChange($event)"
+            />
+            <small class="text-danger d-block mt-2" *ngIf="durationError">{{ durationError }}</small>
+          </div>
+        </div>
+
+        <div class="modal-section mt-3">
+          <label class="form-label" for="createDoctorSearch">Find Doctor</label>
+          <input
+            id="createDoctorSearch"
+            name="createDoctorSearch"
+            class="form-control"
+            placeholder="Search by name, email, or keycloak id..."
+            [(ngModel)]="doctorSearch"
+            (ngModelChange)="onDoctorSearchInput($event)"
+            [disabled]="!isScheduleReady"
+          />
+          <small class="text-muted d-block mt-2" *ngIf="!isScheduleReady">
+            Select a valid date/time and duration first.
+          </small>
+          <small class="text-muted d-block mt-2" *ngIf="doctorLoading">Checking availability...</small>
+          <small class="text-danger d-block mt-2" *ngIf="doctorError">{{ doctorError }}</small>
+
+          <div class="suggestions-panel" *ngIf="isScheduleReady && (doctorOptions.length || doctorNoMatches || doctorLoading)">
+            <div class="suggestions-caption" *ngIf="!doctorSearch.trim()">Top available doctors</div>
+            <div class="suggestion-empty" *ngIf="doctorNoMatches && !doctorLoading">
+              {{ doctorSearch.trim() ? 'No matching doctors.' : 'No available doctors for this slot.' }}
+            </div>
+            <button
+              type="button"
+              class="patient-suggestion doctor-suggestion"
+              *ngFor="let d of doctorOptions"
+              (click)="selectDoctor(d)"
+            >
+              <div class="suggestion-left">
+                <span class="availability-dot" [class.available]="d.available" [class.unavailable]="!d.available"></span>
+                <div>
+                  <div class="suggestion-title">{{ d.displayName }}</div>
+                  <div class="suggestion-meta">{{ d.email || '-' }} • {{ d.id }}</div>
+                </div>
+              </div>
+              <span class="availability-label" [class.text-success]="d.available" [class.text-danger]="!d.available">
+                {{ d.available ? 'Available' : 'Conflict' }}
+              </span>
+            </button>
+          </div>
+
+          <div class="selected-patient" *ngIf="selectedDoctor">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="fw-semibold">{{ selectedDoctor.displayName }}</div>
+                <div class="text-muted">Doctor ID: {{ selectedDoctor.id }}</div>
+              </div>
+              <button type="button" class="btn btn-light btn-sm" (click)="clearSelectedDoctor()">
+                Clear
+              </button>
+            </div>
+            <div class="availability-status mt-2">
+              <span class="availability-dot" [class.available]="selectedDoctor.available" [class.unavailable]="!selectedDoctor.available"></span>
+              <span [class.text-success]="selectedDoctor.available" [class.text-danger]="!selectedDoctor.available">
+                {{ selectedDoctor.available ? 'Available' : 'Not available' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="alert alert-warning mt-3" *ngIf="selectedDoctor && !selectedDoctor.available">
+            {{ doctorConflictMessage }}
+          </div>
+          <div class="form-check mt-2" *ngIf="selectedDoctor && !selectedDoctor.available">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="forceSchedule"
+              [(ngModel)]="forceSchedule"
+            />
+            <label class="form-check-label" for="forceSchedule">
+              Force schedule with conflict
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-section mt-3">
+          <label class="form-label" for="createReason">Reason</label>
+          <input id="createReason" name="createReason" type="text" class="form-control" [(ngModel)]="createForm.reason" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light" (click)="closeModals()">Cancel</button>
+        <button
+          class="btn btn-primary"
+          (click)="submitCreate()"
+          [disabled]="!canCreate"
+        >
+          Create
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-backdrop fade show" *ngIf="showEditModal"></div>
+<div class="modal d-block" tabindex="-1" *ngIf="showEditModal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Appointment</h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Patient</label>
+          <div class="form-control-plaintext">{{ getPatientLabel(editForm.patientId) }}</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Doctor</label>
+          <div class="form-control-plaintext">{{ getDoctorLabel(editForm.doctorId) }}</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="editScheduledAt">Scheduled At</label>
+          <input id="editScheduledAt" name="editScheduledAt" type="datetime-local" class="form-control" [(ngModel)]="editForm.scheduledAt" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="editDurationMinutes">Duration (min)</label>
+          <input id="editDurationMinutes" name="editDurationMinutes" type="number" min="10" class="form-control" [(ngModel)]="editForm.durationMinutes" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="editStatus">Status</label>
+          <select id="editStatus" name="editStatus" class="form-select" [(ngModel)]="editForm.status">
+            <option value="SCHEDULED">SCHEDULED</option>
+            <option value="CONFIRMED">CONFIRMED</option>
+            <option value="CANCELLED">CANCELLED</option>
+            <option value="NO_SHOW">NO_SHOW</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="editReason">Reason</label>
+          <input id="editReason" name="editReason" type="text" class="form-control" [(ngModel)]="editForm.reason" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light" (click)="closeModals()">Cancel</button>
+        <button class="btn btn-primary" (click)="submitEdit()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CANCEL MODAL -->
+<div class="modal-backdrop fade show" *ngIf="showCancelModal"></div>
+<div class="modal d-block" tabindex="-1" *ngIf="showCancelModal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cancel Appointment</h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label" for="cancelReason">Cancellation reason</label>
+        <textarea id="cancelReason" name="cancelReason" class="form-control" rows="3" [(ngModel)]="cancelForm.reason"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light" (click)="closeModals()">Close</button>
+        <button class="btn btn-danger" (click)="submitCancel()">Confirm Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+

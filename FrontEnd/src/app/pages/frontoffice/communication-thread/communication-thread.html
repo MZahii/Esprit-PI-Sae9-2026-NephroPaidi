@@ -1,0 +1,96 @@
+<section class="guardian-overview section" style="padding-top:130px;">
+  <div class="container" *ngIf="loading">
+    <div class="text-muted">Loading...</div>
+  </div>
+
+  <div class="container" *ngIf="!loading && loadFailed">
+    <div class="alert alert-danger mb-3">{{ errorMessage || 'Unable to load this message right now.' }}</div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-light-brand" type="button" (click)="load()">Retry</button>
+      <a routerLink="/frontoffice/communication" class="btn guardian-btn-outline">Back to Messages</a>
+    </div>
+  </div>
+
+  <div class="container" *ngIf="!loading && !loadFailed && message as msg">
+    <a routerLink="/frontoffice/communication" class="btn btn-light-brand mb-3">← Back to Messages</a>
+
+    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+    <div *ngIf="errorMessage && !loadFailed" class="alert alert-danger">{{ errorMessage }}</div>
+    <div *ngIf="isClosed" class="alert alert-secondary">Conversation Closed</div>
+
+    <div class="card p-4">
+      <div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+          <h4 class="mb-1">{{ msg.subject || 'No subject' }}</h4>
+          <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+            <span class="badge bg-soft-primary text-primary">{{ msg.messageType }}</span>
+            <span class="badge text-bg-danger" *ngIf="msg.priority === 'HIGH'">URGENT</span>
+            <span class="badge" [ngClass]="msg.status === 'CLOSED' ? 'text-bg-secondary' : msg.status === 'RESPONDED' ? 'text-bg-success' : 'text-bg-warning'">{{ msg.status }}</span>
+          </div>
+          <small class="text-muted d-block mb-2">Sent {{ msg.createdAt | date:'medium' }}</small>
+        </div>
+      </div>
+
+      <div class="thread-item thread-original mb-3">
+        <div class="d-flex justify-content-between flex-wrap gap-2 mb-1">
+          <strong>You</strong>
+          <small class="text-muted">{{ msg.createdAt | date:'short' }}</small>
+        </div>
+        <p class="mb-0">{{ msg.messageText }}</p>
+      </div>
+
+      <h6 class="mt-4 mb-3">Conversation Thread</h6>
+      <div class="reply-item staff-reply mb-2" *ngFor="let reply of staffReplies">
+        <div class="d-flex justify-content-between flex-wrap gap-2">
+          <strong>Medical Team</strong>
+          <small class="text-muted">{{ getRelativeTimestamp(reply.createdAt) }}</small>
+        </div>
+        <p class="mb-0">{{ reply.replyText }}</p>
+      </div>
+
+      <div *ngIf="staffReplies.length === 0" class="text-muted">No staff replies yet.</div>
+
+      <form class="mt-4" [formGroup]="replyForm" (ngSubmit)="sendReply()" *ngIf="!isClosed">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <label class="form-label fw-semibold mb-0">Your Reply</label>
+          <small class="text-muted">{{ replyLength }}/2000</small>
+        </div>
+        <textarea class="form-control" rows="4" formControlName="replyText" placeholder="Write your message"></textarea>
+        <small class="text-danger d-block" *ngIf="replyForm.controls.replyText.touched && replyForm.controls.replyText.hasError('required')">Reply is required.</small>
+        <small class="text-danger d-block" *ngIf="replyForm.controls.replyText.touched && replyForm.controls.replyText.hasError('maxlength')">Max 2000 characters.</small>
+
+        <div class="d-flex gap-2 mt-3">
+          <button class="btn guardian-btn-primary" type="submit" [disabled]="replyForm.invalid || actionLoading">{{ actionLoading ? 'Sending...' : 'Send Reply' }}</button>
+          <button class="btn guardian-btn-outline" type="button" [disabled]="actionLoading" (click)="openCloseConfirm()">{{ actionLoading ? 'Processing...' : 'Mark as Resolved' }}</button>
+        </div>
+      </form>
+
+      <div class="mt-4 p-3 border rounded bg-light-subtle" *ngIf="isClosed && !hasSatisfactionFeedback">
+        <p class="mb-2 fw-semibold">Was this resolved to your satisfaction?</p>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-light-success" type="button" [disabled]="savingFeedback" (click)="saveSatisfaction('UP')">👍 Yes</button>
+          <button class="btn btn-sm btn-light-danger" type="button" [disabled]="savingFeedback" (click)="saveSatisfaction('DOWN')">👎 No</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade show d-block" tabindex="-1" *ngIf="closeConfirmOpen">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Mark Conversation as Resolved</h5>
+            <button type="button" class="btn-close" (click)="cancelCloseConfirm()"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-0">Are you sure you want to close this conversation? You can no longer send replies after closing.</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-light" type="button" (click)="cancelCloseConfirm()" [disabled]="actionLoading">Cancel</button>
+            <button class="btn btn-primary" type="button" (click)="closeMessage()" [disabled]="actionLoading">{{ actionLoading ? 'Closing...' : 'Confirm' }}</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-backdrop fade show"></div>
+    </div>
+  </div>
+</section>

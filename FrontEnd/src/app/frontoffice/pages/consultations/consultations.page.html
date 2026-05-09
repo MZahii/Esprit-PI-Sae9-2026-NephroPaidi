@@ -1,0 +1,41 @@
+<section class="section guardian-consultations">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+      <div>
+        <h2 class="section-title mb-1">Consultations</h2>
+        <p class="text-muted mb-0">Review scheduled and past consultations for your child.</p>
+      </div>
+
+      <div class="filter-controls d-flex align-items-center gap-2">
+        <label class="form-label mb-0">Status</label>
+        <select class="form-select" [(ngModel)]="filterStatus">
+          <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="alert alert-info">Loading consultations...</div>
+    <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+    <div class="consultation-list" *ngIf="!loading && !error">
+      <div class="consultation-card" *ngFor="let item of filteredConsultations">
+        <div>
+          <h5>{{ consultationTitle(item) }}</h5>
+          <p class="text-muted mb-2">
+            Scheduled {{ formatConsultationDate(item.dateTime, 'medium') || '-' }}
+          </p>
+          <span [ngClass]="statusBadge(item.status)">{{ item.status || 'OPEN' }}</span>
+        </div>
+        <div class="consultation-actions">
+          <a class="btn btn-outline-primary btn-sm" [routerLink]="['/frontoffice/consultations', item.id]">
+            View Details
+          </a>
+        </div>
+      </div>
+
+      <div class="text-center text-muted py-5" *ngIf="filteredConsultations.length === 0">
+        No consultations available yet.
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,524 @@
+name: nephropaidi
+
+services:
+  keycloak:
+    platform: linux/amd64
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: nephro-keycloak
+    command: ["start-dev", "--import-realm"]
+    restart: unless-stopped
+    environment:
+      KC_DB: ${KC_DB:-postgres}
+      KC_DB_URL: ${KC_DB_URL:-jdbc:postgresql://ep-cool-breeze-agqhhjlc.c-2.eu-central-1.aws.neon.tech:5432/KeyCloak?sslmode=require&channel_binding=require}
+      KC_DB_USERNAME: ${KC_DB_USERNAME:-neondb_owner}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD:-npg_Zb1Kda5LPlin}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin123}
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_URL: http://localhost:8080
+      KC_HOSTNAME_STRICT: "false"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./BackEnd/keycloak/realm:/opt/keycloak/data/import
+      - ./BackEnd/keycloak/themes:/opt/keycloak/themes
+    cpus: "1.00"
+    mem_limit: "1g"
+    networks:
+      - nephro-net
+
+  rabbitmq:
+    platform: linux/amd64
+    image: rabbitmq:3.13-management-alpine
+    container_name: nephro-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-admin123}
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    cpus: "0.80"
+    mem_limit: "768m"
+    networks:
+      - nephro-net
+
+  eureka:
+    build:
+      context: ./BackEnd/eureka
+    container_name: nephro-eureka
+    restart: unless-stopped
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka/
+    ports:
+      - "8761:8761"
+    cpus: "0.80"
+    mem_limit: "768m"
+    networks:
+      - nephro-net
+
+  config-server:
+    build:
+      context: ./BackEnd/config-server
+    container_name: nephro-config-server
+    restart: unless-stopped
+    environment:
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
+    ports:
+      - "8888:8888"
+    depends_on:
+      - eureka
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8888/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
+    cpus: "0.80"
+    mem_limit: "768m"
+    networks:
+      - nephro-net
+
+  api-gateway:
+    build:
+      context: ./BackEnd/api-gateway
+    container_name: nephro-api-gateway
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8083
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
+      EUREKA_INSTANCE_HOSTNAME: api-gateway
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
+      USER_SERVICE_URI: http://user-service:8090
+      ADMINISTRATION_SERVICE_URI: http://administration-service:8087
+      CLINICAL_SERVICE_URI: http://clinical-service:8084
+      COMMUNICATION_SERVICE_URI: http://communication-service:8085
+      PROCEDURE_SERVICE_URI: http://procedure-service:8089
+      PHARMACY_SERVICE_URI: http://pharmacy-service:8088
+      AI_PHARMACY_SERVICE_URI: http://ai-pharmacy-service:8093
+      OPS_SERVICE_URI: http://ops-service:8082
+      CORE_OPS_SERVICE_URI: http://core-ops-service:8086
+      EGFR_ML_SERVICE_URI: http://egfr-ml-service:8092
+    ports:
+      - "8083:8083"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      user-service:
+        condition: service_healthy
+      administration-service:
+        condition: service_healthy
+      clinical-service:
+        condition: service_healthy
+      ai-pharmacy-service:
+        condition: service_healthy
+      egfr-ml-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8083/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
+    cpus: "0.60"
+    mem_limit: "640m"
+    networks:
+      - nephro-net
+
+  user-service:
+    build:
+      context: ./BackEnd/microservices/user-service
+    container_name: nephro-user-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8090
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://ep-cool-breeze-agqhhjlc-pooler.c-2.eu-central-1.aws.neon.tech:5432/nephros_user_service_db?sslmode=require&channel_binding=require}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-neondb_owner}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-npg_Zb1Kda5LPlin}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_SHOW_SQL: "false"
+      LOGGING_LEVEL_ROOT: INFO
+      LOGGING_LEVEL_SPRING_WEB: DEBUG
+      EUREKA_URL: http://eureka:8761/eureka
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
+      EUREKA_INSTANCE_HOSTNAME: user-service
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
+      KEYCLOAK_SERVER_URL: http://keycloak:8080
+      KEYCLOAK_REALM: nephrospaidi
+      KEYCLOAK_ADMIN_CLIENT_ID: admin-cli
+      KEYCLOAK_ADMIN_USERNAME: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
+      KEYCLOAK_AUTH_CLIENT_ID: nephro-backend
+      KEYCLOAK_AUTH_CLIENT_SECRET: nephro-backend-secret
+      KEYCLOAK_VERIFICATION_ENABLED: "true"
+      ADMINISTRATION_SERVICE_BASE_URL: http://administration-service:8087
+      ENVIRONMENT: docker
+    ports:
+      - "8090:8090"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      keycloak:
+        condition: service_started
+    cpus: "0.60"
+    mem_limit: "640m"
+    networks:
+      - nephro-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  administration-service:
+    build:
+      context: ./BackEnd/microservices/administration-service
+    container_name: nephro-administration-service
+    restart: unless-stopped
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
+      EUREKA_INSTANCE_HOSTNAME: administration-service
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
+      USER_SERVICE_BASE_URL: http://user-service:8090
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-my-super-secret-internal-key}
+      ENVIRONMENT: docker
+    ports:
+      - "8087:8087"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      user-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8087/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
+    cpus: "0.60"
+    mem_limit: "640m"
+    networks:
+      - nephro-net
+
+  communication-service:
+    build:
+      context: ./BackEnd/microservices/communication-service
+    container_name: nephro-communication-service
+    restart: unless-stopped
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
+      EUREKA_INSTANCE_HOSTNAME: communication-service
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
+      USER_SERVICE_BASE_URL: http://user-service:8090
+      ADMINISTRATION_SERVICE_BASE_URL: http://administration-service:8087
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-my-super-secret-internal-key}
+      ENVIRONMENT: docker
+    ports:
+      - "8085:8085"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      user-service:
+        condition: service_healthy
+      administration-service:
+        condition: service_healthy
+    cpus: "0.60"
+    mem_limit: "640m"
+    networks:
+      - nephro-net
+
+  clinical-service:
+    build:
+      context: ./BackEnd/microservices/clinical-service
+    container_name: nephro-clinical-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://ep-cool-breeze-agqhhjlc-pooler.c-2.eu-central-1.aws.neon.tech:5432/nephros_clinical_service.db?sslmode=require&channel_binding=require}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-neondb_owner}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-npg_Zb1Kda5LPlin}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SERVER_PORT: "8084"
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_OUT_OF_ORDER: "true"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
+      EUREKA_INSTANCE_HOSTNAME: clinical-service
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
+      SERVICES_ADMINISTRATION_BASE: http://administration-service:8087
+      SERVICES_ADMINISTRATION_BASE_URL: http://administration-service:8087
+      SERVICES_USER_BASE: http://user-service:8090
+      SERVICES_USER_BASE_URL: http://user-service:8090
+      SERVICES_PHARMACY_URL: http://pharmacy-service:8088
+      SERVICES_COMMUNICATION_URL: http://communication-service:8085
+      USER_SERVICE_URL: http://user-service:8090
+      ADMIN_SERVICE_URL: http://administration-service:8087
+      PHARMACY_SERVICE_URL: http://pharmacy-service:8088
+      COMMUNICATION_SERVICE_URL: http://communication-service:8085
+      SERVICES_AI_CLINICAL_BASE_URL: http://ai-clinical-service:8091
+      ENVIRONMENT: docker
+      LOGGING_LEVEL_ROOT: INFO
+      LOGGING_LEVEL_TN_ESPRIT: DEBUG
+    ports:
+      - "8084:8084"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      user-service:
+        condition: service_healthy
+      administration-service:
+        condition: service_healthy
+      ai-clinical-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    cpus: "0.70"
+    mem_limit: "768m"
+    networks:
+      - nephro-net
+    volumes:
+      - ./BackEnd/runtime/clinical-lab-results:/app/data/lab-results
+
+  ai-clinical-service:
+    build:
+      context: ./BackEnd/microservices/ai-clinical-service
+    container_name: nephro-ai-clinical-service
+    restart: unless-stopped
+    ports:
+      - "8091:8091"
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8091/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    cpus: "0.50"
+    mem_limit: "512m"
+    networks:
+      - nephro-net
+
+  egfr-ml-service:
+    build:
+      context: ./BackEnd/microservices/egfr-ml-service
+    container_name: nephro-egfr-ml-service
+    restart: unless-stopped
+    ports:
+      - "8092:8092"
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8092/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    cpus: "0.50"
+    mem_limit: "512m"
+    networks:
+      - nephro-net
+
+  ai-pharmacy-service:
+    build:
+      context: ./BackEnd/microservices/ai-pharmacy-service
+    container_name: nephro-ai-pharmacy-service
+    restart: unless-stopped
+    ports:
+      - "8093:8093"
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8093/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    cpus: "0.50"
+    mem_limit: "512m"
+    networks:
+      - nephro-net
+
+  ops-service:
+    build:
+      context: ./BackEnd/microservices/ops-service
+    container_name: nephro-ops-service
+    restart: unless-stopped
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      SPRING_DATASOURCE_URL: ${OPS_DB_URL:-jdbc:postgresql://ep-cool-breeze-agqhhjlc.c-2.eu-central-1.aws.neon.tech/nephros_ops_service_db?sslmode=require&channel_binding=require}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-neondb_owner}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-npg_Zb1Kda5LPlin}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
+      EUREKA_INSTANCE_HOSTNAME: ops-service
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
+      ENVIRONMENT: docker
+    ports:
+      - "8082:8082"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      keycloak:
+        condition: service_started
+    cpus: "0.60"
+    mem_limit: "640m"
+    networks:
+      - nephro-net
+
+  core-ops-service:
+    build:
+      context: ./BackEnd/microservices/core-ops-service
+    container_name: nephro-core-ops-service
+    restart: unless-stopped
+    environment:
+      SERVICE_NAME: core-ops-service
+      PORT: 8086
+      CORE_OPS_DB_URL: ${CORE_OPS_DB_URL:-postgresql://neondb_owner:npg_Zb1Kda5LPlin@ep-cool-breeze-agqhhjlc-pooler.c-2.eu-central-1.aws.neon.tech:5432/nephros_core_ops_service_db?sslmode=require}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://admin:admin123@rabbitmq:5672/%2F}
+    ports:
+      - "8086:8086"
+    depends_on:
+      - rabbitmq
+    cpus: "0.60"
+    mem_limit: "640m"
+    networks:
+      - nephro-net
+
+  pharmacy-service:
+    build:
+      context: ./BackEnd/microservices/pharmacy-service
+    container_name: nephro-pharmacy-service
+    restart: unless-stopped
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://ep-cool-breeze-agqhhjlc.c-2.eu-central-1.aws.neon.tech/nephros_pharmacy_db?sslmode=require&channel_binding=require}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-neondb_owner}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-npg_Zb1Kda5LPlin}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
+      EUREKA_INSTANCE_HOSTNAME: pharmacy-service
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
+      USER_SERVICE_BASE_URL: http://user-service:8090
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-my-super-secret-internal-key}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      ENVIRONMENT: docker
+    ports:
+      - "8088:8088"
+    depends_on:
+      - config-server
+      - eureka
+      - keycloak
+      - user-service
+    cpus: "0.60"
+    mem_limit: "640m"
+    networks:
+      - nephro-net
+
+  procedure-service:
+    build:
+      context: ./BackEnd/microservices/procedure-service
+    container_name: nephro-procedure-service
+    restart: unless-stopped
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
+      EUREKA_INSTANCE_HOSTNAME: procedure-service
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/nephrospaidi
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
+      TWILIO_WHATSAPP_ENABLED: ${TWILIO_WHATSAPP_ENABLED:-false}
+      TWILIO_WHATSAPP_ACCOUNT_SID: ${TWILIO_WHATSAPP_ACCOUNT_SID:-}
+      TWILIO_WHATSAPP_AUTH_TOKEN: ${TWILIO_WHATSAPP_AUTH_TOKEN:-}
+      TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM:-whatsapp:+14155238886}
+      TWILIO_WHATSAPP_DEFAULT_RECIPIENT: ${TWILIO_WHATSAPP_DEFAULT_RECIPIENT:-}
+      TWILIO_WHATSAPP_API_BASE_URL: ${TWILIO_WHATSAPP_API_BASE_URL:-https://api.twilio.com}
+      RESEND_ENABLED: ${RESEND_ENABLED:-false}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-onboarding@resend.dev}
+      RESEND_DEMO_RECIPIENT: ${RESEND_DEMO_RECIPIENT:-}
+      ENVIRONMENT: docker
+    ports:
+      - "8089:8089"
+    depends_on:
+      - config-server
+      - eureka
+      - keycloak
+    cpus: "0.60"
+    mem_limit: "640m"
+    networks:
+      - nephro-net
+
+  frontend:
+    build:
+      context: ./FrontEnd
+    container_name: nephro-frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    cpus: "0.50"
+    mem_limit: "512m"
+    networks:
+      - nephro-net
+
+networks:
+  nephro-net:
+    name: nephro-net
+
+volumes:
+  rabbitmq_data:

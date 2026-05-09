@@ -1,0 +1,189 @@
+server:
+  port: ${SERVER_PORT:8083}
+
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://config-server:8888}
+  cloud:
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: false
+              lower-case-service-id: true
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOriginPatterns:
+                  - "http://localhost:*"
+                  - "http://127.0.0.1:*"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - PATCH
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders:
+                  - "*"
+                allowCredentials: true
+          routes:
+            - id: user-service-api-fallback
+              uri: ${USER_SERVICE_URI:http://localhost:8090}
+              order: -100
+              predicates:
+                - Path=/api/users/**,/api/auth/**
+
+            - id: user-service-openapi
+              uri: ${USER_SERVICE_URI:http://localhost:8090}
+              predicates:
+                - Path=/v3/api-docs/user-service
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: administration-service-api-fallback
+              uri: ${ADMINISTRATION_SERVICE_URI:http://localhost:8087}
+              order: -100
+              predicates:
+                - Path=/api/patients/**,/api/contracts/**,/api/observability/**
+
+            - id: administration-service-openapi
+              uri: ${ADMINISTRATION_SERVICE_URI:http://localhost:8087}
+              predicates:
+                - Path=/v3/api-docs/administration-service
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: administration-service-structure-api-fallback
+              uri: ${ADMINISTRATION_SERVICE_URI:http://localhost:8087}
+              order: -100
+              predicates:
+                - Path=/api/hospital-structure/**,/api/hospital-resources/**,/api/staff-assignments/**
+              filters:
+                - RewritePath=/api/?(.*), /$1
+
+            - id: clinical-service-api-fallback
+              uri: ${CLINICAL_SERVICE_URI:http://localhost:8084}
+              order: -100
+              predicates:
+                - Path=/api/clinical/**
+              filters:
+                - RewritePath=/api/clinical/?(?<segment>.*), /clinical/$\{segment}
+
+            - id: clinical-service-openapi
+              uri: ${CLINICAL_SERVICE_URI:http://localhost:8084}
+              predicates:
+                - Path=/v3/api-docs/clinical-service
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: communication-service-api-fallback
+              uri: ${COMMUNICATION_SERVICE_URI:http://localhost:8085}
+              order: -100
+              predicates:
+                - Path=/api/communication/**,/api/appointments/**
+
+            - id: communication-service-openapi
+              uri: ${COMMUNICATION_SERVICE_URI:http://localhost:8085}
+              predicates:
+                - Path=/v3/api-docs/communication-service
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: procedure-service-api-fallback
+              uri: ${PROCEDURE_SERVICE_URI:http://localhost:8089}
+              order: -100
+              predicates:
+                - Path=/api/procedures/**
+
+            - id: procedure-service-openapi
+              uri: ${PROCEDURE_SERVICE_URI:http://localhost:8089}
+              predicates:
+                - Path=/v3/api-docs/procedure-service
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: pharmacy-service-api-fallback
+              uri: ${PHARMACY_SERVICE_URI:http://localhost:8088}
+              order: -100
+              predicates:
+                - Path=/api/pharmacy/**
+              filters:
+                - RewritePath=/api/pharmacy/?(.*), /api/$1
+
+            - id: pharmacy-medications-api-fallback
+              uri: ${PHARMACY_SERVICE_URI:http://localhost:8088}
+              order: -100
+              predicates:
+                - Path=/api/medications/**
+
+            - id: pharmacy-service-openapi
+              uri: ${PHARMACY_SERVICE_URI:http://localhost:8088}
+              predicates:
+                - Path=/v3/api-docs/pharmacy-service
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: ops-service-api-fallback
+              uri: ${OPS_SERVICE_URI:http://localhost:8082}
+              order: -100
+              predicates:
+                - Path=/api/ops/**
+              filters:
+                - RewritePath=/api/ops/?(.*), /api/$1
+
+            - id: ops-service-openapi
+              uri: ${OPS_SERVICE_URI:http://localhost:8082}
+              predicates:
+                - Path=/v3/api-docs/ops-service
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: core-ops-service-api-fallback
+              uri: ${CORE_OPS_SERVICE_URI:http://localhost:8086}
+              order: -100
+              predicates:
+                - Path=/api/core-ops/**
+              filters:
+                - RewritePath=/api/core-ops/?(.*), /api/$1
+
+            - id: core-ops-service-openapi
+              uri: ${CORE_OPS_SERVICE_URI:http://localhost:8086}
+              predicates:
+                - Path=/v3/api-docs/core-ops-service
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: egfr-ml-service-api-fallback
+              uri: ${EGFR_ML_SERVICE_URI:http://localhost:8092}
+              order: -100
+              predicates:
+                - Path=/api/egfr-ml/**
+              filters:
+                - RewritePath=/api/egfr-ml/?(.*), /$1
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/nephrospaidi}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/nephrospaidi}/protocol/openid-connect/certs}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://eureka:8761/eureka}
+  instance:
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:api-gateway}
+
+management:
+  endpoint:
+    gateway:
+      access: read-only
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

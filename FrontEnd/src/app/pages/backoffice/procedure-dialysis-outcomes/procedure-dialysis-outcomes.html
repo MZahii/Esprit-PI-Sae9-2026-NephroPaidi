@@ -1,0 +1,115 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Dialysis Outcomes</h5>
+    </div>
+
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a routerLink="/backoffice/dashboard">Home</a>
+      </li>
+      <li class="breadcrumb-item">Procedure Service</li>
+      <li class="breadcrumb-item">Dialysis Outcomes</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="row g-4">
+    <div class="col-12 col-xl-4">
+      <div class="card stretch stretch-full">
+        <div class="card-header">
+          <h5 class="card-title">Create Outcome</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Session</label>
+            <select class="form-select" [(ngModel)]="selectedSessionId">
+              <option *ngFor="let session of sessions" [value]="session.id">
+                {{ getSessionDisplay(session.id) }}
+              </option>
+            </select>
+          </div>
+          <button type="button" class="btn btn-primary w-100" (click)="createOutcome()" [disabled]="saving">
+            {{ saving ? 'Saving...' : 'Create Outcome' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-xl-8">
+      <div class="card stretch stretch-full">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">Outcomes List</h5>
+          <button type="button" class="btn btn-light btn-sm" (click)="loadInitialData()">
+            Refresh
+          </button>
+        </div>
+
+        <div class="card-body">
+          <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
+          <div *ngIf="successMessage" class="alert alert-success mb-3">{{ successMessage }}</div>
+          <div *ngIf="loading" class="empty-state">Loading outcomes...</div>
+
+          <div class="mb-3" *ngIf="!loading">
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="searchTerm"
+              placeholder="Filter by patient/session"
+            />
+          </div>
+
+          <div class="table-responsive" *ngIf="!loading">
+            <table class="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Patient / Session</th>
+                  <th>Validated</th>
+                  <th>Summary</th>
+                  <th class="text-end">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="filteredOutcomes.length === 0">
+                  <td colspan="4" class="empty-state">No dialysis outcomes found yet.</td>
+                </tr>
+                <tr *ngFor="let outcome of filteredOutcomes">
+                  <td>{{ getSessionDisplay(outcome.sessionId) }}</td>
+                  <td>
+                    <div class="form-check d-inline-flex align-items-center gap-2 mb-0">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        [id]="'validated-' + outcome.id"
+                        [(ngModel)]="editValidated[outcome.id]"
+                      />
+                      <label class="form-check-label small" [for]="'validated-' + outcome.id">
+                        Validated
+                      </label>
+                    </div>
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      class="form-control form-control-sm"
+                      [(ngModel)]="editSummary[outcome.id]"
+                      placeholder="Outcome summary"
+                    />
+                  </td>
+                  <td class="text-end">
+                    <button type="button" class="btn btn-outline-primary btn-sm" (click)="validateOutcome(outcome)">
+                      Save
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

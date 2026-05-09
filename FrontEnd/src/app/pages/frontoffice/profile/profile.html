@@ -1,0 +1,25 @@
+<section class="guardian-overview section" style="padding-top:130px;">
+  <div class="container">
+    <div class="card p-4">
+      <h4 class="mb-3">Guardian Profile</h4>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Full name</label>
+          <input class="form-control" [value]="(user?.firstName || '') + ' ' + (user?.lastName || '')" readonly />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Username</label>
+          <input class="form-control" [value]="user?.username || '-'" readonly />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Email</label>
+          <input class="form-control" [value]="user?.email || '-'" readonly />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Role</label>
+          <input class="form-control" value="GUARDIAN" readonly />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

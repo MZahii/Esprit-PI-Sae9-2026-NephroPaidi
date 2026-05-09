@@ -1,0 +1,25 @@
+.reply-item {
+  border: 1px solid color-mix(in srgb, var(--default-color, #4f5d75) 10%, transparent);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.thread-original {
+  border: 1px solid color-mix(in srgb, var(--accent-color, #2563eb) 25%, transparent);
+  background: color-mix(in srgb, var(--accent-color, #2563eb) 5%, #fff);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.staff-reply {
+  background: #f5f6f8;
+  margin-right: auto;
+}
+
+.modal {
+  z-index: 1055;
+}
+
+.modal-backdrop {
+  z-index: 1050;
+}

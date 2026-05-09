@@ -1,0 +1,132 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Doctor Dashboard</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item active">Home</li>
+      <li class="breadcrumb-item">Dashboard</li>
+    </ul>
+  </div>
+  <div class="page-header-right ms-auto">
+    <button class="btn btn-sm btn-primary" (click)="refresh()" [disabled]="loading">
+      <i class="feather-refresh-cw"></i> Refresh
+    </button>
+  </div>
+</div>
+
+<div class="main-content">
+  <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
+  
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border" role="status">
+      <span class="sr-only">Loading...</span>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && dashboardData" class="row g-3">
+    <!-- Today's Appointments -->
+    <div class="col-lg-6 col-xl-4">
+      <div class="card dashboard-card">
+        <div class="card-header">
+          <h6 class="card-title">Today's Appointments</h6>
+        </div>
+        <div class="card-body">
+          <div class="dashboard-metric">
+            <span class="metric-value">{{ dashboardData.todayAppointments?.length || 0 }}</span>
+            <span class="metric-label">Appointments</span>
+          </div>
+          <div *ngIf="dashboardData.todayAppointments && dashboardData.todayAppointments.length > 0" class="mt-3">
+            <small class="text-muted">Next: {{ dashboardData.todayAppointments[0]?.scheduledAt | date: 'short' }}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending Appointment Requests -->
+    <div class="col-lg-6 col-xl-4">
+      <div class="card dashboard-card">
+        <div class="card-header">
+          <h6 class="card-title">Pending Requests</h6>
+        </div>
+        <div class="card-body">
+          <div class="dashboard-metric">
+            <span class="metric-value text-warning">{{ dashboardData.pendingAppointmentRequests }}</span>
+            <span class="metric-label">Appointment Requests</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lab Status -->
+    <div class="col-lg-6 col-xl-4">
+      <div class="card dashboard-card">
+        <div class="card-header">
+          <h6 class="card-title">Lab Requests</h6>
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <span class="badge bg-warning">{{ dashboardData.pendingLabRequests }}</span>
+              <small class="text-muted ms-2">Pending</small>
+            </div>
+            <div>
+              <span class="badge bg-success">{{ dashboardData.completedLabRequests }}</span>
+              <small class="text-muted ms-2">Completed</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Surgery Indications -->
+    <div class="col-lg-6 col-xl-4">
+      <div class="card dashboard-card">
+        <div class="card-header">
+          <h6 class="card-title">Surgery Indications</h6>
+        </div>
+        <div class="card-body">
+          <div class="dashboard-metric">
+            <span class="metric-value text-info">{{ dashboardData.surgeriesIndicationsSent }}</span>
+            <span class="metric-label">Sent to Receptionist</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hospitalized Patients -->
+    <div class="col-lg-6 col-xl-4">
+      <div class="card dashboard-card">
+        <div class="card-header">
+          <h6 class="card-title">Hospitalized Patients</h6>
+        </div>
+        <div class="card-body">
+          <div class="dashboard-metric">
+            <span class="metric-value text-danger">{{ dashboardData.hospitalizedPatients }}</span>
+            <span class="metric-label">Currently Hospitalized</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-lg-6 col-xl-4">
+      <div class="card dashboard-card">
+        <div class="card-header">
+          <h6 class="card-title">Quick Actions</h6>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <a href="/backoffice/appointments" class="btn btn-sm btn-outline-primary">View Appointments</a>
+            <a href="/backoffice/lab-inbox" class="btn btn-sm btn-outline-info">Lab Requests</a>
+            <a href="/backoffice/discharge-follow-up" class="btn btn-sm btn-outline-success">Follow-Up Lists</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-muted text-center mt-3">
+    <small>Last refreshed: {{ lastRefresh | date: 'short' }}</small>
+  </div>
+</div>

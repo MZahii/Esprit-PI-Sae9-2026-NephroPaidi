@@ -1,0 +1,134 @@
+.guardian-calendar {
+  .section-title {
+    font-weight: 700;
+  }
+
+  .calendar-controls {
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.35rem 0.75rem;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+  }
+
+  .calendar-month-label {
+    font-weight: 600;
+    min-width: 140px;
+    text-align: center;
+  }
+
+  .calendar-grid {
+    background: #fff;
+    border-radius: 1rem;
+    padding: 1rem;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  }
+
+  .calendar-weekdays,
+  .calendar-week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+  }
+
+  .weekday {
+    text-align: center;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6b7280;
+  }
+
+  .calendar-day {
+    min-height: 120px;
+    border-radius: 0.75rem;
+    background: #f8fafc;
+    padding: 0.5rem;
+    position: relative;
+    border: 1px solid transparent;
+  }
+
+  .calendar-day.other-month {
+    background: #f1f5f9;
+    color: #9ca3af;
+  }
+
+  .calendar-day.today {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+  }
+
+  .day-number {
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .day-events {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .event-pill {
+    border: none;
+    text-align: left;
+    border-radius: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    background: #e8f1ff;
+    color: #1d4ed8;
+    font-size: 0.75rem;
+  }
+
+  .event-time {
+    font-weight: 600;
+    margin-right: 0.25rem;
+  }
+
+  .event-more {
+    font-size: 0.7rem;
+    color: #64748b;
+  }
+}
+
+.appointment-details {
+  position: fixed;
+  right: 1.5rem;
+  top: 6.5rem;
+  width: 320px;
+  z-index: 1050;
+
+  .details-card {
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+    padding: 1rem;
+  }
+
+  .details-header h5 {
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.35rem 0;
+    font-size: 0.85rem;
+  }
+
+  .detail-row span {
+    color: #64748b;
+  }
+
+  .details-actions {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 992px) {
+  .appointment-details {
+    position: static;
+    width: 100%;
+    margin-top: 1.5rem;
+  }
+}

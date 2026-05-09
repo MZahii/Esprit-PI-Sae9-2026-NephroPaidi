@@ -1,0 +1,335 @@
+<div class="phx-page">
+
+  <!-- ── Page Header ─────────────────────────────────────────────────────── -->
+  <div class="phx-header">
+    <div class="phx-header-left">
+      <div class="phx-header-icon" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">
+        <i class="bi bi-bell-fill"></i>
+      </div>
+      <div>
+        <h4 class="phx-title">Stock Alerts</h4>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item"><a routerLink="/backoffice/pharmacy/medications">Pharmacy</a></li>
+            <li class="breadcrumb-item active">Alerts</li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="phx-btn phx-btn-ghost phx-btn-sm" (click)="load()">
+        <i class="bi bi-arrow-clockwise"></i> Refresh
+      </button>
+      <button class="phx-btn phx-btn-alert" (click)="showEmailModal=true">
+        <i class="bi bi-envelope-fill"></i> Send Alert Email
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Stat Cards ──────────────────────────────────────────────────────── -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+      <div class="phx-stat-card phx-stat-red">
+        <div class="phx-stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        <div class="phx-stat-body">
+          <div class="phx-stat-value">{{ totalAlerts }}</div>
+          <div class="phx-stat-label">Total Alerts</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="phx-stat-card phx-stat-orange">
+        <div class="phx-stat-icon"><i class="bi bi-capsule-pill"></i></div>
+        <div class="phx-stat-body">
+          <div class="phx-stat-value">{{ medicationAlerts().length }}</div>
+          <div class="phx-stat-label">Medication Alerts</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="phx-stat-card phx-stat-blue">
+        <div class="phx-stat-icon"><i class="bi bi-tools"></i></div>
+        <div class="phx-stat-body">
+          <div class="phx-stat-value">{{ equipmentAlerts().length }}</div>
+          <div class="phx-stat-label">Equipment Alerts</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="phx-stat-card phx-stat-teal">
+        <div class="phx-stat-icon"><i class="bi bi-droplet-half"></i></div>
+        <div class="phx-stat-body">
+          <div class="phx-stat-value">{{ dialysisAlerts().length }}</div>
+          <div class="phx-stat-label">Dialysis Alerts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Loading ─────────────────────────────────────────────────────────── -->
+  <div class="phx-loader" *ngIf="loading()">
+    <div class="spinner-border text-danger"></div>
+    <span>Loading alerts...</span>
+  </div>
+
+  <!-- ── All Clear ───────────────────────────────────────────────────────── -->
+  <div class="phx-all-clear" *ngIf="!loading() && totalAlerts === 0">
+    <i class="bi bi-check-circle-fill"></i>
+    <h5>All stock levels are healthy!</h5>
+    <p>No items are below their minimum stock threshold at this time.</p>
+  </div>
+
+  <div *ngIf="!loading() && totalAlerts > 0">
+
+    <!-- ── Medication Alerts ─────────────────────────────────────────────── -->
+    <div class="phx-card mb-4" *ngIf="medicationAlerts().length > 0">
+      <div class="phx-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-capsule-pill text-danger"></i>
+          <span class="fw-700">Medication Alerts</span>
+        </div>
+        <span class="phx-badge phx-badge-danger">{{ medicationAlerts().length }} item(s)</span>
+      </div>
+      <div class="table-responsive">
+        <table class="phx-table">
+          <thead>
+            <tr>
+              <th>Medication</th>
+              <th>Form</th>
+              <th class="text-center">Current Stock</th>
+              <th class="text-center">Minimum Stock</th>
+              <th class="text-center">Deficit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of medicationAlerts()" class="phx-row-danger">
+              <td class="fw-700">{{ a.name }}</td>
+              <td><span class="phx-pill phx-pill-indigo">{{ a.form | titlecase }}</span></td>
+              <td class="text-center fw-700 text-danger">{{ a.currentTotalStock }}</td>
+              <td class="text-center text-muted">{{ a.minimumStock }}</td>
+              <td class="text-center"><span class="phx-pill phx-pill-danger">−{{ a.deficit }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Equipment Alerts ──────────────────────────────────────────────── -->
+    <div class="phx-card mb-4" *ngIf="equipmentAlerts().length > 0">
+      <div class="phx-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-tools" style="color:#2563eb"></i>
+          <span class="fw-700">Equipment Alerts</span>
+        </div>
+        <span class="phx-badge phx-badge-primary">{{ equipmentAlerts().length }} item(s)</span>
+      </div>
+      <div class="table-responsive">
+        <table class="phx-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Category</th>
+              <th>Unit</th>
+              <th class="text-center">Current Stock</th>
+              <th class="text-center">Minimum Stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of equipmentAlerts()"
+              [class.phx-row-danger]="item.currentStock === 0"
+              [class.phx-row-warning]="item.currentStock !== 0">
+              <td class="fw-700">{{ item.name }}</td>
+              <td><span class="phx-pill phx-pill-indigo">{{ item.category }}</span></td>
+              <td class="text-muted">{{ item.unit }}</td>
+              <td class="text-center fw-700" [class.text-danger]="item.currentStock===0" [class.text-warning]="item.currentStock!==0">
+                {{ item.currentStock }}
+                <span class="phx-pill phx-pill-danger ms-1" *ngIf="item.currentStock===0">OUT</span>
+              </td>
+              <td class="text-center text-muted">{{ item.minimumStock ?? '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Dialysis Alerts ───────────────────────────────────────────────── -->
+    <div class="phx-card mb-4" *ngIf="dialysisAlerts().length > 0">
+      <div class="phx-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-droplet-half" style="color:#0d9488"></i>
+          <span class="fw-700">Dialysis Material Alerts</span>
+        </div>
+        <span class="phx-badge phx-badge-teal">{{ dialysisAlerts().length }} item(s)</span>
+      </div>
+      <div class="table-responsive">
+        <table class="phx-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Category</th>
+              <th>Unit</th>
+              <th class="text-center">Current Stock</th>
+              <th class="text-center">Minimum Stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of dialysisAlerts()"
+              [class.phx-row-danger]="item.currentStock === 0"
+              [class.phx-row-warning]="item.currentStock !== 0">
+              <td class="fw-700">{{ item.name }}</td>
+              <td><span class="phx-pill phx-pill-teal">{{ item.category }}</span></td>
+              <td class="text-muted">{{ item.unit }}</td>
+              <td class="text-center fw-700" [class.text-danger]="item.currentStock===0" [style.color]="item.currentStock!==0 ? '#d97706' : null">
+                {{ item.currentStock }}
+                <span class="phx-pill phx-pill-danger ms-1" *ngIf="item.currentStock===0">OUT</span>
+              </td>
+              <td class="text-center text-muted">{{ item.minimumStock ?? '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Email Alert Modal ────────────────────────────────────────────────── -->
+<div class="phx-overlay" *ngIf="showEmailModal" (click)="showEmailModal=false"></div>
+<div class="phx-modal" [class.phx-modal-open]="showEmailModal">
+  <div class="phx-modal-dialog">
+    <div class="phx-modal-header" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">
+      <div class="d-flex align-items-center gap-2 text-white">
+        <i class="bi bi-envelope-fill fs-5"></i>
+        <h5 class="mb-0">Send Low-Stock Alert</h5>
+      </div>
+      <button class="phx-close-btn" (click)="showEmailModal=false"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="phx-modal-body">
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 16px;display:flex;gap:12px;margin-bottom:18px;">
+        <i class="bi bi-info-circle-fill" style="color:#dc2626;font-size:18px;flex-shrink:0;margin-top:1px;"></i>
+        <p style="margin:0;font-size:13.5px;color:#7f1d1d;line-height:1.5;">An email report will be sent listing all items currently below their minimum stock threshold across all categories.</p>
+      </div>
+      <div class="phx-field">
+        <label>Recipient Email <span class="text-danger">*</span></label>
+        <input type="email" class="phx-input" [(ngModel)]="alertEmail" placeholder="pharmacist@hospital.com"/>
+      </div>
+    </div>
+    <div class="phx-modal-footer">
+      <button class="phx-btn phx-btn-ghost" (click)="showEmailModal=false">Cancel</button>
+      <button class="phx-btn phx-btn-alert" (click)="sendEmail()" [disabled]="!alertEmail || sendingEmail()">
+        <span *ngIf="sendingEmail()" class="phx-spin me-1"></span>
+        <i *ngIf="!sendingEmail()" class="bi bi-send-fill"></i>
+        {{ sendingEmail() ? 'Sending…' : 'Send Alert' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ────────────────────────────────────────────────────────────── -->
+<div class="phx-toast" [class.phx-toast-show]="toast()"
+  [class.phx-toast-success]="toastOk()" [class.phx-toast-error]="!toastOk()">
+  <i class="bi" [class.bi-check-circle-fill]="toastOk()" [class.bi-x-circle-fill]="!toastOk()"></i>
+  {{ toast() }}
+</div>
+
+<!-- ── Shared Styles ─────────────────────────────────────────────────────── -->
+<style>
+@keyframes fadeSlideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes toastIn { 0% { opacity:0; transform:translateY(16px) scale(.95); } 70% { transform:translateY(-3px) scale(1.01); } 100% { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes pageEnter   { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes headerSlide { from { opacity:0; transform:translateX(-18px); } to { opacity:1; transform:translateX(0); } }
+@keyframes statPop     { from { opacity:0; transform:translateY(16px) scale(.92); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes numPop      { from { opacity:0; transform:scale(.6); } to { opacity:1; transform:scale(1); } }
+@keyframes rowIn       { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+@keyframes overlayIn   { to { background:rgba(15,23,42,.45); backdrop-filter:blur(3px); } }
+
+:root { --phx-primary:#dc2626; }
+
+.phx-page { padding:0; background:transparent; min-height:auto; animation:pageEnter .45s cubic-bezier(.22,1,.36,1) both; }
+.phx-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; border:1px solid #fecaca; border-radius:16px; background:linear-gradient(130deg,#fff5f5 0%,#fee2e2 100%); padding:18px 20px; animation:headerSlide .4s cubic-bezier(.22,1,.36,1) .05s both; }
+.phx-header-left { display:flex; align-items:center; gap:16px; }
+.phx-header-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; transition:transform .3s cubic-bezier(.34,1.56,.64,1); }
+.phx-header-icon:hover { transform:rotate(-6deg) scale(1.12); }
+.phx-title { font-size:22px; font-weight:800; color:#1e293b; margin:0; }
+
+.phx-btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:8px; font-weight:600; font-size:13.5px; border:none; cursor:pointer; transition:transform .2s, opacity .15s; }
+.phx-btn:not(:disabled):hover { transform:translateY(-2px); }
+.phx-btn:not(:disabled):active { transform:translateY(0) scale(.97); }
+.phx-btn:disabled { opacity:.5; cursor:not-allowed; transform:none !important; }
+.phx-btn-sm { padding:6px 13px; font-size:12.5px; }
+.phx-btn-alert { background:#dc2626 !important; color:#fff !important; }
+.phx-btn-ghost { background:#f8fafc !important; border:1px solid #e2e8f0 !important; color:#334155 !important; }
+.phx-spin { display:inline-block; width:13px; height:13px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; }
+
+.phx-card { background:#fff; border-radius:16px; border:1px solid #dbe7f5; box-shadow:none; overflow:hidden; margin-bottom:20px; animation:fadeSlideIn .4s ease .1s both; }
+.phx-card:hover { box-shadow:0 8px 30px rgba(0,0,0,.09); transform:translateY(-2px); transition:transform .25s ease, box-shadow .25s ease; }
+.phx-card-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #e3edf9; background:#f8fbff; }
+.fw-700 { font-weight:700; } .fw-600 { font-weight:600; }
+
+.phx-badge { padding:4px 12px; border-radius:999px; font-size:12px; font-weight:700; }
+.phx-badge-danger  { background:#fee2e2; color:#dc2626; }
+.phx-badge-primary { background:#dbeafe; color:#1d4ed8; }
+.phx-badge-teal    { background:#ccfbf1; color:#0f766e; }
+.phx-pill { display:inline-block; padding:4px 11px; border-radius:999px; font-size:12px; font-weight:700; }
+.phx-pill-indigo { background:#dbeafe; color:#1d4ed8; }
+.phx-pill-teal   { background:#ccfbf1; color:#0f766e; }
+.phx-pill-danger { background:#fee2e2; color:#dc2626; }
+
+.phx-table { width:100%; border-collapse:collapse; }
+.phx-table thead tr { background:#fafbff; }
+.phx-table th { padding:12px 16px; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#64748b; border-bottom:1px solid #f1f5f9; white-space:nowrap; }
+.phx-table td { padding:14px 16px; border-bottom:1px solid #f8fafc; font-size:13.5px; color:#334155; }
+.phx-table tbody tr:last-child td { border-bottom:none; }
+.phx-table tbody tr { animation:rowIn .25s ease both; }
+.phx-table tbody tr:hover td { background:#fff5f5 !important; }
+.phx-row-danger  { background:#fff5f5 !important; }
+.phx-row-warning { background:#fffbeb !important; }
+
+.phx-all-clear { text-align:center; padding:60px 20px; }
+.phx-all-clear i { font-size:48px; color:#16a34a; display:block; margin-bottom:16px; }
+.phx-all-clear h5 { font-weight:700; color:#15803d; margin-bottom:8px; }
+.phx-all-clear p { color:#64748b; font-size:14px; margin:0; }
+.phx-loader { display:flex; align-items:center; gap:12px; justify-content:center; padding:60px; color:#64748b; }
+
+.phx-overlay { position:fixed; inset:0; z-index:1040; background:rgba(15,23,42,0); backdrop-filter:blur(0px); animation:overlayIn .25s ease forwards; }
+.phx-modal { position:fixed; inset:0; z-index:1050; display:flex; align-items:center; justify-content:center; pointer-events:none; opacity:0; transition:opacity .25s ease; }
+.phx-modal.phx-modal-open { pointer-events:auto; opacity:1; }
+.phx-modal-dialog { background:#fff; border-radius:20px; width:100%; max-width:480px; box-shadow:0 24px 80px rgba(0,0,0,.22); overflow:hidden; transform:translateY(-16px) scale(.97); transition:transform .3s cubic-bezier(.34,1.56,.64,1); }
+.phx-modal-open .phx-modal-dialog { transform:translateY(0) scale(1); }
+.phx-modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px; }
+.phx-modal-body { padding:24px; max-height:60vh; overflow-y:auto; }
+.phx-modal-footer { display:flex; justify-content:flex-end; gap:10px; padding:16px 24px; border-top:1px solid #f1f5f9; background:#fafbff; }
+.phx-close-btn { background:rgba(255,255,255,.2); border:none; color:#fff; width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; transition:background .15s, transform .15s; }
+.phx-close-btn:hover { background:rgba(255,255,255,.35); transform:scale(1.1); }
+
+.phx-field { margin-bottom:18px; }
+.phx-field label { display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:6px; }
+.phx-input { width:100%; padding:10px 13px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:14px; outline:none; transition:border-color .2s; background:#fff; box-sizing:border-box; }
+.phx-input:focus { border-color:#dc2626; box-shadow:0 0 0 3px rgba(220,38,38,.08); }
+
+.phx-stat-card { border-radius:14px; padding:16px 18px; display:flex; align-items:center; gap:14px; border:1.5px solid transparent; transition:transform .2s ease, box-shadow .2s ease; animation:statPop .45s cubic-bezier(.34,1.56,.64,1) both; }
+.phx-stat-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,.1); }
+.phx-stat-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.phx-stat-body { flex:1; }
+.phx-stat-value { font-size:26px; font-weight:800; line-height:1; animation:numPop .5s cubic-bezier(.34,1.56,.64,1) .3s both; }
+.phx-stat-label { font-size:12px; font-weight:600; margin-top:4px; opacity:.7; }
+.phx-stat-red    { background:linear-gradient(135deg,#fff5f5,#fee2e2); border-color:#fecaca; }
+.phx-stat-red    .phx-stat-icon { background:#ef4444; color:#fff; }
+.phx-stat-red    .phx-stat-value { color:#dc2626; }
+.phx-stat-orange { background:linear-gradient(135deg,#fff7ed,#ffedd5); border-color:#fed7aa; }
+.phx-stat-orange .phx-stat-icon { background:#ea580c; color:#fff; }
+.phx-stat-orange .phx-stat-value { color:#c2410c; }
+.phx-stat-blue   { background:linear-gradient(135deg,#eff6ff,#dbeafe); border-color:#bfdbfe; }
+.phx-stat-blue   .phx-stat-icon { background:#2563eb; color:#fff; }
+.phx-stat-blue   .phx-stat-value { color:#1d4ed8; }
+.phx-stat-teal   { background:linear-gradient(135deg,#f0fdfa,#ccfbf1); border-color:#99f6e4; }
+.phx-stat-teal   .phx-stat-icon { background:#0d9488; color:#fff; }
+.phx-stat-teal   .phx-stat-value { color:#0f766e; }
+
+.phx-toast { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; align-items:center; gap:10px; padding:14px 20px; border-radius:14px; font-weight:600; font-size:14px; color:#fff; box-shadow:0 8px 30px rgba(0,0,0,.18); opacity:0; pointer-events:none; transform:translateY(16px) scale(.95); transition:opacity .2s ease, transform .2s ease; }
+.phx-toast.phx-toast-show { opacity:1; pointer-events:auto; transform:translateY(0) scale(1); animation:toastIn .4s cubic-bezier(.34,1.56,.64,1) forwards; }
+.phx-toast-success { background:linear-gradient(135deg,#16a34a,#15803d); }
+.phx-toast-error   { background:linear-gradient(135deg,#ef4444,#dc2626); }
+</style>

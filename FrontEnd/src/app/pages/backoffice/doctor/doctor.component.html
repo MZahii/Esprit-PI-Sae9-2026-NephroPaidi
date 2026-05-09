@@ -1,0 +1,104 @@
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Doctor Overview</h5>
+    </div>
+
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a routerLink="/backoffice/dashboard">Home</a>
+      </li>
+      <li class="breadcrumb-item">Doctor</li>
+    </ul>
+  </div>
+
+  <div class="page-header-right ms-auto">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <span class="badge dashboard-role-badge" [ngClass]="roleBadgeClass">
+        {{ role }}
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-content doctor-page">
+  <div class="row g-4">
+
+    <!-- WELCOME -->
+    <div class="col-12">
+      <div class="card stretch stretch-full welcome-card overflow-hidden">
+        <div class="card-body">
+          <div class="row align-items-center gy-4">
+            <div class="col-lg-8">
+              <span class="welcome-badge">DOCTOR DASHBOARD</span>
+              <h2 class="welcome-title">Welcome, {{ displayName }}</h2>
+              <p class="welcome-text">
+                Track your consultations, manage patient follow-ups, and keep your clinical workflow organized.
+              </p>
+            </div>
+
+            <div class="col-lg-4">
+              <div class="profile-mini-card">
+                <div class="profile-mini-header">
+                  <span class="badge" [ngClass]="roleBadgeClass">{{ role }}</span>
+                </div>
+
+                <div class="profile-mini-body">
+                  <div class="profile-line">
+                    <strong>Name:</strong>
+                    <span>{{ displayName }}</span>
+                  </div>
+
+                  <div class="profile-line">
+                    <strong>Email:</strong>
+                    <span>{{ displayEmail }}</span>
+                  </div>
+
+                  <div class="profile-line">
+                    <strong>Status:</strong>
+                    <span class="text-success fw-semibold">Authenticated</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="col-12">
+      <div class="card stretch stretch-full">
+        <div class="card-header">
+          <h5 class="card-title">Clinical Shortcuts</h5>
+        </div>
+
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-lg-4 col-md-6" *ngFor="let action of quickActions">
+              <a
+                class="action-card"
+                [class.disabled]="action.disabled"
+                [routerLink]="action.route || null"
+                [attr.aria-disabled]="action.disabled ? 'true' : null"
+                (click)="action.disabled ? $event.preventDefault() : null"
+              >
+                <div class="action-icon">
+                  <i [class]="action.icon"></i>
+                </div>
+                <div class="action-copy">
+                  <div class="action-title">{{ action.label }}</div>
+                  <div class="action-text">{{ action.description }}</div>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

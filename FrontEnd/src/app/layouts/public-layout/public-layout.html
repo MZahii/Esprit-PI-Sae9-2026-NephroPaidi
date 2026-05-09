@@ -1,0 +1,133 @@
+<header id="header" class="header d-flex align-items-center fixed-top">
+  <div
+    class="header-container container-fluid container-xl position-relative d-flex align-items-center justify-content-between"
+  >
+    <a routerLink="/" class="logo d-flex align-items-center">
+      <img
+        src="assets/frontoffice/img/Logo_fin.png"
+        alt="NephrosPaidi"
+        style="height: 45px; margin-right: 8px;"
+      />
+      <h1 class="sitename">NephrosPaidi</h1>
+    </a>
+
+    <nav id="navmenu" class="navmenu">
+      <ul>
+        <li>
+          <a
+            routerLink="/"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+          >
+            Home
+          </a>
+        </li>
+
+        <li>
+          <a routerLink="/about" routerLinkActive="active">About</a>
+        </li>
+
+        <li>
+          <a routerLink="/services" routerLinkActive="active">Services</a>
+        </li>
+
+        <li>
+          <a routerLink="/doctors" routerLinkActive="active">Doctors</a>
+        </li>
+
+        <li class="dropdown">
+          <a href="javascript:void(0)">
+            <span>More Pages</span>
+            <i class="bi bi-chevron-down toggle-dropdown"></i>
+          </a>
+          <ul>
+            <li><a routerLink="/faq">Frequently Asked Questions</a></li>
+            <li><a routerLink="/terms">Terms</a></li>
+            <li><a routerLink="/privacy">Privacy</a></li>
+          </ul>
+        </li>
+
+        <li>
+          <a routerLink="/contact" routerLinkActive="active">Contact</a>
+        </li>
+      </ul>
+
+      <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+    </nav>
+
+    <a class="btn-getstarted" routerLink="/login">Login</a>
+  </div>
+</header>
+
+<main class="main">
+  <router-outlet></router-outlet>
+</main>
+
+<footer id="footer" class="footer position-relative light-background">
+  <div class="container footer-top">
+    <div class="row gy-4">
+      <div class="col-lg-4 col-md-6 footer-about">
+        <a routerLink="/" class="logo d-flex align-items-center">
+          <span class="sitename">NephrosPaidi</span>
+        </a>
+
+        <div class="footer-contact pt-3">
+          <p>1, 2 rue André Ampère - 2083 -</p>
+          <p>Pôle Technologique - El Ghazala.</p>
+          <p class="mt-3"><strong>Phone:</strong> <span>+216 99-911-347</span></p>
+          <p><strong>Email:</strong> <span>NephrosPaidi@esprit.tn</span></p>
+        </div>
+      </div>
+
+      <div class="col-lg-2 col-md-3 footer-links">
+        <h4>Useful Links</h4>
+        <ul>
+          <li><a routerLink="/">Home</a></li>
+          <li><a routerLink="/about">About us</a></li>
+          <li><a routerLink="/services">Services</a></li>
+          <li><a routerLink="/terms">Terms of service</a></li>
+          <li><a routerLink="/privacy">Privacy policy</a></li>
+        </ul>
+      </div>
+
+      <div class="col-lg-2 col-md-3 footer-links">
+        <h4>Our Services</h4>
+        <ul>
+          <li><a routerLink="/services">Kidney Disease Monitoring</a></li>
+          <li><a routerLink="/services">Lab Results Tracking</a></li>
+          <li><a routerLink="/services">Treatment Follow-up</a></li>
+          <li><a routerLink="/services">Pediatric Consultations</a></li>
+          <li><a routerLink="/services">AI Support Tools</a></li>
+        </ul>
+      </div>
+
+      <div class="col-lg-2 col-md-3 footer-links">
+        <h4>About Platform</h4>
+        <ul>
+          <li><a routerLink="/about">Smart Monitoring System</a></li>
+          <li><a routerLink="/login">Doctor Dashboard</a></li>
+          <li><a routerLink="/login">Parent Portal</a></li>
+          <li><a routerLink="/privacy">Secure Medical Data</a></li>
+          <li><a routerLink="/services">AI Support Tools</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="container copyright text-center mt-4">
+    <p>
+      © 2026
+      <span>NephrosPaidi</span>
+      <strong class="px-1 sitename">— Pediatric Nephrology Digital Platform.</strong>
+      <span>All rights reserved.</span>
+    </p>
+  </div>
+</footer>
+
+<a
+  href="#"
+  id="scroll-top"
+  class="scroll-top d-flex align-items-center justify-content-center"
+>
+  <i class="bi bi-arrow-up-short"></i>
+</a>

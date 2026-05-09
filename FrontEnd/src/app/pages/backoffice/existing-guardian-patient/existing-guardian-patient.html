@@ -1,0 +1,168 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Existing Guardian + New Patient</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item">Existing Guardian + Patient</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="row justify-content-center">
+    <div class="col-12">
+      <div class="card stretch stretch-full">
+        <div class="card-header">
+          <h5 class="card-title">Link New Patient To Existing Guardian</h5>
+        </div>
+
+        <div class="card-body">
+          <div *ngIf="successMessage" class="alert alert-success mb-3">{{ successMessage }}</div>
+          <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-xl-5">
+              <label class="form-label fw-semibold">Search Guardian</label>
+              <input
+                class="form-control"
+                placeholder="Search by name, username, email, phone, CIN, DOB, sex..."
+                [(ngModel)]="guardianSearch"
+              />
+              <small class="text-muted">Search with any guardian field to quickly find account.</small>
+            </div>
+            <div class="col-xl-7">
+              <label class="form-label fw-semibold">Select Existing Guardian Account</label>
+              <select
+                class="form-control"
+                [(ngModel)]="selectedGuardianId"
+                (ngModelChange)="onGuardianChange()"
+              >
+                <option [ngValue]="null">Select guardian</option>
+                <option *ngFor="let guardian of filteredGuardians" [ngValue]="guardian.id">
+                  {{ guardianName(guardian) }} ({{ guardian.username }}) - {{ guardian.email || 'No email' }}
+                </option>
+              </select>
+              <small class="text-muted">Choose guardian first, then complete new patient profile.</small>
+            </div>
+          </div>
+
+          <div class="guardian-overview mb-4" *ngIf="selectedGuardian as guardian">
+            <div class="overview-title">Selected Guardian Account</div>
+            <div class="overview-grid">
+              <div><strong>Name:</strong> {{ guardianName(guardian) }}</div>
+              <div><strong>Username:</strong> {{ guardian.username }}</div>
+              <div><strong>Email:</strong> {{ guardian.email || '-' }}</div>
+              <div><strong>Phone:</strong> {{ guardian.phone || '-' }}</div>
+              <div><strong>CIN:</strong> {{ guardian.cin || '-' }}</div>
+              <div><strong>Linked Kids:</strong> {{ linkedPatients.length }}</div>
+            </div>
+          </div>
+
+          <div class="linked-patients mb-4" *ngIf="selectedGuardianId">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="mb-0 section-title">Already Linked Patient Profiles</h6>
+              <select class="form-control sort-select" [(ngModel)]="sortDirection">
+                <option value="asc">Name: A -> Z</option>
+                <option value="desc">Name: Z -> A</option>
+              </select>
+            </div>
+            <div *ngIf="loadingGuardianPatients" class="text-muted py-2">Loading linked patients...</div>
+            <div class="table-responsive" *ngIf="!loadingGuardianPatients">
+              <table class="table table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Patient</th>
+                    <th>Age</th>
+                    <th>Sex</th>
+                    <th>Date Of Birth</th>
+                    <th>Blood Type</th>
+                    <th>Allergies</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let patient of sortedLinkedPatients">
+                    <td>{{ patientName(patient) }}</td>
+                    <td>{{ patientAge(patient.dateOfBirth) }}</td>
+                    <td>{{ patient.sex }}</td>
+                    <td>{{ patient.dateOfBirth }}</td>
+                    <td>{{ patient.bloodType || '-' }}</td>
+                    <td>{{ patient.allergies || '-' }}</td>
+                  </tr>
+                  <tr *ngIf="sortedLinkedPatients.length === 0">
+                    <td colspan="6" class="text-center text-muted py-3">
+                      No linked patient profile yet for this guardian.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <form (ngSubmit)="submit()" #f="ngForm">
+            <h6 class="section-title">New Patient Profile Information</h6>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Patient First Name</label>
+                <input class="form-control" name="patientFirstName" [(ngModel)]="form.patientFirstName" minlength="3" required />
+                <small class="text-muted">Minimum 3 letters.</small>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Patient Last Name</label>
+                <input class="form-control" name="patientLastName" [(ngModel)]="form.patientLastName" minlength="3" required />
+                <small class="text-muted">Minimum 3 letters.</small>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Patient Date of Birth</label>
+                <input type="date" class="form-control" name="patientDateOfBirth" [(ngModel)]="form.patientDateOfBirth" [max]="maxPatientBirthDate" required />
+                <small class="text-muted">Date of birth cannot be in the future.</small>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Patient Sex</label>
+                <select class="form-control" name="patientSex" [(ngModel)]="form.patientSex" required>
+                  <option value="" disabled>Select sex</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Blood Type (Optional)</label>
+                <select class="form-control" name="patientBloodType" [(ngModel)]="form.patientBloodType">
+                  <option value="">Select blood type</option>
+                  <option *ngFor="let type of bloodTypeOptions" [value]="type">{{ type }}</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Allergies (Optional)</label>
+                <select class="form-control" name="patientAllergies" [(ngModel)]="form.patientAllergies">
+                  <option value="">Select allergy</option>
+                  <option *ngFor="let allergy of allergyOptions" [value]="allergy">{{ allergy }}</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Chronic Conditions (Optional)</label>
+                <select class="form-control" name="patientChronicConditions" [(ngModel)]="form.patientChronicConditions">
+                  <option value="">Select condition</option>
+                  <option *ngFor="let condition of chronicConditionOptions" [value]="condition">{{ condition }}</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Medical Notes (Optional)</label>
+                <input class="form-control" name="patientMedicalNotes" [(ngModel)]="form.patientMedicalNotes" placeholder="Reception notes" />
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+              <button class="btn btn-primary" type="submit" [disabled]="loading || f.invalid || !selectedGuardianId">
+                {{ loading ? 'CREATING...' : 'LINK NEW PATIENT PROFILE' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

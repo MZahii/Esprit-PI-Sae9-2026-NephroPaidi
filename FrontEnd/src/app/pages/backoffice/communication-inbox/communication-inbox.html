@@ -1,0 +1,258 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Communication Inbox</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item">Inbox</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="card stretch stretch-full">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h5 class="card-title mb-0">Queue: {{ queue }}</h5>
+        <small class="text-muted">
+          <ng-container *ngIf="queue === 'DOCTOR'; else staffQueueHelp">Review nurse escalations and reply back to guardians.</ng-container>
+          <ng-template #staffQueueHelp>Monitor, prioritize, and handle incoming guardian communications.</ng-template>
+        </small>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-light-brand" routerLink="/backoffice/communication/templates">Quick-Reply Templates</a>
+        <button class="btn btn-light-brand" type="button" (click)="toggleFilters()">{{ showFilters ? 'Hide Filters' : 'Advanced Filters' }}</button>
+        <button class="btn btn-light-brand" type="button" (click)="load()">Refresh</button>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="errorMessage" class="alert alert-danger d-flex justify-content-between align-items-center">
+        <span>{{ errorMessage }}</span>
+        <button class="btn btn-sm btn-light-brand" type="button" (click)="load()">Retry</button>
+      </div>
+      <div *ngIf="successMessage" class="alert alert-success d-flex justify-content-between align-items-center">
+        <span>{{ successMessage }}</span>
+        <button class="btn btn-sm btn-light-brand" type="button" (click)="successMessage = ''">Dismiss</button>
+      </div>
+
+      <div class="d-flex gap-2 flex-wrap mb-3">
+        <button class="btn" [ngClass]="activeTab === 'MY_QUEUE' ? 'btn-primary' : 'btn-light-brand'" (click)="selectTab('MY_QUEUE')">
+          Actionable Queue
+        </button>
+        <button class="btn" [ngClass]="activeTab === 'ALL_MESSAGES' ? 'btn-primary' : 'btn-light-brand'" (click)="selectTab('ALL_MESSAGES')">
+          All Messages
+        </button>
+        <button class="btn d-flex align-items-center gap-2" [ngClass]="activeTab === 'URGENT' ? 'btn-primary' : 'btn-light-brand'" (click)="selectTab('URGENT')">
+          Urgent
+          <span class="badge bg-danger">{{ urgentTabCount }}</span>
+        </button>
+      </div>
+
+      <div class="row g-2 mb-3">
+        <div class="col-md-3">
+          <div class="border rounded p-3 h-100">
+            <small class="text-muted d-block">Total Pending</small>
+            <h5 class="mb-0">{{ pendingCount }}</h5>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="border rounded p-3 h-100">
+            <small class="text-muted d-block">Urgent Open</small>
+            <h5 class="mb-0">{{ urgentOpenCount }}</h5>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="border rounded p-3 h-100">
+            <small class="text-muted d-block">First Responses Today</small>
+            <h5 class="mb-0">{{ respondedTodayCount }}</h5>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="border rounded p-3 h-100">
+            <small class="text-muted d-block">Avg. First Response</small>
+            <h5 class="mb-0">{{ avgResponseHours }}</h5>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="border rounded p-3 h-100">
+            <small class="text-muted d-block">{{ queue === 'DOCTOR' ? 'Escalated To You' : 'Escalated Cases' }}</small>
+            <h5 class="mb-0">{{ queue === 'DOCTOR' ? escalatedAssignedToMeCount : escalatedCount }}</h5>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-3" *ngIf="showFilters">
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Search</label>
+              <input class="form-control" placeholder="Patient, subject, content" [(ngModel)]="draftFilters.search" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Patient</label>
+              <select class="form-control" [(ngModel)]="draftFilters.patientId">
+                <option [ngValue]="null">All patients</option>
+                <option *ngFor="let patient of patientOptions" [ngValue]="patient.id">{{ patient.name }}</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Assignment</label>
+              <select class="form-control" [(ngModel)]="draftFilters.assigned">
+                <option *ngFor="let option of assignedFilters" [value]="option">{{ option }}</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Date From</label>
+              <input type="date" class="form-control" [(ngModel)]="draftFilters.dateFrom" />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Date To</label>
+              <input type="date" class="form-control" [(ngModel)]="draftFilters.dateTo" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Status</label>
+              <div class="d-flex flex-wrap gap-3">
+                <label class="form-check-label" *ngFor="let status of statuses">
+                  <input class="form-check-input me-1" type="checkbox" [checked]="isChecked(status, draftFilters.statuses)" (change)="toggleChecked(status, draftFilters.statuses)" />
+                  {{ status }}
+                </label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Priority</label>
+              <div class="d-flex flex-wrap gap-3">
+                <label class="form-check-label" *ngFor="let priority of priorities">
+                  <input class="form-check-input me-1" type="checkbox" [checked]="isChecked(priority, draftFilters.priorities)" (change)="toggleChecked(priority, draftFilters.priorities)" />
+                  {{ priority }}
+                </label>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Type</label>
+              <div class="d-flex flex-wrap gap-3">
+                <label class="form-check-label" *ngFor="let type of types">
+                  <input class="form-check-input me-1" type="checkbox" [checked]="isChecked(type, draftFilters.types)" (change)="toggleChecked(type, draftFilters.types)" />
+                  {{ type }}
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-primary" type="button" (click)="applyFilters()">Apply Filters</button>
+            <button class="btn btn-light-brand" type="button" (click)="clearAllFilters()">Reset All</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 flex-wrap mb-3" *ngIf="activeFilterTags.length > 0">
+        <button class="btn btn-sm btn-light-brand" type="button" *ngFor="let tag of activeFilterTags" (click)="removeTag(tag)">
+          {{ tag }} ✕
+        </button>
+      </div>
+
+      <div class="bulk-toolbar mb-3" *ngIf="!loading && filteredItems.length > 0">
+        <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button class="btn btn-sm btn-light-brand" type="button" (click)="toggleSelectVisible()">
+              {{ areAllVisibleSelected ? 'Clear Visible' : 'Select Visible' }}
+            </button>
+            <button class="btn btn-sm btn-light-brand" type="button" (click)="clearSelection()" [disabled]="!hasSelection">
+              Clear Selection
+            </button>
+            <span class="text-muted small">{{ selectedCount }} selected</span>
+          </div>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-sm btn-primary" type="button" [disabled]="!hasSelection || bulkActionLoading" (click)="runBulkAction('TAKE')">
+              {{ bulkActionLoading ? 'Processing...' : 'Bulk Take' }}
+            </button>
+            <button class="btn btn-sm btn-light-brand" type="button" [disabled]="!hasSelection || bulkActionLoading" (click)="runBulkAction('MARK_READ')">
+              Mark Read
+            </button>
+            <button class="btn btn-sm btn-light-brand" type="button" [disabled]="!hasSelection || bulkActionLoading" (click)="runBulkAction('UNASSIGN')">
+              Unassign
+            </button>
+            <button class="btn btn-sm btn-outline-danger" type="button" [disabled]="!hasSelection || bulkActionLoading" (click)="runBulkAction('CLOSE')">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="loading" class="placeholder-glow">
+        <p class="placeholder col-12"></p>
+        <p class="placeholder col-12"></p>
+        <p class="placeholder col-10"></p>
+      </div>
+
+      <div class="table-responsive" *ngIf="!loading">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th class="selection-column">
+                <input type="checkbox" [checked]="areAllVisibleSelected" (change)="toggleSelectVisible()" />
+              </th>
+              <th>Created</th>
+              <th>Patient</th>
+              <th>Type</th>
+              <th>Subject & Preview</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Assigned Staff</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of pagedItems">
+              <td class="selection-column">
+                <input type="checkbox" [checked]="isSelected(item.id)" (change)="toggleSelection(item.id)" />
+              </td>
+              <td>{{ item.createdAt | date:'short' }}</td>
+              <td>{{ getPatientDisplay(item.patientId) }}</td>
+              <td>{{ item.messageType }}</td>
+              <td>
+                <div class="fw-semibold">{{ item.subject || 'No subject' }}</div>
+                <small class="d-block text-warning fw-semibold" *ngIf="item.status === 'ESCALATED'">{{ getEscalationLabel(item) }}</small>
+                <small class="text-muted">{{ getMessagePreview(item) }}</small>
+              </td>
+              <td>
+                <span class="badge" [ngClass]="item.priority === 'HIGH' ? 'bg-danger' : 'bg-secondary'">{{ item.priority }}</span>
+              </td>
+              <td>{{ item.status }}</td>
+              <td>{{ item.assignedToUserKeycloakId || 'Unassigned' }}</td>
+              <td>
+                <div class="d-flex gap-2 justify-content-end">
+                  <button
+                    class="btn btn-sm btn-primary"
+                    type="button"
+                    *ngIf="canTake(item)"
+                    [disabled]="actionLoadingId === item.id"
+                    (click)="take(item)">
+                    {{ actionLoadingId === item.id ? 'Assigning...' : 'Take Ownership' }}
+                  </button>
+                  <a class="btn btn-sm btn-light-brand" [routerLink]="['/backoffice/communication', item.id]">Open</a>
+                </div>
+              </td>
+            </tr>
+
+            <tr *ngIf="filteredItems.length === 0">
+              <td colspan="9" class="text-center text-muted py-4">No messages match the current filters.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="filteredItems.length > 0 && !loading">
+        <small class="text-muted">Page {{ page }} / {{ totalPages }}</small>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-light-brand" type="button" [disabled]="page <= 1" (click)="previousPage()">Previous</button>
+          <button class="btn btn-sm btn-light-brand" type="button" [disabled]="page >= totalPages" (click)="nextPage()">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

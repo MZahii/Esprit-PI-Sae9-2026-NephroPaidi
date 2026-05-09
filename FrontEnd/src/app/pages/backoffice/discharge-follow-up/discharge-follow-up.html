@@ -1,0 +1,149 @@
+<div class="container-fluid p-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Discharge Follow-Up Management</h1>
+        <button class="btn btn-primary" (click)="toggleForm()" [disabled]="loading">
+          <i class="bi bi-plus-circle"></i> {{ showForm ? 'Cancel' : 'New Follow-Up' }}
+        </button>
+      </div>
+
+      <!-- Alert Messages -->
+      <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ errorMessage }}
+        <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+      </div>
+
+      <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ successMessage }}
+        <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+      </div>
+
+      <!-- Create Follow-Up Form -->
+      <div *ngIf="showForm" class="card mb-4">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">Create New Discharge Follow-Up</h5>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="followUpForm" (ngSubmit)="createFollowUp()">
+            <!-- Patient ID -->
+            <div class="mb-3">
+              <label for="patientId" class="form-label">Patient ID *</label>
+              <input
+                type="number"
+                id="patientId"
+                class="form-control"
+                formControlName="patientId"
+                placeholder="Enter patient ID"
+                min="1">
+              <small class="text-danger" *ngIf="followUpForm.get('patientId')?.hasError('required') && followUpForm.get('patientId')?.touched">
+                Patient ID is required
+              </small>
+            </div>
+
+            <!-- Follow-Up Items -->
+            <div class="mb-3">
+              <label class="form-label">Follow-Up Items</label>
+              <div formArrayName="items">
+                <div *ngFor="let item of items?.controls; let i = index"
+                     class="card mb-2" formGroupName="{{ i }}">
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-4">
+                        <label class="form-label">Item Type *</label>
+                        <input type="text" class="form-control" formControlName="itemType"
+                               placeholder="e.g., Lab Test, Medication, Physical Therapy">
+                      </div>
+                      <div class="col-md-5">
+                        <label class="form-label">Description *</label>
+                        <input type="text" class="form-control" formControlName="description"
+                               placeholder="e.g., Check kidney function">
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label">Frequency *</label>
+                        <select class="form-control" formControlName="frequency">
+                          <option value="">Select...</option>
+                          <option value="DAILY">Daily</option>
+                          <option value="WEEKLY">Weekly</option>
+                          <option value="MONTHLY">Monthly</option>
+                          <option value="AS_NEEDED">As Needed</option>
+                        </select>
+                      </div>
+                      <div class="col-md-1 d-flex align-items-end">
+                        <button type="button" class="btn btn-sm btn-danger w-100"
+                                (click)="removeItem(i)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" class="btn btn-sm btn-secondary" (click)="addItem()">
+                <i class="bi bi-plus"></i> Add Item
+              </button>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary" [disabled]="loading || followUpForm.invalid">
+                <span *ngIf="!loading">Create Follow-Up</span>
+                <span *ngIf="loading">
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Creating...
+                </span>
+              </button>
+              <button type="button" class="btn btn-outline-secondary" (click)="toggleForm()" [disabled]="loading">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Follow-Ups List -->
+      <div *ngIf="!loading && followUps.length === 0" class="alert alert-info">
+        No discharge follow-ups created yet.
+      </div>
+
+      <div *ngFor="let followUp of followUps" class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <strong>Patient ID:</strong> {{ followUp.patientId }}
+            <span [ngClass]="getStatusBadgeClass(followUp.status)" class="ms-2">
+              {{ followUp.status }}
+            </span>
+          </div>
+          <small class="text-muted">Created: {{ followUp.createdAt | date: 'short' }}</small>
+        </div>
+        <div class="card-body">
+          <h6 class="card-subtitle mb-2 text-muted">Follow-Up Items:</h6>
+          <table class="table table-sm table-striped">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Description</th>
+                <th>Frequency</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of followUp.items">
+                <td>{{ item.itemType }}</td>
+                <td>{{ item.description }}</td>
+                <td><span class="badge bg-info">{{ item.frequency }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Loading Spinner -->
+      <div *ngIf="loading" class="text-center">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

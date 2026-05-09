@@ -1,0 +1,19 @@
+.message-card {
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--default-color, #4f5d75) 10%, transparent);
+  border-radius: 16px;
+  padding: 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.message-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(31, 41, 55, 0.12);
+}
+
+.urgent-card {
+  border-left: 4px solid #dc3545;
+  background: color-mix(in srgb, #dc3545 6%, #ffffff);
+}

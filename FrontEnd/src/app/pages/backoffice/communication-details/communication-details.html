@@ -1,0 +1,193 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Conversation Details</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Dashboard</a></li>
+      <li class="breadcrumb-item"><a routerLink="/backoffice/communication/inbox">Inbox</a></li>
+      <li class="breadcrumb-item">Details</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content" *ngIf="loading">
+  <div class="card stretch stretch-full">
+    <div class="card-body text-muted">Loading conversation details...</div>
+  </div>
+</div>
+
+<div class="main-content" *ngIf="!loading">
+  <div class="card stretch stretch-full mb-3" *ngIf="!message">
+    <div class="card-body">
+      <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
+      <div *ngIf="!errorMessage" class="text-muted mb-3">Conversation details are not available.</div>
+      <a class="btn btn-light-brand" routerLink="/backoffice/communication/inbox">Back to Inbox</a>
+    </div>
+  </div>
+
+  <div class="row g-3" *ngIf="message as msg">
+    <div class="col-lg-8">
+      <div class="card stretch stretch-full mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h5 class="card-title mb-1">{{ msg.subject || 'No subject' }}</h5>
+            <small class="text-muted">Created {{ msg.createdAt | date:'medium' }}</small>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <span class="badge" [ngClass]="msg.priority === 'HIGH' ? 'bg-danger' : 'bg-secondary'">{{ msg.priority }}</span>
+            <span class="badge bg-info">{{ msg.status }}</span>
+            <span class="badge bg-light text-dark">{{ msg.messageType }}</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+          <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <button class="btn btn-sm btn-light-brand" type="button" (click)="take()" [disabled]="actionLoading">Take Ownership</button>
+            <button class="btn btn-sm btn-light-brand" type="button" (click)="unassign()" [disabled]="actionLoading || !canUnassign">Unassign</button>
+            <button class="btn btn-sm btn-light-brand" type="button" (click)="markRead()" [disabled]="actionLoading">Mark Read</button>
+            <button class="btn btn-sm btn-light-brand" type="button" (click)="openCloseConfirm()" [disabled]="actionLoading || !canClose">Close Conversation</button>
+            <button class="btn btn-sm btn-warning" type="button" *ngIf="canEscalate" (click)="openEscalationModal()" [disabled]="actionLoading">Escalate to Doctor</button>
+          </div>
+
+          <div class="reply-item mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <strong>Guardian Message</strong>
+              <small class="text-muted">Guardian • {{ msg.createdAt | date:'short' }}</small>
+            </div>
+            <p class="mb-0">{{ msg.messageText }}</p>
+          </div>
+
+          <h6 class="fw-semibold">Conversation</h6>
+          <div class="reply-item mb-2" *ngFor="let reply of msg.replies">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <strong>{{ reply.senderRole }}</strong>
+              <small class="text-muted">{{ reply.createdAt | date:'short' }}</small>
+            </div>
+            <p class="mb-0">{{ reply.replyText }}</p>
+          </div>
+
+          <form [formGroup]="replyForm" (ngSubmit)="reply()" class="mt-3" *ngIf="msg.status !== 'CLOSED'">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label fw-semibold mb-0">Reply</label>
+              <small class="text-muted">{{ replyLength }}/2000</small>
+            </div>
+
+            <div class="row g-2 mb-2">
+              <div class="col-md-8">
+                <select class="form-control" [(ngModel)]="selectedTemplateId" [ngModelOptions]="{standalone: true}">
+                  <option value="">Select quick-reply template...</option>
+                  <option *ngFor="let template of messageTypeTemplates" [value]="template.id">
+                    {{ template.name }} (used: {{ template.usageCount }})
+                  </option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <button class="btn btn-light-brand w-100" type="button" (click)="applyTemplate()" [disabled]="!selectedTemplateId || templatesLoading">Insert Template</button>
+              </div>
+            </div>
+
+            <textarea class="form-control" rows="4" formControlName="replyText" placeholder="Write your response to the guardian"></textarea>
+            <small class="text-danger" *ngIf="replyForm.controls.replyText.touched && replyForm.controls.replyText.hasError('required')">Reply is required.</small>
+            <small class="text-danger" *ngIf="replyForm.controls.replyText.touched && replyForm.controls.replyText.hasError('maxlength')">Maximum 2000 characters.</small>
+
+            <button class="btn btn-primary mt-2" type="submit" [disabled]="replyForm.invalid || actionLoading">{{ actionLoading ? 'Sending...' : 'Send Reply' }}</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card stretch stretch-full">
+        <div class="card-header"><h5 class="card-title">Audit Log</h5></div>
+        <div class="card-body">
+          <div *ngIf="auditLoading" class="text-muted mb-2">Loading audit...</div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr><th>Date</th><th>Action</th><th>Actor</th><th>Details</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of auditItems">
+                  <td>{{ item.createdAt | date:'short' }}</td>
+                  <td>{{ item.action }}</td>
+                  <td>{{ item.actorRole }}</td>
+                  <td>{{ item.details || '-' }}</td>
+                </tr>
+                <tr *ngIf="auditItems.length === 0"><td colspan="4" class="text-muted text-center">No audit logs.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card stretch stretch-full">
+        <div class="card-header">
+          <h5 class="card-title">Patient Summary</h5>
+        </div>
+        <div class="card-body">
+          <p class="mb-2"><strong>Name:</strong> {{ patientName }}</p>
+          <p class="mb-2"><strong>Date of Birth:</strong> {{ patientDob | date:'mediumDate' }}</p>
+          <p class="mb-2"><strong>Patient ID:</strong> {{ msg.patientId }}</p>
+          <p class="mb-2"><strong>Guardian ID:</strong> {{ msg.guardianKeycloakId }}</p>
+          <p class="mb-3"><strong>Assigned Staff ID:</strong> {{ msg.assignedToUserKeycloakId || 'Unassigned' }}</p>
+          <p class="mb-3"><strong>Assigned Doctor:</strong> {{ msg.assignedDoctorKeycloakId || 'Not escalated' }}</p>
+
+          <a class="btn btn-light-brand w-100" [routerLink]="['/backoffice/patients']">Open Patient Record</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade show d-block" tabindex="-1" *ngIf="showCloseConfirm">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Close conversation</h5>
+          <button type="button" class="btn-close" (click)="cancelCloseConfirm()"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-0">Are you sure you want to close this conversation? This will mark it as completed for the current queue.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-light-brand" type="button" (click)="cancelCloseConfirm()" [disabled]="actionLoading">Cancel</button>
+          <button class="btn btn-primary" type="button" (click)="close()" [disabled]="actionLoading">{{ actionLoading ? 'Closing...' : 'Confirm Close' }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade show d-block" tabindex="-1" *ngIf="showEscalationModal">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" [formGroup]="escalationForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Escalate to Doctor</h5>
+          <button type="button" class="btn-close" (click)="cancelEscalationModal()"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label fw-semibold">Assigned Doctor</label>
+          <select class="form-control mb-3" formControlName="doctorKeycloakId">
+            <option value="">Select a doctor</option>
+            <option *ngFor="let doctor of doctors" [value]="doctor.keycloakId">{{ doctor.username }} • {{ doctor.keycloakId }}</option>
+          </select>
+          <small class="text-danger d-block" *ngIf="escalationForm.controls.doctorKeycloakId.touched && escalationForm.controls.doctorKeycloakId.hasError('required')">Doctor selection is required.</small>
+
+          <label class="form-label fw-semibold">Escalation reason</label>
+          <textarea class="form-control" rows="3" formControlName="reason" placeholder="Write why this message needs doctor review"></textarea>
+          <small class="text-danger" *ngIf="escalationForm.controls.reason.touched && escalationForm.controls.reason.hasError('required')">Reason is required.</small>
+          <small class="text-danger" *ngIf="escalationForm.controls.reason.touched && escalationForm.controls.reason.hasError('maxlength')">Maximum 500 characters.</small>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-light-brand" type="button" (click)="cancelEscalationModal()" [disabled]="actionLoading">Cancel</button>
+          <button class="btn btn-warning" type="button" (click)="escalate()" [disabled]="actionLoading || escalationForm.invalid">{{ actionLoading ? 'Escalating...' : 'Escalate Conversation' }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop fade show" *ngIf="showCloseConfirm || showEscalationModal"></div>
+</div>
+
+

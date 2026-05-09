@@ -1,0 +1,124 @@
+.page-header {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  padding: 20px 30px;
+  margin-bottom: 30px;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+
+.contract-list {
+  display: grid;
+  gap: 12px;
+}
+
+.contract-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px;
+  background: #fff;
+}
+
+.contract-title {
+  font-size: 15px;
+  color: #0f172a;
+}
+
+.audit-section {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 20px;
+}
+
+.audit-filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+}
+
+.audit-list {
+  display: grid;
+  gap: 12px;
+}
+
+.audit-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px;
+  background: #f8fafc;
+}
+
+.audit-action {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.audit-meta {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.diff-list {
+  display: grid;
+  gap: 10px;
+}
+
+.diff-item {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.diff-field {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.diff-values {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.diff-old {
+  color: #991b1b;
+}
+
+.diff-new {
+  color: #166534;
+}
+
+.diff-arrow {
+  color: #64748b;
+}
+
+.raw-details {
+  display: grid;
+  gap: 6px;
+  color: #334155;
+}
+
+.full-row {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 992px) {
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .audit-filters {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,100 @@
+<section class="guardian-overview section" style="padding-top:130px;">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <div>
+        <h2 class="mb-1">Messages</h2>
+        <p class="text-muted mb-0">Track your conversations with the care team.</p>
+      </div>
+
+      <a routerLink="/frontoffice/communication/new" class="btn guardian-btn-primary">New Message</a>
+    </div>
+
+    <div class="card p-3 mb-3">
+      <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+        <button
+          type="button"
+          class="btn btn-sm"
+          *ngFor="let filter of filterButtons"
+          [class.btn-primary]="activeFilter === filter.value"
+          [class.btn-light-brand]="activeFilter !== filter.value"
+          (click)="setFilter(filter.value)">
+          {{ filter.label }}
+        </button>
+      </div>
+
+      <div class="row g-2 align-items-end">
+        <div class="col-md-8">
+          <label class="form-label fw-semibold">Search</label>
+          <input class="form-control" type="text" placeholder="Search by subject or message content" [(ngModel)]="search" (ngModelChange)="onFiltersChange()" />
+        </div>
+        <div class="col-md-4">
+          <button class="btn btn-light-brand" type="button" (click)="load()">Refresh</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+    <div *ngIf="errorMessage" class="alert alert-danger d-flex justify-content-between align-items-center">
+      <span>{{ errorMessage }}</span>
+      <button class="btn btn-sm btn-light-brand" type="button" (click)="load()" *ngIf="hasPatientLink">Retry</button>
+    </div>
+
+    <div class="row gy-3" *ngIf="loading">
+      <div class="col-12" *ngFor="let _ of [1, 2, 3]">
+        <div class="message-card d-block placeholder-glow">
+          <div class="placeholder col-6 mb-2"></div>
+          <div class="placeholder col-10 mb-2"></div>
+          <div class="placeholder col-4"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row gy-3" *ngIf="!loading">
+      <div class="col-12" *ngFor="let item of pagedItems">
+        <a
+          class="message-card d-block"
+          [class.urgent-card]="item.priority === 'HIGH'"
+          [routerLink]="['/frontoffice/communication', item.id]">
+          <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+            <div>
+              <span class="badge me-1" [ngClass]="getTypeBadgeClass(item.messageType)">{{ item.messageType }}</span>
+              <span class="badge text-bg-danger me-1" *ngIf="item.priority === 'HIGH'">⚠ URGENT</span>
+              <span class="badge" [ngClass]="getStatusBadgeClass(item.status)">{{ item.status }}</span>
+            </div>
+            <div class="text-end">
+              <small class="text-muted">{{ item.createdAt | date:'medium' }}</small>
+            </div>
+          </div>
+
+          <h5 class="mb-1 fw-semibold">{{ item.subject || 'No subject provided' }}</h5>
+          <p class="mb-2 text-secondary">{{ getPreviewText(item) }}</p>
+
+          <small class="d-block text-muted mb-2">{{ getCardTimeIndicator(item) }}</small>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted" *ngIf="item.replies.length > 0">💬 {{ item.replies.length }} {{ item.replies.length === 1 ? 'reply' : 'replies' }}</small>
+            <small class="text-muted" *ngIf="item.replies.length === 0">⏳ Awaiting response</small>
+            <small class="text-primary fw-semibold">Open details</small>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-12" *ngIf="filteredItems.length === 0">
+        <div class="text-center border rounded p-4 bg-light-subtle">
+          <div class="fs-2 mb-2">📭</div>
+          <h5 class="mb-1">No messages found</h5>
+          <p class="text-muted mb-3">{{ hasPatientLink ? 'Try adjusting filters or start a new conversation with the care team.' : 'No linked patient found for this account' }}</p>
+          <a routerLink="/frontoffice/communication/new" class="btn guardian-btn-primary" *ngIf="hasPatientLink">Send Your First Message</a>
+        </div>
+      </div>
+
+      <div class="col-12 d-flex justify-content-between align-items-center" *ngIf="filteredItems.length > 0">
+        <small class="text-muted">Page {{ page }} / {{ totalPages }}</small>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-light-brand" (click)="previousPage()" [disabled]="page <= 1">Previous</button>
+          <button type="button" class="btn btn-sm btn-light-brand" (click)="nextPage()" [disabled]="page >= totalPages">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

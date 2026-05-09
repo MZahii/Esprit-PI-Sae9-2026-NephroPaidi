@@ -1,0 +1,108 @@
+.page-header {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  padding: 20px 30px;
+  margin-bottom: 20px;
+}
+
+.role-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  height: 100%;
+}
+
+.role-card h6 {
+  margin: 0 0 8px;
+  color: #1f2937;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.role-total {
+  font-size: 28px;
+  font-weight: 800;
+  color: #1d4ed8;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.role-meta {
+  display: grid;
+  gap: 2px;
+  color: #64748b;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 12px;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badge-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-enabled {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge-disabled {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.pagination-row {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rows-per-page {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #334155;
+  font-size: 14px;
+}
+
+.rows-per-page select {
+  min-width: 86px;
+}
+
+.pagination-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 992px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+}

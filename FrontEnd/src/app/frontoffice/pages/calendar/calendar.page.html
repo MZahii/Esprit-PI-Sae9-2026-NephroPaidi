@@ -1,0 +1,99 @@
+<section class="section guardian-calendar">
+  <div class="container">
+    <div class="calendar-header d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+      <div>
+        <h2 class="section-title mb-1">Appointment Calendar</h2>
+        <p class="text-muted mb-0">Track scheduled appointments and consultation status.</p>
+      </div>
+
+      <div class="calendar-controls d-flex align-items-center gap-2">
+        <button class="btn btn-light btn-sm" (click)="prevMonth()">Previous</button>
+        <span class="calendar-month-label">{{ monthLabel }}</span>
+        <button class="btn btn-light btn-sm" (click)="nextMonth()">Next</button>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="alert alert-info">Loading your appointments...</div>
+    <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+    <div class="calendar-grid">
+      <div class="calendar-weekdays">
+        <div class="weekday">Sun</div>
+        <div class="weekday">Mon</div>
+        <div class="weekday">Tue</div>
+        <div class="weekday">Wed</div>
+        <div class="weekday">Thu</div>
+        <div class="weekday">Fri</div>
+        <div class="weekday">Sat</div>
+      </div>
+
+      <div class="calendar-week" *ngFor="let week of weeks">
+        <div
+          class="calendar-day"
+          *ngFor="let day of week"
+          [class.other-month]="!day.inMonth"
+          [class.today]="day.isToday"
+        >
+          <div class="day-number">{{ day.date.getDate() }}</div>
+          <div class="day-events">
+            <button
+              class="event-pill"
+              *ngFor="let event of day.events | slice:0:3"
+              (click)="selectAppointment(event)"
+            >
+              <span class="event-time">{{ event.scheduledAt | date:'shortTime' }}</span>
+              <span class="event-label">{{ event.reason || 'Consultation' }}</span>
+            </button>
+            <div class="event-more" *ngIf="day.events.length > 3">
+              +{{ day.events.length - 3 }} more
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="calendar-empty text-center text-muted mt-4" *ngIf="!loading && !error && appointments.length === 0">
+      No appointments scheduled for this month.
+    </div>
+  </div>
+</section>
+
+<aside class="appointment-details" *ngIf="selectedAppointment">
+  <div class="details-card">
+    <div class="details-header d-flex align-items-center justify-content-between">
+      <h5>Appointment Details</h5>
+      <button class="btn btn-light btn-sm" (click)="closeDetails()">Close</button>
+    </div>
+
+    <div class="details-body">
+      <div class="detail-row">
+        <span>Scheduled</span>
+        <strong>{{ selectedAppointment.scheduledAt | date:'fullDate' }} • {{ selectedAppointment.scheduledAt | date:'shortTime' }}</strong>
+      </div>
+      <div class="detail-row">
+        <span>Status</span>
+        <strong class="badge" [ngClass]="statusBadge(selectedAppointment.status)">
+          {{ selectedAppointment.status || 'SCHEDULED' }}
+        </strong>
+      </div>
+      <div class="detail-row">
+        <span>Reason</span>
+        <strong>{{ selectedAppointment.reason || 'General follow-up' }}</strong>
+      </div>
+      <div class="detail-row">
+        <span>Doctor</span>
+        <strong>{{ selectedAppointment.doctorId || 'Assigned at clinic' }}</strong>
+      </div>
+    </div>
+
+    <div class="details-actions d-flex gap-2 mt-3">
+      <a class="btn btn-primary btn-sm" routerLink="/frontoffice/consultations">View Consultations</a>
+      <a
+        class="btn btn-outline-secondary btn-sm"
+        [routerLink]="['/frontoffice/consultations', selectedAppointment.consultationId || selectedAppointment.id]"
+      >
+        Consultation Details
+      </a>
+    </div>
+  </div>
+</aside>

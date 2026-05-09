@@ -1,0 +1,88 @@
+.lab-requests-page {
+  .summary-card {
+    border: 1px solid #e9eef5;
+    border-radius: 16px;
+    padding: 16px;
+    background: #f8fafc;
+    height: 100%;
+  }
+
+  .summary-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .summary-value {
+    font-size: 26px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .card-title {
+    font-weight: 700;
+  }
+
+  .empty-state {
+    color: #64748b;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .consultation-row {
+    padding: 16px 18px;
+    border-top: 1px solid #eef2f7;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .consultation-row:hover {
+    background: #f8fafc;
+  }
+
+  .consultation-row.selected {
+    background: #eff6ff;
+    border-left: 4px solid #2563eb;
+  }
+
+  .consultation-main {
+    min-width: 0;
+  }
+
+  .consultation-title {
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .consultation-meta {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+  }
+
+  .consultation-preview {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #334155;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 420px;
+  }
+
+  .lab-item {
+    border: 1px solid #e9eef5;
+    border-radius: 14px;
+    background: #f8fafc;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  .urgency-pill {
+    min-width: 78px;
+    text-align: center;
+  }
+}

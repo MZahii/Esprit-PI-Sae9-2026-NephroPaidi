@@ -1,0 +1,66 @@
+.empty-state {
+  padding: 1rem 0;
+  color: #6c757d;
+  text-align: center;
+}
+
+.table td,
+.table th {
+  vertical-align: middle;
+}
+
+.section-title {
+  margin-top: 0.35rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: #6c757d;
+  letter-spacing: 0.04em;
+}
+
+.dialysis-table {
+  min-width: 980px;
+
+  .patient-col {
+    min-width: 190px;
+  }
+
+  .type-col {
+    min-width: 160px;
+  }
+
+  .freq-col {
+    min-width: 160px;
+  }
+
+  .planning-col {
+    min-width: 190px;
+  }
+
+  .status-col {
+    min-width: 170px;
+  }
+
+  .actions-col {
+    min-width: 180px;
+  }
+}
+
+.status-select {
+  min-width: 160px;
+  font-size: 0.85rem;
+}
+
+.modal-backdrop {
+  z-index: 1040;
+}
+
+.modal {
+  z-index: 1050;
+}
+
+.modal-content {
+  border: 0;
+  border-radius: 1rem;
+  box-shadow: 0 1rem 3rem rgba(15, 23, 42, 0.16);
+}

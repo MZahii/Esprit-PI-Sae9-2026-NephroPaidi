@@ -1,0 +1,60 @@
+.empty-state {
+  color: #6c757d;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.history-item {
+  border: 1px solid #e9ecef;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  background: #fafbfc;
+}
+
+.criteria-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.2rem 0.75rem;
+}
+
+.decision-line {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.note-line {
+  margin-top: 0.35rem;
+}
+
+.complication-item {
+  background: #fff7f7;
+  border-color: #f5c2c7;
+}
+
+.complication-text {
+  flex: 1 1 0;
+  white-space: pre-wrap;
+  color: #334155;
+}
+
+.care-task-item {
+  background: #f8fbff;
+  border-color: #cfe2ff;
+}
+
+.care-task-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  flex: 1 1 0;
+}
+
+.care-task-title {
+  font-weight: 600;
+  color: #1f2937;
+}

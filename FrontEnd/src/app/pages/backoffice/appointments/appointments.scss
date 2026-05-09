@@ -1,0 +1,267 @@
+:host {
+  display: block;
+}
+
+.filters {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
+}
+
+.patient-filter {
+  max-width: 520px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  z-index: 1040;
+}
+
+.modal {
+  z-index: 1050;
+}
+
+.modal-content {
+  border-radius: 16px;
+  border: 1px solid #e9eef5;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.2);
+}
+
+.suggestions-panel {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.patient-suggestion {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #e9eef5;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 10px 12px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.patient-suggestion:hover {
+  border-color: #cfe0ff;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+}
+
+.suggestion-title {
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.suggestion-meta {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.selected-patient {
+  border: 1px solid #e9eef5;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 12px;
+}
+
+.suggestions-caption {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin-bottom: -4px;
+}
+
+.suggestion-empty {
+  font-size: 12px;
+  color: #64748b;
+  padding: 6px 4px;
+}
+
+.suggestion-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.doctor-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.availability-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #cbd5f5;
+  display: inline-block;
+}
+
+.availability-dot.available {
+  background: #22c55e;
+}
+
+.availability-dot.unavailable {
+  background: #ef4444;
+}
+
+.availability-label {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.availability-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.modal-section + .modal-section {
+  margin-top: 16px;
+}
+
+.calendar-container {
+  border: 1px solid #e9eef5;
+  border-radius: 16px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.calendar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.calendar-title {
+  font-weight: 700;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-weight: 600;
+  font-size: 12px;
+  color: #94a3b8;
+  padding-bottom: 4px;
+}
+
+.calendar-cell {
+  border: 1px solid #e9eef5;
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 72px;
+  text-align: left;
+  background: #f8fafc;
+  position: relative;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.calendar-cell:hover {
+  border-color: #cfe0ff;
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+}
+
+.calendar-cell.outside {
+  background: #ffffff;
+  border-style: dashed;
+  color: #cbd5f5;
+}
+
+.calendar-cell.today {
+  border-color: #3b82f6;
+}
+
+.calendar-cell.selected {
+  border-color: #1d4ed8;
+  background: #e0ecff;
+}
+
+.calendar-number {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.calendar-count {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: #1d4ed8;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+.day-panel {
+  border: 1px solid #e9eef5;
+  border-radius: 14px;
+  padding: 12px;
+  background: #f8fafc;
+  min-height: 100%;
+}
+
+.day-header {
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 12px;
+}
+
+.day-appointment {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e9eef5;
+  margin-bottom: 10px;
+}
+
+.day-time {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 13px;
+}
+
+.day-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.day-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.day-actions .btn {
+  white-space: nowrap;
+  font-size: 12px;
+  padding: 4px 8px;
+}

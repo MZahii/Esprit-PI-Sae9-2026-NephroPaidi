@@ -1,0 +1,87 @@
+services:
+  keycloak-db:
+    image: postgres:16
+    container_name: nephro-keycloak-db
+    profiles: ["local-keycloak-db"]
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloakpass
+    volumes:
+      - keycloak_db:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: nephro-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://ep-cool-breeze-agqhhjlc.c-2.eu-central-1.aws.neon.tech:5432/KeyCloak?sslmode=require&channel_binding=require
+      KC_DB_USERNAME: neondb_owner
+      KC_DB_PASSWORD: npg_Zb1Kda5LPlin
+
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
+
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/realm:/opt/keycloak/data/import
+
+  eureka:
+    build:
+      context: ./eureka
+    container_name: nephro-eureka
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka/
+    ports:
+      - "8761:8761"
+
+  api-gateway:
+    profiles: ["container-gateway"]
+    build:
+      context: ./api-gateway
+    container_name: nephro-api-gateway
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/nephrospaidi
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka
+      - keycloak
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: nephro-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "5672:5672"      # AMQP port
+      - "15672:15672"    # Management UI port
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  ai-pharmacy-service:
+    build:
+      context: ./microservices/ai-pharmacy-service
+    container_name: nephro-ai-pharmacy-service
+    environment:
+      MODEL_PATH: model.joblib
+    ports:
+      - "8093:8093"
+
+volumes:
+  keycloak_db:
+  rabbitmq_data:

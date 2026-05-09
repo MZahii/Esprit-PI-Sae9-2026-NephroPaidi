@@ -1,0 +1,171 @@
+<div class="module-page placement-page">
+  <header class="module-header card stretch stretch-full">
+    <div>
+      <p class="module-kicker">HR Operations</p>
+      <h2>Equipment Placement</h2>
+      <p class="module-subtitle">Place and supervise room equipment with compatibility-safe actions and instant room context.</p>
+    </div>
+    <div class="module-header__crumbs">
+      <a routerLink="/backoffice/dashboard">Dashboard</a>
+      <span>/</span>
+      <span>Equipment Placement</span>
+    </div>
+  </header>
+
+  <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="alert alert-success mb-3">{{ successMessage }}</div>
+
+  <section class="kpi-grid" *ngIf="!loading">
+    <article class="kpi-card"><span>Total Floors</span><strong>{{ floors.length }}</strong></article>
+    <article class="kpi-card"><span>Placement Rooms</span><strong>{{ totalEligibleRooms }}</strong></article>
+    <article class="kpi-card"><span>Selected Floor</span><strong>{{ selectedFloor?.floorLabel || '-' }}</strong></article>
+    <article class="kpi-card"><span>Selected Workspace</span><strong>{{ details?.workspaceName || '-' }}</strong></article>
+  </section>
+
+  <section class="card stretch stretch-full panel-card" *ngIf="!loading">
+    <div class="card-header"><h6 class="mb-0">Select Floor & Workspace</h6></div>
+    <div class="card-body picker-layout">
+      <div class="picker-column">
+        <h6 class="picker-title">Floors</h6>
+        <div class="picker-list">
+          <button
+            type="button"
+            class="picker-btn"
+            *ngFor="let floor of floors"
+            [class.active]="floor.floorId === selectedFloorId"
+            (click)="selectFloor(floor.floorId)"
+          >
+            <div class="picker-name">Floor {{ floor.floorLabel }}</div>
+            <div class="picker-meta">{{ floor.eligibleWorkspaceCount }} room(s) • {{ floor.totalPlacedEquipment }} placed</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="picker-column" *ngIf="selectedFloor as floor">
+        <h6 class="picker-title">Workspaces in Floor {{ floor.floorLabel }}</h6>
+        <div class="picker-list">
+          <button
+            type="button"
+            class="picker-btn"
+            *ngFor="let ws of floor.workspaces"
+            [class.active]="ws.workspaceId === selectedWorkspaceId"
+            (click)="openWorkspace(ws.workspaceId)"
+          >
+            <div class="picker-name">{{ ws.workspaceName }}</div>
+            <div class="picker-meta">{{ label(ws.workspaceType) }} • {{ ws.placedCount }} placed</div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <ng-container *ngIf="details as d">
+    <section class="kpi-grid">
+      <article class="kpi-card"><span>Room</span><strong>{{ d.workspaceName }}</strong></article>
+      <article class="kpi-card"><span>Floor</span><strong>{{ d.floorLabel }}</strong></article>
+      <article class="kpi-card"><span>Room Type</span><strong>{{ label(d.workspaceType) }}</strong></article>
+      <article class="kpi-card"><span>Current Equipment</span><strong>{{ d.placedEquipment.length }}</strong></article>
+    </section>
+
+    <section class="card stretch stretch-full panel-card">
+      <div class="card-header"><h6 class="mb-0">Allowed Equipment Categories</h6></div>
+      <div class="card-body allowed-wrap">
+        <span class="metric-pill" *ngFor="let c of d.allowedCategories">{{ label(c) }}</span>
+      </div>
+    </section>
+
+    <section class="card stretch stretch-full panel-card">
+      <div class="card-header"><h6 class="mb-0">Add Equipment To This Room</h6></div>
+      <div class="card-body action-form">
+        <select class="form-control" [(ngModel)]="equipmentToPlaceId">
+          <option [ngValue]="null" disabled>Select compatible available equipment</option>
+          <option *ngFor="let eq of d.availableCompatibleEquipment" [ngValue]="eq.id">
+            {{ eq.name }} ({{ eq.equipmentCode }})
+          </option>
+        </select>
+        <button class="btn btn-primary" type="button" [disabled]="saving || !equipmentToPlaceId" (click)="placeEquipment()">Add To Room</button>
+      </div>
+    </section>
+
+    <section class="card stretch stretch-full panel-card">
+      <div class="card-header"><h6 class="mb-0">Current Equipment In This Room</h6></div>
+      <div class="card-body grouped-grid">
+        <article class="group-card" *ngFor="let group of groupedPlacedEquipment; trackBy: trackByGroup">
+          <header class="group-head">
+            <div>
+              <div class="group-title">{{ groupLabel(group) }}</div>
+              <div class="group-subtitle">{{ group.count }} item(s)</div>
+            </div>
+            <button class="btn btn-outline-primary btn-sm" type="button" (click)="openGroupDetails(group)">View Details</button>
+          </header>
+
+          <div class="group-metrics">
+            <span class="metric-pill">Available: {{ group.available }}</span>
+            <span class="metric-pill">Maintenance: {{ group.underMaintenance }}</span>
+            <span class="metric-pill">Out Of Service: {{ group.outOfService }}</span>
+            <span class="metric-pill">Archived: {{ group.archived }}</span>
+          </div>
+        </article>
+
+        <div class="empty-state" *ngIf="groupedPlacedEquipment.length === 0">
+          No equipment is currently placed in this workspace.
+        </div>
+      </div>
+    </section>
+  </ng-container>
+
+  <div class="group-modal" *ngIf="selectedGroup">
+    <div class="group-modal__backdrop" (click)="closeGroupDetails()"></div>
+
+    <div class="group-modal__panel">
+      <div class="group-modal__header">
+        <div>
+          <h6>{{ groupLabel(selectedGroup) }}</h6>
+          <span>{{ selectedGroup.count }} item(s)</span>
+        </div>
+        <button class="btn btn-light btn-sm" type="button" (click)="closeGroupDetails()">Close</button>
+      </div>
+
+      <div class="group-modal__body">
+        <article class="detail-row" *ngFor="let eq of selectedGroup.items; trackBy: trackByItem">
+          <div class="detail-main">
+            <div class="detail-title">{{ eq.name }}</div>
+            <div class="detail-meta">{{ eq.equipmentCode }} • {{ label(eq.category) }} • {{ label(eq.subtype) }}</div>
+          </div>
+
+          <div class="detail-actions">
+            <select class="form-control form-control-sm" [ngModel]="eq.status" (ngModelChange)="updateStatus(eq.id, $event)">
+              <option *ngFor="let s of statuses" [value]="s">{{ label(s) }}</option>
+            </select>
+            <button
+              class="btn btn-outline-warning btn-sm"
+              type="button"
+              [disabled]="saving"
+              (click)="movingEquipmentId === eq.id ? cancelMove() : startMove(eq.id)"
+            >
+              {{ movingEquipmentId === eq.id ? 'Cancel Move' : 'Move' }}
+            </button>
+            <button class="btn btn-outline-danger btn-sm" type="button" (click)="removeEquipment(eq.id)">Remove</button>
+          </div>
+
+          <div class="move-inline" *ngIf="movingEquipmentId === eq.id">
+            <select class="form-control form-control-sm" [(ngModel)]="selectedMoveTargetWorkspaceId">
+              <option [ngValue]="null" disabled>Select target workspace</option>
+              <option *ngFor="let option of moveTargetOptionsFor(eq)" [ngValue]="option.workspaceId">{{ option.label }}</option>
+            </select>
+            <button
+              class="btn btn-warning btn-sm"
+              type="button"
+              [disabled]="saving || !selectedMoveTargetWorkspaceId || moveTargetOptionsFor(eq).length === 0"
+              (click)="confirmMove(eq)"
+            >
+              Confirm Move
+            </button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</div>
+
+

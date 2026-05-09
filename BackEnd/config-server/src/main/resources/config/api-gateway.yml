@@ -1,0 +1,129 @@
+server:
+  port: 8083
+
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: false
+              lower-case-service-id: true
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOriginPatterns:
+                  - "http://localhost:*"
+                  - "http://127.0.0.1:*"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - PATCH
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders:
+                  - "*"
+                allowCredentials: true
+          routes:
+            # User Service - Authentication & User Management
+            - id: user-service-api
+              uri: lb://user-service
+              predicates:
+                - Path=/api/users/**,/api/auth/**
+
+            # Administration Service - Patients, Contracts, Observability
+            - id: administration-service-api
+              uri: lb://administration-service
+              predicates:
+                - Path=/api/patients/**,/api/contracts/**,/api/observability/**
+
+            # Administration Service - Hospital structure, resources and staff assignments
+            # These controllers are exposed without /api prefix in administration-service,
+            # so we rewrite /api/<segment> -> /<segment> at the gateway.
+            - id: administration-service-structure-api
+              uri: lb://administration-service
+              predicates:
+                - Path=/api/hospital-structure/**,/api/hospital-resources/**,/api/staff-assignments/**
+              filters:
+                - RewritePath=/api/?(.*), /$1
+
+            # Clinical Service - Audit logs
+            - id: clinical-service-api
+              uri: lb://clinical-service
+              predicates:
+                - Path=/clinical/**,/api/clinical/**
+              filters:
+                - RewritePath=/api/clinical/?(?<segment>.*), /clinical/$\{segment}
+
+            # Communication Service - Guardian/staff messaging and appointment requests
+            - id: communication-service-api
+              uri: lb://communication-service
+              predicates:
+                - Path=/api/communication/**,/api/appointments/**
+
+            # Procedure Service - Explicit API namespace
+            - id: procedure-service-api
+              uri: lb://procedure-service
+              predicates:
+                - Path=/api/procedures/**
+
+            # Pharmacy Service - Rewrite frontend path to service endpoints
+            - id: pharmacy-service-api
+              uri: lb://pharmacy-service
+              predicates:
+                - Path=/api/pharmacy/**
+              filters:
+                - RewritePath=/api/pharmacy/?(.*), /api/$1
+
+            # Pharmacy medication catalog (same path as pharmacy-service controllers)
+            - id: pharmacy-medications-api
+              uri: lb://pharmacy-service
+              predicates:
+                - Path=/api/medications/**
+
+            # Operations Service - Rewrite frontend path to service endpoints
+            - id: ops-service-api
+              uri: lb://ops-service
+              predicates:
+                - Path=/api/ops/**
+              filters:
+                - RewritePath=/api/ops/?(.*), /api/$1
+
+            # eGFR ML Service - ML prediction endpoint namespace
+            - id: egfr-ml-service-api
+              uri: http://egfr-ml-service:8092
+              predicates:
+                - Path=/api/egfr-ml/**
+              filters:
+                - RewritePath=/api/egfr-ml/?(.*), /$1
+
+            # AI Pharmacy Service - Pediatric dosing verification
+            - id: ai-pharmacy-service-api
+              uri: ${AI_PHARMACY_SERVICE_URI:http://ai-pharmacy-service:8093}
+              predicates:
+                - Path=/api/ai/**
+              filters:
+                - RewritePath=/api/ai/?(.*), /$1
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/nephrospaidi}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8080/realms/nephrospaidi/protocol/openid-connect/certs}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka}
+
+management:
+  endpoint:
+    gateway:
+      access: read-only
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
