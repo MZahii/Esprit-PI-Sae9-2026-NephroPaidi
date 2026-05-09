@@ -13,4 +13,6 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends docker-ce-cli \
     && rm -rf /var/lib/apt/lists/*
 
+COPY devops/jenkins/init.groovy.d/ /usr/share/jenkins/ref/init.groovy.d/
+
 USER jenkins

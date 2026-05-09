@@ -31,3 +31,9 @@ internal:
     base-url: ${USER_SERVICE_BASE_URL:http://localhost:8090}
   administration-service:
     base-url: ${ADMINISTRATION_SERVICE_BASE_URL:http://localhost:8087}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

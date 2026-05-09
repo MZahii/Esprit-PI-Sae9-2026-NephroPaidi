@@ -1,5 +1,8 @@
 # Docker Rebuild & Kubernetes Redeploy Action Plan
 
+> Legacy local-recovery note: this document was written for Docker Desktop / Minikube-era troubleshooting.
+> It is not the authoritative Sprint 3 jury route. For jury delivery, follow the kubeadm path in `DEVOPS_PHASE_3_KUBEADM.md`.
+
 **Status:** Infrastructure crashed (Docker Desktop + Kubernetes)  
 **Reason:** Metrics configuration in source files but NOT in deployed Docker images  
 **Solution:** Complete rebuild cycle

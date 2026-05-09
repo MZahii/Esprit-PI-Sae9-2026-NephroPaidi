@@ -31,7 +31,10 @@ spec:
             - name: SPRING_DATASOURCE_USERNAME
               value: "neondb_owner"
             - name: SPRING_DATASOURCE_PASSWORD
-              value: "npg_Zb1Kda5LPlin"
+              valueFrom:
+                secretKeyRef:
+                  name: nephro-app-secrets
+                  key: USER_DB_PASSWORD
             - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
               value: "org.postgresql.Driver"
             - name: SPRING_JPA_HIBERNATE_DDL_AUTO
@@ -49,23 +52,41 @@ spec:
             - name: EUREKA_INSTANCE_HOSTNAME
               value: "user-service"
             - name: KEYCLOAK_ISSUER_URI
-              value: "http://localhost:8080/realms/nephrospaidi"
+              valueFrom:
+                configMapKeyRef:
+                  name: nephro-common-config
+                  key: KEYCLOAK_ISSUER_URI
             - name: KEYCLOAK_JWK_SET_URI
-              value: "http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs"
+              valueFrom:
+                configMapKeyRef:
+                  name: nephro-common-config
+                  key: KEYCLOAK_JWK_SET_URI
             - name: KEYCLOAK_SERVER_URL
-              value: "http://keycloak:8080"
+              valueFrom:
+                configMapKeyRef:
+                  name: nephro-common-config
+                  key: KEYCLOAK_SERVER_URL
             - name: KEYCLOAK_REALM
-              value: "nephrospaidi"
+              valueFrom:
+                configMapKeyRef:
+                  name: nephro-common-config
+                  key: KEYCLOAK_REALM
             - name: KEYCLOAK_ADMIN_CLIENT_ID
               value: "admin-cli"
             - name: KEYCLOAK_ADMIN_USERNAME
               value: "admin"
             - name: KEYCLOAK_ADMIN_PASSWORD
-              value: "admin123"
+              valueFrom:
+                secretKeyRef:
+                  name: nephro-app-secrets
+                  key: KEYCLOAK_ADMIN_PASSWORD
             - name: KEYCLOAK_AUTH_CLIENT_ID
               value: "nephro-backend"
             - name: KEYCLOAK_AUTH_CLIENT_SECRET
-              value: "nephro-backend-secret"
+              valueFrom:
+                secretKeyRef:
+                  name: nephro-app-secrets
+                  key: KEYCLOAK_AUTH_CLIENT_SECRET
             - name: KEYCLOAK_VERIFICATION_ENABLED
               value: "true"
             - name: ADMINISTRATION_SERVICE_BASE_URL

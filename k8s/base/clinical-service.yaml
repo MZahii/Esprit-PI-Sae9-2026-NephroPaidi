@@ -31,7 +31,10 @@ spec:
             - name: SPRING_DATASOURCE_USERNAME
               value: "neondb_owner"
             - name: SPRING_DATASOURCE_PASSWORD
-              value: "npg_Zb1Kda5LPlin"
+              valueFrom:
+                secretKeyRef:
+                  name: nephro-app-secrets
+                  key: CLINICAL_DB_PASSWORD
             - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
               value: "org.postgresql.Driver"
             - name: SERVER_PORT
@@ -49,9 +52,15 @@ spec:
             - name: EUREKA_INSTANCE_HOSTNAME
               value: "clinical-service"
             - name: KEYCLOAK_ISSUER_URI
-              value: "http://localhost:8080/realms/nephrospaidi"
+              valueFrom:
+                configMapKeyRef:
+                  name: nephro-common-config
+                  key: KEYCLOAK_ISSUER_URI
             - name: KEYCLOAK_JWK_SET_URI
-              value: "http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs"
+              valueFrom:
+                configMapKeyRef:
+                  name: nephro-common-config
+                  key: KEYCLOAK_JWK_SET_URI
             - name: SERVICES_ADMINISTRATION_BASE
               value: "http://administration-service:8087"
             - name: SERVICES_ADMINISTRATION_BASE_URL

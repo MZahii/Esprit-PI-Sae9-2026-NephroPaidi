@@ -20,3 +20,45 @@ data:
         static_configs:
           - targets:
               - clinical-service:8084
+
+      - job_name: administration-service
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets:
+              - administration-service:8087
+
+      - job_name: api-gateway
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets:
+              - api-gateway:8083
+
+      - job_name: communication-service
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets:
+              - communication-service:8085
+
+      - job_name: ops-service
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets:
+              - ops-service:8082
+
+      - job_name: pharmacy-service
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets:
+              - pharmacy-service:8088
+
+      - job_name: procedure-service
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets:
+              - procedure-service:8089
+
+      - job_name: user-service
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets:
+              - user-service:8090

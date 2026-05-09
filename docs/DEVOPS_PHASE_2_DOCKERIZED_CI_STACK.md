@@ -62,11 +62,20 @@ Then in Jenkins install plugins:
 - Login with default `admin/admin`
 - Change password
 - Create user token for Jenkins
-- Configure webhook:
-  - URL: `http://host.docker.internal:8099/sonarqube-webhook/`
+- Configure the SonarQube Quality Gate webhook back to Jenkins:
+  - URL: `http://jenkins:8080/sonarqube-webhook/`
   - Keep secret empty unless also configured in Jenkins
 
-## 6) Port customization
+## 6) GitHub webhook note
+
+The jury rubric also expects GitHub push automation. If Jenkins is only local, `localhost` is not enough for GitHub.
+
+Use a public Jenkins URL or a temporary tunnel and configure:
+
+- GitHub webhook URL: `https://<public-jenkins-url>/github-webhook/`
+- Jenkins job trigger: `GitHub hook trigger for GITScm polling`
+
+## 7) Port customization
 
 Edit `.env` (copy from `.env.example`) to change:
 - `JENKINS_HTTP_PORT`

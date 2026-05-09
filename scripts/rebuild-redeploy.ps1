@@ -1,84 +1,103 @@
-# Complete Docker Rebuild and Kubernetes Redeploy Script
-# Purpose: Rebuild all Docker images and redeploy to Kubernetes with latest metrics configuration
-# Usage: .\rebuild-redeploy.ps1
+# Local Docker Rebuild and Kubernetes Rollout Helper
+# Purpose: rebuild local images, optionally load them into Minikube, restart workloads,
+# and run a lightweight verification pass.
+# Note: this is a local helper only. The Sprint 3 jury path must target a kubeadm cluster.
 
-Write-Host @"
+$banner = @"
 ╔════════════════════════════════════════════════════════════════════════════╗
-║                   🔨 COMPLETE REBUILD & REDEPLOY SCRIPT                   ║
-║              Rebuilds Docker images and redeploys to Kubernetes            ║
+║                 LOCAL REBUILD + KUBERNETES ROLLOUT HELPER                ║
+║         Use for local validation only, not as the final kubeadm flow     ║
 ╚════════════════════════════════════════════════════════════════════════════╝
 "@
+Write-Host $banner
 
-# Get to project root
-cd (Split-Path -Parent $PSScriptRoot)
+Set-Location (Split-Path -Parent $PSScriptRoot)
 Write-Host "Working directory: $(Get-Location)"
 
-# ============================================================================
-# PHASE 1: BUILD ALL DOCKER IMAGES
-# ============================================================================
-Write-Host "`n╔═══════════════════════════════════════════════════════════╗"
-Write-Host "║ PHASE 1: REBUILDING DOCKER IMAGES                        ║"
-Write-Host "╚═══════════════════════════════════════════════════════════╝"
+function Get-JsonStatusCode {
+  param(
+    [Parameter(Mandatory = $true)][string]$Url,
+    [int]$TimeoutSec = 5
+  )
 
-Write-Host "`n⏳ Building all services (this takes 10-15 minutes)..."
-Write-Host "Services to rebuild:"
-Write-Host "  • api-gateway"
-Write-Host "  • eureka"
-Write-Host "  • config-server"
-Write-Host "  • clinical-service"
-Write-Host "  • user-service"
-Write-Host "  • pharmacy-service"
-Write-Host "  • communication-service"
-Write-Host "  • administration-service"
-Write-Host "  • procedure-service"
-Write-Host "  • core-ops-service"
-Write-Host "  • ops-service"
-Write-Host "  • frontend"
-Write-Host "  + AI services"
-
-$startTime = Get-Date
-docker compose -f docker-compose.full.yml build --no-cache
-$buildTime = (Get-Date) - $startTime
-Write-Host "`n✅ Docker build completed in $($buildTime.TotalMinutes.ToString('0.0')) minutes"
-
-# ============================================================================
-# PHASE 2: LOAD IMAGES INTO MINIKUBE
-# ============================================================================
-Write-Host "`n╔═══════════════════════════════════════════════════════════╗"
-Write-Host "║ PHASE 2: LOADING IMAGES INTO MINIKUBE                     ║"
-Write-Host "╚═══════════════════════════════════════════════════════════╝"
-
-$images = @(
-  "nephropaidi-api-gateway",
-  "nephropaidi-eureka",
-  "nephropaidi-config-server",
-  "nephropaidi-clinical-service",
-  "nephropaidi-user-service",
-  "nephropaidi-pharmacy-service",
-  "nephropaidi-communication-service",
-  "nephropaidi-administration-service",
-  "nephropaidi-procedure-service",
-  "nephropaidi-core-ops-service",
-  "nephropaidi-ops-service"
-)
-
-foreach ($img in $images) {
-  Write-Host "`n⏳ Loading $img into Minikube..."
-  minikube image load "${img}:latest" 2>&1 | Select-String "Loaded" -ErrorAction SilentlyContinue
-  if ($LASTEXITCODE -eq 0) {
-    Write-Host "  ✅ $img loaded"
+  try {
+    $response = Invoke-WebRequest -UseBasicParsing -TimeoutSec $TimeoutSec $Url
+    return $response.StatusCode
+  } catch {
+    return $null
   }
 }
 
-Write-Host "`n✅ All images loaded into Minikube"
+Write-Host "`n[1/5] Building Docker images from docker-compose.full.yml"
+$buildStart = Get-Date
+docker compose -f docker-compose.full.yml build --no-cache
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "❌ Docker build failed."
+  exit 1
+}
+$buildTime = (Get-Date) - $buildStart
+Write-Host "✅ Docker build completed in $($buildTime.TotalMinutes.ToString('0.0')) minutes"
 
-# ============================================================================
-# PHASE 3: RESTART KUBERNETES DEPLOYMENTS
-# ============================================================================
-Write-Host "`n╔═══════════════════════════════════════════════════════════╗"
-Write-Host "║ PHASE 3: RESTARTING KUBERNETES DEPLOYMENTS               ║"
-Write-Host "╚═══════════════════════════════════════════════════════════╝"
+Write-Host "`n[2/5] Checking Kubernetes context"
+try {
+  $currentContext = (kubectl config current-context).Trim()
+  Write-Host "Current context: $currentContext"
+} catch {
+  Write-Host "❌ Unable to read kubectl context."
+  exit 1
+}
 
+try {
+  kubectl cluster-info --request-timeout=10s | Out-Null
+  Write-Host "✅ Kubernetes API reachable"
+} catch {
+  Write-Host "❌ Kubernetes API is not reachable."
+  Write-Host "   Start your cluster first. For jury delivery, this should be kubeadm."
+  exit 1
+}
+
+$useMinikube = $false
+if ($currentContext -like "minikube*") {
+  try {
+    minikube profile list | Out-Null
+    $useMinikube = $true
+  } catch {
+    $useMinikube = $false
+  }
+}
+
+if ($useMinikube) {
+  Write-Host "`n[3/5] Minikube detected, loading local images"
+  $images = @(
+    "nephropaidi-api-gateway",
+    "nephropaidi-eureka",
+    "nephropaidi-config-server",
+    "nephropaidi-clinical-service",
+    "nephropaidi-user-service",
+    "nephropaidi-pharmacy-service",
+    "nephropaidi-communication-service",
+    "nephropaidi-administration-service",
+    "nephropaidi-procedure-service",
+    "nephropaidi-core-ops-service",
+    "nephropaidi-ops-service",
+    "nephropaidi-frontend"
+  )
+
+  foreach ($img in $images) {
+    Write-Host "⏳ Loading $($img):latest"
+    minikube image load "${img}:latest" | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+      Write-Host "  ✅ $img loaded"
+    } else {
+      Write-Host "  ⚠️ Failed to load $img"
+    }
+  }
+} else {
+  Write-Host "`n[3/5] Non-Minikube context detected"
+  Write-Host "ℹ️ Skipping local image load. For kubeadm, push images to a registry visible from the nodes."
+}
+
+Write-Host "`n[4/5] Restarting Kubernetes deployments"
 $deployments = @(
   "api-gateway",
   "eureka",
@@ -90,119 +109,45 @@ $deployments = @(
   "administration-service",
   "procedure-service",
   "core-ops-service",
-  "ops-service"
+  "ops-service",
+  "frontend"
 )
 
 foreach ($dep in $deployments) {
-  Write-Host "`n⏳ Restarting $dep deployment..."
-  kubectl rollout restart deployment/$dep -n nephro 2>&1 | Select-String "restarted" -ErrorAction SilentlyContinue
+  Write-Host "⏳ Restarting deployment/$dep"
+  kubectl rollout restart deployment/$dep -n nephro | Out-Null
 }
 
-Write-Host "`n⏳ Waiting 45 seconds for all pods to restart..."
-Start-Sleep -Seconds 45
+Write-Host "⏳ Waiting 30 seconds for rollout start"
+Start-Sleep -Seconds 30
 
-Write-Host "`n✅ All deployments restarted"
-
-# ============================================================================
-# PHASE 4: VERIFY PODS RUNNING
-# ============================================================================
-Write-Host "`n╔═══════════════════════════════════════════════════════════╗"
-Write-Host "║ PHASE 4: VERIFICATION                                     ║"
-Write-Host "╚═══════════════════════════════════════════════════════════╝"
-
-Write-Host "`nPod Status:"
-$podCount = (kubectl get pods -n nephro --no-headers | Measure-Object -Line).Lines
-Write-Host "  Total pods: $podCount"
-
-kubectl get pods -n nephro --no-headers | ForEach-Object {
-  if ($_ -match "(\S+)\s+(\d+)/(\d+)\s+(\S+)") {
-    $name = $matches[1]
-    $status = $matches[4]
-    $icon = if ($status -eq "Running") { "✅" } else { "⏳" }
-    Write-Host "  $icon $name ($status)"
-  }
+Write-Host "`n[5/5] Verification"
+try {
+  kubectl get pods -n nephro
+} catch {
+  Write-Host "⚠️ Could not list pods."
 }
 
-# ============================================================================
-# PHASE 5: TEST METRICS ENDPOINTS
-# ============================================================================
-Write-Host "`n╔═══════════════════════════════════════════════════════════╗"
-Write-Host "║ PHASE 5: TESTING METRICS ENDPOINTS                        ║"
-Write-Host "╚═══════════════════════════════════════════════════════════╝"
-
-Write-Host "`nTesting /actuator/prometheus endpoints (30 second timeout)..."
-
+Write-Host "`nLocal metrics spot-checks"
 $testServices = @(
-  @{Name="api-gateway"; Port=8083},
-  @{Name="clinical-service"; Port=8084},
-  @{Name="user-service"; Port=8090}
+  @{ Name = "api-gateway"; Url = "http://localhost:8083/actuator/prometheus" },
+  @{ Name = "clinical-service"; Url = "http://localhost:8084/actuator/prometheus" },
+  @{ Name = "user-service"; Url = "http://localhost:8090/actuator/prometheus" }
 )
 
 foreach ($svc in $testServices) {
-  Write-Host "`n⏳ Testing $($svc.Name):$($svc.Port)..."
-  try {
-    $response = curl -s "http://localhost:$($svc.Port)/actuator/prometheus" -m 5 -o /dev/null -w "%{http_code}"
-    if ($response -eq "200") {
-      Write-Host "  ✅ $($svc.Name) - Metrics endpoint UP (HTTP 200)"
-    } else {
-      Write-Host "  ⚠️ $($svc.Name) - HTTP $response"
-    }
-  } catch {
-    Write-Host "  ❌ $($svc.Name) - Connection failed"
+  $statusCode = Get-JsonStatusCode -Url $svc.Url
+  if ($statusCode -eq 200) {
+    Write-Host "✅ $($svc.Name): metrics endpoint reachable"
+  } elseif ($statusCode) {
+    Write-Host "⚠️ $($svc.Name): HTTP $statusCode"
+  } else {
+    Write-Host "⚠️ $($svc.Name): not reachable locally"
   }
 }
 
-# ============================================================================
-# PHASE 6: VERIFY PROMETHEUS TARGETS
-# ============================================================================
-Write-Host "`n╔═══════════════════════════════════════════════════════════╗"
-Write-Host "║ PHASE 6: PROMETHEUS TARGETS                              ║"
-Write-Host "╚═══════════════════════════════════════════════════════════╝"
-
-Write-Host "`nChecking Prometheus targets (should see UP status):"
-try {
-  $targets = curl -s "http://localhost:9090/api/v1/targets" | ConvertFrom-Json | Select-Object -ExpandProperty data | Select-Object -ExpandProperty activeTargets
-  foreach ($target in $targets) {
-    $job = $target.labels.job
-    $health = $target.health
-    $icon = if ($health -eq "up") { "✅" } else { "⚠️" }
-    Write-Host "  $icon $job: $health"
-  }
-} catch {
-  Write-Host "  ⚠️ Could not query Prometheus (is it running?)"
-}
-
-# ============================================================================
-# SUMMARY
-# ============================================================================
-Write-Host @"
-╔════════════════════════════════════════════════════════════════════════════╗
-║                       🎉 REBUILD COMPLETE                                ║
-╚════════════════════════════════════════════════════════════════════════════╝
-
-✅ All Docker images rebuilt with metrics configuration
-✅ All images loaded into Minikube
-✅ All Kubernetes deployments restarted
-✅ All pods should be Running
-✅ Prometheus metrics endpoints should be UP
-
-NEXT STEPS:
-
-1. Verify Prometheus Dashboard:
-   → http://localhost:9090/targets
-   → All services should show (up) in green
-
-2. Verify Grafana Dashboard:
-   → http://localhost:3000 (admin/admin)
-   → Navigate to nephropaidi-overview
-   → Should see CPU, Memory, HTTP metrics
-
-3. Test Jenkins Build:
-   → http://localhost:8099
-   → Run Build Now
-   → Should complete in 2-3 minutes
-
-4. If issues remain:
-   → Check pod logs: kubectl logs -n nephro <pod-name>
-   → Check metrics endpoint: kubectl port-forward svc/<service> <port>:<port>
-"@
+Write-Host ""
+Write-Host "Next steps:"
+Write-Host "1. Run Jenkins with RUN_FRONTEND_TESTS=false unless the Vitest browser packages are installed."
+Write-Host "2. For kubeadm, publish images to a registry and update manifests if nodes cannot see local images."
+Write-Host "3. Verify ingress, Prometheus, and Grafana from the active cluster, not from Minikube-specific commands."

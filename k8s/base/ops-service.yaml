@@ -29,21 +29,36 @@ spec:
             - name: SPRING_DATASOURCE_USERNAME
               value: "neondb_owner"
             - name: SPRING_DATASOURCE_PASSWORD
-              value: "npg_Zb1Kda5LPlin"
+              valueFrom:
+                secretKeyRef:
+                  name: nephro-app-secrets
+                  key: OPS_DB_PASSWORD
             - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
               value: "org.postgresql.Driver"
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
-              value: "http://localhost:8080/realms/nephrospaidi"
+              valueFrom:
+                configMapKeyRef:
+                  name: nephro-common-config
+                  key: KEYCLOAK_ISSUER_URI
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI
-              value: "http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs"
+              valueFrom:
+                configMapKeyRef:
+                  name: nephro-common-config
+                  key: KEYCLOAK_JWK_SET_URI
             - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
               value: "http://eureka:8761/eureka"
             - name: EUREKA_INSTANCE_HOSTNAME
               value: "ops-service"
             - name: KEYCLOAK_ISSUER_URI
-              value: "http://localhost:8080/realms/nephrospaidi"
+              valueFrom:
+                configMapKeyRef:
+                  name: nephro-common-config
+                  key: KEYCLOAK_ISSUER_URI
             - name: KEYCLOAK_JWK_SET_URI
-              value: "http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs"
+              valueFrom:
+                configMapKeyRef:
+                  name: nephro-common-config
+                  key: KEYCLOAK_JWK_SET_URI
             - name: ENVIRONMENT
               value: "docker"
 ---

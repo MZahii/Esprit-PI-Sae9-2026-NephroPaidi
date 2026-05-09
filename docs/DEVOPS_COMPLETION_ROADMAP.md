@@ -1,5 +1,8 @@
 # DevOps Phases - Completion Roadmap
 
+> Historical progress note: parts of this roadmap refer to Docker Desktop Kubernetes as an intermediate local step.
+> The final Sprint 3 orchestration target is a functional kubeadm cluster.
+
 ## Current Status Summary (May 7, 2026)
 
 ### ✅ **Phase 1: Jenkins + SonarQube** 

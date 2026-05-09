@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nephro-common-config
+  namespace: nephro
+data:
+  KEYCLOAK_ISSUER_URI: "http://keycloak:8080/realms/nephrospaidi"
+  KEYCLOAK_JWK_SET_URI: "http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs"
+  KEYCLOAK_SERVER_URL: "http://keycloak:8080"
+  KEYCLOAK_REALM: "nephrospaidi"
