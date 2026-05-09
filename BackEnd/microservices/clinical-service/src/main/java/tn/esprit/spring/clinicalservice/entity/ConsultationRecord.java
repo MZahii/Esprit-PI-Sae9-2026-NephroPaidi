@@ -89,6 +89,34 @@ public class ConsultationRecord {
     @CollectionTable(name = "consultation_allergies", joinColumns = @JoinColumn(name = "consultation_id"))
     private List<AllergyEntry> allergies = new ArrayList<>();
     
+    // ============= AI DOCUMENT METADATA (for PDF/Scanner parsing) =============
+    @Column(name = "parser_confidence")
+    private Float parserConfidence; // 0.0-1.0 confidence from document scanner
+    
+    @Column(name = "content_type")
+    private String contentType; // "application/pdf", "image/jpeg", etc.
+    
+    @Column(name = "requires_manual_review")
+    private Boolean requiresManualReview = false; // Flag if document parsing was uncertain
+    
+    @Column(name = "document_age_days")
+    private Integer documentAgeDays; // Days since document was created
+    
+    @Column(name = "is_reviewed")
+    private Boolean isReviewed = false; // Clinical staff has reviewed this consultation
+    
+    @Column(name = "hospital_id")
+    private Integer hospitalId = 0; // Hospital identifier (0 = unknown)
+    
+    @Column(name = "department_id")
+    private Integer departmentId = 0; // Department identifier (0 = unknown)
+    
+    @Column(name = "serum_creatinine_umol_l")
+    private java.math.BigDecimal serumCreatinine_umolL; // Creatinine in μmol/L (for AI model)
+    
+    @Column(name = "document_quality_score")
+    private Float documentQualityScore; // Calculated quality score (0-100)
+    
     // ============= AUDIT FIELDS =============
     @Column(nullable = false, name = "created_at")
     private LocalDateTime createdAt;

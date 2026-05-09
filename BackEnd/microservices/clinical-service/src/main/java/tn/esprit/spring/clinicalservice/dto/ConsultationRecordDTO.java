@@ -45,6 +45,17 @@ public class ConsultationRecordDTO {
     // Allergies
     private List<AllergyEntryDTO> allergies;
     
+    // AI Document Metadata (for PDF/Scanner parsing)
+    private Float parserConfidence;      // 0.0-1.0 confidence from document scanner
+    private String contentType;           // "application/pdf", "image/jpeg", etc.
+    private Boolean requiresManualReview; // Flag if document parsing was uncertain
+    private Integer documentAgeDays;      // Days since document was created
+    private Boolean isReviewed;           // Clinical staff has reviewed this consultation
+    private Integer hospitalId;           // Hospital identifier (0 = unknown)
+    private Integer departmentId;         // Department identifier (0 = unknown)
+    private BigDecimal serumCreatinine_umolL; // Creatinine in μmol/L (for AI model)
+    private Float documentQualityScore;   // Calculated quality score (0-100)
+    
     // Audit
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
