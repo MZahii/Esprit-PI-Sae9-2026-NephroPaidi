@@ -186,14 +186,16 @@
   box-shadow: 0 10px 24px rgba(15, 128, 148, 0.08);
 }
 
-.notifications-menu {
+.notifications-menu,
+.messages-menu {
   position: relative;
   display: flex;
   align-items: center;
   height: 52px;
 }
 
-.notifications-trigger {
+.notifications-trigger,
+.messages-trigger {
   position: relative;
   width: 52px;
   height: 52px;
@@ -219,7 +221,8 @@
   box-shadow: 0 8px 18px rgba(15, 128, 148, 0.16);
 }
 
-.notifications-trigger:hover {
+.notifications-trigger:hover,
+.messages-trigger:hover {
   transform: translateY(-1px);
 }
 
@@ -313,6 +316,53 @@
 .notification-message {
   color: #64748b;
   font-size: 13px;
+}
+
+.messages-dropdown {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: -64px;
+  width: 440px;
+  max-height: min(650px, calc(100vh - 124px));
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #d6eaf2;
+  border-radius: 20px;
+  box-shadow: 0 24px 70px rgba(15, 60, 90, 0.18);
+  z-index: 1001;
+}
+
+.messages-dropdown::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  right: 92px;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border-left: 1px solid #d6eaf2;
+  border-top: 1px solid #d6eaf2;
+  transform: rotate(45deg);
+}
+
+:host ::ng-deep .messages-dropdown app-internal-staff-messaging {
+  display: block;
+}
+
+:host ::ng-deep .messages-dropdown .page-header {
+  display: none !important;
+}
+
+:host ::ng-deep .messages-dropdown .main-content {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+:host ::ng-deep .messages-dropdown .card {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  margin: 0 !important;
 }
 
 /* user dropdown */
@@ -451,6 +501,7 @@
 }
 
 :host-context(body.np-theme-dark) .notifications-dropdown,
+:host-context(body.np-theme-dark) .messages-dropdown,
 :host-context(body.np-theme-dark) .user-menu-dropdown {
   background: #0c1728;
   border-color: #2a3d58;
@@ -480,4 +531,18 @@
   .notifications-dropdown {
     width: 300px;
   }
+
+  .messages-dropdown {
+    position: fixed;
+    top: 92px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-height: calc(100vh - 110px);
+  }
+
+  .messages-dropdown::before {
+    right: 128px;
+  }
+
 }

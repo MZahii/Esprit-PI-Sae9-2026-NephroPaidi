@@ -155,6 +155,25 @@
           </div>
         </div>
 
+        <div class="messages-menu" *ngIf="canUseInternalStaffMessaging" [class.open]="messagesOpen">
+          <button
+            type="button"
+            class="messages-trigger"
+            (click)="toggleMessages($event)"
+            title="Internal Staff Messaging"
+          >
+            <img
+              src="assets/backoffice/images/icons/message.png"
+              alt="Internal staff messaging"
+              class="header-action-img"
+            />
+          </button>
+
+          <div class="messages-dropdown" *ngIf="messagesOpen">
+            <app-internal-staff-messaging [compactMode]="true"></app-internal-staff-messaging>
+          </div>
+        </div>
+
         <div class="user-menu" [class.open]="userMenuOpen">
           <button
             type="button"

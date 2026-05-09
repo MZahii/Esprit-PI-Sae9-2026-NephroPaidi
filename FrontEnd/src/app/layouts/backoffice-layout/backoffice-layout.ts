@@ -24,6 +24,7 @@ import { getValidToken, logout } from '../../core/auth/keycloak.service';
 import { TemplateAssetsService } from '../../core/services/template-assets.service';
 import { InterfacePreferencesService } from '../../core/services/interface-preferences.service';
 import { environment } from '../../../environments/environment';
+import { InternalStaffMessagingComponent } from '../../pages/backoffice/internal-staff-messaging/internal-staff-messaging';
 
 declare const window: any;
 
@@ -93,7 +94,7 @@ interface DockedStatGroup {
 @Component({
   selector: 'app-backoffice-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, InternalStaffMessagingComponent],
   templateUrl: './backoffice-layout.html',
   styleUrls: ['./backoffice-layout.scss']
 })
@@ -106,6 +107,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
 
   userMenuOpen = false;
   notificationsOpen = false;
+  messagesOpen = false;
   loadingNotifications = false;
   notifications: HeaderNotification[] = [];
   unreadCount = 0;
@@ -481,16 +483,6 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
       });
     }
 
-    if (this.canUseInternalStaffMessaging) {
-      items.push({
-        key: 'internalStaffMessaging',
-        label: 'Internal Staff Messaging',
-        icon: 'feather-message-circle',
-        route: '/backoffice/internal-staff-messaging',
-        exact: true
-      });
-    }
-
     if (this.isPharmacist || this.isNurse) {
       items.push({
         key: 'pharmacy',
@@ -693,6 +685,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
         this.updateRouteBodyClasses();
         this.userMenuOpen = false;
         this.notificationsOpen = false;
+        this.messagesOpen = false;
         if (Date.now() - this.lastManualMenuToggleAt > this.manualMenuToggleGraceMs) {
           this.syncOpenMenusWithRoute();
         }
@@ -1074,6 +1067,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
   toggleUserMenu(event: MouseEvent): void {
     event.stopPropagation();
     this.notificationsOpen = false;
+    this.messagesOpen = false;
     this.userMenuOpen = !this.userMenuOpen;
 
     setTimeout(() => {
@@ -1086,6 +1080,9 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     const target = event.target as HTMLElement | null;
     if (!target?.closest('.notifications-menu')) {
       this.notificationsOpen = false;
+    }
+    if (!target?.closest('.messages-menu')) {
+      this.messagesOpen = false;
     }
     if (!target?.closest('.user-menu')) {
       this.userMenuOpen = false;
@@ -1104,6 +1101,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     }
     event.stopPropagation();
     this.userMenuOpen = false;
+    this.messagesOpen = false;
     this.notificationsOpen = !this.notificationsOpen;
 
     if (this.notificationsOpen) {
@@ -1112,6 +1110,13 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
         await this.markAllVisibleAsRead();
       }
     }
+  }
+
+  toggleMessages(event: MouseEvent): void {
+    event.stopPropagation();
+    this.notificationsOpen = false;
+    this.userMenuOpen = false;
+    this.messagesOpen = !this.messagesOpen;
   }
 
   async markAsRead(notificationId: number): Promise<void> {
@@ -1217,6 +1222,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
 
   async onLogout(): Promise<void> {
     this.userMenuOpen = false;
+    this.messagesOpen = false;
     await logout();
   }
 
