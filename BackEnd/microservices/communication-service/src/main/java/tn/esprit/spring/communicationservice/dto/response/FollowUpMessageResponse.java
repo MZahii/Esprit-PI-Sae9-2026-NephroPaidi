@@ -2,6 +2,8 @@ package tn.esprit.spring.communicationservice.dto.response;
 
 import lombok.Builder;
 import lombok.Getter;
+import tn.esprit.spring.communicationservice.domain.enums.AiTriageStatus;
+import tn.esprit.spring.communicationservice.domain.enums.AiUrgencyLevel;
 import tn.esprit.spring.communicationservice.domain.enums.MessageQueue;
 import tn.esprit.spring.communicationservice.domain.enums.MessageStatus;
 import tn.esprit.spring.communicationservice.domain.enums.MessageType;
@@ -31,5 +33,11 @@ public class FollowUpMessageResponse {
     private Instant readAt;
     private Instant lastUpdatedAt;
     private Instant closedAt;
+    private AiUrgencyLevel aiUrgencyLevel;
+    private Double aiConfidence;
+    private AiTriageStatus aiTriageStatus;
+    private String aiExplanation;
+    private String aiModelVersion;
+    private Instant aiEvaluatedAt;
     private List<MessageReplyResponse> replies;
 }

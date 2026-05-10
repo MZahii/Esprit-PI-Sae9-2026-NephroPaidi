@@ -35,7 +35,6 @@
             <small class="text-muted">Created {{ msg.createdAt | date:'medium' }}</small>
           </div>
           <div class="d-flex flex-wrap gap-2">
-            <span class="badge" [ngClass]="msg.priority === 'HIGH' ? 'bg-danger' : 'bg-secondary'">{{ msg.priority }}</span>
             <span class="badge bg-info">{{ msg.status }}</span>
             <span class="badge bg-light text-dark">{{ msg.messageType }}</span>
           </div>
@@ -136,6 +135,24 @@
           <p class="mb-3"><strong>Assigned Doctor:</strong> {{ msg.assignedDoctorKeycloakId || 'Not escalated' }}</p>
 
           <a class="btn btn-light-brand w-100" [routerLink]="['/backoffice/patients']">Open Patient Record</a>
+        </div>
+      </div>
+
+      <div class="card stretch stretch-full mt-3" *ngIf="shouldShowAiAdvisory(msg)">
+        <div class="card-header">
+          <h5 class="card-title">AI Triage Advisory</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-flex flex-wrap gap-2 mb-3" *ngIf="shouldShowAiPrediction(msg)">
+            <span class="badge" [ngClass]="getAiUrgencyClass(msg)">{{ msg.aiUrgencyLevel }}</span>
+          </div>
+          <div class="alert alert-warning py-2 mb-0" *ngIf="shouldShowAiFailure(msg)">
+            AI triage unavailable
+          </div>
+          <p class="mb-2" *ngIf="shouldShowAiPrediction(msg) && msg.aiConfidence !== null && msg.aiConfidence !== undefined"><strong>Confidence:</strong> {{ formatAiConfidence(msg) }}</p>
+          <p class="mb-2" *ngIf="shouldShowAiPrediction(msg) && msg.aiModelVersion"><strong>Model:</strong> {{ msg.aiModelVersion }}</p>
+          <p class="mb-2" *ngIf="shouldShowAiPrediction(msg) && msg.aiEvaluatedAt"><strong>Evaluated:</strong> {{ msg.aiEvaluatedAt | date:'short' }}</p>
+          <p class="mb-0" *ngIf="shouldShowAiPrediction(msg) && msg.aiExplanation"><strong>Explanation:</strong> {{ msg.aiExplanation }}</p>
         </div>
       </div>
     </div>

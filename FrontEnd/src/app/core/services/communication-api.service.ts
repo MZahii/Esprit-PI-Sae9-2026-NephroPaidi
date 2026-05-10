@@ -12,6 +12,8 @@ export type MessageStatus = 'PENDING' | 'READ' | 'IN_PROGRESS' | 'ESCALATED' | '
 export type SenderRole = 'GUARDIAN' | 'RECEPTIONIST' | 'NURSE' | 'DOCTOR';
 export type StaffRole = 'RECEPTIONIST' | 'NURSE' | 'DOCTOR';
 export type BulkMessageAction = 'TAKE' | 'MARK_READ' | 'UNASSIGN' | 'CLOSE';
+export type AiUrgencyLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type AiTriageStatus = 'PENDING' | 'SUCCESS' | 'FALLBACK' | 'FAILED' | 'SKIPPED';
 
 export interface CreateMessagePayload {
   patientId?: number | null;
@@ -65,6 +67,12 @@ export interface FollowUpMessage {
   readAt?: string | null;
   lastUpdatedAt: string;
   closedAt?: string | null;
+  aiUrgencyLevel?: AiUrgencyLevel | null;
+  aiConfidence?: number | null;
+  aiTriageStatus?: AiTriageStatus | null;
+  aiExplanation?: string | null;
+  aiModelVersion?: string | null;
+  aiEvaluatedAt?: string | null;
   replies: MessageReply[];
 }
 

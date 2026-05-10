@@ -6,9 +6,13 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
+import tn.esprit.spring.communicationservice.ai.AiTriageClient;
+import tn.esprit.spring.communicationservice.ai.AiTriageRequest;
+import tn.esprit.spring.communicationservice.ai.AiTriageResult;
 import tn.esprit.spring.communicationservice.domain.entity.FollowUpMessage;
 import tn.esprit.spring.communicationservice.domain.entity.MessageAuditLog;
 import tn.esprit.spring.communicationservice.domain.entity.MessageReply;
+import tn.esprit.spring.communicationservice.domain.enums.AiTriageStatus;
 import tn.esprit.spring.communicationservice.domain.enums.MessageAuditAction;
 import tn.esprit.spring.communicationservice.domain.enums.MessageQueue;
 import tn.esprit.spring.communicationservice.domain.enums.MessageStatus;
@@ -55,6 +59,7 @@ public class FollowUpMessageServiceImpl implements FollowUpMessageService {
     private final CurrentUserService currentUserService;
     private final GuardianPatientResolverService guardianPatientResolverService;
     private final TransactionTemplate transactionTemplate;
+    private final AiTriageClient aiTriageClient;
 
     @Override
     @Transactional
@@ -74,6 +79,7 @@ public class FollowUpMessageServiceImpl implements FollowUpMessageService {
         entity.setQueue(routeQueue(request.getMessageType(), request.getPriority()));
         entity.setCreatedAt(now);
         entity.setLastUpdatedAt(now);
+        applyAiTriage(entity, request);
 
         FollowUpMessage saved = followUpMessageRepository.save(entity);
 
@@ -383,6 +389,37 @@ public class FollowUpMessageServiceImpl implements FollowUpMessageService {
         return MessageQueue.NURSE;
     }
 
+    private void applyAiTriage(FollowUpMessage entity, CreateMessageRequest request) {
+        if (!shouldRunAiTriage(request.getMessageType())) {
+            entity.setAiUrgencyLevel(null);
+            entity.setAiConfidence(null);
+            entity.setAiTriageStatus(AiTriageStatus.SKIPPED);
+            entity.setAiExplanation(null);
+            entity.setAiModelVersion(null);
+            entity.setAiEvaluatedAt(null);
+            return;
+        }
+
+        AiTriageRequest aiRequest = AiTriageRequest.builder()
+                .messageText(entity.getMessageText())
+                .subject(entity.getSubject())
+                .messageType(request.getMessageType())
+                .guardianPriority(request.getPriority())
+                .build();
+
+        AiTriageResult result = aiTriageClient.triage(aiRequest);
+        entity.setAiUrgencyLevel(result.getUrgencyLevel());
+        entity.setAiConfidence(result.getConfidence());
+        entity.setAiTriageStatus(result.getStatus() != null ? result.getStatus() : AiTriageStatus.FAILED);
+        entity.setAiExplanation(trimToLength(result.getExplanation(), 1000));
+        entity.setAiModelVersion(result.getModelVersion());
+        entity.setAiEvaluatedAt(result.getEvaluatedAt() != null ? result.getEvaluatedAt() : Instant.now());
+    }
+
+    private boolean shouldRunAiTriage(MessageType messageType) {
+        return messageType == MessageType.MEDICAL;
+    }
+
     private FollowUpMessage getMessageOrThrow(UUID id) {
         return followUpMessageRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Message not found: " + id));
@@ -439,6 +476,14 @@ public class FollowUpMessageServiceImpl implements FollowUpMessageService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String trimToLength(String value, int maxLength) {
+        String trimmed = trimOrNull(value);
+        if (trimmed == null || trimmed.length() <= maxLength) {
+            return trimmed;
+        }
+        return trimmed.substring(0, maxLength);
     }
 
     private void applyBulkAction(UUID messageId, BulkMessageAction action) {

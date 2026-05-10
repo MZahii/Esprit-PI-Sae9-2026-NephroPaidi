@@ -30,3 +30,9 @@ internal:
     base-url: ${USER_SERVICE_BASE_URL:http://localhost:8090}
   administration-service:
     base-url: ${ADMINISTRATION_SERVICE_BASE_URL:http://localhost:8087}
+
+ai:
+  triage:
+    enabled: ${AI_TRIAGE_ENABLED:true}
+    base-url: ${AI_TRIAGE_SERVICE_BASE_URL:http://localhost:8000}
+    timeout-millis: ${AI_TRIAGE_TIMEOUT_MILLIS:1500}

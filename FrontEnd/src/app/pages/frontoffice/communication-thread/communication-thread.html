@@ -24,7 +24,6 @@
           <h4 class="mb-1">{{ msg.subject || 'No subject' }}</h4>
           <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
             <span class="badge bg-soft-primary text-primary">{{ msg.messageType }}</span>
-            <span class="badge text-bg-danger" *ngIf="msg.priority === 'HIGH'">URGENT</span>
             <span class="badge" [ngClass]="msg.status === 'CLOSED' ? 'text-bg-secondary' : msg.status === 'RESPONDED' ? 'text-bg-success' : 'text-bg-warning'">{{ msg.status }}</span>
           </div>
           <small class="text-muted d-block mb-2">Sent {{ msg.createdAt | date:'medium' }}</small>

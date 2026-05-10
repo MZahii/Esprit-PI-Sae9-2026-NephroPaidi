@@ -44,10 +44,6 @@
         <button class="btn" [ngClass]="activeTab === 'ALL_MESSAGES' ? 'btn-primary' : 'btn-light-brand'" (click)="selectTab('ALL_MESSAGES')">
           All Messages
         </button>
-        <button class="btn d-flex align-items-center gap-2" [ngClass]="activeTab === 'URGENT' ? 'btn-primary' : 'btn-light-brand'" (click)="selectTab('URGENT')">
-          Urgent
-          <span class="badge bg-danger">{{ urgentTabCount }}</span>
-        </button>
       </div>
 
       <div class="row g-2 mb-3">
@@ -55,12 +51,6 @@
           <div class="border rounded p-3 h-100">
             <small class="text-muted d-block">Total Pending</small>
             <h5 class="mb-0">{{ pendingCount }}</h5>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="border rounded p-3 h-100">
-            <small class="text-muted d-block">Urgent Open</small>
-            <h5 class="mb-0">{{ urgentOpenCount }}</h5>
           </div>
         </div>
         <div class="col-md-3">
@@ -117,15 +107,6 @@
                 <label class="form-check-label" *ngFor="let status of statuses">
                   <input class="form-check-input me-1" type="checkbox" [checked]="isChecked(status, draftFilters.statuses)" (change)="toggleChecked(status, draftFilters.statuses)" />
                   {{ status }}
-                </label>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Priority</label>
-              <div class="d-flex flex-wrap gap-3">
-                <label class="form-check-label" *ngFor="let priority of priorities">
-                  <input class="form-check-input me-1" type="checkbox" [checked]="isChecked(priority, draftFilters.priorities)" (change)="toggleChecked(priority, draftFilters.priorities)" />
-                  {{ priority }}
                 </label>
               </div>
             </div>
@@ -198,7 +179,7 @@
               <th>Patient</th>
               <th>Type</th>
               <th>Subject & Preview</th>
-              <th>Priority</th>
+              <th *ngIf="showAiColumn">AI Triage</th>
               <th>Status</th>
               <th>Assigned Staff</th>
               <th></th>
@@ -217,8 +198,16 @@
                 <small class="d-block text-warning fw-semibold" *ngIf="item.status === 'ESCALATED'">{{ getEscalationLabel(item) }}</small>
                 <small class="text-muted">{{ getMessagePreview(item) }}</small>
               </td>
-              <td>
-                <span class="badge" [ngClass]="item.priority === 'HIGH' ? 'bg-danger' : 'bg-secondary'">{{ item.priority }}</span>
+              <td *ngIf="showAiColumn">
+                <div class="d-flex flex-wrap gap-1 align-items-center" *ngIf="shouldShowAiPrediction(item)">
+                  <span class="badge" [ngClass]="getAiUrgencyClass(item)">{{ item.aiUrgencyLevel }}</span>
+                </div>
+                <small class="text-muted d-block" *ngIf="shouldShowAiPrediction(item) && item.aiConfidence !== null && item.aiConfidence !== undefined">
+                  Confidence {{ formatAiConfidence(item) }}
+                </small>
+                <small class="text-danger d-block" *ngIf="shouldShowAiFailure(item)">
+                  AI triage unavailable
+                </small>
               </td>
               <td>{{ item.status }}</td>
               <td>{{ item.assignedToUserKeycloakId || 'Unassigned' }}</td>
@@ -238,7 +227,7 @@
             </tr>
 
             <tr *ngIf="filteredItems.length === 0">
-              <td colspan="9" class="text-center text-muted py-4">No messages match the current filters.</td>
+              <td [attr.colspan]="showAiColumn ? 9 : 8" class="text-center text-muted py-4">No messages match the current filters.</td>
             </tr>
           </tbody>
         </table>

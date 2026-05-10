@@ -47,6 +47,11 @@ export class CommunicationNewComponent implements OnInit {
       this.form.patchValue({ messageType: queryType });
     }
 
+    this.enforcePriorityForMessageType(this.form.controls.messageType.value);
+    this.form.controls.messageType.valueChanges.subscribe((messageType) => {
+        this.enforcePriorityForMessageType(messageType);
+    });
+
     this.loadPatients();
   }
 
@@ -77,6 +82,10 @@ export class CommunicationNewComponent implements OnInit {
 
   get messageLength(): number {
     return this.form.controls.messageText.value?.length ?? 0;
+  }
+
+  get showManualUrgentCheckbox(): boolean {
+    return !this.isMedicalMessageType(this.form.controls.messageType.value);
   }
 
   get isUrgent(): boolean {
@@ -123,6 +132,16 @@ export class CommunicationNewComponent implements OnInit {
         this.errorMessage = err?.error?.message || 'Unable to load linked patients.';
       }
     });
+  }
+
+  private enforcePriorityForMessageType(messageType: MessageType | null | undefined): void {
+    if (this.isMedicalMessageType(messageType)) {
+      this.form.controls.priority.setValue('NORMAL', { emitEvent: false });
+    }
+  }
+
+  private isMedicalMessageType(messageType: MessageType | null | undefined): boolean {
+    return messageType === 'MEDICAL';
   }
 
   submit(): void {
