@@ -2,6 +2,10 @@
 -- Purpose: Support PDF/Document scanner integration for automated lab data extraction
 -- These columns track document quality, parser confidence, and extraction metadata
 
+CREATE TABLE IF NOT EXISTS consultation_records (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+);
+
 ALTER TABLE consultation_records
 ADD COLUMN IF NOT EXISTS parser_confidence FLOAT;
 

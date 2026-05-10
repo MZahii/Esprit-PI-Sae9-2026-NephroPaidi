@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS hospitalization_records (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    patient_id UUID NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    patient_id UUID NOT NULL,
     admission_date TIMESTAMP NOT NULL,
     discharge_date TIMESTAMP,
     admission_reason VARCHAR(500),
@@ -32,9 +32,7 @@ CREATE TABLE IF NOT EXISTS hospitalization_records (
     
     -- Audit fields
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_hosp_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_hosp_patient_id ON hospitalization_records(patient_id);

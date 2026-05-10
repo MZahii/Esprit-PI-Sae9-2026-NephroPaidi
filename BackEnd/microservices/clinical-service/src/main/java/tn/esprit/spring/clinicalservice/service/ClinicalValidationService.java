@@ -4,8 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tn.esprit.spring.clinicalservice.entity.*;
+import tn.esprit.spring.clinicalservice.enums.AlertSeverity;
 import tn.esprit.spring.clinicalservice.enums.CKDStage;
+import tn.esprit.spring.clinicalservice.repository.ClinicalAlertRepository;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Clinical validation service implementing 7 pediatric nephrology business rules.
@@ -17,11 +21,50 @@ public class ClinicalValidationService {
     
     @Autowired
     private SchwartzGFRCalculator schwartzCalculator;
+
+    @Autowired
+    private ClinicalAlertRepository alertRepository;
     
     /**
      * RULE 1: Schwartz validation - height + creatinine required for eGFR computation
      */
+    public void validateSchwartzRequirements(ConsultationRecord consultation) {
+        if (consultation == null) {
+            return;
+        }
+
+        VitalSigns vitals = consultation.getVitalSigns();
+        PediatricNephrologyRecord nephro = consultation.getNephologyRecord();
+        if (vitals == null || nephro == null) {
+            return;
+        }
+
+        BigDecimal height = vitals.getHeight_cm();
+        BigDecimal creatinine = nephro.getSerumCreatinine_mgdL();
+        BigDecimal existingEgfr = nephro.getEGFR();
+
+        boolean requiresSchwartzInputs = height != null || creatinine != null || existingEgfr != null;
+        if (!requiresSchwartzInputs) {
+            return;
+        }
+
+        if (height == null || height.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Rule 1: Height (cm) is required for Schwartz calculation");
+        }
+        if (creatinine == null || creatinine.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Rule 1: Serum creatinine (mg/dL) is required for Schwartz calculation");
+        }
+
+        log.debug("Rule 1: Schwartz requirements validated");
+    }
+
+    /**
+     * RULE 1 legacy helper for manual operations endpoint
+     */
     public void validateSchwartzRequirements(PediatricNephrologyRecord nephro) {
+        if (nephro == null) {
+            return;
+        }
         if (nephro.getSerumCreatinine_mgdL() == null || nephro.getSerumCreatinine_mgdL().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Rule 1: Serum creatinine (mg/dL) is required for Schwartz calculation");
         }
@@ -122,8 +165,15 @@ public class ClinicalValidationService {
     public void checkCRH8DayCompliance(DischargeDocument discharge) {
         if (discharge.getCrhDocumentStatus() != null && 
             discharge.getCrhDocumentStatus().name().equals("PARTIAL_PENDING_8_DAYS")) {
-            log.warn("Rule 5: CRH document incomplete - must be finalized within 8 days of discharge");
-            // TODO: Schedule alert for day 7
+            ClinicalAlert alert = new ClinicalAlert();
+            alert.setPatientId(discharge.getPatientId());
+            alert.setAlertType("CRH_DEADLINE");
+            alert.setSeverity(AlertSeverity.WARNING);
+            alert.setMessage("CRH document pending completion");
+            alert.setDetails("Finalize within 8 days of discharge. Recommended escalation on day 7 after " + discharge.getDischargeDate());
+            alert.setCreatedAt(LocalDateTime.now());
+            alert.setResolved(false);
+            alertRepository.save(alert);
         }
     }
     
@@ -132,14 +182,30 @@ public class ClinicalValidationService {
      * If husPresent AND husOutcome != FATAL → create annual follow-up task
      */
     public void checkHUSAnnualFollowup(PediatricNephrologyRecord nephro) {
+        checkHUSAnnualFollowup(null, nephro);
+    }
+
+    public void checkHUSAnnualFollowup(UUID patientId, PediatricNephrologyRecord nephro) {
+        if (nephro == null) {
+            return;
+        }
         if (nephro.getHusPresent() == null || !nephro.getHusPresent()) {
             return;
         }
         if (nephro.getHusType() == null) {
             return;
         }
-        log.info("Rule 6: HUS patient detected - annual follow-up recommended");
-        // TODO: Create follow-up task
+        if (patientId != null) {
+            ClinicalAlert alert = new ClinicalAlert();
+            alert.setPatientId(patientId);
+            alert.setAlertType("HUS_FOLLOW_UP");
+            alert.setSeverity(AlertSeverity.ROUTINE);
+            alert.setMessage("Annual HUS nephrology follow-up required");
+            alert.setDetails("HUS history detected. Schedule annual renal follow-up and blood-pressure review.");
+            alert.setCreatedAt(LocalDateTime.now());
+            alert.setResolved(false);
+            alertRepository.save(alert);
+        }
     }
     
     /**

@@ -102,7 +102,7 @@ services:
   communication:
     url: ${COMMUNICATION_SERVICE_URL:${SERVICES_COMMUNICATION_URL:http://localhost:8085}}
   ai-clinical:
-    base-url: ${AI_CLINICAL_SERVICE_URL:http://localhost:5000}
+    base-url: ${AI_CLINICAL_SERVICE_URL:http://ai-clinical-service:8091}
 
 # Management/Actuator
 management:

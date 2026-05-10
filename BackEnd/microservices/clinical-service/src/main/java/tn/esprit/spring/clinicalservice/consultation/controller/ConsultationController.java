@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@RestController
+@RestController("doctorConsultationController")
 @RequestMapping("/clinical/consultations")
 @RequiredArgsConstructor
 public class ConsultationController {

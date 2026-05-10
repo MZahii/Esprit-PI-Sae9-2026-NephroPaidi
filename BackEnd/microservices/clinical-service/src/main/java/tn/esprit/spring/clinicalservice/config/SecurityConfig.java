@@ -24,7 +24,7 @@ import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
-@Profile("!local")
+@Profile("!local & !test")
 @RequiredArgsConstructor
 public class SecurityConfig {
 

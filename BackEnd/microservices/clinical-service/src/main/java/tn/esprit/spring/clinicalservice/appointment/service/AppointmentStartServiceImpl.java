@@ -85,7 +85,7 @@ public class AppointmentStartServiceImpl implements AppointmentStartService {
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime appointmentTime = appointment.getScheduledAt();
-        LocalDateTime hardCancelTime = appointmentTime.plusMinutes(20);
+        LocalDateTime hardCancelTime = appointmentTime.plusMinutes(15);
         
         // Can only extend if still within the active window
         if (now.isAfter(hardCancelTime)) {
@@ -127,13 +127,13 @@ public class AppointmentStartServiceImpl implements AppointmentStartService {
 
         for (Appointment appointment : scheduledAppointments) {
             LocalDateTime appointmentTime = appointment.getScheduledAt();
-            LocalDateTime hardCancelTime = appointmentTime.plusMinutes(20);
+            LocalDateTime hardCancelTime = appointmentTime.plusMinutes(15);
 
-            // At 20 minutes: Hard cancel if never started
+            // At 15 minutes: Hard cancel if never started
             if (now.isAfter(hardCancelTime) && 
                 (appointment.getStatus().equals(AppointmentStatus.SCHEDULED) || 
                  appointment.getStatus().equals(AppointmentStatus.NO_SHOW))) {
-                log.info("Auto-cancelling stale appointment (20-min mark): {}", appointment.getId());
+                log.info("Auto-cancelling stale appointment (15-min mark): {}", appointment.getId());
 
                 appointment.setStatus(AppointmentStatus.CANCELLED);
                 appointment.setUpdatedAt(now);

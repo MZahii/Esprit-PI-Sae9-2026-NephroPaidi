@@ -1,5 +1,10 @@
 package tn.esprit.spring.clinicalservice.dto;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.*;
 import tn.esprit.spring.clinicalservice.enums.*;
 import java.math.BigDecimal;
@@ -16,20 +21,40 @@ import java.util.UUID;
 @Builder
 public class ConsultationRecordDTO {
     private UUID id;
+
+    @NotNull
     private UUID patientId;
+
+    @NotBlank
     private String consultationType;
+
+    @NotBlank
     private String admissionMode;
+
+    @NotNull
     private LocalDateTime consultationDate;
     private String chiefComplaint;
     
     // VitalSigns embedded fields
+    @Positive
     private BigDecimal weight_kg;
+
+    @Positive
     private BigDecimal height_cm;
+
+    @Min(30)
+    @Max(300)
     private Integer bpSystolic_mmHg;
+
+    @Min(20)
+    @Max(200)
     private Integer bpDiastolic_mmHg;
     private Integer heartRate_bpm;
     private Integer respiratoryRate_bpm;
     private BigDecimal temperature_C;
+
+    @Min(0)
+    @Max(100)
     private Integer oxygenSaturation_pct;
     
     // PediatricNephrology embedded fields
@@ -55,6 +80,11 @@ public class ConsultationRecordDTO {
     private Integer departmentId;         // Department identifier (0 = unknown)
     private BigDecimal serumCreatinine_umolL; // Creatinine in μmol/L (for AI model)
     private Float documentQualityScore;   // Calculated quality score (0-100)
+
+    // Optional clinical computation inputs
+    private Integer ageYears;
+    private Boolean isPremature;
+    private BigDecimal proteinIntakeGPerKgPerDay;
     
     // Audit
     private LocalDateTime createdAt;

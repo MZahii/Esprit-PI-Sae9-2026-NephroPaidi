@@ -59,8 +59,9 @@ class ConsultationOutcomeServiceImplTest {
                 .build();
 
         when(consultationRepository.findById(consultationId)).thenReturn(Optional.of(consultation));
-        when(outcomeRepository.findByConsultationId(consultationId)).thenReturn(Optional.empty());
+        when(outcomeRepository.findByConsultationIdForUpdate(consultationId)).thenReturn(Optional.empty());
         when(outcomeRepository.save(any(ConsultationOutcome.class))).thenReturn(saved);
+        when(outcomeRepository.saveAndFlush(any(ConsultationOutcome.class))).thenReturn(saved);
 
         ConsultationOutcomeResponse response = service.updateNotes(consultationId, doctorId, "New note");
 
@@ -83,7 +84,7 @@ class ConsultationOutcomeServiceImplTest {
                 .build();
 
         when(consultationRepository.findById(consultationId)).thenReturn(Optional.of(consultation));
-        when(outcomeRepository.findByConsultationId(consultationId)).thenReturn(Optional.of(outcome));
+        when(outcomeRepository.findByConsultationIdForUpdate(consultationId)).thenReturn(Optional.of(outcome));
         when(outcomeRepository.save(any(ConsultationOutcome.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ConsultationOutcomeResponse response = service.updatePrescriptions(consultationId, doctorId, "New");

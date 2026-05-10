@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   ClinicalApiService,
@@ -19,6 +19,14 @@ import { Subscription, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 
 type WorkspaceTab = 'notes' | 'diagnosis' | 'plan' | 'labs' | 'prescriptions' | 'adherence';
+type WorkflowSectionKey =
+  | 'patient-context'
+  | 'vitals'
+  | 'nephrology'
+  | 'hospitalization'
+  | 'discharge'
+  | 'alerts'
+  | 'review';
 
 interface EgfrTrendPoint {
   consultationId: string;
@@ -35,6 +43,22 @@ interface EgfrMlPredictionState {
   classification: EgfrMlClassificationResponse | null;
   payloadPreview: Record<string, unknown> | null;
 }
+
+interface WorkflowSection {
+  key: WorkflowSectionKey;
+  label: string;
+  hint: string;
+}
+
+const WORKFLOW_SECTIONS: WorkflowSection[] = [
+  { key: 'patient-context', label: 'Patient Context', hint: 'Identity, history, allergies, and encounter framing.' },
+  { key: 'vitals', label: 'Vitals', hint: 'Anthropometrics, blood pressure, and immediate measurements.' },
+  { key: 'nephrology', label: 'Nephrology', hint: 'Creatinine, eGFR, CKD stage, and renal findings.' },
+  { key: 'hospitalization', label: 'Hospitalization', hint: 'Escalate when inpatient workflow or nurse handoff is needed.' },
+  { key: 'discharge', label: 'Discharge & Follow-up', hint: 'Plan, prescriptions, follow-up, and home instructions.' },
+  { key: 'alerts', label: 'Alerts', hint: 'Surface renal risk, adherence, and blood-pressure concerns.' },
+  { key: 'review', label: 'Review', hint: 'Generate summary and confirm the consultation is complete.' }
+];
 
 const HEIGHT_MEDIAN_BY_AGE: Record<number, number> = {
   2: 87,
@@ -199,7 +223,7 @@ const DBP_P95_BY_AGE: Record<number, number> = {
 @Component({
   selector: 'app-consultation-workspace',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink],
   templateUrl: './consultation-workspace.page.html',
   styleUrl: './consultation-workspace.page.scss'
 })
@@ -231,6 +255,9 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
   };
 
   activeTab: WorkspaceTab = 'notes';
+  activeWorkflowSection: WorkflowSectionKey = 'patient-context';
+  workflowSections = WORKFLOW_SECTIONS;
+  workflowIntakeForm;
   draft: ConsultationWorkspaceDraft = {
     soap: {
       subjective: '',
@@ -276,13 +303,27 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
   showHospitalizeModal = false;
 
   medicationSuggestions: Record<number, any[]> = {};
+  private workflowFormSubscription?: Subscription;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private api: ClinicalApiService,
-    private workspace: ConsultationWorkspaceService
-  ) {}
+    private workspace: ConsultationWorkspaceService,
+    private formBuilder: FormBuilder
+  ) {
+    this.workflowIntakeForm = this.formBuilder.group({
+      ageYears: [null as number | null],
+      sex: [''],
+      heightCm: [null as number | null],
+      weightKg: [null as number | null],
+      systolicBpMmHg: [null as number | null],
+      diastolicBpMmHg: [null as number | null],
+      creatinineMgDl: [null as number | null],
+      treatmentPlan: [''],
+      guardianInstructions: ['']
+    });
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -292,12 +333,13 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
     }
     this.consultationId = id;
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || null;
+    this.bindWorkflowIntakeForm();
     this.loadConsultation();
     this.loadDraft();
   }
 
   ngOnDestroy(): void {
-    // No polling subscription to clean up.
+    this.workflowFormSubscription?.unsubscribe();
   }
 
   @HostListener('window:beforeunload', ['$event'])
@@ -313,6 +355,29 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
       return;
     }
     this.activeTab = tab;
+  }
+
+  openWorkflowSection(section: WorkflowSectionKey): void {
+    this.activeWorkflowSection = section;
+    switch (section) {
+      case 'patient-context':
+      case 'vitals':
+      case 'nephrology':
+      case 'alerts':
+        this.setTab('notes');
+        break;
+      case 'hospitalization':
+        if (this.adherenceUnlocked) {
+          this.setTab('adherence');
+        } else {
+          this.openHospitalizeModal();
+        }
+        break;
+      case 'discharge':
+      case 'review':
+        this.setTab('plan');
+        break;
+    }
   }
 
   loadConsultation(): void {
@@ -365,6 +430,7 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
       .subscribe((draft) => {
         this.draft = draft;
         this.adherenceUnlocked = (draft.carePlanDoses?.length ?? 0) > 0;
+        this.syncWorkflowIntakeFormFromDraft();
         this.lastSavedSnapshot = this.buildDraftSnapshot();
         this.runEgfrMlPrediction();
       });
@@ -969,6 +1035,23 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
     return soapFilled && diagnosisFilled && treatmentPlanFilled;
   }
 
+  workflowSectionStatus(section: WorkflowSectionKey): 'Complete' | 'In progress' | 'Pending' {
+    if (this.isWorkflowSectionComplete(section)) return 'Complete';
+    if (this.isWorkflowSectionStarted(section)) return 'In progress';
+    return 'Pending';
+  }
+
+  workflowSectionBadgeClass(section: WorkflowSectionKey): string {
+    const status = this.workflowSectionStatus(section);
+    if (status === 'Complete') return 'bg-soft-success text-success';
+    if (status === 'In progress') return 'bg-soft-warning text-warning';
+    return 'bg-soft-secondary text-muted';
+  }
+
+  get completedWorkflowSections(): number {
+    return this.workflowSections.filter((section) => this.isWorkflowSectionComplete(section.key)).length;
+  }
+
   get hospitalizationQueryParams(): Record<string, string> {
     const params: Record<string, string> = {};
     if (this.consultationId) {
@@ -1394,6 +1477,7 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
     this.api.getPatient(patientId).subscribe({
       next: (patient) => {
         this.patientProfile = patient;
+        this.patchWorkflowPatientProfile();
         this.runEgfrMlPrediction();
       },
       error: () => {
@@ -1647,5 +1731,121 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
   private toFiniteNumber(value: unknown): number | null {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  private bindWorkflowIntakeForm(): void {
+    this.workflowFormSubscription = this.workflowIntakeForm.valueChanges.subscribe((value) => {
+      this.draft = {
+        ...this.draft,
+        treatmentPlan: value.treatmentPlan ?? '',
+        guardianInstructions: value.guardianInstructions ?? '',
+        metrics: {
+          ...this.draft.metrics,
+          ageYears: this.toFiniteNumber(value.ageYears) ?? undefined,
+          sex: value.sex || undefined,
+          heightCm: this.toFiniteNumber(value.heightCm) ?? undefined,
+          weightKg: this.toFiniteNumber(value.weightKg) ?? undefined,
+          systolicBpMmHg: this.toFiniteNumber(value.systolicBpMmHg) ?? undefined,
+          diastolicBpMmHg: this.toFiniteNumber(value.diastolicBpMmHg) ?? undefined,
+          creatinineMgDl: this.toFiniteNumber(value.creatinineMgDl) ?? undefined
+        }
+      };
+      this.runEgfrMlPrediction();
+    });
+  }
+
+  private syncWorkflowIntakeFormFromDraft(): void {
+    this.workflowIntakeForm.patchValue({
+      ageYears: this.draft.metrics.ageYears ?? null,
+      sex: this.draft.metrics.sex ?? '',
+      heightCm: this.draft.metrics.heightCm ?? null,
+      weightKg: this.draft.metrics.weightKg ?? null,
+      systolicBpMmHg: this.draft.metrics.systolicBpMmHg ?? null,
+      diastolicBpMmHg: this.draft.metrics.diastolicBpMmHg ?? null,
+      creatinineMgDl: this.draft.metrics.creatinineMgDl ?? null,
+      treatmentPlan: this.draft.treatmentPlan ?? '',
+      guardianInstructions: this.draft.guardianInstructions ?? ''
+    }, { emitEvent: false });
+  }
+
+  private patchWorkflowPatientProfile(): void {
+    if (!this.patientProfile) {
+      return;
+    }
+
+    const current = this.workflowIntakeForm.getRawValue();
+    const fallbackAge = this.toFiniteNumber(this.patientProfile?.age);
+    const fallbackSex = String(this.patientProfile?.gender ?? this.patientProfile?.sex ?? '').trim();
+
+    if (this.draft.metrics.ageYears === undefined && fallbackAge !== null) {
+      this.draft.metrics.ageYears = fallbackAge;
+    }
+    if (!this.draft.metrics.sex && fallbackSex) {
+      this.draft.metrics.sex = fallbackSex;
+    }
+
+    this.workflowIntakeForm.patchValue({
+      ageYears: current.ageYears ?? fallbackAge,
+      sex: current.sex || fallbackSex
+    }, { emitEvent: false });
+  }
+
+  private hasFiniteMetric(value: unknown): boolean {
+    return this.toFiniteNumber(value) !== null;
+  }
+
+  private isWorkflowSectionComplete(section: WorkflowSectionKey): boolean {
+    switch (section) {
+      case 'patient-context':
+        return !!this.consultationId && this.getPatientLabel(this.consultation?.patientId) !== '-';
+      case 'vitals':
+        return this.hasFiniteMetric(this.draft.metrics.heightCm)
+          && this.hasFiniteMetric(this.draft.metrics.weightKg)
+          && this.hasFiniteMetric(this.draft.metrics.systolicBpMmHg)
+          && this.hasFiniteMetric(this.draft.metrics.diastolicBpMmHg);
+      case 'nephrology':
+        return this.hasFiniteMetric(this.draft.metrics.creatinineMgDl)
+          && this.egfrValue !== null
+          && !!this.ckdStage
+          && this.ckdStage !== 'N/A';
+      case 'hospitalization':
+        return this.adherenceUnlocked && (this.draft.carePlanDoses?.length ?? 0) > 0;
+      case 'discharge':
+        return !!this.draft.treatmentPlan?.trim()
+          && !!this.draft.guardianInstructions?.trim()
+          && (this.draft.prescriptions || []).some((item) => (item.medication || '').trim().length > 0);
+      case 'alerts':
+        return this.hasFiniteMetric(this.draft.metrics.creatinineMgDl)
+          && this.hasFiniteMetric(this.draft.metrics.systolicBpMmHg)
+          && this.hasFiniteMetric(this.draft.metrics.diastolicBpMmHg);
+      case 'review':
+        return this.canComplete;
+    }
+  }
+
+  private isWorkflowSectionStarted(section: WorkflowSectionKey): boolean {
+    switch (section) {
+      case 'patient-context':
+        return !!this.consultation || !!this.patientProfile;
+      case 'vitals':
+        return this.hasFiniteMetric(this.draft.metrics.heightCm)
+          || this.hasFiniteMetric(this.draft.metrics.weightKg)
+          || this.hasFiniteMetric(this.draft.metrics.systolicBpMmHg)
+          || this.hasFiniteMetric(this.draft.metrics.diastolicBpMmHg);
+      case 'nephrology':
+        return this.hasFiniteMetric(this.draft.metrics.creatinineMgDl)
+          || this.egfrValue !== null
+          || (!!this.ckdStage && this.ckdStage !== 'N/A');
+      case 'hospitalization':
+        return this.adherenceUnlocked || (this.draft.carePlanDoses?.length ?? 0) > 0;
+      case 'discharge':
+        return !!this.draft.treatmentPlan?.trim()
+          || !!this.draft.guardianInstructions?.trim()
+          || (this.draft.prescriptions || []).some((item) => (item.medication || '').trim().length > 0);
+      case 'alerts':
+        return this.alerts.length > 0 || this.hasFiniteMetric(this.draft.metrics.creatinineMgDl);
+      case 'review':
+        return this.completenessScore > 0 || !!this.generatedSummary;
+    }
   }
 }

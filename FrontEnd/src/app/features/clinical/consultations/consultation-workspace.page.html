@@ -273,6 +273,81 @@
             </div>
           </div>
 
+          <div class="card border-0 bg-light-subtle mb-3">
+            <div class="card-body">
+              <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                <div>
+                  <div class="text-uppercase text-muted small fw-semibold">Pediatric nephrology workflow</div>
+                  <h6 class="mb-1">Navigate by clinical section instead of only by document tab</h6>
+                  <p class="text-muted small mb-0">
+                    This keeps the existing workspace, but organizes the consultation around patient context, vitals, nephrology, hospitalization, discharge, alerts, and review.
+                  </p>
+                </div>
+                <span class="badge bg-soft-primary text-primary">{{ completedWorkflowSections }}/{{ workflowSections.length }} sections complete</span>
+              </div>
+
+              <div class="row g-2">
+                <div class="col-xl-4 col-md-6" *ngFor="let section of workflowSections">
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary text-start w-100 h-100"
+                    [class.border-primary]="activeWorkflowSection === section.key"
+                    [class.bg-white]="activeWorkflowSection === section.key"
+                    (click)="openWorkflowSection(section.key)">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                      <strong>{{ section.label }}</strong>
+                      <span class="badge" [ngClass]="workflowSectionBadgeClass(section.key)">{{ workflowSectionStatus(section.key) }}</span>
+                    </div>
+                    <div class="small text-muted">{{ section.hint }}</div>
+                  </button>
+                </div>
+              </div>
+
+              <form class="row g-3 mt-1" [formGroup]="workflowIntakeForm">
+                <div class="col-xl-3 col-md-6">
+                  <label class="form-label small text-muted">Age (years)</label>
+                  <input type="number" class="form-control" formControlName="ageYears" placeholder="7" />
+                </div>
+                <div class="col-xl-3 col-md-6">
+                  <label class="form-label small text-muted">Sex</label>
+                  <select class="form-select" formControlName="sex">
+                    <option value="">Select</option>
+                    <option value="M">Male</option>
+                    <option value="F">Female</option>
+                  </select>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                  <label class="form-label small text-muted">Height (cm)</label>
+                  <input type="number" class="form-control" formControlName="heightCm" placeholder="125" />
+                </div>
+                <div class="col-xl-3 col-md-6">
+                  <label class="form-label small text-muted">Weight (kg)</label>
+                  <input type="number" class="form-control" formControlName="weightKg" placeholder="24.5" />
+                </div>
+                <div class="col-xl-3 col-md-6">
+                  <label class="form-label small text-muted">Systolic BP</label>
+                  <input type="number" class="form-control" formControlName="systolicBpMmHg" placeholder="110" />
+                </div>
+                <div class="col-xl-3 col-md-6">
+                  <label class="form-label small text-muted">Diastolic BP</label>
+                  <input type="number" class="form-control" formControlName="diastolicBpMmHg" placeholder="70" />
+                </div>
+                <div class="col-xl-3 col-md-6">
+                  <label class="form-label small text-muted">Creatinine (mg/dL)</label>
+                  <input type="number" class="form-control" formControlName="creatinineMgDl" placeholder="0.8" />
+                </div>
+                <div class="col-xl-12">
+                  <label class="form-label small text-muted">Treatment plan headline</label>
+                  <input class="form-control" formControlName="treatmentPlan" placeholder="First-line discharge or inpatient plan..." />
+                </div>
+                <div class="col-xl-12">
+                  <label class="form-label small text-muted">Guardian instructions headline</label>
+                  <input class="form-control" formControlName="guardianInstructions" placeholder="Education, warning signs, home care..." />
+                </div>
+              </form>
+            </div>
+          </div>
+
           <ul class="nav nav-tabs consultation-tabs">
             <li class="nav-item">
               <button class="nav-link" [class.active]="activeTab === 'notes'" (click)="setTab('notes')">SOAP Notes</button>

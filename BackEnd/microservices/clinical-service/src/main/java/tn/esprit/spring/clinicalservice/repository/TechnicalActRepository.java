@@ -16,4 +16,6 @@ public interface TechnicalActRepository extends JpaRepository<TechnicalAct, UUID
      * Find all technical acts for a discharge document
      */
     List<TechnicalAct> findByDischargeId(UUID dischargeId);
+
+    void deleteByDischargeId(UUID dischargeId);
 }

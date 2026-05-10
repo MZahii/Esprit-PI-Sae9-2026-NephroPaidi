@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS discharge_documents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    patient_id UUID NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    patient_id UUID NOT NULL,
     discharge_date TIMESTAMP NOT NULL,
     
     -- HAS §1: Admission Reason
@@ -30,9 +30,7 @@ CREATE TABLE IF NOT EXISTS discharge_documents (
     
     -- Audit fields
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_discharge_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_discharge_patient_id ON discharge_documents(patient_id);

@@ -95,7 +95,7 @@ public class ClinicalOperationsController {
         ConsultationRecord consultation = optional.get();
         try {
             // Scan for BP classification
-            alertsService.checkBPClassification(consultation.getPatientId(), consultation.getVitalSigns());
+            alertsService.checkBPClassification(consultation.getPatientId(), consultation.getVitalSigns(), null);
             
             // Scan for electrolyte levels
             alertsService.checkPhosphateLevel(consultation.getPatientId(), consultation.getNephologyRecord());

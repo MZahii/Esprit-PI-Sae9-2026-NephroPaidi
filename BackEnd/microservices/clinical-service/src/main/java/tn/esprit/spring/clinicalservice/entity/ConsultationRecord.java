@@ -59,8 +59,8 @@ public class ConsultationRecord {
         @AttributeOverride(name = "bpDiastolic_mmHg", column = @Column(name = "vital_bp_diastolic")),
         @AttributeOverride(name = "heartRate_bpm", column = @Column(name = "vital_heart_rate")),
         @AttributeOverride(name = "respiratoryRate_bpm", column = @Column(name = "vital_respiratory_rate")),
-        @AttributeOverride(name = "temperature_celsius", column = @Column(name = "vital_temperature")),
-        @AttributeOverride(name = "oxygen_saturation_pct", column = @Column(name = "vital_oxygen_saturation"))
+        @AttributeOverride(name = "temperature_C", column = @Column(name = "vital_temperature")),
+        @AttributeOverride(name = "oxygenSaturation_pct", column = @Column(name = "vital_oxygen_saturation"))
     })
     private VitalSigns vitalSigns;
     
@@ -79,6 +79,8 @@ public class ConsultationRecord {
     @AttributeOverrides({
         @AttributeOverride(name = "eGFR", column = @Column(name = "nephro_egfr")),
         @AttributeOverride(name = "schwartz_k", column = @Column(name = "nephro_k")),
+        @AttributeOverride(name = "serumCreatinine_umolL", column = @Column(name = "nephro_serum_creatinine_umol_l")),
+        @AttributeOverride(name = "serumCreatinine_mgdL", column = @Column(name = "nephro_serum_creatinine_mg_dl")),
         @AttributeOverride(name = "ckdStage", column = @Column(name = "nephro_ckd_stage")),
         @AttributeOverride(name = "ckdCause", column = @Column(name = "nephro_ckd_cause"))
     })

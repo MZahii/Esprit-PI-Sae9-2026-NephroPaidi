@@ -16,4 +16,6 @@ public interface MedicationAtDischargeRepository extends JpaRepository<Medicatio
      * Find all medications for a discharge document
      */
     List<MedicationAtDischarge> findByDischargeId(UUID dischargeId);
+
+    void deleteByDischargeId(UUID dischargeId);
 }
