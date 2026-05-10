@@ -65,7 +65,10 @@ function parseJwtPayload(token: string): JwtPayload | null {
 
 function normalizeRole(role: unknown): string | null {
   if (role == null) return null;
-  const normalized = String(role).trim().toUpperCase();
+  let normalized = String(role).trim().toUpperCase();
+  if (normalized.startsWith('ROLE_')) {
+    normalized = normalized.slice(5);
+  }
   return normalized || null;
 }
 
@@ -180,6 +183,10 @@ export function hasAnyRole(expectedRoles: readonly string[]): boolean {
 
 export function getLandingRouteByRole(): string {
   const roles = getUserRoles();
+  if (roles.includes('PHARMACIST')) {
+    return '/backoffice/pharmacy/dashboard';
+  }
+
   if (roles.some((role) => STAFF_BACKOFFICE_ROLES.includes(role as typeof STAFF_BACKOFFICE_ROLES[number]))) {
     return '/backoffice/dashboard';
   }

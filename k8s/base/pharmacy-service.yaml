@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pharmacy-service
+  namespace: nephro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pharmacy-service
+  template:
+    metadata:
+      labels:
+        app: pharmacy-service
+    spec:
+      containers:
+        - name: pharmacy-service
+          image: nephropaidi-pharmacy-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8088
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              value: "optional:configserver:http://config-server:8888"
+            - name: SPRING_CLOUD_CONFIG_URI
+              value: "http://config-server:8888"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://ep-cool-breeze-agqhhjlc.c-2.eu-central-1.aws.neon.tech/nephros_pharmacy_db?sslmode=require&channel_binding=require"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "neondb_owner"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nephro-app-secrets
+                  key: PHARMACY_DB_PASSWORD
+            - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+              value: "http://eureka:8761/eureka"
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: "pharmacy-service"
+            - name: KEYCLOAK_ISSUER_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: nephro-common-config
+                  key: KEYCLOAK_ISSUER_URI
+            - name: KEYCLOAK_JWK_SET_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: nephro-common-config
+                  key: KEYCLOAK_JWK_SET_URI
+            - name: USER_SERVICE_BASE_URL
+              value: "http://user-service:8090"
+            - name: INTERNAL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nephro-app-secrets
+                  key: INTERNAL_API_KEY
+            - name: MAIL_USERNAME
+              value: ""
+            - name: MAIL_PASSWORD
+              value: ""
+            - name: ENVIRONMENT
+              value: "docker"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pharmacy-service
+  namespace: nephro
+spec:
+  selector:
+    app: pharmacy-service
+  ports:
+    - name: http
+      port: 8088
+      targetPort: 8088

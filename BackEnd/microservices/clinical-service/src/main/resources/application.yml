@@ -2,11 +2,27 @@ spring:
   application:
     name: clinical-service
   config:
-    import: "configserver:"
+    import: optional:configserver:http://config-server:8888
   flyway:
     outOfOrder: true
     validateOnMigrate: false
     repairOnMigrate: true
+  datasource:
+    hikari:
+      connection-timeout: 10000
+      validation-timeout: 5000
+      initialization-fail-timeout: 10000
+      maximum-pool-size: 5
+      minimum-idle: 1
+      keepalive-time: 30000
+      max-lifetime: 600000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://eureka:8761/eureka}
+  instance:
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:clinical-service}
 
 # Feign Configuration
 feign:
@@ -75,23 +91,30 @@ resilience4j:
 # Service URLs for Feign clients
 services:
   user:
-    url: ${USER_SERVICE_URL:http://localhost:8086}
+    url: ${USER_SERVICE_URL:${SERVICES_USER_BASE_URL:${SERVICES_USER_BASE:http://localhost:8090}}}
+    base-url: ${SERVICES_USER_BASE_URL:${SERVICES_USER_BASE:http://localhost:8090}}
   admin:
-    url: ${ADMIN_SERVICE_URL:http://localhost:8085}
+    url: ${ADMIN_SERVICE_URL:${SERVICES_ADMINISTRATION_BASE_URL:${SERVICES_ADMINISTRATION_BASE:http://localhost:8087}}}
+  administration:
+    base-url: ${SERVICES_ADMINISTRATION_BASE_URL:${SERVICES_ADMINISTRATION_BASE:http://localhost:8087}}
   pharmacy:
-    url: ${PHARMACY_SERVICE_URL:http://localhost:8087}
+    url: ${PHARMACY_SERVICE_URL:${SERVICES_PHARMACY_URL:http://localhost:8088}}
   communication:
-    url: ${COMMUNICATION_SERVICE_URL:http://localhost:8089}
+    url: ${COMMUNICATION_SERVICE_URL:${SERVICES_COMMUNICATION_URL:http://localhost:8085}}
 
 # Management/Actuator
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics
   endpoint:
     health:
       show-details: always
   health:
     circuitbreakers:
       enabled: true
+
+server:
+  port: 8084
+  address: 0.0.0.0

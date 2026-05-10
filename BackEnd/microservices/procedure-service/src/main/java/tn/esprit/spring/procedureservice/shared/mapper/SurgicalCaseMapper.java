@@ -21,6 +21,7 @@ public final class SurgicalCaseMapper {
             surgicalCase.getPatientId(),
             surgicalCase.getConsultationId(),
             surgicalCase.getAppointmentId(),
+            surgicalCase.getSurgeryRequestId(),
             surgicalCase.getFirstName(),
             surgicalCase.getLastName(),
             surgicalCase.getAge(),

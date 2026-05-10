@@ -12,6 +12,7 @@ import tn.esprit.spring.communicationservice.staffmessaging.domain.InternalStaff
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,14 +65,27 @@ public class CurrentUserService {
 
     public Set<String> getCurrentRoles() {
         Jwt jwt = currentJwt();
-        Object realmAccess = jwt.getClaims().get("realm_access");
+        Set<String> roles = new LinkedHashSet<>();
 
-        if (!(realmAccess instanceof Map<?, ?> realmAccessMap)) {
-            return Collections.emptySet();
+        Object realmAccess = jwt.getClaims().get("realm_access");
+        if (realmAccess instanceof Map<?, ?> realmAccessMap) {
+            roles.addAll(readRoles(realmAccessMap.get("roles")));
         }
 
-        Object roles = realmAccessMap.get("roles");
-        if (!(roles instanceof Collection<?> roleCollection)) {
+        Object resourceAccess = jwt.getClaims().get("resource_access");
+        if (resourceAccess instanceof Map<?, ?> resourceAccessMap) {
+            for (Object value : resourceAccessMap.values()) {
+                if (value instanceof Map<?, ?> clientAccessMap) {
+                    roles.addAll(readRoles(clientAccessMap.get("roles")));
+                }
+            }
+        }
+
+        return roles;
+    }
+
+    private Set<String> readRoles(Object candidate) {
+        if (!(candidate instanceof Collection<?> roleCollection)) {
             return Collections.emptySet();
         }
 

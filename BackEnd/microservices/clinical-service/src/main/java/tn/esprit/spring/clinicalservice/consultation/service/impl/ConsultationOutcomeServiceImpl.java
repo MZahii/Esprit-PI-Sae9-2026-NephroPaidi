@@ -1,6 +1,7 @@
 package tn.esprit.spring.clinicalservice.consultation.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,7 @@ import tn.esprit.spring.clinicalservice.notification.GuardianNotificationType;
 import java.util.UUID;
 import java.util.Objects;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -85,10 +87,13 @@ public class ConsultationOutcomeServiceImpl implements ConsultationOutcomeServic
 
     private ConsultationOutcome getOrCreateOutcome(UUID consultationId, UUID doctorId) {
         ensureOwnership(consultationId, doctorId);
-        return outcomeRepository.findByConsultationId(consultationId)
-                .orElseGet(() -> ConsultationOutcome.builder()
-                        .consultationId(consultationId)
-                        .build());
+        return outcomeRepository.findByConsultationIdForUpdate(consultationId)
+                .orElseGet(() -> {
+                    ConsultationOutcome newOutcome = ConsultationOutcome.builder()
+                            .consultationId(consultationId)
+                            .build();
+                    return outcomeRepository.saveAndFlush(newOutcome);
+                });
     }
 
     private void ensureOwnership(UUID consultationId, UUID doctorId) {
@@ -121,6 +126,10 @@ public class ConsultationOutcomeServiceImpl implements ConsultationOutcomeServic
         if (Objects.equals(before, after)) {
             return;
         }
-        guardianNotificationService.notifyGuardians(consultationId, type, message);
+        try {
+            guardianNotificationService.notifyGuardians(consultationId, type, message);
+        } catch (Exception ex) {
+            log.warn("Guardian notification skipped for consultation {} ({}): {}", consultationId, type, ex.getMessage());
+        }
     }
 }

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -74,6 +74,10 @@ type ContractType = 'CDI' | 'CDD' | 'INTERNSHIP' | 'PART_TIME' | 'TEMPORARY';
   styleUrl: './staff-user-details.scss'
 })
 export class StaffUserDetails implements OnInit {
+  @Input() modalMode = false;
+  @Input() userId: number | null = null;
+  @Output() closeModal = new EventEmitter<void>();
+
   loading = false;
   savingProfile = false;
   savingContractId: number | null = null;
@@ -81,6 +85,7 @@ export class StaffUserDetails implements OnInit {
   auditLoading = false;
   errorMessage = '';
   successMessage = '';
+  profileStatsOpen = false;
   role = '';
   returnTo: 'staff' | 'staff-details' | 'contracts' | 'hr-list' = 'staff';
   backRoute = '/backoffice/staff';
@@ -101,8 +106,7 @@ export class StaffUserDetails implements OnInit {
     phone: '',
     dateOfBirth: '',
     sex: 'MALE' as Sex,
-    role: 'DOCTOR' as StaffRole,
-    avatarUrl: ''
+    role: 'DOCTOR' as StaffRole
   };
 
   contractForm = {
@@ -138,6 +142,16 @@ export class StaffUserDetails implements OnInit {
     this.role = this.authStorage.getRole() ?? '';
     this.resolveReturnNavigation();
     this.loadUserDetails();
+  }
+
+  openProfileStats(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.profileStatsOpen = true;
+  }
+
+  closeProfileStats(): void {
+    this.profileStatsOpen = false;
   }
 
   private resolveReturnNavigation(): void {
@@ -253,6 +267,29 @@ export class StaffUserDetails implements OnInit {
     });
   }
 
+  get activeContractCount(): number {
+    return this.contracts.filter((contract) => ['ACTIVE', 'SUSPENDED'].includes(contract.status)).length;
+  }
+
+  get endedContractCount(): number {
+    return this.contracts.filter((contract) => ['ENDED', 'EXPIRED'].includes(contract.status)).length;
+  }
+
+  get latestContractStatus(): string {
+    return this.contracts[0]?.status ?? 'NO CONTRACT';
+  }
+
+  get auditEventCount(): number {
+    return this.auditLogs.length;
+  }
+
+  get profileCompleteness(): number {
+    if (!this.user) return 0;
+    const fields = [this.user.firstName, this.user.lastName, this.user.email, this.user.phone, this.user.dateOfBirth, this.user.sex, this.user.cin];
+    const filled = fields.filter((value) => String(value ?? '').trim().length > 0).length;
+    return Math.round((filled / fields.length) * 100);
+  }
+
   startProfileEdit(): void {
     if (!this.user || !this.canEditProfile) return;
     this.editProfile = true;
@@ -265,8 +302,7 @@ export class StaffUserDetails implements OnInit {
       phone: this.user.phone ?? '',
       dateOfBirth: this.user.dateOfBirth ?? '',
       sex: (this.user.sex as Sex) || 'MALE',
-      role: (this.user.role as StaffRole) || 'DOCTOR',
-      avatarUrl: this.user.avatarUrl ?? ''
+      role: (this.user.role as StaffRole) || 'DOCTOR'
     };
   }
 
@@ -327,8 +363,7 @@ export class StaffUserDetails implements OnInit {
             lastName,
             email,
             dateOfBirth,
-            sex: this.profileForm.sex,
-            avatarUrl: this.profileForm.avatarUrl.trim() || null
+            sex: this.profileForm.sex
           }
         : {
             firstName,
@@ -337,8 +372,7 @@ export class StaffUserDetails implements OnInit {
             phone: this.user.phone || null,
             dateOfBirth,
             sex: this.profileForm.sex,
-            role: this.user.role,
-            avatarUrl: this.profileForm.avatarUrl.trim() || null
+            role: this.user.role
           };
       const endpoint = isHrAccount
         ? `${environment.apiBaseUrl}/api/users/hr/${this.user.id}`
@@ -614,7 +648,7 @@ export class StaffUserDetails implements OnInit {
 
   private async loadUserDetails(): Promise<void> {
     this.loading = true;
-    this.auditLoading = true;
+    this.auditLoading = false;
     this.errorMessage = '';
     this.successMessage = '';
     this.user = null;
@@ -622,7 +656,7 @@ export class StaffUserDetails implements OnInit {
     this.auditLogs = [];
 
     try {
-      const userId = Number(this.route.snapshot.paramMap.get('id'));
+      const userId = Number(this.userId ?? this.route.snapshot.paramMap.get('id'));
       if (!Number.isFinite(userId) || userId <= 0) {
         throw new Error('Invalid staff user id.');
       }
@@ -637,10 +671,6 @@ export class StaffUserDetails implements OnInit {
         contracts: this.http.get<ContractRow[] | unknown>(
           `${environment.apiBaseUrl}/api/contracts?staffUserId=${userId}`,
           { headers }
-        ),
-        audit: this.http.get<UserAuditLogRow[] | unknown>(
-          `${environment.apiBaseUrl}/api/users/${userId}/audit`,
-          { headers }
         )
       }));
 
@@ -652,7 +682,7 @@ export class StaffUserDetails implements OnInit {
 
       this.user = { ...selected, deleted: false };
       this.contracts = Array.isArray(response?.contracts) ? response.contracts : [];
-      this.auditLogs = Array.isArray(response?.audit) ? response.audit : [];
+      this.auditLogs = [];
       this.auditDiffCache.clear();
     } catch (error: unknown) {
       const err = error as { error?: { message?: string }; message?: string };

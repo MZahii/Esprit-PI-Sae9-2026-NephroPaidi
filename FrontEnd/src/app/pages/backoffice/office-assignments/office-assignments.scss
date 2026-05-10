@@ -77,10 +77,11 @@
   .creation-panel {
     border: 1px solid #dbe7f5;
     border-radius: 14px;
-    overflow: hidden;
+    overflow: visible;
+    box-shadow: 0 18px 45px rgba(19, 86, 112, 0.08);
 
     .card-header {
-      background: #f8fbff;
+      background: linear-gradient(180deg, #f8fcff 0%, #edf8fc 100%);
       border-bottom: 1px solid #e3edf9;
     }
   }
@@ -89,21 +90,39 @@
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .tab-btn {
-    border: 1px solid #dbe5f0;
-    border-radius: 999px;
-    background: #fff;
-    color: #334155;
-    font-weight: 700;
-    padding: 8px 14px;
+    align-items: center;
+    background: linear-gradient(180deg, #ffffff 0%, #e6f8fc 100%);
+    border: 1px solid #9bd8ec;
+    border-radius: 10px;
+    box-shadow: 0 12px 28px rgba(18, 126, 158, 0.12);
+    display: inline-flex;
+    height: 56px;
+    justify-content: center;
+    min-width: 74px;
+    padding: 6px 12px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+
+    img {
+      border-radius: 50%;
+      display: block;
+      height: 38px;
+      object-fit: cover;
+      width: 38px;
+    }
   }
 
   .tab-btn.active {
-    border-color: #4f46e5;
-    color: #4338ca;
-    background: #eef2ff;
+    background: linear-gradient(180deg, #dff8fe 0%, #c6edf6 100%);
+    border-color: #0e9ab3;
+    box-shadow: inset 0 0 0 1px rgba(14, 154, 179, 0.12), 0 14px 30px rgba(18, 126, 158, 0.17);
+  }
+
+  .tab-btn:hover {
+    transform: translateY(-1px);
   }
 
   .create-grid {
@@ -113,9 +132,7 @@
     align-items: end;
 
     button {
-      min-width: 130px;
       height: 42px;
-      font-weight: 700;
     }
   }
 
@@ -141,10 +158,11 @@
   .workspace-card {
     border: 1px solid #dbe7f5;
     border-radius: 14px;
-    background: #fff;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fcff 100%);
     padding: 12px;
     display: grid;
     gap: 10px;
+    box-shadow: 0 16px 42px rgba(19, 86, 112, 0.07);
   }
 
   .workspace-head {
@@ -193,6 +211,7 @@
   .assigned-row {
     border: 1px solid #dbe7f5;
     border-radius: 10px;
+    background: #ffffff;
     padding: 10px;
     display: grid;
     grid-template-columns: 1fr auto;
@@ -217,9 +236,59 @@
 
   .move-inline {
     grid-column: 1 / -1;
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(190px, 1fr) auto;
     gap: 8px;
     align-items: center;
+  }
+
+  .icon-command {
+    align-items: center;
+    background: linear-gradient(180deg, #ffffff 0%, #e6f8fc 100%);
+    border: 1px solid #9bd8ec;
+    border-radius: 10px;
+    box-shadow: 0 12px 28px rgba(18, 126, 158, 0.12);
+    display: inline-flex;
+    height: 50px !important;
+    justify-content: center;
+    min-width: 64px;
+    padding: 6px 12px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+
+    img {
+      border-radius: 50%;
+      display: block;
+      height: 34px;
+      object-fit: cover;
+      width: 34px;
+    }
+
+    &:hover:not(:disabled) {
+      border-color: #0797b0;
+      box-shadow: 0 16px 34px rgba(18, 126, 158, 0.18);
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+  }
+
+  .icon-command--primary {
+    background: linear-gradient(180deg, #def8ff 0%, #bfeef8 100%);
+    border-color: #69c8df;
+    min-width: 72px;
+  }
+
+  .icon-command--warning {
+    background: linear-gradient(180deg, #fffaf0 0%, #ffedc2 100%);
+    border-color: #f5b94d;
+  }
+
+  .icon-command--danger {
+    background: linear-gradient(180deg, #fff8f8 0%, #ffe8e8 100%);
+    border-color: #ffb8b8;
   }
 
   @media (max-width: 1080px) {
@@ -240,8 +309,7 @@
     }
 
     .move-inline {
-      flex-direction: column;
-      align-items: stretch;
+      grid-template-columns: 1fr;
     }
   }
 }

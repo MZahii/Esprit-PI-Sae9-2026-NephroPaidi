@@ -49,42 +49,48 @@
             </button>
           </div>
 
-          <div class="stats-grid mb-3" *ngIf="!loading">
-            <div class="stats-card">
-              <div class="stats-label">Total Staff</div>
-              <div class="stats-value">{{ totalStaff }}</div>
-            </div>
-            <div class="stats-card chart-card">
-              <div class="stats-label">Account Status</div>
-              <div class="circle-wrap" [style.background]="circleStyle(toPercent(activeStaff, totalStaff), '#2563eb')">
-                <div class="circle-value">{{ toPercent(activeStaff, totalStaff) }}%</div>
+          <div class="hr-summary-grid mb-3" *ngIf="!loading">
+            <div class="hr-summary-card primary">
+              <div>
+                <div class="stats-label">Total Staff</div>
+                <div class="stats-value" appCountUp>{{ totalStaff }}</div>
               </div>
-              <div class="chart-legend">Active {{ activeStaff }} / Pending {{ pendingStaff }} / Inactive {{ inactiveStaff }}</div>
+              <div class="summary-lines">
+                <span>{{ activeStaff }} active</span>
+                <span>{{ pendingStaff }} pending</span>
+                <span>{{ inactiveStaff }} inactive</span>
+              </div>
             </div>
-            <div class="stats-card chart-card">
+
+            <div class="hr-summary-card chart-card">
+              <div class="stats-label">Account Health</div>
+              <div class="circle-wrap" [style.background]="circleStyle(toPercent(activeStaff, totalStaff), '#2563eb')">
+                <div class="circle-value" appCountUp>{{ toPercent(activeStaff, totalStaff) }}%</div>
+              </div>
+              <div class="chart-legend">Active accounts</div>
+            </div>
+
+            <div class="hr-summary-card chart-card">
               <div class="stats-label">Contract Coverage</div>
               <div class="circle-wrap" [style.background]="circleStyle(toPercent(withContractStaff, totalStaff), '#14b8a6')">
-                <div class="circle-value">{{ toPercent(withContractStaff, totalStaff) }}%</div>
+                <div class="circle-value" appCountUp>{{ toPercent(withContractStaff, totalStaff) }}%</div>
               </div>
-              <div class="chart-legend">With {{ withContractStaff }} / Without {{ withoutContractStaff }}</div>
+              <div class="chart-legend">{{ withContractStaff }} with / {{ withoutContractStaff }} without</div>
             </div>
-            <div class="stats-card chart-card">
-              <div class="stats-label">Access State</div>
+
+            <div class="hr-summary-card chart-card">
+              <div class="stats-label">Access Enabled</div>
               <div class="circle-wrap" [style.background]="circleStyle(toPercent(enabledStaff, totalStaff), '#22c55e')">
-                <div class="circle-value">{{ toPercent(enabledStaff, totalStaff) }}%</div>
+                <div class="circle-value" appCountUp>{{ toPercent(enabledStaff, totalStaff) }}%</div>
               </div>
-              <div class="chart-legend">Enabled {{ enabledStaff }} / Disabled {{ disabledStaff }}</div>
-            </div>
-            <div class="stats-card">
-              <div class="stats-label">Archived In Session</div>
-              <div class="stats-value">{{ archivedStaffCount }}</div>
+              <div class="chart-legend">{{ enabledStaff }} enabled / {{ disabledStaff }} disabled</div>
             </div>
           </div>
 
           <div class="role-stats-grid mb-3" *ngIf="!loading">
-            <div class="role-card" *ngFor="let rs of roleStats">
+            <div class="role-card" *ngFor="let rs of roleStats" [attr.data-stat-tooltip]="rs.role + ' share: ' + toPercent(rs.total, totalStaff) + '% of staff'">
               <div class="role-title">{{ rs.role }}</div>
-              <div class="role-total">{{ rs.total }}</div>
+              <div class="role-total" appCountUp>{{ rs.total }}</div>
               <div class="role-line">Active: {{ rs.active }}</div>
               <div class="role-line">Pending: {{ rs.pending }}</div>
               <div class="role-line">Inactive: {{ rs.inactive }}</div>
@@ -92,7 +98,7 @@
             </div>
           </div>
 
-          <div class="filters-panel mb-3">
+          <div class="filters-panel staff-filter-panel mb-3">
             <div class="filters-header">
               <div>
                 <h6 class="mb-1">Advanced Search & Filters</h6>
@@ -105,7 +111,7 @@
               </div>
             </div>
 
-            <div class="filters">
+            <div class="filters staff-filters">
             <input
               type="text"
               class="form-control"
@@ -203,48 +209,61 @@
                         {{ user.deleted ? 'ARCHIVED' : 'LIVE' }}
                       </span>
                     </td>
-                    <td class="d-flex gap-2 flex-wrap">
-                      <a
-                        class="btn btn-sm btn-light"
-                        [routerLink]="['/backoffice/staff', user.id]"
+                    <td>
+                      <div class="action-stack">
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-light icon-action-btn"
+                        (click)="openStaffDetailsPanel($event, user.id)"
+                        data-ui-tooltip="Check User Details"
+                        aria-label="Check User Details"
                       >
-                        Check User Details
-                      </a>
+                        <img src="assets/backoffice/images/banner/details.png" alt="" />
+                      </button>
                       <button
                         *ngIf="isHr"
                         type="button"
-                        class="btn btn-sm btn-light"
+                        class="btn btn-sm btn-light icon-action-btn"
                         [disabled]="actionLoadingUserId === user.id || !!user.deleted"
                         (click)="toggleAccountStatus(user)"
+                        [attr.data-ui-tooltip]="user.accountStatus === 'INACTIVE' ? 'Activate Account' : 'Deactivate Account'"
+                        [attr.aria-label]="user.accountStatus === 'INACTIVE' ? 'Activate Account' : 'Deactivate Account'"
                       >
-                        {{ user.accountStatus === 'INACTIVE' ? 'Activate Account' : 'Deactivate Account' }}
+                        <img [src]="user.accountStatus === 'INACTIVE' ? 'assets/backoffice/images/banner/restore.png' : 'assets/backoffice/images/banner/desactive.png'" alt="" />
                       </button>
                       <button
                         *ngIf="canSoftDelete(user)"
                         type="button"
-                        class="btn btn-sm btn-outline-danger"
+                        class="btn btn-sm btn-outline-danger icon-action-btn"
                         [disabled]="actionLoadingUserId === user.id"
                         (click)="softDeleteUser(user)"
+                        data-ui-tooltip="Archive User"
+                        aria-label="Archive User"
                       >
-                        Archive User
+                        <img src="assets/backoffice/images/banner/archive.png" alt="" />
                       </button>
                       <button
                         *ngIf="canRestore(user)"
                         type="button"
-                        class="btn btn-sm btn-outline-success"
+                        class="btn btn-sm btn-outline-success icon-action-btn"
                         [disabled]="actionLoadingUserId === user.id"
                         (click)="restoreUser(user)"
+                        data-ui-tooltip="Restore User"
+                        aria-label="Restore User"
                       >
-                        Restore User
+                        <img src="assets/backoffice/images/banner/restore.png" alt="" />
                       </button>
                       <a
                         *ngIf="isHr && !hasAnyContract(user.id) && !user.deleted"
-                        class="btn btn-sm btn-light-brand"
+                        class="btn btn-sm btn-light-brand icon-action-btn"
                         [routerLink]="['/backoffice/contracts/create']"
                         [queryParams]="{ staffUserId: user.id, staffName: fullName(user) }"
+                        data-ui-tooltip="Create Contract"
+                        aria-label="Create Contract"
                       >
-                        Create Contract
+                        <img src="assets/backoffice/images/auth/contract.png" alt="" />
                       </a>
+                      </div>
                     </td>
                   </tr>
                 </ng-container>
@@ -265,8 +284,8 @@
               </select>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
-                Prev
+              <button class="btn btn-sm btn-light pagination-icon-btn" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" data-ui-tooltip="Previous" aria-label="Previous">
+                <img src="assets/backoffice/images/banner/prev.png" alt="" />
               </button>
               <button
                 *ngFor="let p of pageNumbers"
@@ -277,8 +296,8 @@
               >
                 {{ p }}
               </button>
-              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
-                Next
+              <button class="btn btn-sm btn-light pagination-icon-btn" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" data-ui-tooltip="Next" aria-label="Next">
+                <img src="assets/backoffice/images/banner/next.png" alt="" />
               </button>
             </div>
           </div>
@@ -287,3 +306,6 @@
     </div>
   </div>
 </div>
+
+
+

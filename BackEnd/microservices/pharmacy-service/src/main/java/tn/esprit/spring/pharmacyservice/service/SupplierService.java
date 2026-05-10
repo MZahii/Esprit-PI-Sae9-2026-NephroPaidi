@@ -94,9 +94,15 @@ public class SupplierService {
         if (!Boolean.TRUE.equals(supplier.getIsActive())) {
             throw new IllegalStateException("Cannot place orders for an inactive supplier: " + supplier.getName());
         }
+        SupplyOrder.ItemType itemType = dto.getItemType() != null
+                ? SupplyOrder.ItemType.valueOf(dto.getItemType())
+                : SupplyOrder.ItemType.MEDICATION;
         SupplyOrder order = SupplyOrder.builder()
                 .supplier(supplier)
                 .medicationId(dto.getMedicationId())
+                .itemType(itemType)
+                .itemId(dto.getItemId() != null ? dto.getItemId() : dto.getMedicationId())
+                .itemName(dto.getItemName())
                 .orderedQuantity(dto.getOrderedQuantity())
                 .orderDate(LocalDate.now())
                 .expectedDeliveryDate(dto.getExpectedDeliveryDate())
@@ -104,23 +110,33 @@ public class SupplierService {
                 .status(SupplyOrder.OrderStatus.PENDING)
                 .build();
         SupplyOrder saved = supplyOrderRepository.save(order);
-        String medName = medicationRepository.findById(dto.getMedicationId())
-                .map(Medication::getName).orElse("Unknown Medication");
-        emailService.sendOrderPlacedEmail(supplier, saved, medName);
+        if (itemType == SupplyOrder.ItemType.MEDICATION && dto.getMedicationId() != null) {
+            String medName = medicationRepository.findById(dto.getMedicationId())
+                    .map(Medication::getName).orElse("Unknown Medication");
+            emailService.sendOrderPlacedEmail(supplier, saved, medName);
+        }
         return toOrderDTO(saved);
     }
 
-    public SupplyOrderDTO markDelivered(Long orderId) {
+    public SupplyOrderDTO markDelivered(Long orderId, Integer deliveredQuantity) {
         SupplyOrder order = findOrderById(orderId);
         order.setStatus(SupplyOrder.OrderStatus.DELIVERED);
+        order.setActualDeliveryDate(LocalDate.now());
+        if (deliveredQuantity != null) {
+            order.setDeliveredQuantity(deliveredQuantity);
+        } else {
+            order.setDeliveredQuantity(order.getOrderedQuantity());
+        }
         SupplyOrder saved = supplyOrderRepository.save(order);
-        // Fire event so StockService can update stock
-        eventPublisher.publishEvent(new OrderDeliveredEvent(
-                saved.getOrderId(), saved.getMedicationId(), saved.getOrderedQuantity()));
-        String medName = medicationRepository.findById(saved.getMedicationId())
-                .map(Medication::getName).orElse("Unknown Medication");
-        Supplier supplier = findSupplierById(saved.getSupplier().getSupplierId());
-        emailService.sendOrderDeliveredEmail(supplier, saved, medName);
+        if (saved.getItemType() == SupplyOrder.ItemType.MEDICATION && saved.getMedicationId() != null) {
+            // Fire event so StockService can update medication stock
+            eventPublisher.publishEvent(new OrderDeliveredEvent(
+                    saved.getOrderId(), saved.getMedicationId(), saved.getDeliveredQuantity()));
+            String medName = medicationRepository.findById(saved.getMedicationId())
+                    .map(Medication::getName).orElse("Unknown Medication");
+            Supplier supplier = findSupplierById(saved.getSupplier().getSupplierId());
+            emailService.sendOrderDeliveredEmail(supplier, saved, medName);
+        }
         return toOrderDTO(saved);
     }
 
@@ -205,10 +221,15 @@ public class SupplierService {
                 .orderId(o.getOrderId())
                 .supplierId(o.getSupplier().getSupplierId())
                 .medicationId(o.getMedicationId())
+                .itemType(o.getItemType() != null ? o.getItemType().name() : null)
+                .itemId(o.getItemId())
+                .itemName(o.getItemName())
                 .orderDate(o.getOrderDate())
                 .status(o.getStatus().name())
                 .orderedQuantity(o.getOrderedQuantity())
+                .deliveredQuantity(o.getDeliveredQuantity())
                 .expectedDeliveryDate(o.getExpectedDeliveryDate())
+                .actualDeliveryDate(o.getActualDeliveryDate())
                 .notes(o.getNotes())
                 .build();
     }

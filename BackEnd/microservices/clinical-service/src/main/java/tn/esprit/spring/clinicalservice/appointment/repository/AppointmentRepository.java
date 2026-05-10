@@ -48,4 +48,18 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
     );
+
+    @Query("SELECT a FROM Appointment a WHERE a.doctorId = :doctorId AND a.scheduledAt BETWEEN :start AND :end ORDER BY a.scheduledAt ASC")
+    List<Appointment> findByDoctorIdAndScheduledAtBetween(
+            @Param("doctorId") UUID doctorId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+    @Query("SELECT a FROM Appointment a WHERE a.status = :status AND a.scheduledAt BETWEEN :start AND :end ORDER BY a.scheduledAt ASC")
+    List<Appointment> findByStatusAndScheduledAtBetween(
+            @Param("status") AppointmentStatus status,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 }

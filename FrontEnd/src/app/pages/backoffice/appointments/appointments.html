@@ -144,10 +144,37 @@
                     <div class="day-details">
                       <div class="fw-semibold">{{ getPatientLabel(item.patientId) }}</div>
                       <div class="text-muted">{{ getDoctorLabel(item.doctorId) }} • {{ item.durationMinutes }} min</div>
+                      <div class="text-muted small" *ngIf="item.status === 'SCHEDULED'">
+                        {{ getAppointmentCountdown(item) }}
+                      </div>
                     </div>
-                    <span class="badge" [ngClass]="statusClass(item.status)">
-                      {{ item.status }}
-                    </span>
+                    <div class="day-actions" *ngIf="!isReceptionist">
+                      <button 
+                        type="button" 
+                        class="btn btn-sm btn-success"
+                        *ngIf="canStartAppointment(item)"
+                        (click)="startConsultation(item.id)"
+                        [disabled]="startingAppointmentId === item.id">
+                        <span *ngIf="startingAppointmentId !== item.id">Start</span>
+                        <span *ngIf="startingAppointmentId === item.id">
+                          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Starting...
+                        </span>
+                      </button>
+                      <button 
+                        type="button" 
+                        class="btn btn-sm btn-warning"
+                        (click)="openEditModal(item)">
+                        Edit
+                      </button>
+                      <button 
+                        type="button" 
+                        class="btn btn-sm btn-danger"
+                        (click)="openCancelModal(item)">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -157,7 +184,7 @@
       </div>
     </div>
   </div>
-</div>
+
 
 <!-- CREATE MODAL -->
 <div class="modal-backdrop fade show" *ngIf="showCreateModal"></div>
@@ -405,3 +432,5 @@
     </div>
   </div>
 </div>
+
+

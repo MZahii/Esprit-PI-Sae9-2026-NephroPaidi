@@ -3,9 +3,10 @@ import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Observable, timeout } from 'rxjs';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
+import { CountUpDirective } from '../../../shared/directives/count-up.directive';
 
 type FloorInsertPosition = 'TOP' | 'BOTTOM' | 'BETWEEN';
 
@@ -79,11 +80,13 @@ interface SummaryStats {
 @Component({
   selector: 'app-hospital-structure',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, CountUpDirective],
   templateUrl: './hospital-structure.html',
   styleUrl: './hospital-structure.scss'
 })
 export class HospitalStructureComponent implements OnInit {
+  private static readonly REQUEST_TIMEOUT_MS = 15000;
+
   loading = false;
   saving = false;
   errorMessage = '';
@@ -117,7 +120,9 @@ export class HospitalStructureComponent implements OnInit {
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
-    this.loadAll();
+    this.loadAll().catch(() => {
+      // loadAll already sets user-facing error state.
+    });
   }
 
   get canInsertBetween(): boolean {
@@ -145,6 +150,25 @@ export class HospitalStructureComponent implements OnInit {
     return (this.groupedWorkspacesByFloor[floorId] ?? []).slice(0, 4);
   }
 
+  get busiestFloorLabel(): string {
+    const floor = [...(this.structure?.floors ?? [])]
+      .sort((a, b) => b.totalWorkspaces - a.totalWorkspaces)[0];
+    return floor ? `${floor.floorLabel} (${floor.totalWorkspaces})` : '-';
+  }
+
+  get workspaceTypeDistribution(): Array<{ label: string; count: number }> {
+    const counters = new Map<string, number>();
+    for (const floor of this.structure?.floors ?? []) {
+      for (const workspace of floor.workspaces) {
+        counters.set(workspace.workspaceTypeLabel, (counters.get(workspace.workspaceTypeLabel) ?? 0) + 1);
+      }
+    }
+    return Array.from(counters.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }
+
   async loadAll(): Promise<void> {
     this.loading = true;
     this.errorMessage = '';
@@ -159,6 +183,7 @@ export class HospitalStructureComponent implements OnInit {
       this.recomputeDerivedState();
     } catch (error: unknown) {
       this.handleError(error, 'Failed to load hospital structure.');
+      throw error;
     } finally {
       this.loading = false;
     }
@@ -179,15 +204,15 @@ export class HospitalStructureComponent implements OnInit {
     try {
       const headers = await this.authHeaders();
       await firstValueFrom(
-        this.http.post<StructureResponse>(
+        this.withTimeout(this.http.post<StructureResponse>(
           `${environment.apiBaseUrl}/api/hospital-structure/floors/initialize`,
           { totalFloors: this.initializeTotalFloors },
           { headers }
-        )
+        ))
       );
 
       this.successMessage = 'Floors initialized successfully.';
-      await this.loadAll();
+      await this.refreshStructureOnly();
     } catch (error: unknown) {
       this.handleError(error, 'Failed to initialize floors.');
     } finally {
@@ -206,18 +231,18 @@ export class HospitalStructureComponent implements OnInit {
     try {
       const headers = await this.authHeaders();
       await firstValueFrom(
-        this.http.post(
+        this.withTimeout(this.http.post(
           `${environment.apiBaseUrl}/api/hospital-structure/floors`,
           {
             position: this.addFloorPosition,
             afterFloorId: this.addFloorPosition === 'BETWEEN' ? this.addFloorAfterId : null
           },
           { headers }
-        )
+        ))
       );
 
       this.successMessage = 'Floor added and renumbered successfully.';
-      await this.loadAll();
+      await this.refreshStructureOnly();
     } catch (error: unknown) {
       this.handleError(error, 'Failed to add floor.');
     } finally {
@@ -226,6 +251,7 @@ export class HospitalStructureComponent implements OnInit {
   }
 
   async deleteFloor(floor: FloorItem): Promise<void> {
+    if (this.saving) return;
     if (!confirm(`Delete floor ${floor.floorLabel} and all its workspaces?`)) {
       return;
     }
@@ -233,10 +259,10 @@ export class HospitalStructureComponent implements OnInit {
     this.startSave();
     try {
       const headers = await this.authHeaders();
-      await firstValueFrom(this.http.delete(`${environment.apiBaseUrl}/api/hospital-structure/floors/${floor.id}`, { headers }));
+      await firstValueFrom(this.withTimeout(this.http.delete(`${environment.apiBaseUrl}/api/hospital-structure/floors/${floor.id}`, { headers })));
       this.successMessage = `Floor ${floor.floorLabel} deleted.`;
       this.expandedFloorIds.delete(floor.id);
-      await this.loadAll();
+      await this.refreshStructureOnly();
     } catch (error: unknown) {
       this.handleError(error, 'Failed to delete floor.');
     } finally {
@@ -263,7 +289,7 @@ export class HospitalStructureComponent implements OnInit {
     try {
       const headers = await this.authHeaders();
       await firstValueFrom(
-        this.http.post(
+        this.withTimeout(this.http.post(
           `${environment.apiBaseUrl}/api/hospital-structure/workspaces`,
           {
             floorId: floor.id,
@@ -271,12 +297,12 @@ export class HospitalStructureComponent implements OnInit {
             quantity: form.quantity
           },
           { headers }
-        )
+        ))
       );
 
       this.workspaceFormByFloor[floor.id] = { workspaceType: '', quantity: 1 };
       this.successMessage = `Workspace group added to floor ${floor.floorLabel}.`;
-      await this.loadAll();
+      await this.refreshStructureOnly();
     } catch (error: unknown) {
       this.handleError(error, 'Failed to add workspace group.');
     } finally {
@@ -285,6 +311,7 @@ export class HospitalStructureComponent implements OnInit {
   }
 
   async deleteGroup(floor: FloorItem, group: WorkspaceGroupView): Promise<void> {
+    if (this.saving) return;
     if (!confirm(`Delete all ${group.label} from floor ${floor.floorLabel}?`)) {
       return;
     }
@@ -293,17 +320,17 @@ export class HospitalStructureComponent implements OnInit {
     try {
       const headers = await this.authHeaders();
       await firstValueFrom(
-        this.http.delete(
+        this.withTimeout(this.http.delete(
           `${environment.apiBaseUrl}/api/hospital-structure/workspaces/groups`,
           {
             headers,
             params: { floorId: String(floor.id), workspaceType: group.workspaceType }
           }
-        )
+        ))
       );
 
       this.successMessage = `${group.label} removed from floor ${floor.floorLabel}.`;
-      await this.loadAll();
+      await this.refreshStructureOnly();
     } catch (error: unknown) {
       this.handleError(error, 'Failed to delete workspace group.');
     } finally {
@@ -320,6 +347,7 @@ export class HospitalStructureComponent implements OnInit {
   }
 
   async deleteWorkspaceItem(item: WorkspaceItem): Promise<void> {
+    if (this.saving) return;
     if (!confirm(`Delete ${item.workspaceName}?`)) {
       return;
     }
@@ -327,9 +355,9 @@ export class HospitalStructureComponent implements OnInit {
     this.startSave();
     try {
       const headers = await this.authHeaders();
-      await firstValueFrom(this.http.delete(`${environment.apiBaseUrl}/api/hospital-structure/workspaces/${item.id}`, { headers }));
+      await firstValueFrom(this.withTimeout(this.http.delete(`${environment.apiBaseUrl}/api/hospital-structure/workspaces/${item.id}`, { headers })));
       this.successMessage = `${item.workspaceName} deleted.`;
-      await this.loadAll();
+      await this.refreshStructureOnly();
       if (this.detailModal) {
         const floor = this.structure?.floors.find((f) => f.id === this.detailModal!.floor.id);
         const group = (this.groupedWorkspacesByFloor[floor?.id ?? -1] ?? []).find((g) => g.workspaceType === this.detailModal!.group.workspaceType);
@@ -418,6 +446,16 @@ export class HospitalStructureComponent implements OnInit {
     };
   }
 
+  private async refreshStructureOnly(): Promise<void> {
+    try {
+      this.structure = await this.fetchStructure();
+      this.ensureFormDefaults();
+      this.recomputeDerivedState();
+    } catch (error: unknown) {
+      this.handleError(error, 'Data refresh failed. Please reload the page.');
+    }
+  }
+
   private ensureFormDefaults(): void {
     for (const floor of this.structure?.floors ?? []) {
       if (!this.workspaceFormByFloor[floor.id]) {
@@ -428,15 +466,19 @@ export class HospitalStructureComponent implements OnInit {
 
   private async fetchStructure(): Promise<StructureResponse> {
     const headers = await this.authHeaders();
-    return firstValueFrom(this.http.get<StructureResponse>(`${environment.apiBaseUrl}/api/hospital-structure`, { headers }));
+    return firstValueFrom(this.withTimeout(this.http.get<StructureResponse>(`${environment.apiBaseUrl}/api/hospital-structure`, { headers })));
   }
 
   private async fetchWorkspaceTypes(): Promise<WorkspaceTypeOption[]> {
     const headers = await this.authHeaders();
     const response = await firstValueFrom(
-      this.http.get<WorkspaceTypeOption[]>(`${environment.apiBaseUrl}/api/hospital-structure/workspace-types`, { headers })
+      this.withTimeout(this.http.get<WorkspaceTypeOption[]>(`${environment.apiBaseUrl}/api/hospital-structure/workspace-types`, { headers }))
     );
     return Array.isArray(response) ? response : [];
+  }
+
+  private withTimeout<T>(source$: Observable<T>): Observable<T> {
+    return source$.pipe(timeout(HospitalStructureComponent.REQUEST_TIMEOUT_MS));
   }
 
   private async authHeaders(): Promise<HttpHeaders> {
@@ -478,3 +520,7 @@ export class HospitalStructureComponent implements OnInit {
     return error.message;
   }
 }
+
+
+
+

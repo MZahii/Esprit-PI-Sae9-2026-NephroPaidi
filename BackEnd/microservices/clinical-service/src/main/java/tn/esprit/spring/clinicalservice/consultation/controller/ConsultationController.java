@@ -19,11 +19,8 @@ import tn.esprit.spring.clinicalservice.consultation.service.ConsultationOutcome
 import tn.esprit.spring.clinicalservice.consultation.service.ConsultationService;
 import tn.esprit.spring.clinicalservice.security.DoctorIdResolver;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
-
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 

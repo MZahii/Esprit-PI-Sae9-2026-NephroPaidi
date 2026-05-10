@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>tn.esprit.spring</groupId>
+    <artifactId>nephropaidi-backend</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>NephroPaidi Backend</name>
+    <description>Maven aggregator for backend infrastructure and microservices.</description>
+
+    <modules>
+        <module>api-gateway</module>
+        <module>config-server</module>
+        <module>eureka</module>
+        <module>microservices/administration-service</module>
+        <module>microservices/clinical-service</module>
+        <module>microservices/communication-service</module>
+        <module>microservices/core-ops-service</module>
+        <module>microservices/ops-service</module>
+        <module>microservices/pharmacy-service</module>
+        <module>microservices/procedure-service</module>
+        <module>microservices/user-service</module>
+    </modules>
+</project>

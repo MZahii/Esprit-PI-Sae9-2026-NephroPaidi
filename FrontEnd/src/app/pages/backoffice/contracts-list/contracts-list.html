@@ -16,10 +16,16 @@
       <div class="card stretch stretch-full">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
           <h5 class="card-title mb-0">{{ contractListTitle }}</h5>
-          <div class="d-flex gap-2 flex-wrap">
-            <button class="btn btn-light btn-sm" type="button" (click)="printContracts()">Print Report</button>
-            <button class="btn btn-primary btn-sm" type="button" (click)="exportContractsPdf()">Export PDF</button>
-            <a *ngIf="isHr || (isAdmin && contractScope === 'HR')" class="btn btn-primary" routerLink="/backoffice/contracts/create">Create Contract</a>
+          <div class="d-flex gap-2 flex-wrap" data-page-action-dock>
+            <button class="btn btn-primary btn-sm report-action" type="button" (click)="exportContractsPdf()" data-ui-tooltip="Export PDF" aria-label="Export PDF">
+              <img class="page-action-icon" src="assets/backoffice/images/auth/pdf.png" alt="" />
+            </button>
+            <button class="btn btn-light btn-sm report-action" type="button" (click)="printContracts()" data-ui-tooltip="Print Report" aria-label="Print Report">
+              <img class="page-action-icon" src="assets/backoffice/images/auth/print.png" alt="" />
+            </button>
+            <button *ngIf="isHr || (isAdmin && contractScope === 'HR')" class="btn btn-primary create-contract-action" type="button" (click)="openCreateContractPanel($event)" data-ui-tooltip="Create Contract" aria-label="Create Contract">
+              <img class="page-action-icon" src="assets/backoffice/images/auth/contract.png" alt="" />
+            </button>
           </div>
         </div>
 
@@ -32,30 +38,28 @@
           </div>
 
           <div class="stats-grid mb-3" *ngIf="!loading">
-            <div class="stats-card">
+            <div class="stats-card" [attr.data-stat-tooltip]="'100% of displayed contracts. Live total: ' + totalContracts">
               <div class="stats-label">Total Contracts</div>
-              <div class="stats-value">{{ totalContracts }}</div>
+              <div class="stats-value" appCountUp>{{ totalContracts }}</div>
             </div>
-            <div class="stats-card chart-card">
+            <div class="stats-card" [attr.data-stat-tooltip]="'Ending soon: ' + toPercent(endingSoonContracts, totalContracts) + '% of displayed contracts'">
+              <div class="stats-label">Ending Soon</div>
+              <div class="stats-value" appCountUp>{{ endingSoonContracts }}</div>
+              <div class="stats-line">Active/suspended contracts ending in 30 days</div>
+            </div>
+            <div class="stats-card chart-card" [attr.data-stat-tooltip]="'Active contract rate: ' + toPercent(activeContracts, totalContracts) + '%'">
               <div class="stats-label">Contract Status</div>
               <div class="circle-wrap" [style.background]="circleStyle(toPercent(activeContracts, totalContracts), '#2563eb')">
-                <div class="circle-value">{{ toPercent(activeContracts, totalContracts) }}%</div>
+                <div class="circle-value" appCountUp>{{ toPercent(activeContracts, totalContracts) }}%</div>
               </div>
               <div class="chart-legend">Active {{ activeContracts }} / Suspended {{ suspendedContracts }} / Ended {{ endedContracts }}</div>
             </div>
-            <div class="stats-card chart-card">
+            <div class="stats-card chart-card" [attr.data-stat-tooltip]="'Account active access rate: ' + toPercent(userActiveAccessContracts, totalContracts) + '%'">
               <div class="stats-label">Account Access</div>
               <div class="circle-wrap" [style.background]="circleStyle(toPercent(userActiveAccessContracts, totalContracts), '#22c55e')">
-                <div class="circle-value">{{ toPercent(userActiveAccessContracts, totalContracts) }}%</div>
+                <div class="circle-value" appCountUp>{{ toPercent(userActiveAccessContracts, totalContracts) }}%</div>
               </div>
               <div class="chart-legend">User Active {{ userActiveAccessContracts }} / User Inactive {{ userInactiveAccessContracts }}</div>
-            </div>
-            <div class="stats-card">
-              <div class="stats-label">Scope</div>
-              <div class="stats-line">
-                {{ contractScope === 'HR' ? 'Only HR contracts are displayed.' : 'Only staff contracts are displayed.' }}
-                <span *ngIf="isAdmin">Archived: {{ archivedContracts }}</span>
-              </div>
             </div>
           </div>
 
@@ -63,20 +67,24 @@
             <input
               type="text"
               class="form-control"
-              placeholder="Search by account name, username, role, reference, type, status, title..."
+              placeholder="Search name, username, role, reference, type, status..."
               [(ngModel)]="searchTerm"
               (ngModelChange)="onFiltersChanged()"
             />
 
-            <select class="form-control" [(ngModel)]="roleFilter" (ngModelChange)="onFiltersChanged()">
+            <select
+              *ngIf="contractScope !== 'HR'"
+              class="form-control"
+              [(ngModel)]="roleFilter"
+              (ngModelChange)="onFiltersChanged()"
+            >
               <option value="ALL">All Roles</option>
-              <option *ngIf="isAdmin" value="HR">HR</option>
-              <option *ngIf="!isAdmin" value="DOCTOR">DOCTOR</option>
-              <option *ngIf="!isAdmin" value="NURSE">NURSE</option>
-              <option *ngIf="!isAdmin" value="SURGEON">SURGEON</option>
-              <option *ngIf="!isAdmin" value="PHARMACIST">PHARMACIST</option>
-              <option *ngIf="!isAdmin" value="RECEPTIONIST">RECEPTIONIST</option>
-              <option *ngIf="!isAdmin" value="LAB_AGENT">LAB_AGENT</option>
+              <option value="DOCTOR">DOCTOR</option>
+              <option value="NURSE">NURSE</option>
+              <option value="SURGEON">SURGEON</option>
+              <option value="PHARMACIST">PHARMACIST</option>
+              <option value="RECEPTIONIST">RECEPTIONIST</option>
+              <option value="LAB_AGENT">LAB_AGENT</option>
             </select>
 
             <select class="form-control" [(ngModel)]="statusFilter" (ngModelChange)="onFiltersChanged()">
@@ -119,7 +127,7 @@
                 <tr *ngFor="let contract of paginatedContracts">
                   <td>{{ staffDisplay(contract) }}</td>
                   <td>{{ staffRole(contract) }}</td>
-                  <td>{{ contract.contractType }}</td>
+                  <td><span class="status-pill contract-chip">{{ contract.contractType }}</span></td>
                   <td>
                     <span class="status-pill" [ngClass]="contractStateClass(contract)">
                       {{ contractStateLabel(contract) }}
@@ -130,55 +138,68 @@
                       {{ accountAccessStatus(contract) === 'USER_ACTIVE' ? 'USER ACTIVE' : 'USER INACTIVE' }}
                     </span>
                   </td>
-                  <td class="d-flex gap-2 flex-wrap">
-                    <a
+                  <td>
+                    <div class="icon-action-row">
+                    <button
                       type="button"
-                      class="btn btn-sm btn-light"
-                      [routerLink]="['/backoffice/staff', contract.staffUserId]"
-                      [queryParams]="{ returnTo: 'contracts' }"
+                      class="btn btn-sm btn-light icon-action-btn"
+                      (click)="openStaffDetailsPanel($event, contract.staffUserId)"
+                      data-ui-tooltip="Details"
+                      aria-label="Details"
                     >
-                      Details
-                    </a>
+                      <img src="assets/backoffice/images/banner/details.png" alt="" />
+                    </button>
                     <button
                       *ngIf="canManageContract(contract) && contract.status === 'ACTIVE'"
                       type="button"
-                      class="btn btn-sm btn-light-brand"
+                      class="btn btn-sm btn-light-brand icon-action-btn"
                       (click)="runAction(contract.id, 'suspend')"
+                      data-ui-tooltip="Suspend"
+                      aria-label="Suspend"
                     >
-                      Suspend
+                      <img src="assets/backoffice/images/banner/suspend.png" alt="" />
                     </button>
                     <button
                       *ngIf="canManageContract(contract) && contract.status === 'SUSPENDED'"
                       type="button"
-                      class="btn btn-sm btn-light-brand"
+                      class="btn btn-sm btn-light-brand icon-action-btn"
                       (click)="runAction(contract.id, 'resume')"
+                      data-ui-tooltip="Resume"
+                      aria-label="Resume"
                     >
-                      Resume
+                      <img src="assets/backoffice/images/banner/restore.png" alt="" />
                     </button>
                     <button
                       *ngIf="canManageContract(contract) && (contract.status === 'ACTIVE' || contract.status === 'SUSPENDED')"
                       type="button"
-                      class="btn btn-sm btn-light"
+                      class="btn btn-sm btn-light icon-action-btn"
                       (click)="runAction(contract.id, 'end')"
+                      data-ui-tooltip="End"
+                      aria-label="End"
                     >
-                      End
+                      <img src="assets/backoffice/images/banner/end.png" alt="" />
                     </button>
                     <button
                       *ngIf="canArchiveContract(contract)"
                       type="button"
-                      class="btn btn-sm btn-light"
+                      class="btn btn-sm btn-light icon-action-btn"
                       (click)="runArchive(contract.id)"
+                      data-ui-tooltip="Archive"
+                      aria-label="Archive"
                     >
-                      Archive
+                      <img src="assets/backoffice/images/banner/archive.png" alt="" />
                     </button>
                     <button
                       *ngIf="canRestoreContract(contract)"
                       type="button"
-                      class="btn btn-sm btn-primary"
+                      class="btn btn-sm btn-primary icon-action-btn"
                       (click)="runRestore(contract.id)"
+                      data-ui-tooltip="Restore"
+                      aria-label="Restore"
                     >
-                      Restore
+                      <img src="assets/backoffice/images/banner/restore.png" alt="" />
                     </button>
+                    </div>
                   </td>
                 </tr>
 
@@ -201,8 +222,8 @@
               </select>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
-                Prev
+              <button class="btn btn-sm btn-light pagination-icon-btn" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" data-ui-tooltip="Previous" aria-label="Previous">
+                <img src="assets/backoffice/images/banner/prev.png" alt="" />
               </button>
               <button
                 *ngFor="let p of pageNumbers"
@@ -213,8 +234,8 @@
               >
                 {{ p }}
               </button>
-              <button class="btn btn-sm btn-light" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
-                Next
+              <button class="btn btn-sm btn-light pagination-icon-btn" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" data-ui-tooltip="Next" aria-label="Next">
+                <img src="assets/backoffice/images/banner/next.png" alt="" />
               </button>
             </div>
           </div>
@@ -223,3 +244,6 @@
     </div>
   </div>
 </div>
+
+
+

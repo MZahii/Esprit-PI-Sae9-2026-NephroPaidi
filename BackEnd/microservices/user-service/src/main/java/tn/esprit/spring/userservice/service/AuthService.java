@@ -12,12 +12,15 @@ import org.springframework.web.server.ResponseStatusException;
 import tn.esprit.spring.userservice.config.KeycloakAdminConfig;
 import tn.esprit.spring.userservice.dto.request.LoginRequest;
 import tn.esprit.spring.userservice.dto.request.ResendVerificationEmailRequest;
+import tn.esprit.spring.userservice.dto.request.ForgotPasswordRequest;
 import tn.esprit.spring.userservice.dto.response.TokenRefreshResponse;
 import tn.esprit.spring.userservice.dto.response.KeycloakTokenResponse;
 import tn.esprit.spring.userservice.dto.response.LoginResponse;
 import tn.esprit.spring.userservice.entity.Role;
 import tn.esprit.spring.userservice.entity.User;
 import tn.esprit.spring.userservice.repository.UserRepository;
+
+import java.util.Objects;
 
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
@@ -45,10 +48,10 @@ public class AuthService {
         }
         enforceEmailVerification(user);
 
-        KeycloakTokenResponse tokenResponse = requestTokenFromKeycloak(
+        KeycloakTokenResponse tokenResponse = Objects.requireNonNull(requestTokenFromKeycloak(
                 user.getUsername(),
                 request.getPassword()
-        );
+        ), "Keycloak token response must not be null");
 
         String redirectTo = user.isMustChangePassword()
                 ? "/backoffice/account-settings?forcePasswordChange=true"
@@ -78,7 +81,10 @@ public class AuthService {
                     .ifPresent(this::enforceEmailVerification);
         }
 
-        KeycloakTokenResponse tokenResponse = refreshTokenFromKeycloak(refreshToken);
+        KeycloakTokenResponse tokenResponse = Objects.requireNonNull(
+                refreshTokenFromKeycloak(refreshToken),
+                "Keycloak refresh response must not be null"
+        );
         return TokenRefreshResponse.builder()
                 .accessToken(tokenResponse.getAccessToken())
                 .refreshToken(tokenResponse.getRefreshToken())
@@ -101,6 +107,17 @@ public class AuthService {
             keycloakAdminService.ensureEmailVerificationRequired(user.getKeycloakId());
             keycloakAdminService.sendVerificationEmailIfPossible(user.getKeycloakId());
         });
+    }
+
+    public void forgotPassword(ForgotPasswordRequest request) {
+        String identifier = request.getIdentifier() == null ? "" : request.getIdentifier().trim();
+        if (identifier.isBlank()) {
+            return;
+        }
+
+        userRepository.findByIdentifier(identifier).ifPresent(user ->
+                keycloakAdminService.sendPasswordResetOrVerificationEmail(user.getKeycloakId())
+        );
     }
 
     private KeycloakTokenResponse requestTokenFromKeycloak(String username, String password) {
@@ -129,15 +146,16 @@ public class AuthService {
                     requestEntity,
                     KeycloakTokenResponse.class
             );
+            KeycloakTokenResponse body = response.getBody();
 
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            if (!response.getStatusCode().is2xxSuccessful() || body == null) {
                 throw new ResponseStatusException(
                         UNAUTHORIZED,
                         "Invalid username/email or password"
                 );
             }
 
-            return response.getBody();
+            return body;
 
         } catch (HttpStatusCodeException ex) {
             throw new ResponseStatusException(
@@ -172,15 +190,16 @@ public class AuthService {
                     requestEntity,
                     KeycloakTokenResponse.class
             );
+            KeycloakTokenResponse body = response.getBody();
 
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            if (!response.getStatusCode().is2xxSuccessful() || body == null) {
                 throw new ResponseStatusException(
                         UNAUTHORIZED,
                         "Session expired. Please login again."
                 );
             }
 
-            return response.getBody();
+            return body;
         } catch (HttpStatusCodeException ex) {
             throw new ResponseStatusException(
                     UNAUTHORIZED,

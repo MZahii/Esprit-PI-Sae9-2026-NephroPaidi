@@ -20,9 +20,9 @@
     <div class="consultation-list" *ngIf="!loading && !error">
       <div class="consultation-card" *ngFor="let item of filteredConsultations">
         <div>
-          <h5>Consultation #{{ item.id }}</h5>
+          <h5>{{ consultationTitle(item) }}</h5>
           <p class="text-muted mb-2">
-            Scheduled {{ item.dateTime | date:'medium' }}
+            Scheduled {{ formatConsultationDate(item.dateTime, 'medium') || '-' }}
           </p>
           <span [ngClass]="statusBadge(item.status)">{{ item.status || 'OPEN' }}</span>
         </div>

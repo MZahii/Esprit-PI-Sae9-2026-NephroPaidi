@@ -1,0 +1,28 @@
+<div class="logs-center-page">
+  <section class="card stretch stretch-full logs-tabs-card">
+    <div class="card-body logs-tab-row">
+      <button
+        type="button"
+        class="logs-tab"
+        [class.active]="activeTab === 'audit'"
+        (click)="setTab('audit')"
+      >
+        <img src="assets/backoffice/images/banner/logs.png" alt="" />
+        <span>Audit Logs</span>
+      </button>
+
+      <button
+        type="button"
+        class="logs-tab"
+        [class.active]="activeTab === 'clinical'"
+        (click)="setTab('clinical')"
+      >
+        <img src="assets/backoffice/images/banner/details.png" alt="" />
+        <span>Clinical Audit Logs</span>
+      </button>
+    </div>
+  </section>
+
+  <app-logs *ngIf="activeTab === 'audit'"></app-logs>
+  <app-clinical-audit-logs *ngIf="activeTab === 'clinical'"></app-clinical-audit-logs>
+</div>

@@ -129,6 +129,25 @@
   width: 90px;
 }
 
+.icon-action-btn {
+  width: 56px !important;
+  max-width: 56px !important;
+  height: 42px !important;
+  min-width: 56px !important;
+  padding: 3px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 56px !important;
+}
+
+.icon-action-btn img {
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
 @media (max-width: 992px) {
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

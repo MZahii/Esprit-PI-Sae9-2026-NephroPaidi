@@ -97,7 +97,7 @@ class UserServiceImplTest {
         when(userRepository.existsByEmailAndDeletedFalse(guardianRequest.getEmail())).thenReturn(false);
         when(userRepository.existsByCinAndDeletedFalse(guardianRequest.getCin())).thenReturn(false);
         when(userRepository.existsByPhoneAndDeletedFalse(guardianRequest.getPhone())).thenReturn(false);
-        when(keycloakAdminService.createUser(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), eq(true)))
+        when(keycloakAdminService.createUser(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), eq(true)))
                 .thenReturn("kc-guardian-1");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -114,6 +114,7 @@ class UserServiceImplTest {
                 eq("guardian1@example.com"),
                 eq("Lea"),
                 eq("Ben Ali"),
+                eq("12345678"),
                 eq("12345678"),
                 eq(Role.GUARDIAN.name()),
                 eq(true)

@@ -34,8 +34,15 @@ public class MedicationService {
     public MedicationDTO createMedication(MedicationDTO dto) {
         Medication med = Medication.builder()
                 .name(dto.getName())
+                .genericName(dto.getGenericName())
                 .form(dto.getForm())
-                .pediatricDosage(dto.getPediatricDosage())
+                .strength(dto.getStrength())
+                .unit(dto.getUnit())
+                .therapeuticClass(dto.getTherapeuticClass())
+                .standardDosage(dto.getStandardDosage())
+                .renalDoseAdjustment(dto.isRenalDoseAdjustment())
+                .storageConditions(dto.getStorageConditions() != null ? dto.getStorageConditions() : "ROOM_TEMPERATURE")
+                .controlledSubstance(dto.isControlledSubstance())
                 .minimumStock(dto.getMinimumStock())
                 .build();
         return toMedicationDTO(medicationRepository.save(med));
@@ -79,8 +86,15 @@ public class MedicationService {
     public MedicationDTO updateMedication(Long id, MedicationDTO dto) {
         Medication med = findMedById(id);
         med.setName(dto.getName());
+        med.setGenericName(dto.getGenericName());
         med.setForm(dto.getForm());
-        med.setPediatricDosage(dto.getPediatricDosage());
+        med.setStrength(dto.getStrength());
+        med.setUnit(dto.getUnit());
+        med.setTherapeuticClass(dto.getTherapeuticClass());
+        med.setStandardDosage(dto.getStandardDosage());
+        med.setRenalDoseAdjustment(dto.isRenalDoseAdjustment());
+        if (dto.getStorageConditions() != null) med.setStorageConditions(dto.getStorageConditions());
+        med.setControlledSubstance(dto.isControlledSubstance());
         med.setMinimumStock(dto.getMinimumStock());
         return toMedicationDTO(medicationRepository.save(med));
     }
@@ -157,8 +171,15 @@ public class MedicationService {
         return MedicationDTO.builder()
                 .medicationId(med.getMedicationId())
                 .name(med.getName())
+                .genericName(med.getGenericName())
                 .form(med.getForm())
-                .pediatricDosage(med.getPediatricDosage())
+                .strength(med.getStrength())
+                .unit(med.getUnit())
+                .therapeuticClass(med.getTherapeuticClass())
+                .standardDosage(med.getStandardDosage())
+                .renalDoseAdjustment(med.isRenalDoseAdjustment())
+                .storageConditions(med.getStorageConditions())
+                .controlledSubstance(med.isControlledSubstance())
                 .minimumStock(med.getMinimumStock())
                 .build();
     }

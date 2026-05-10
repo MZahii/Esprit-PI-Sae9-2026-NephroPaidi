@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -21,6 +21,9 @@ interface UserRow {
   styleUrl: './create-hr.scss'
 })
 export class CreateHr {
+  @Input() modalMode = false;
+  @Output() closeModal = new EventEmitter<void>();
+
   loading = false;
   loadingUsers = false;
   successMessage = '';
@@ -205,6 +208,11 @@ export class CreateHr {
       this.cdr.detectChanges();
 
       setTimeout(() => {
+        if (this.modalMode) {
+          this.closeModal.emit();
+          return;
+        }
+
         this.router.navigate(['/backoffice/hr-list']);
       }, 1500);
     } catch (error: unknown) {
@@ -214,6 +222,15 @@ export class CreateHr {
       this.loading = false;
       this.cdr.detectChanges();
     }
+  }
+
+  cancel(): void {
+    if (this.modalMode) {
+      this.closeModal.emit();
+      return;
+    }
+
+    this.router.navigate(['/backoffice/hr-list']);
   }
 
   private resolveApiError(error: unknown): string {

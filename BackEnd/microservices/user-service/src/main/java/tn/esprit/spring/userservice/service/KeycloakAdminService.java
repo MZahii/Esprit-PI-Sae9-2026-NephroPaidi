@@ -40,6 +40,7 @@ public class KeycloakAdminService {
     private final KeycloakAdminConfig keycloakConfig;
     private final RestTemplateBuilder restTemplateBuilder;
     private static final String VERIFY_EMAIL_ACTION = "VERIFY_EMAIL";
+    private static final String UPDATE_PASSWORD_ACTION = "UPDATE_PASSWORD";
 
     public record KeycloakUserState(String email, boolean emailVerified, boolean enabled, List<String> requiredActions) {
         public boolean hasEmail() {
@@ -53,6 +54,7 @@ public class KeycloakAdminService {
             String firstName,
             String lastName,
             String password,
+            String temporaryPasswordHint,
             String role,
             boolean enabled
     ) {
@@ -66,6 +68,7 @@ public class KeycloakAdminService {
         user.setEnabled(enabled);
         user.setEmailVerified(false);
         user.setRequiredActions(resolveInitialRequiredActions(email));
+        user.setAttributes(buildAccountEmailAttributes(username, email, temporaryPasswordHint));
 
         Response response = realmResource.users().create(user);
 
@@ -338,6 +341,28 @@ public class KeycloakAdminService {
         }
     }
 
+    public void sendPasswordResetOrVerificationEmail(String keycloakId) {
+        try {
+            KeycloakUserState state = getUserState(keycloakId);
+            if (!state.hasEmail()) {
+                return;
+            }
+
+            UserResource userResource = keycloak.realm(keycloakConfig.getRealm()).users().get(keycloakId);
+            if (!state.emailVerified()) {
+                ensureEmailVerificationRequired(keycloakId);
+                userResource.executeActionsEmail(List.of(VERIFY_EMAIL_ACTION));
+                log.info("Verification email re-sent (forgot-password fallback) for user {}", keycloakId);
+                return;
+            }
+
+            userResource.executeActionsEmail(List.of(UPDATE_PASSWORD_ACTION));
+            log.info("Password reset email sent for user {}", keycloakId);
+        } catch (Exception ex) {
+            log.warn("Failed to send forgot-password email for user {}: {}", keycloakId, ex.getMessage());
+        }
+    }
+
     private String safeReadBody(Response response) {
         try {
             if (response.hasEntity()) {
@@ -357,6 +382,20 @@ public class KeycloakAdminService {
             return List.of();
         }
         return List.of(VERIFY_EMAIL_ACTION);
+    }
+
+    private java.util.Map<String, List<String>> buildAccountEmailAttributes(
+            String username,
+            String email,
+            String temporaryPasswordHint
+    ) {
+        java.util.Map<String, List<String>> attrs = new java.util.HashMap<>();
+        attrs.put("np_login_username", List.of(username == null ? "" : username));
+        attrs.put("np_login_email", List.of(email == null ? "" : email));
+        attrs.put("np_temp_password", List.of(
+                temporaryPasswordHint == null || temporaryPasswordHint.isBlank() ? "Not provided" : temporaryPasswordHint
+        ));
+        return attrs;
     }
 
     private boolean hasEmailChanged(String currentEmail, String requestedEmail) {

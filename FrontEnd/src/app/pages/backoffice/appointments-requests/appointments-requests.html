@@ -15,6 +15,65 @@
     <div class="alert alert-success shadow-sm mb-0">{{ toastMessage }}</div>
   </div>
 
+  <div class="toast-holder" *ngIf="doctorFollowToast" style="top: 160px;">
+    <div class="alert shadow-sm mb-0" [ngClass]="doctorFollowToastIsError ? 'alert-danger' : 'alert-success'">
+      {{ doctorFollowToast }}
+    </div>
+  </div>
+
+  <div class="card stretch stretch-full mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <h5 class="card-title mb-0">Doctor follow-up requests</h5>
+      <button class="btn btn-light-brand" type="button" [disabled]="doctorFollowUpLoading" (click)="loadDoctorFollowUps()">
+        {{ doctorFollowUpLoading ? 'Refreshing…' : 'Refresh' }}
+      </button>
+    </div>
+    <div class="card-body">
+      <p class="text-muted small mb-3">
+        When a doctor requests a return visit from the consultation workspace, the suggested date appears here. Book the slot to create the appointment and close the request.
+      </p>
+      <div *ngIf="doctorFollowUpError" class="alert alert-warning">{{ doctorFollowUpError }}</div>
+
+      <div *ngIf="doctorFollowUpLoading" class="placeholder-glow">
+        <p class="placeholder col-12"></p>
+        <p class="placeholder col-10"></p>
+      </div>
+
+      <div class="table-responsive" *ngIf="!doctorFollowUpLoading">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>Suggested date</th>
+              <th>Return in</th>
+              <th>Doctor</th>
+              <th>Notes</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of doctorFollowUps">
+              <td>{{ getPatientDisplay(row.patientId) }}</td>
+              <td>
+                <span *ngIf="row.computedReturnDate">{{ row.computedReturnDate | date:'mediumDate' }}</span>
+                <span *ngIf="!row.computedReturnDate">—</span>
+              </td>
+              <td>{{ formatOffset(row) }}</td>
+              <td>{{ doctorLabel(row.doctorId) }}</td>
+              <td class="text-muted small">{{ row.notes || '—' }}</td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-success" type="button" (click)="openDoctorFollowConfirm(row)">Book slot</button>
+              </td>
+            </tr>
+            <tr *ngIf="doctorFollowUps.length === 0">
+              <td colspan="6" class="text-center text-muted py-4">No pending doctor follow-up requests.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <div class="card stretch stretch-full">
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
       <h5 class="card-title mb-0">Appointment Queue</h5>
@@ -217,4 +276,71 @@
     </div>
   </div>
   <div class="modal-backdrop fade show" *ngIf="rejectModalOpen"></div>
+
+  <div class="modal fade show d-block" tabindex="-1" *ngIf="doctorFollowModalOpen && selectedDoctorFollow as fu">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Book follow-up slot</h5>
+          <button type="button" class="btn-close" (click)="closeDoctorFollowModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="p-3 border rounded bg-light-subtle mb-3">
+            <div><strong>Patient:</strong> {{ getPatientDisplay(fu.patientId) }}</div>
+            <div><strong>Suggested date:</strong> {{ fu.computedReturnDate ? (fu.computedReturnDate | date:'mediumDate') : '—' }}</div>
+            <div><strong>Return in:</strong> {{ formatOffset(fu) }}</div>
+            <div><strong>Consultation:</strong> {{ fu.consultationId }}</div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="fuScheduledAt">Scheduled date &amp; time</label>
+              <input
+                id="fuScheduledAt"
+                name="fuScheduledAt"
+                type="datetime-local"
+                class="form-control"
+                [(ngModel)]="doctorFollowScheduledAt"
+                [min]="minDateTimeLocal"
+              />
+              <small class="text-muted">Prefilled from the suggested date (09:00); adjust as needed.</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="fuDoctor">Doctor</label>
+              <select id="fuDoctor" name="fuDoctor" class="form-control" [(ngModel)]="doctorFollowDoctorId" [disabled]="doctorLoading">
+                <option value="">Select a doctor</option>
+                <option *ngFor="let doctor of doctorOptions" [value]="doctor.id">{{ doctor.label }}</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="fuDuration">Duration (minutes)</label>
+              <input id="fuDuration" name="fuDuration" type="number" class="form-control" [(ngModel)]="doctorFollowDuration" min="10" max="180" />
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold" for="fuReason">Reason (optional)</label>
+              <textarea id="fuReason" name="fuReason" class="form-control" rows="2" [(ngModel)]="doctorFollowReason"></textarea>
+            </div>
+          </div>
+
+          <div class="text-danger small mt-2" *ngIf="doctorFollowScheduledAt && isDoctorFollowConfirmInvalid && doctorFollowDoctorId">
+            Choose a date and time in the future (must be after now).
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-light" type="button" (click)="closeDoctorFollowModal()">Cancel</button>
+          <button
+            class="btn btn-success"
+            type="button"
+            [disabled]="isDoctorFollowConfirmInvalid || doctorFollowSubmitting"
+            (click)="submitDoctorFollowConfirm()"
+          >
+            {{ doctorFollowSubmitting ? 'Booking…' : 'Confirm &amp; create appointment' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show" *ngIf="doctorFollowModalOpen"></div>
 </div>
+
+

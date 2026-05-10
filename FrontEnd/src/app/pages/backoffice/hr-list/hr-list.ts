@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
+import { CountUpDirective } from '../../../shared/directives/count-up.directive';
 
 type AccountStatus = 'PENDING_CONTRACT' | 'ACTIVE' | 'INACTIVE';
 type ContractSort = 'WITH_CONTRACT_FIRST' | 'WITHOUT_CONTRACT_FIRST';
@@ -30,10 +31,17 @@ interface ContractRow {
   status: 'ACTIVE' | 'SUSPENDED' | 'ENDED' | 'EXPIRED';
 }
 
+interface AssignmentRow {
+  id: number;
+  userId: number;
+  role: 'HR';
+  workspaceId: number;
+}
+
 @Component({
   selector: 'app-hr-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, CountUpDirective],
   templateUrl: './hr-list.html',
   styleUrl: './hr-list.scss'
 })
@@ -46,7 +54,7 @@ export class HrList implements OnInit, OnDestroy {
   contractFilter: ContractFilter = 'ALL';
   contractSort: ContractSort = 'WITH_CONTRACT_FIRST';
   sortDirection: 'asc' | 'desc' = 'asc';
-  pageSize = 10;
+  pageSize = 5;
   currentPage = 1;
   actionLoadingUserId: number | null = null;
   actionMessage = '';
@@ -55,12 +63,21 @@ export class HrList implements OnInit, OnDestroy {
   allHr: UserRow[] = [];
   archivedHr: UserRow[] = [];
   contractsByUserId: Record<number, ContractRow[]> = {};
+  hrOfficeAssignments: AssignmentRow[] = [];
   private refreshTimer?: ReturnType<typeof setInterval>;
 
   constructor(
     private http: HttpClient,
     private cdr: ChangeDetectorRef
   ) {}
+
+  openStaffDetailsPanel(event: MouseEvent, userId: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    window.dispatchEvent(new CustomEvent('open-staff-details-panel', {
+      detail: { userId }
+    }));
+  }
 
   ngOnInit(): void {
     const navigationState = history.state as { actionMessage?: string } | undefined;
@@ -162,6 +179,15 @@ export class HrList implements OnInit, OnDestroy {
 
   get withoutContractHr(): number {
     return this.totalHr - this.withContractHr;
+  }
+
+  get withOfficeAssignmentHr(): number {
+    const assignedIds = new Set(this.hrOfficeAssignments.map((assignment) => assignment.userId));
+    return this.allHr.filter((user) => assignedIds.has(user.id)).length;
+  }
+
+  get withoutOfficeAssignmentHr(): number {
+    return Math.max(0, this.totalHr - this.withOfficeAssignmentHr);
   }
 
   fullName(user: UserRow): string {
@@ -330,9 +356,16 @@ export class HrList implements OnInit, OnDestroy {
       const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
       const response = await firstValueFrom(this.http.get<UserRow[] | unknown>(`${environment.apiBaseUrl}/api/users`, { headers }));
       const contractsResponse = await firstValueFrom(this.http.get<ContractRow[] | unknown>(`${environment.apiBaseUrl}/api/contracts`, { headers }));
+      const assignmentsResponse = await firstValueFrom(
+        this.http.get<AssignmentRow[] | unknown>(`${environment.apiBaseUrl}/api/staff-assignments`, {
+          headers,
+          params: { role: 'HR' }
+        })
+      );
 
       const users = Array.isArray(response) ? response : [];
       const contracts = Array.isArray(contractsResponse) ? contractsResponse : [];
+      this.hrOfficeAssignments = Array.isArray(assignmentsResponse) ? assignmentsResponse : [];
 
       const liveHr = users
         .filter(u => u.role === 'HR')
@@ -372,7 +405,6 @@ export class HrList implements OnInit, OnDestroy {
       user.firstName ?? '',
       user.lastName ?? '',
       `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
-      user.email ?? '',
       user.phone ?? '',
       user.accountStatus ?? '',
       user.deleted ? 'archived' : 'live',
@@ -381,3 +413,7 @@ export class HrList implements OnInit, OnDestroy {
     ].map(v => v.toLowerCase());
   }
 }
+
+
+
+

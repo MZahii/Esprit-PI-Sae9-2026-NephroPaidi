@@ -225,6 +225,62 @@
   border-radius: 16px;
 }
 
+.workflow-card {
+  overflow: hidden;
+}
+
+.workflow-card-lab {
+  background: linear-gradient(135deg, #ffffff 0%, #f7fbff 100%);
+}
+
+.workflow-card-nurse {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fff9 100%);
+}
+
+.workflow-side-card {
+  height: 100%;
+}
+
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.workflow-step {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.workflow-step span {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #e0ecff;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.workflow-step strong {
+  display: block;
+  color: #0f172a;
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+.workflow-step small {
+  display: block;
+  color: #64748b;
+  line-height: 1.55;
+}
+
 .bar-list {
   display: flex;
   flex-direction: column;
@@ -447,5 +503,9 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
+  }
+
+  .workflow-grid {
+    grid-template-columns: 1fr;
   }
 }

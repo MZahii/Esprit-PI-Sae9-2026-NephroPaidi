@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
 
@@ -85,6 +85,13 @@ export class StaffPlacementsComponent implements OnInit {
   };
 
   moveState: Record<number, { enabled: boolean; targetWorkspaceId: number | null }> = {};
+  private workspaceGroupCache: Record<PlacementRole, WorkspaceGroup[]> = {
+    DOCTOR: [],
+    LAB_AGENT: [],
+    PHARMACIST: [],
+    RECEPTIONIST: []
+  };
+  private readonly requestTimeoutMs = 12000;
 
   constructor(private http: HttpClient) {}
 
@@ -105,7 +112,7 @@ export class StaffPlacementsComponent implements OnInit {
   }
 
   get tabWorkspaceGroups(): WorkspaceGroup[] {
-    return this.groupAssignmentsByWorkspace(this.activeTab);
+    return this.workspaceGroupCache[this.activeTab];
   }
 
   get tabAvailableUsers(): UserRow[] {
@@ -114,6 +121,7 @@ export class StaffPlacementsComponent implements OnInit {
 
   setTab(tab: PlacementRole): void {
     this.activeTab = tab;
+    this.moveState = {};
     this.errorMessage = '';
     this.successMessage = '';
   }
@@ -129,6 +137,7 @@ export class StaffPlacementsComponent implements OnInit {
         this.loadRoleData('PHARMACIST'),
         this.loadRoleData('RECEPTIONIST')
       ]);
+      this.rebuildWorkspaceGroupCache();
     } catch (error: any) {
       this.errorMessage = error?.error?.message || error?.message || 'Failed to load staff placements.';
     } finally {
@@ -157,7 +166,7 @@ export class StaffPlacementsComponent implements OnInit {
         userId: form.userId,
         role,
         workspaceId: form.workspaceId
-      }, { headers }));
+      }, { headers }).pipe(timeout(this.requestTimeoutMs)));
 
       this.successMessage = `${this.roleLabel(role)} placement created.`;
       this.createForm[role] = { userId: null, workspaceId: null };
@@ -192,7 +201,7 @@ export class StaffPlacementsComponent implements OnInit {
       const headers = await this.authHeaders();
       await firstValueFrom(this.http.patch(`${environment.apiBaseUrl}/api/staff-assignments/${assignment.id}/move`, {
         workspaceId: state.targetWorkspaceId
-      }, { headers }));
+      }, { headers }).pipe(timeout(this.requestTimeoutMs)));
 
       this.successMessage = 'Placement moved.';
       this.cancelMove(assignment.id);
@@ -215,7 +224,7 @@ export class StaffPlacementsComponent implements OnInit {
 
     try {
       const headers = await this.authHeaders();
-      await firstValueFrom(this.http.delete(`${environment.apiBaseUrl}/api/staff-assignments/${assignment.id}`, { headers }));
+      await firstValueFrom(this.http.delete(`${environment.apiBaseUrl}/api/staff-assignments/${assignment.id}`, { headers }).pipe(timeout(this.requestTimeoutMs)));
       this.successMessage = 'Placement deleted.';
       this.moveState = {};
       await this.loadAll();
@@ -253,11 +262,11 @@ export class StaffPlacementsComponent implements OnInit {
       firstValueFrom(this.http.get<AssignmentRow[]>(`${environment.apiBaseUrl}/api/staff-assignments`, {
         headers,
         params: { role }
-      })),
+      }).pipe(timeout(this.requestTimeoutMs))),
       firstValueFrom(this.http.get<WorkspaceOption[]>(`${environment.apiBaseUrl}/api/staff-assignments/workspaces`, {
         headers,
         params: { role }
-      }))
+      }).pipe(timeout(this.requestTimeoutMs)))
     ]);
 
     this.assignments[role] = assignments ?? [];
@@ -266,8 +275,25 @@ export class StaffPlacementsComponent implements OnInit {
 
   private async loadUsers(): Promise<void> {
     const headers = await this.authHeaders();
-    const allUsers = await firstValueFrom(this.http.get<UserRow[]>(`${environment.apiBaseUrl}/api/users`, { headers }));
+    const allUsers = await firstValueFrom(this.http.get<UserRow[]>(`${environment.apiBaseUrl}/api/users`, { headers }).pipe(timeout(this.requestTimeoutMs)));
     this.users = (allUsers ?? []).filter((user) => ['DOCTOR', 'LAB_AGENT', 'PHARMACIST', 'RECEPTIONIST'].includes(user.role) && user.enabled);
+  }
+
+  trackByWorkspaceGroup(_: number, group: WorkspaceGroup): number {
+    return group.workspaceId;
+  }
+
+  trackByAssignment(_: number, assignment: AssignmentRow): number {
+    return assignment.id;
+  }
+
+  private rebuildWorkspaceGroupCache(): void {
+    this.workspaceGroupCache = {
+      DOCTOR: this.groupAssignmentsByWorkspace('DOCTOR'),
+      LAB_AGENT: this.groupAssignmentsByWorkspace('LAB_AGENT'),
+      PHARMACIST: this.groupAssignmentsByWorkspace('PHARMACIST'),
+      RECEPTIONIST: this.groupAssignmentsByWorkspace('RECEPTIONIST')
+    };
   }
 
   private availableUsersByRole(role: PlacementRole): UserRow[] {

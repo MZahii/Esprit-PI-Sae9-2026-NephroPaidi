@@ -56,7 +56,7 @@
         <div class="col-lg-2 col-md-6">
           <label class="form-label">Consultation Status</label>
           <select class="form-select" [(ngModel)]="filters.status">
-            <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+            <option *ngFor="let status of statuses" [value]="status">{{ statusOptionLabel(status) }}</option>
           </select>
         </div>
         <div class="col-lg-2 col-md-6">
@@ -125,7 +125,7 @@
               </div>
               <div class="d-flex flex-column align-items-end gap-2">
                 <span class="badge" [ngClass]="statusBadge(row.consultation?.status)">
-                  {{ row.consultation?.status || 'OPEN' }}
+                  {{ statusLabel(row.consultation?.status) }}
                 </span>
                 <span class="badge bg-soft-info text-info">
                   {{ row.labRequests.length }} request{{ row.labRequests.length === 1 ? '' : 's' }}

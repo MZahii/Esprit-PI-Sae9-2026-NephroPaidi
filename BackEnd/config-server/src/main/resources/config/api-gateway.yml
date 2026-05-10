@@ -53,7 +53,7 @@ spring:
             - id: clinical-service-api
               uri: lb://clinical-service
               predicates:
-                - Path=/api/clinical/**
+                - Path=/clinical/**,/api/clinical/**
               filters:
                 - RewritePath=/api/clinical/?(?<segment>.*), /clinical/$\{segment}
 
@@ -77,6 +77,12 @@ spring:
               filters:
                 - RewritePath=/api/pharmacy/?(.*), /api/$1
 
+            # Pharmacy medication catalog (same path as pharmacy-service controllers)
+            - id: pharmacy-medications-api
+              uri: lb://pharmacy-service
+              predicates:
+                - Path=/api/medications/**
+
             # Operations Service - Rewrite frontend path to service endpoints
             - id: ops-service-api
               uri: lb://ops-service
@@ -85,11 +91,28 @@ spring:
               filters:
                 - RewritePath=/api/ops/?(.*), /api/$1
 
+            # eGFR ML Service - ML prediction endpoint namespace
+            - id: egfr-ml-service-api
+              uri: http://egfr-ml-service:8092
+              predicates:
+                - Path=/api/egfr-ml/**
+              filters:
+                - RewritePath=/api/egfr-ml/?(.*), /$1
+
+            # AI Pharmacy Service - Pediatric dosing verification
+            - id: ai-pharmacy-service-api
+              uri: ${AI_PHARMACY_SERVICE_URI:http://ai-pharmacy-service:8093}
+              predicates:
+                - Path=/api/ai/**
+              filters:
+                - RewritePath=/api/ai/?(.*), /$1
+
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/nephrospaidi}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8080/realms/nephrospaidi/protocol/openid-connect/certs}
 
 eureka:
   client:
@@ -103,4 +126,4 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway
+        include: health,info,gateway,metrics,prometheus

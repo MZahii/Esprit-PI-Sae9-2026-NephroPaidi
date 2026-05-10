@@ -21,3 +21,5 @@ dist/
 .idea/
 BackEnd/.idea/
 target/
+BackEnd/runtime/clinical-lab-results/
+tmp/

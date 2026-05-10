@@ -78,6 +78,7 @@ public class UserServiceImpl implements UserService {
                 request.getFirstName(),
                 request.getLastName(),
                 generatedPassword,
+                request.getCin(),
                 Role.HR.name(),
                 false
         );
@@ -130,6 +131,7 @@ public class UserServiceImpl implements UserService {
                 request.getUsername(),
                 request.getRole().name(),
                 generatedPassword,
+                null,
                 request.getRole().name(),
                 false
         );
@@ -172,6 +174,7 @@ public class UserServiceImpl implements UserService {
                 request.getFirstName(),
                 request.getLastName(),
                 generatedPassword,
+                request.getCin(),
                 request.getRole().name(),
                 false
         );
@@ -228,6 +231,7 @@ public class UserServiceImpl implements UserService {
                 request.getFirstName(),
                 request.getLastName(),
                 generatedPassword,
+                request.getCin(),
                 Role.GUARDIAN.name(),
                 true
         );

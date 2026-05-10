@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import tn.esprit.spring.procedureservice.notification.service.ResendEmailService;
 import tn.esprit.spring.procedureservice.shared.exception.BusinessException;
 import tn.esprit.spring.procedureservice.surgical.domain.entity.PreOpAssessment;
 import tn.esprit.spring.procedureservice.surgical.domain.entity.SurgicalCase;
@@ -25,6 +24,7 @@ import tn.esprit.spring.procedureservice.surgical.dto.request.DecideTransplantOf
 import tn.esprit.spring.procedureservice.surgical.dto.request.UpdateSurgicalCaseRequest;
 import tn.esprit.spring.procedureservice.surgical.repository.PreOpAssessmentRepository;
 import tn.esprit.spring.procedureservice.surgical.repository.SurgicalCaseRepository;
+import tn.esprit.spring.procedureservice.whatsapp.service.ProcedureWhatsAppAlertService;
 
 @DisplayName("SurgicalCaseService Tests")
 class SurgicalCaseServiceTest {
@@ -36,7 +36,7 @@ class SurgicalCaseServiceTest {
     private PreOpAssessmentRepository preOpAssessmentRepository;
 
     @Mock
-    private ResendEmailService resendEmailService;
+    private ProcedureWhatsAppAlertService whatsAppAlertService;
 
     @InjectMocks
     private SurgicalCaseService service;
@@ -61,6 +61,7 @@ class SurgicalCaseServiceTest {
     void createShouldForceDefaultStatuses() {
         CreateSurgicalCaseRequest request = new CreateSurgicalCaseRequest(
             "15",
+            null,
             null,
             null,
             "Sami",
@@ -88,7 +89,7 @@ class SurgicalCaseServiceTest {
 
         assertEquals("OPEN", result.getStatus());
         assertEquals("PENDING", result.getOfferStatus());
-        verify(resendEmailService).sendSurgicalCaseCreatedNotification(any(SurgicalCase.class));
+        verify(whatsAppAlertService).sendSurgicalCaseCreatedAlert(any(SurgicalCase.class));
     }
 
     @Test

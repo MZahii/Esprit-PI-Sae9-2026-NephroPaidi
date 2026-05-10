@@ -82,4 +82,18 @@ export class ConsultationDetailsPage implements OnInit {
     if (status === 'IN_PROGRESS') return 'badge bg-primary';
     return 'badge bg-warning text-dark';
   }
+
+  get consultationTitle(): string {
+    const formattedDate = this.formatConsultationDate(this.consultation?.dateTime, 'longDate');
+    return formattedDate ? `Consultation on ${formattedDate}` : 'Consultation details';
+  }
+
+  formatConsultationDate(value: any, format: 'longDate' | 'medium' = 'medium'): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat('en-US', format === 'longDate'
+      ? { year: 'numeric', month: 'short', day: 'numeric' }
+      : { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
+    ).format(date);
+  }
 }

@@ -29,7 +29,7 @@ function Wait-Url {
 $env:COMPOSE_PARALLEL_LIMIT = "2"
 Write-Host "COMPOSE_PARALLEL_LIMIT=$($env:COMPOSE_PARALLEL_LIMIT) (CPU guard)"
 
-Write-Host "Step 1/3: starting core infra (eureka, keycloak, rabbitmq, config-server)..."
+Write-Host "Step 1/4: starting core infra (eureka, keycloak, rabbitmq, config-server)..."
 docker compose -p $ProjectName -f $ComposeFile up -d --build eureka keycloak rabbitmq config-server
 Wait-Url -Url "http://localhost:8761/actuator/health" -TimeoutSec 300
 Wait-Url -Url "http://localhost:8888/actuator/health" -TimeoutSec 300

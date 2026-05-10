@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { finalize, Subscription } from 'rxjs';
@@ -23,6 +23,7 @@ import { InternalStaffMessagingRealtimeService } from '../../../core/services/in
   styleUrl: './internal-staff-messaging.scss'
 })
 export class InternalStaffMessagingComponent implements OnInit, AfterViewInit, OnDestroy {
+  @Input() compactMode = false;
   @ViewChild('messageViewport') private messageViewport?: ElementRef<HTMLDivElement>;
 
   conversationsLoading = true;
@@ -42,6 +43,7 @@ export class InternalStaffMessagingComponent implements OnInit, AfterViewInit, O
   selectedConversationId = '';
   draftMessage = '';
   searchTerm = '';
+  compactThreadOpen = false;
 
   private realtimeSub?: Subscription;
   private connectionSub?: Subscription;
@@ -147,7 +149,7 @@ export class InternalStaffMessagingComponent implements OnInit, AfterViewInit, O
             }
           }
 
-          if (!this.selectedConversationId && this.conversations.length > 0) {
+          if (!this.compactMode && !this.selectedConversationId && this.conversations.length > 0) {
             void this.openConversation(this.conversations[0]);
           }
         },
@@ -204,8 +206,13 @@ export class InternalStaffMessagingComponent implements OnInit, AfterViewInit, O
     }
 
     this.selectedConversationId = conversation.id;
+    this.compactThreadOpen = true;
     this.loadMessages(conversation.id);
     this.markConversationRead(conversation.id);
+  }
+
+  backToDiscussions(): void {
+    this.compactThreadOpen = false;
   }
 
   startDirectConversation(user: StaffMessagingUser): void {
@@ -285,6 +292,11 @@ export class InternalStaffMessagingComponent implements OnInit, AfterViewInit, O
 
   getRoleLabel(role: string | undefined | null): string {
     return (role || '').replace(/_/g, ' ');
+  }
+
+  getParticipantInitial(conversation: StaffConversationSummary): string {
+    const name = this.getPeer(conversation)?.displayName || 'S';
+    return name.trim().charAt(0).toUpperCase() || 'S';
   }
 
   private markConversationRead(conversationId: string): void {

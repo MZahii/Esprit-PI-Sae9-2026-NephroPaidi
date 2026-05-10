@@ -16,7 +16,7 @@
 <div class="main-content">
   <div class="row g-4">
     <div class="col-12">
-      <div class="card stretch stretch-full welcome-card overflow-hidden">
+      <div class="card stretch stretch-full welcome-card admin-dashboard-welcome overflow-hidden">
         <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
           <div>
             <span class="welcome-badge">{{ role || 'USER' }} DASHBOARD</span>
@@ -39,6 +39,116 @@
       <div class="text-muted">Loading live statistics...</div>
     </div>
 
+    <ng-container *ngIf="!loadingStats && isLabAgent">
+      <div class="col-lg-8">
+        <div class="card stretch stretch-full chart-card workflow-card workflow-card-lab">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Lab Workflow</h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-3">
+              Open the lab inbox to receive doctor orders, upload PDF or image results, and trigger the AI analysis that feeds back into the consultation workspace.
+            </p>
+            <div class="workflow-grid mb-3">
+              <div class="workflow-step">
+                <span>1</span>
+                <strong>Receive request</strong>
+                <small>Doctor orders appear automatically in the inbox.</small>
+              </div>
+              <div class="workflow-step">
+                <span>2</span>
+                <strong>Upload result</strong>
+                <small>Attach the verified PDF, image, or text result file.</small>
+              </div>
+              <div class="workflow-step">
+                <span>3</span>
+                <strong>Send back to clinic</strong>
+                <small>AI analysis updates the consultation metrics and recommendation.</small>
+              </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <a routerLink="/backoffice/lab-inbox" class="btn btn-primary">Open Lab Inbox</a>
+              <a routerLink="/backoffice/account-settings" class="btn btn-light">Account Settings</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card stretch stretch-full analytics-summary-card workflow-side-card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Daily Focus</h5>
+          </div>
+          <div class="card-body">
+            <div class="analytics-pill mb-3">
+              <span>Priority</span>
+              <strong>Upload pending results quickly</strong>
+            </div>
+            <ul class="mb-0 text-muted small">
+              <li>Open requests from the lab inbox.</li>
+              <li>Upload the verified result file.</li>
+              <li>Check AI summary and doctor-review flags.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="!loadingStats && isNurse">
+      <div class="col-lg-8">
+        <div class="card stretch stretch-full chart-card workflow-card workflow-card-nurse">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Nurse Shift Operations</h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-3">
+              Hospitalization requests created by doctors should become active bedside task lists here. Open the nurse task board to update observations, medication rounds, and monitoring tasks in real time.
+            </p>
+            <div class="workflow-grid mb-3">
+              <div class="workflow-step">
+                <span>1</span>
+                <strong>Receive admission</strong>
+                <small>Doctor-created hospitalization cases appear in the nurse board.</small>
+              </div>
+              <div class="workflow-step">
+                <span>2</span>
+                <strong>Execute tasks</strong>
+                <small>Record vitals, observations, and task completion per shift.</small>
+              </div>
+              <div class="workflow-step">
+                <span>3</span>
+                <strong>Keep progress current</strong>
+                <small>Doctors and operations can follow hospitalization progress immediately.</small>
+              </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <a routerLink="/backoffice/nurse/hospitalizations" class="btn btn-primary">Open Nurse Task Board</a>
+              <a routerLink="/backoffice/account-settings" class="btn btn-light">Account Settings</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card stretch stretch-full analytics-summary-card workflow-side-card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Shift Checklist</h5>
+          </div>
+          <div class="card-body">
+            <div class="analytics-pill mb-3">
+              <span>Priority</span>
+              <strong>Close bedside tasks before handover</strong>
+            </div>
+            <ul class="mb-0 text-muted small">
+              <li>Open the selected hospitalization case.</li>
+              <li>Update task status and notes after each action.</li>
+              <li>Watch for medication safety or abnormal monitoring flags.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
     <div class="col-12" *ngIf="!loadingStats && (isAdmin || isHr || isReceptionist)">
       <div class="card stretch stretch-full chart-card">
         <div class="card-header">
@@ -47,27 +157,27 @@
         <div class="card-body">
           <div class="row g-3">
             <div class="col-md-3 col-6">
-              <div class="analytics-pill">
+              <div class="analytics-pill" [attr.data-stat-tooltip]="'Contracts ending in 7 days: ' + actionAlerts.contractsEndingIn7Days + ' urgent item(s)'">
                 <span>Ending In 7 Days</span>
-                <strong>{{ actionAlerts.contractsEndingIn7Days }}</strong>
+                <strong appCountUp>{{ actionAlerts.contractsEndingIn7Days }}</strong>
               </div>
             </div>
             <div class="col-md-3 col-6">
-              <div class="analytics-pill">
+              <div class="analytics-pill" [attr.data-stat-tooltip]="'Contracts ending in 30 days: ' + actionAlerts.contractsEndingIn30Days + ' contract(s) to review'">
                 <span>Ending In 30 Days</span>
-                <strong>{{ actionAlerts.contractsEndingIn30Days }}</strong>
+                <strong appCountUp>{{ actionAlerts.contractsEndingIn30Days }}</strong>
               </div>
             </div>
             <div class="col-md-3 col-6">
-              <div class="analytics-pill">
+              <div class="analytics-pill" [attr.data-stat-tooltip]="'Pending users waiting too long: ' + actionAlerts.pendingUsersTooLong">
                 <span>Pending Too Long</span>
-                <strong>{{ actionAlerts.pendingUsersTooLong }}</strong>
+                <strong appCountUp>{{ actionAlerts.pendingUsersTooLong }}</strong>
               </div>
             </div>
             <div class="col-md-3 col-6">
-              <div class="analytics-pill">
+              <div class="analytics-pill" [attr.data-stat-tooltip]="'Profiles missing required data: ' + actionAlerts.profilesMissingRequiredData">
                 <span>Profiles Missing Data</span>
-                <strong>{{ actionAlerts.profilesMissingRequiredData }}</strong>
+                <strong appCountUp>{{ actionAlerts.profilesMissingRequiredData }}</strong>
               </div>
             </div>
           </div>
@@ -99,7 +209,7 @@
 
               <div class="expiring-date-line">
                 <span>End Date</span>
-                <strong>{{ contract.endDate }}</strong>
+                <strong appCountUp>{{ contract.endDate }}</strong>
               </div>
 
               <div class="expiry-progress">
@@ -111,15 +221,17 @@
               </div>
 
               <div class="expiring-card-actions">
-                <span class="badge bg-light text-dark">{{ contract.status }}</span>
-                  <a
+                <span class="status-pill" [ngClass]="'badge-' + contract.status.toLowerCase()">{{ contract.status }}</span>
+                  <button
                     *ngIf="canOpenExpiringAccounts"
-                    class="btn btn-sm btn-light-brand"
-                    [routerLink]="['/backoffice/staff', contract.staffUserId]"
-                    [queryParams]="{ returnTo: 'contracts' }"
+                    type="button"
+                    class="btn btn-sm btn-light-brand icon-action-btn"
+                    (click)="openStaffDetailsPanel($event, contract.staffUserId)"
+                    data-ui-tooltip="Details"
+                    aria-label="Details"
                   >
-                    Open Account
-                  </a>
+                    <img src="assets/backoffice/images/banner/details.png" alt="" />
+                  </button>
               </div>
             </div>
           </div>
@@ -134,23 +246,27 @@
             <h5 class="card-title mb-0">Clinic Resources Supervision</h5>
           </div>
           <div class="card-body">
-            <div class="row g-3">
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Total Floors</span><strong>{{ clinicStructure?.totalFloors ?? 0 }}</strong></div></div>
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Total Workspaces</span><strong>{{ clinicStructure?.totalWorkspaces ?? 0 }}</strong></div></div>
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Workspace Types</span><strong>{{ clinicWorkspaceTypesCount }}</strong></div></div>
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Placed Equipment</span><strong>{{ totalPlacedEquipment }}</strong></div></div>
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Total Equipment</span><strong>{{ equipmentSummary?.total ?? 0 }}</strong></div></div>
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Available Equipment</span><strong>{{ equipmentSummary?.available ?? 0 }}</strong></div></div>
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Under Maintenance</span><strong>{{ equipmentSummary?.underMaintenance ?? 0 }}</strong></div></div>
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Out Of Service</span><strong>{{ equipmentSummary?.outOfService ?? 0 }}</strong></div></div>
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Admin Office Assignments</span><strong>{{ assignmentCounts['ADMIN'] }}</strong></div></div>
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>HR Office Assignments</span><strong>{{ assignmentCounts['HR'] }}</strong></div></div>
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Doctor Placements</span><strong>{{ assignmentCounts['DOCTOR'] }}</strong></div></div>
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Lab Agent Placements</span><strong>{{ assignmentCounts['LAB_AGENT'] }}</strong></div></div>
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Pharmacist Placements</span><strong>{{ assignmentCounts['PHARMACIST'] }}</strong></div></div>
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Receptionist Placements</span><strong>{{ assignmentCounts['RECEPTIONIST'] }}</strong></div></div>
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Empty Eligible Workspaces</span><strong>{{ emptyEligibleWorkspaces }}</strong></div></div>
-              <div class="col-lg-3 col-sm-6"><div class="analytics-pill"><span>Floors With Placements</span><strong>{{ floorsWithEquipmentPlacements }}</strong></div></div>
+            <div class="resource-overview-grid">
+              <div class="resource-overview-card" [attr.data-stat-tooltip]="'Clinic capacity: ' + (clinicStructure?.totalWorkspaces ?? 0) + ' workspaces. Empty eligible rooms: ' + emptyEligibleWorkspaces">
+                <span>Clinic Capacity</span>
+                <strong appCountUp>{{ clinicStructure?.totalWorkspaces ?? 0 }}</strong>
+                <small>{{ clinicStructure?.totalFloors ?? 0 }} floors / {{ clinicWorkspaceTypesCount }} types / {{ emptyEligibleWorkspaces }} rooms free</small>
+              </div>
+              <div class="resource-overview-card" [attr.data-stat-tooltip]="'Equipment availability: ' + (equipmentSummary?.available ?? 0) + ' available out of ' + (equipmentSummary?.total ?? 0)">
+                <span>Equipment Ready</span>
+                <strong appCountUp>{{ equipmentSummary?.available ?? 0 }}</strong>
+                <small>{{ equipmentSummary?.underMaintenance ?? 0 }} maintenance / {{ equipmentSummary?.outOfService ?? 0 }} out</small>
+              </div>
+              <div class="resource-overview-card warning" [attr.data-stat-tooltip]="'Office gaps: ' + adminWithoutOffice + ' admin and ' + hrWithoutOffice + ' HR without office'">
+                <span>Office Gaps</span>
+                <strong appCountUp>{{ adminWithoutOffice + hrWithoutOffice }}</strong>
+                <small>{{ assignmentCounts['ADMIN'] }} admin assigned / {{ assignmentCounts['HR'] }} HR assigned</small>
+              </div>
+              <div class="resource-overview-card" [attr.data-stat-tooltip]="'Clinical placements: doctors ' + assignmentCounts['DOCTOR'] + ', lab ' + assignmentCounts['LAB_AGENT'] + ', pharmacists ' + assignmentCounts['PHARMACIST'] + ', receptionists ' + assignmentCounts['RECEPTIONIST']">
+                <span>Staff Placements</span>
+                <strong appCountUp>{{ assignmentCounts['DOCTOR'] + assignmentCounts['LAB_AGENT'] + assignmentCounts['PHARMACIST'] + assignmentCounts['RECEPTIONIST'] }}</strong>
+                <small>{{ staffWithoutPlacement }} staff still without placement</small>
+              </div>
             </div>
           </div>
         </div>
@@ -159,28 +275,28 @@
       <div class="col-xxl-3 col-md-6">
         <div class="card stretch stretch-full metric-card metric-gradient">
           <div class="metric-label">Total Accounts</div>
-          <div class="metric-value">{{ allUsers.length }}</div>
+          <div class="metric-value" appCountUp>{{ allUsers.length }}</div>
           <div class="metric-sub">HR + Staff + Guardians</div>
         </div>
       </div>
       <div class="col-xxl-3 col-md-6">
         <div class="card stretch stretch-full metric-card metric-gradient">
           <div class="metric-label">Total Staff</div>
-          <div class="metric-value">{{ totalStaff }}</div>
+          <div class="metric-value" appCountUp>{{ totalStaff }}</div>
           <div class="metric-sub">Operational teams</div>
         </div>
       </div>
       <div class="col-xxl-3 col-md-6">
         <div class="card stretch stretch-full metric-card metric-gradient">
           <div class="metric-label">Total Contracts</div>
-          <div class="metric-value">{{ totalContracts }}</div>
+          <div class="metric-value" appCountUp>{{ totalContracts }}</div>
           <div class="metric-sub">HR + Staff contracts</div>
         </div>
       </div>
       <div class="col-xxl-3 col-md-6">
         <div class="card stretch stretch-full metric-card metric-gradient">
           <div class="metric-label">Patient Profiles</div>
-          <div class="metric-value">{{ totalPatients }}</div>
+          <div class="metric-value" appCountUp>{{ totalPatients }}</div>
           <div class="metric-sub">Linked to {{ linkedGuardians }} guardians</div>
         </div>
       </div>
@@ -190,27 +306,27 @@
           <div class="card-body">
             <div class="row g-3">
               <div class="col-lg-3 col-sm-6">
-                <div class="analytics-pill">
+                <div class="analytics-pill" data-stat-tooltip="Live stat loaded from backend data. Percentage context is shown by the animated bars on this section.">
                   <span>Contract Coverage</span>
-                  <strong>{{ contractCoverage }}%</strong>
+                  <strong appCountUp>{{ contractCoverage }}%</strong>
                 </div>
               </div>
               <div class="col-lg-3 col-sm-6">
-                <div class="analytics-pill">
+                <div class="analytics-pill" data-stat-tooltip="Live stat loaded from backend data. Percentage context is shown by the animated bars on this section.">
                   <span>Enabled Accounts</span>
-                  <strong>{{ enabledUsersRate }}%</strong>
+                  <strong appCountUp>{{ enabledUsersRate }}%</strong>
                 </div>
               </div>
               <div class="col-lg-3 col-sm-6">
-                <div class="analytics-pill">
+                <div class="analytics-pill" data-stat-tooltip="Live stat loaded from backend data. Percentage context is shown by the animated bars on this section.">
                   <span>Guardians Linked</span>
-                  <strong>{{ patientCoverageRate }}%</strong>
+                  <strong appCountUp>{{ patientCoverageRate }}%</strong>
                 </div>
               </div>
               <div class="col-lg-3 col-sm-6">
-                <div class="analytics-pill">
+                <div class="analytics-pill" data-stat-tooltip="Live stat loaded from backend data. Percentage context is shown by the animated bars on this section.">
                   <span>Patients This Month</span>
-                  <strong>{{ monthPatients }}</strong>
+                  <strong appCountUp>{{ monthPatients }}</strong>
                 </div>
               </div>
             </div>
@@ -228,7 +344,7 @@
               <div class="bar-item" *ngFor="let roleItem of roleBreakdownWithPercent">
                 <div class="bar-meta">
                   <span>{{ roleItem.role }}</span>
-                  <strong>{{ roleItem.count }}</strong>
+                  <strong appCountUp>{{ roleItem.count }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill role" [style.width.%]="roleItem.percent"></span>
@@ -249,7 +365,7 @@
               <div class="bar-item" *ngFor="let status of contractStatusBreakdown">
                 <div class="bar-meta">
                   <span>{{ status.label }}</span>
-                  <strong>{{ status.value }}</strong>
+                  <strong appCountUp>{{ status.value }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill" [ngClass]="status.css" [style.width.%]="status.percent"></span>
@@ -270,7 +386,7 @@
               <div class="bar-item">
                 <div class="bar-meta">
                   <span>Enabled</span>
-                  <strong>{{ enabledUsers }}</strong>
+                  <strong appCountUp>{{ enabledUsers }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill active" [style.width.%]="enabledUsersRate"></span>
@@ -279,7 +395,7 @@
               <div class="bar-item">
                 <div class="bar-meta">
                   <span>Disabled</span>
-                  <strong>{{ disabledUsers }}</strong>
+                  <strong appCountUp>{{ disabledUsers }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill inactive" [style.width.%]="100 - enabledUsersRate"></span>
@@ -304,7 +420,7 @@
               ]">
                 <div class="bar-meta">
                   <span>{{ status.label }}</span>
-                  <strong>{{ status.value }}</strong>
+                  <strong appCountUp>{{ status.value }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill" [ngClass]="status.css" [style.width.%]="status.percent"></span>
@@ -325,7 +441,7 @@
               <div class="bar-item" *ngFor="let sex of patientSexBreakdown">
                 <div class="bar-meta">
                   <span>{{ sex.label }}</span>
-                  <strong>{{ sex.value }}</strong>
+                  <strong appCountUp>{{ sex.value }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill" [ngClass]="sex.css" [style.width.%]="sex.percent"></span>
@@ -333,9 +449,9 @@
               </div>
             </div>
             <div class="mini-stats mt-3">
-              <div>Guardians: <strong>{{ totalGuardians }}</strong></div>
-              <div>Linked: <strong>{{ linkedGuardians }}</strong></div>
-              <div>Avg Kids/Guardian: <strong>{{ averageKidsPerGuardian }}</strong></div>
+              <div>Guardians: <strong appCountUp>{{ totalGuardians }}</strong></div>
+              <div>Linked: <strong appCountUp>{{ linkedGuardians }}</strong></div>
+              <div>Avg Kids/Guardian: <strong appCountUp>{{ averageKidsPerGuardian }}</strong></div>
             </div>
           </div>
         </div>
@@ -346,28 +462,28 @@
       <div class="col-xxl-3 col-md-6">
         <div class="card stretch stretch-full metric-card metric-gradient">
           <div class="metric-label">Total Staff</div>
-          <div class="metric-value">{{ totalStaff }}</div>
+          <div class="metric-value" appCountUp>{{ totalStaff }}</div>
           <div class="metric-sub">Operational workforce</div>
         </div>
       </div>
       <div class="col-xxl-3 col-md-6">
         <div class="card stretch stretch-full metric-card metric-gradient">
           <div class="metric-label">Contracts</div>
-          <div class="metric-value">{{ totalContracts }}</div>
+          <div class="metric-value" appCountUp>{{ totalContracts }}</div>
           <div class="metric-sub">All registered contracts</div>
         </div>
       </div>
       <div class="col-xxl-3 col-md-6">
         <div class="card stretch stretch-full metric-card metric-gradient">
           <div class="metric-label">Active Contracts</div>
-          <div class="metric-value">{{ activeContracts }}</div>
+          <div class="metric-value" appCountUp>{{ activeContracts }}</div>
           <div class="metric-sub">{{ activeContractsRate }}% of contracts</div>
         </div>
       </div>
       <div class="col-xxl-3 col-md-6">
         <div class="card stretch stretch-full metric-card metric-gradient">
           <div class="metric-label">Coverage</div>
-          <div class="metric-value">{{ contractCoverage }}%</div>
+          <div class="metric-value" appCountUp>{{ contractCoverage }}%</div>
           <div class="metric-sub">Staff with at least one contract</div>
         </div>
       </div>
@@ -377,27 +493,27 @@
           <div class="card-body">
             <div class="row g-3">
               <div class="col-lg-3 col-sm-6">
-                <div class="analytics-pill">
+                <div class="analytics-pill" data-stat-tooltip="Live stat loaded from backend data. Percentage context is shown by the animated bars on this section.">
                   <span>Staff Active Rate</span>
-                  <strong>{{ activeStaffRate }}%</strong>
+                  <strong appCountUp>{{ activeStaffRate }}%</strong>
                 </div>
               </div>
               <div class="col-lg-3 col-sm-6">
-                <div class="analytics-pill">
+                <div class="analytics-pill" data-stat-tooltip="Live stat loaded from backend data. Percentage context is shown by the animated bars on this section.">
                   <span>Active Contracts Rate</span>
-                  <strong>{{ activeContractsRate }}%</strong>
+                  <strong appCountUp>{{ activeContractsRate }}%</strong>
                 </div>
               </div>
               <div class="col-lg-3 col-sm-6">
-                <div class="analytics-pill">
+                <div class="analytics-pill" data-stat-tooltip="Live stat loaded from backend data. Percentage context is shown by the animated bars on this section.">
                   <span>Without Contract</span>
-                  <strong>{{ staffWithoutContractCount }}</strong>
+                  <strong appCountUp>{{ staffWithoutContractCount }}</strong>
                 </div>
               </div>
               <div class="col-lg-3 col-sm-6">
-                <div class="analytics-pill">
+                <div class="analytics-pill" data-stat-tooltip="Live stat loaded from backend data. Percentage context is shown by the animated bars on this section.">
                   <span>Pending Accounts</span>
-                  <strong>{{ pendingStaff }}</strong>
+                  <strong appCountUp>{{ pendingStaff }}</strong>
                 </div>
               </div>
             </div>
@@ -415,7 +531,7 @@
               <div class="bar-item" *ngFor="let status of staffStatusBreakdown">
                 <div class="bar-meta">
                   <span>{{ status.label }}</span>
-                  <strong>{{ status.value }}</strong>
+                  <strong appCountUp>{{ status.value }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill" [ngClass]="status.css" [style.width.%]="status.percent"></span>
@@ -436,7 +552,7 @@
               <div class="bar-item" *ngFor="let status of contractStatusBreakdown">
                 <div class="bar-meta">
                   <span>{{ status.label }}</span>
-                  <strong>{{ status.value }}</strong>
+                  <strong appCountUp>{{ status.value }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill" [ngClass]="status.css" [style.width.%]="status.percent"></span>
@@ -457,7 +573,7 @@
               <div class="bar-item" *ngFor="let roleItem of roleBreakdownWithPercent">
                 <div class="bar-meta">
                   <span>{{ roleItem.role }}</span>
-                  <strong>{{ roleItem.count }}</strong>
+                  <strong appCountUp>{{ roleItem.count }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill role" [style.width.%]="roleItem.percent"></span>
@@ -473,28 +589,28 @@
       <div class="col-xxl-3 col-md-6">
         <div class="card stretch stretch-full metric-card metric-gradient">
           <div class="metric-label">Total Guardians</div>
-          <div class="metric-value">{{ totalGuardians }}</div>
+          <div class="metric-value" appCountUp>{{ totalGuardians }}</div>
           <div class="metric-sub">Registered family accounts</div>
         </div>
       </div>
       <div class="col-xxl-3 col-md-6">
         <div class="card stretch stretch-full metric-card metric-gradient">
           <div class="metric-label">Total Patients</div>
-          <div class="metric-value">{{ totalPatients }}</div>
+          <div class="metric-value" appCountUp>{{ totalPatients }}</div>
           <div class="metric-sub">Linked patient profiles</div>
         </div>
       </div>
       <div class="col-xxl-3 col-md-6">
         <div class="card stretch stretch-full metric-card metric-gradient">
           <div class="metric-label">Patients This Month</div>
-          <div class="metric-value">{{ monthPatients }}</div>
+          <div class="metric-value" appCountUp>{{ monthPatients }}</div>
           <div class="metric-sub">Created in current month</div>
         </div>
       </div>
       <div class="col-xxl-3 col-md-6">
         <div class="card stretch stretch-full metric-card metric-gradient">
           <div class="metric-label">Patients Today</div>
-          <div class="metric-value">{{ todayPatients }}</div>
+          <div class="metric-value" appCountUp>{{ todayPatients }}</div>
           <div class="metric-sub">New today</div>
         </div>
       </div>
@@ -504,27 +620,27 @@
           <div class="card-body">
             <div class="row g-3">
               <div class="col-lg-3 col-sm-6">
-                <div class="analytics-pill">
+                <div class="analytics-pill" data-stat-tooltip="Live stat loaded from backend data. Percentage context is shown by the animated bars on this section.">
                   <span>Guardian Linking Rate</span>
-                  <strong>{{ guardianLinkingRate }}%</strong>
+                  <strong appCountUp>{{ guardianLinkingRate }}%</strong>
                 </div>
               </div>
               <div class="col-lg-3 col-sm-6">
-                <div class="analytics-pill">
+                <div class="analytics-pill" data-stat-tooltip="Live stat loaded from backend data. Percentage context is shown by the animated bars on this section.">
                   <span>Avg Kids / Guardian</span>
-                  <strong>{{ averageKidsPerGuardian }}</strong>
+                  <strong appCountUp>{{ averageKidsPerGuardian }}</strong>
                 </div>
               </div>
               <div class="col-lg-3 col-sm-6">
-                <div class="analytics-pill">
+                <div class="analytics-pill" data-stat-tooltip="Live stat loaded from backend data. Percentage context is shown by the animated bars on this section.">
                   <span>Blood Type Filled</span>
-                  <strong>{{ bloodTypeFilledRate }}%</strong>
+                  <strong appCountUp>{{ bloodTypeFilledRate }}%</strong>
                 </div>
               </div>
               <div class="col-lg-3 col-sm-6">
-                <div class="analytics-pill">
+                <div class="analytics-pill" data-stat-tooltip="Live stat loaded from backend data. Percentage context is shown by the animated bars on this section.">
                   <span>With Allergies</span>
-                  <strong>{{ withAllergiesPatients }}</strong>
+                  <strong appCountUp>{{ withAllergiesPatients }}</strong>
                 </div>
               </div>
             </div>
@@ -542,7 +658,7 @@
               <div class="bar-item" *ngFor="let sex of patientSexBreakdown">
                 <div class="bar-meta">
                   <span>{{ sex.label }}</span>
-                  <strong>{{ sex.value }}</strong>
+                  <strong appCountUp>{{ sex.value }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill" [ngClass]="sex.css" [style.width.%]="sex.percent"></span>
@@ -563,7 +679,7 @@
               <div class="bar-item" *ngFor="let age of patientAgeBreakdown">
                 <div class="bar-meta">
                   <span>{{ age.label }}</span>
-                  <strong>{{ age.value }}</strong>
+                  <strong appCountUp>{{ age.value }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill" [ngClass]="age.css" [style.width.%]="age.percent"></span>
@@ -584,7 +700,7 @@
               <div class="bar-item">
                 <div class="bar-meta">
                   <span>Guardians With Profiles</span>
-                  <strong>{{ linkedGuardians }}</strong>
+                  <strong appCountUp>{{ linkedGuardians }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill active" [style.width.%]="guardianLinkingRate"></span>
@@ -593,7 +709,7 @@
               <div class="bar-item">
                 <div class="bar-meta">
                   <span>Guardians Without Profiles</span>
-                  <strong>{{ unlinkedGuardians }}</strong>
+                  <strong appCountUp>{{ unlinkedGuardians }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill inactive" [style.width.%]="100 - guardianLinkingRate"></span>
@@ -614,7 +730,7 @@
               <div class="bar-item">
                 <div class="bar-meta">
                   <span>Blood Type Filled</span>
-                  <strong>{{ bloodTypeFilledPatients }}</strong>
+                  <strong appCountUp>{{ bloodTypeFilledPatients }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill role" [style.width.%]="bloodTypeFilledRate"></span>
@@ -623,7 +739,7 @@
               <div class="bar-item">
                 <div class="bar-meta">
                   <span>Blood Type Missing</span>
-                  <strong>{{ bloodTypeMissingPatients }}</strong>
+                  <strong appCountUp>{{ bloodTypeMissingPatients }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill ended" [style.width.%]="100 - bloodTypeFilledRate"></span>
@@ -632,7 +748,7 @@
               <div class="bar-item">
                 <div class="bar-meta">
                   <span>Profiles With Allergies</span>
-                  <strong>{{ withAllergiesPatients }}</strong>
+                  <strong appCountUp>{{ withAllergiesPatients }}</strong>
                 </div>
                 <div class="bar-track">
                   <span class="bar-fill pending" [style.width.%]="totalPatients ? (withAllergiesPatients * 100 / totalPatients) : 0"></span>
@@ -647,3 +763,7 @@
     
   </div>
 </div>
+
+
+
+

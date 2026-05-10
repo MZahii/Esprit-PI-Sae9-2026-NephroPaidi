@@ -11,15 +11,36 @@
 </div>
 
 <div class="main-content">
+  <div class="stats-grid mb-3">
+    <div class="stats-card" [attr.data-stat-tooltip]="'100% of staff records included in role overview: ' + totalStaffForStats">
+      <div class="stats-label">Total Staff</div>
+      <div class="stats-value" appCountUp>{{ totalStaffForStats }}</div>
+    </div>
+    <div class="stats-card" [attr.data-stat-tooltip]="'Active staff rate: ' + (totalStaffForStats ? ((activeStaffForStats * 100 / totalStaffForStats) | number:'1.0-0') : 0) + '%'">
+      <div class="stats-label">Active Staff</div>
+      <div class="stats-value" appCountUp>{{ activeStaffForStats }}</div>
+    </div>
+    <div class="stats-card" [attr.data-stat-tooltip]="'Without contract: ' + (totalStaffForStats ? ((withoutContractForStats * 100 / totalStaffForStats) | number:'1.0-0') : 0) + '% of staff'">
+      <div class="stats-label">Without Contract</div>
+      <div class="stats-value" appCountUp>{{ withoutContractForStats }}</div>
+    </div>
+    <div class="stats-card" [attr.data-stat-tooltip]="'Without placement: ' + (totalStaffForStats ? ((withoutPlacementForStats * 100 / totalStaffForStats) | number:'1.0-0') : 0) + '% of staff'">
+      <div class="stats-label">Without Placement</div>
+      <div class="stats-value" appCountUp>{{ withoutPlacementForStats }}</div>
+    </div>
+  </div>
+
   <div class="row g-3 mb-3">
     <div class="col-xl-2 col-md-4 col-6" *ngFor="let stat of roleStats">
-      <div class="role-card">
+      <div class="role-card" [attr.data-stat-tooltip]="stat.role + ' share: ' + (totalStaffForStats ? ((stat.total * 100 / totalStaffForStats) | number:'1.0-0') : 0) + '% of all staff'">
         <h6>{{ stat.role }}</h6>
-        <div class="role-total">{{ stat.total }}</div>
+        <div class="role-total" appCountUp>{{ stat.total }}</div>
         <div class="role-meta">
           <small>Active: {{ stat.active }}</small>
           <small>Pending: {{ stat.pending }}</small>
           <small>Inactive: {{ stat.inactive }}</small>
+          <small>No contract: {{ stat.withoutContract }}</small>
+          <small>No placement: {{ stat.withoutPlacement }}</small>
         </div>
       </div>
     </div>
@@ -103,13 +124,15 @@
                 </span>
               </td>
               <td>
-                <a
-                  class="btn btn-sm btn-light"
-                  [routerLink]="['/backoffice/staff', user.id]"
-                  [queryParams]="{ returnTo: 'staff-details' }"
+                <button
+                  type="button"
+                  class="btn btn-sm btn-light icon-action-btn"
+                  (click)="openStaffDetailsPanel($event, user.id)"
+                  data-ui-tooltip="Details"
+                  aria-label="Details"
                 >
-                  Details
-                </a>
+                  <img src="assets/backoffice/images/banner/details.png" alt="" />
+                </button>
               </td>
             </tr>
             <tr *ngIf="paginatedStaff.length === 0">
@@ -130,7 +153,9 @@
         </div>
 
         <div class="pagination-controls" *ngIf="totalPages > 1">
-          <button class="btn btn-sm btn-light" (click)="previousPage()" [disabled]="currentPage === 1">Prev</button>
+          <button class="btn btn-sm btn-light pagination-icon-btn" (click)="previousPage()" [disabled]="currentPage === 1" data-ui-tooltip="Previous" aria-label="Previous">
+            <img src="assets/backoffice/images/banner/prev.png" alt="" />
+          </button>
           <button
             class="btn btn-sm"
             *ngFor="let page of pageNumbers"
@@ -139,9 +164,14 @@
           >
             {{ page }}
           </button>
-          <button class="btn btn-sm btn-light" (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+          <button class="btn btn-sm btn-light pagination-icon-btn" (click)="nextPage()" [disabled]="currentPage === totalPages" data-ui-tooltip="Next" aria-label="Next">
+            <img src="assets/backoffice/images/banner/next.png" alt="" />
+          </button>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+
+

@@ -1,23 +1,12 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
-import { inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
-import { AuthStorageService } from './auth-storage.service';
-
-let sessionRedirectScheduled = false;
-
-function isPublicApiRequest(url: string): boolean {
-  return (
-    url.includes('/api/users/public/doctors')
-  );
-}
 
 function mapFriendlyMessage(status: number): string {
   switch (status) {
     case 0:
       return 'Unable to connect to the server. Please check your internet connection and try again.';
     case 401:
-      return 'Your session has expired. You will be redirected to the login page.';
+      return 'You are not authorized to open this resource with the current account.';
     case 403:
       return 'You do not have permission to perform this action.';
     case 404:
@@ -56,8 +45,6 @@ function buildFriendlyError(error: HttpErrorResponse): HttpErrorResponse {
 }
 
 export const authSessionInterceptor: HttpInterceptorFn = (req, next) => {
-  const authStorage = inject(AuthStorageService);
-  const router = inject(Router);
   const isLoginRequest = req.url.endsWith('/api/auth/login');
 
   if (isLoginRequest) {
@@ -66,24 +53,6 @@ export const authSessionInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (
-        error.status === 401
-        && !isLoginRequest
-        && !isPublicApiRequest(req.url)
-        && authStorage.isAuthenticated()
-      ) {
-        authStorage.clear();
-        authStorage.setPostLoginRedirect(router.url);
-        if (!sessionRedirectScheduled && router.url !== '/login') {
-          sessionRedirectScheduled = true;
-          setTimeout(() => {
-            void router.navigateByUrl('/login').finally(() => {
-              sessionRedirectScheduled = false;
-            });
-          }, 2000);
-        }
-      }
-
       return throwError(() => buildFriendlyError(error));
     })
   );

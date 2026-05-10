@@ -40,7 +40,6 @@ export class CreateStaff {
     dateOfBirth: string;
     sex: Sex;
     role: StaffRole | '';
-    avatarUrl: string;
   } = {
     username: '',
     cin: '',
@@ -51,7 +50,6 @@ export class CreateStaff {
     dateOfBirth: '',
     sex: '',
     role: '',
-    avatarUrl: ''
   };
 
   readonly roleOptions: StaffRole[] = [
@@ -180,7 +178,6 @@ export class CreateStaff {
       dateOfBirth: this.staffForm.dateOfBirth,
       sex: this.staffForm.sex,
       role: this.staffForm.role,
-      avatarUrl: this.staffForm.avatarUrl.trim() || null
     };
 
     this.loading = true;
@@ -206,7 +203,6 @@ export class CreateStaff {
         dateOfBirth: '',
         sex: '',
         role: '',
-        avatarUrl: ''
       };
       this.cdr.detectChanges();
 

@@ -5,7 +5,7 @@ spring:
   application:
     name: api-gateway
   config:
-    import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://localhost:8888}
+    import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://config-server:8888}
   cloud:
     gateway:
       server:
@@ -114,6 +114,12 @@ spring:
               filters:
                 - RewritePath=/api/pharmacy/?(.*), /api/$1
 
+            - id: pharmacy-medications-api-fallback
+              uri: ${PHARMACY_SERVICE_URI:http://localhost:8088}
+              order: -100
+              predicates:
+                - Path=/api/medications/**
+
             - id: pharmacy-service-openapi
               uri: ${PHARMACY_SERVICE_URI:http://localhost:8088}
               predicates:
@@ -151,6 +157,14 @@ spring:
               filters:
                 - SetPath=/v3/api-docs
 
+            - id: egfr-ml-service-api-fallback
+              uri: ${EGFR_ML_SERVICE_URI:http://localhost:8092}
+              order: -100
+              predicates:
+                - Path=/api/egfr-ml/**
+              filters:
+                - RewritePath=/api/egfr-ml/?(.*), /$1
+
   security:
     oauth2:
       resourceserver:
@@ -161,7 +175,9 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka}
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://eureka:8761/eureka}
+  instance:
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:api-gateway}
 
 management:
   endpoint:
@@ -170,4 +186,8 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway
+        include: health,info,metrics,prometheus,gateway
+  metrics:
+    export:
+      prometheus:
+        enabled: true

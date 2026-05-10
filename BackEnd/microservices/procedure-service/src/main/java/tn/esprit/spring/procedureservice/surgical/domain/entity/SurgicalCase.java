@@ -30,6 +30,9 @@ public class SurgicalCase {
     @Column(name = "appointment_id")
     private String appointmentId;
 
+    @Column(name = "surgery_request_id")
+    private Long surgeryRequestId;
+
     // Patient information (denormalized for read performance)
     private String firstName;
     private String lastName;

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -6,6 +6,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom, forkJoin, Subscription } from 'rxjs';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
+import { CountUpDirective } from '../../../shared/directives/count-up.directive';
 import { AuthStorageService } from '../../../core/auth/auth-storage.service';
 import { DocumentExportService } from '../../../core/services/document-export.service';
 
@@ -45,7 +46,7 @@ interface UserRow {
 @Component({
   selector: 'app-contracts-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, CountUpDirective],
   templateUrl: './contracts-list.html',
   styleUrl: './contracts-list.scss'
 })
@@ -58,7 +59,7 @@ export class ContractsList implements OnInit, OnDestroy {
   searchTerm = '';
   statusFilter: ContractStatus | 'ALL' = 'ALL';
   roleFilter: 'ALL' | 'HR' | 'DOCTOR' | 'NURSE' | 'SURGEON' | 'PHARMACIST' | 'RECEPTIONIST' | 'LAB_AGENT' = 'ALL';
-  pageSize = 10;
+  pageSize = 5;
   currentPage = 1;
   sortField: 'name' | 'startDate' | 'endDate' = 'name';
   sortDirection: 'asc' | 'desc' = 'desc';
@@ -77,6 +78,28 @@ export class ContractsList implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private documentExportService: DocumentExportService
   ) {}
+
+  openCreateContractPanel(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    window.dispatchEvent(new CustomEvent('open-create-contract-panel'));
+  }
+
+  openStaffDetailsPanel(event: MouseEvent, userId: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    window.dispatchEvent(new CustomEvent('open-staff-details-panel', {
+      detail: { userId }
+    }));
+  }
+
+  @HostListener('window:contract-created', ['$event'])
+  async onContractCreated(event: Event): Promise<void> {
+    const detail = (event as CustomEvent<{ message?: string }>).detail;
+    this.actionMessage = detail?.message ?? 'The contract was created successfully.';
+    await this.loadContracts();
+    this.cdr.detectChanges();
+  }
 
   ngOnInit(): void {
     this.role = this.authStorage.getRole() ?? '';
@@ -215,6 +238,26 @@ export class ContractsList implements OnInit, OnDestroy {
 
   get userInactiveAccessContracts(): number {
     return this.totalContracts - this.userActiveAccessContracts;
+  }
+
+  get endingSoonContracts(): number {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const limit = new Date(today);
+    limit.setDate(limit.getDate() + 30);
+    return this.visibleContracts.filter((contract) => {
+      if (contract.deleted || !['ACTIVE', 'SUSPENDED'].includes(contract.status)) return false;
+      const end = new Date(contract.endDate);
+      return !Number.isNaN(end.getTime()) && end >= today && end <= limit;
+    }).length;
+  }
+
+  get expiredContracts(): number {
+    return this.visibleContracts.filter(c => !c.deleted && c.status === 'EXPIRED').length;
+  }
+
+  get missingAccessContracts(): number {
+    return this.visibleContracts.filter(c => !c.deleted && this.accountAccessStatus(c) === 'USER_INACTIVE').length;
   }
 
   statusClass(status: ContractStatus): string {
@@ -493,3 +536,7 @@ export class ContractsList implements OnInit, OnDestroy {
     };
   }
 }
+
+
+
+

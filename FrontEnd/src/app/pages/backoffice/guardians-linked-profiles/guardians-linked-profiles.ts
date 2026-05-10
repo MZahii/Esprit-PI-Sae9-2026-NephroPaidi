@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
+import { CountUpDirective } from '../../../shared/directives/count-up.directive';
 
 interface PatientProfile {
   id: number;
@@ -27,6 +28,7 @@ interface GuardianUser {
   lastName?: string;
   email?: string;
   phone?: string;
+  createdAt?: string | null;
 }
 
 interface GuardianLinkedRow {
@@ -39,7 +41,7 @@ type LinkFilter = 'ALL' | 'WITH_PATIENTS' | 'WITHOUT_PATIENTS';
 @Component({
   selector: 'app-guardians-linked-profiles',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, CountUpDirective],
   templateUrl: './guardians-linked-profiles.html',
   styleUrl: './guardians-linked-profiles.scss'
 })
@@ -50,10 +52,10 @@ export class GuardiansLinkedProfiles implements OnInit {
   linkedFilter: LinkFilter = 'ALL';
   sexFilter: 'ALL' | 'MALE' | 'FEMALE' = 'ALL';
   sortDirection: 'asc' | 'desc' = 'asc';
-  pageSize = 10;
+  pageSize = 5;
   currentPage = 1;
   readonly pageSizeOptions: number[] = [5, 10, 20];
-  expandedGuardianId: number | null = null;
+  detailsRow: GuardianLinkedRow | null = null;
 
   allRows: GuardianLinkedRow[] = [];
 
@@ -127,6 +129,21 @@ export class GuardiansLinkedProfiles implements OnInit {
     return Number((this.totalLinkedProfiles / this.totalGuardians).toFixed(2));
   }
 
+  get linkedGuardianRate(): number {
+    if (!this.totalGuardians) return 0;
+    return Math.round((this.withPatientsCount / this.totalGuardians) * 100);
+  }
+
+  get recentGuardiansCount(): number {
+    const now = new Date();
+    const since = new Date(now);
+    since.setDate(now.getDate() - 30);
+    return this.allRows.filter((row) => {
+      const created = new Date(row.guardian.createdAt ?? '');
+      return !Number.isNaN(created.getTime()) && created >= since && created <= now;
+    }).length;
+  }
+
   get topLinkedGuardians(): GuardianLinkedRow[] {
     return [...this.allRows]
       .sort((a, b) => b.patients.length - a.patients.length)
@@ -142,12 +159,12 @@ export class GuardiansLinkedProfiles implements OnInit {
     this.currentPage = page;
   }
 
-  toggleRow(row: GuardianLinkedRow): void {
-    this.expandedGuardianId = this.expandedGuardianId === row.guardian.id ? null : row.guardian.id;
+  openDetails(row: GuardianLinkedRow): void {
+    this.detailsRow = row;
   }
 
-  isExpanded(row: GuardianLinkedRow): boolean {
-    return this.expandedGuardianId === row.guardian.id;
+  closeDetails(): void {
+    this.detailsRow = null;
   }
 
   guardianFullName(guardian: GuardianUser): string {
@@ -228,3 +245,7 @@ export class GuardiansLinkedProfiles implements OnInit {
     ].map((value) => String(value).toLowerCase());
   }
 }
+
+
+
+

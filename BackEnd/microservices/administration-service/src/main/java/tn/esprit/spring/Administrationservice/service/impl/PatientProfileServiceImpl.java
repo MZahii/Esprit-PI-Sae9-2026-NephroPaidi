@@ -8,7 +8,9 @@ import tn.esprit.spring.Administrationservice.entity.PatientProfile;
 import tn.esprit.spring.Administrationservice.repository.PatientProfileRepository;
 import tn.esprit.spring.Administrationservice.service.PatientProfileService;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -57,6 +59,40 @@ public class PatientProfileServiceImpl implements PatientProfileService {
     public List<PatientProfileResponse> getAll() {
         return patientProfileRepository.findAll()
                 .stream()
+                .map(PatientProfileResponse::from)
+                .toList();
+    }
+
+    @Override
+    public PatientProfileResponse getById(Long patientId) {
+        return patientProfileRepository.findById(patientId)
+                .map(PatientProfileResponse::from)
+                .orElseThrow(() -> new IllegalArgumentException("Patient profile not found with id: " + patientId));
+    }
+
+    @Override
+    public List<PatientProfileResponse> getByIds(Collection<Long> patientIds) {
+        if (patientIds == null || patientIds.isEmpty()) {
+            return List.of();
+        }
+        return patientProfileRepository.findAllById(
+                        patientIds.stream().filter(Objects::nonNull).distinct().toList()
+                )
+                .stream()
+                .map(PatientProfileResponse::from)
+                .toList();
+    }
+
+    @Override
+    public List<PatientProfileResponse> search(String query, int limit) {
+        String safeQuery = query == null ? "" : query.trim();
+        if (safeQuery.length() < 1) {
+            return List.of();
+        }
+        int safeLimit = Math.max(1, Math.min(limit, 20));
+        return patientProfileRepository.searchByQuery(safeQuery)
+                .stream()
+                .limit(safeLimit)
                 .map(PatientProfileResponse::from)
                 .toList();
     }

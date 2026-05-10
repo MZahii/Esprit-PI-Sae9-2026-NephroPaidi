@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Observable, timeout } from 'rxjs';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 import { environment } from '../../../../environments/environment';
+import { CountUpDirective } from '../../../shared/directives/count-up.directive';
 
 type AssignmentRole = 'ADMIN' | 'HR';
 
@@ -51,11 +52,13 @@ interface WorkspaceGroup {
 @Component({
   selector: 'app-office-assignments',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, CountUpDirective],
   templateUrl: './office-assignments.html',
   styleUrl: './office-assignments.scss'
 })
 export class OfficeAssignmentsComponent implements OnInit {
+  private static readonly REQUEST_TIMEOUT_MS = 15000;
+
   loading = false;
   saving = false;
   errorMessage = '';
@@ -79,13 +82,44 @@ export class OfficeAssignmentsComponent implements OnInit {
   };
 
   moveState: Record<number, { enabled: boolean; targetWorkspaceId: number | null }> = {};
+  moveOptionsByAssignmentId: Record<number, WorkspaceOption[]> = {};
+  workspaceGroupsByRole: Record<AssignmentRole, WorkspaceGroup[]> = { ADMIN: [], HR: [] };
+  availableUsersByRoleCache: Record<AssignmentRole, UserRow[]> = { ADMIN: [], HR: [] };
 
   async ngOnInit(): Promise<void> {
-    await this.loadAll();
+    try {
+      await this.loadAll();
+    } catch {
+      // loadAll already sets user-facing error state.
+    }
   }
 
   get totalAssignments(): number {
     return this.assignments.ADMIN.length + this.assignments.HR.length;
+  }
+
+  get totalOfficeOptions(): number {
+    return this.workspaceOptions.ADMIN.length + this.workspaceOptions.HR.length;
+  }
+
+  get occupiedOfficeOptions(): number {
+    const occupied = new Set([
+      ...this.assignments.ADMIN.map((assignment) => assignment.workspaceId),
+      ...this.assignments.HR.map((assignment) => assignment.workspaceId)
+    ]);
+    return occupied.size;
+  }
+
+  get availableOfficeOptions(): number {
+    return Math.max(0, this.totalOfficeOptions - this.occupiedOfficeOptions);
+  }
+
+  get adminWithoutOffice(): number {
+    return this.availableUsersByRoleCache.ADMIN.length;
+  }
+
+  get hrWithoutOffice(): number {
+    return this.availableUsersByRoleCache.HR.length;
   }
 
   get tabAssignments(): AssignmentRow[] {
@@ -97,15 +131,17 @@ export class OfficeAssignmentsComponent implements OnInit {
   }
 
   get tabAvailableUsers(): UserRow[] {
-    return this.availableUsersByRole(this.activeTab);
+    return this.availableUsersByRoleCache[this.activeTab];
   }
 
   get tabWorkspaceGroups(): WorkspaceGroup[] {
-    return this.groupAssignmentsByWorkspace(this.activeTab);
+    return this.workspaceGroupsByRole[this.activeTab];
   }
 
   setTab(tab: AssignmentRole): void {
     this.activeTab = tab;
+    this.moveState = {};
+    this.moveOptionsByAssignmentId = {};
     this.errorMessage = '';
     this.successMessage = '';
   }
@@ -120,8 +156,10 @@ export class OfficeAssignmentsComponent implements OnInit {
         this.loadRoleData('ADMIN'),
         this.loadRoleData('HR')
       ]);
+      this.recomputeDerivedCaches();
     } catch (error: any) {
-      this.errorMessage = error?.error?.message || error?.message || 'Failed to load office assignments.';
+      this.errorMessage = this.extractBackendError(error, 'Failed to load office assignments.');
+      throw error;
     } finally {
       this.loading = false;
     }
@@ -139,34 +177,42 @@ export class OfficeAssignmentsComponent implements OnInit {
       return;
     }
 
-    this.saving = true;
-    this.errorMessage = '';
+    if (this.saving) return;
+    this.startSave();
 
     try {
       const headers = await this.authHeaders();
-      await firstValueFrom(this.http.post(`${environment.apiBaseUrl}/api/staff-assignments`, {
+      await firstValueFrom(this.withTimeout(this.http.post(`${environment.apiBaseUrl}/api/staff-assignments`, {
         userId: form.userId,
         role,
         workspaceId: form.workspaceId
-      }, { headers }));
+      }, { headers })));
 
       this.successMessage = `${role} assignment created.`;
       this.createForm[role] = { userId: null, workspaceId: null };
       this.moveState = {};
+      this.moveOptionsByAssignmentId = {};
       await this.loadAll();
     } catch (error: any) {
-      this.errorMessage = error?.error?.message || error?.message || 'Failed to create assignment.';
+      this.errorMessage = this.extractBackendError(error, 'Failed to create assignment.');
     } finally {
-      this.saving = false;
+      this.endSave();
     }
   }
 
   startMove(assignmentId: number): void {
+    const assignment = this.tabAssignments.find((item) => item.id === assignmentId);
+    if (!assignment) {
+      return;
+    }
     this.moveState[assignmentId] = { enabled: true, targetWorkspaceId: null };
+    this.moveOptionsByAssignmentId[assignmentId] = this.workspaceOptions[assignment.role]
+      .filter((option) => this.canMoveToWorkspace(assignment, option));
   }
 
   cancelMove(assignmentId: number): void {
     this.moveState[assignmentId] = { enabled: false, targetWorkspaceId: null };
+    delete this.moveOptionsByAssignmentId[assignmentId];
   }
 
   async confirmMove(assignment: AssignmentRow): Promise<void> {
@@ -176,44 +222,57 @@ export class OfficeAssignmentsComponent implements OnInit {
       return;
     }
 
-    this.saving = true;
-    this.errorMessage = '';
+    if (this.saving) return;
+    this.startSave();
 
     try {
       const headers = await this.authHeaders();
-      await firstValueFrom(this.http.patch(`${environment.apiBaseUrl}/api/staff-assignments/${assignment.id}/move`, {
+      await firstValueFrom(this.withTimeout(this.http.patch(`${environment.apiBaseUrl}/api/staff-assignments/${assignment.id}/move`, {
         workspaceId: state.targetWorkspaceId
-      }, { headers }));
+      }, { headers })));
+
+      assignment.workspaceId = state.targetWorkspaceId;
+      const selectedWorkspace = this.tabWorkspaceOptions.find((ws) => ws.workspaceId === state.targetWorkspaceId);
+      if (selectedWorkspace) {
+        assignment.workspaceCode = selectedWorkspace.workspaceCode;
+        assignment.workspaceName = selectedWorkspace.workspaceName;
+        assignment.workspaceType = selectedWorkspace.workspaceType;
+        assignment.floorLabel = selectedWorkspace.floorLabel;
+      }
 
       this.successMessage = 'Assignment moved.';
       this.cancelMove(assignment.id);
       this.moveState = {};
-      await this.loadAll();
+      this.moveOptionsByAssignmentId = {};
+      await this.refreshCurrentTabData();
     } catch (error: any) {
-      this.errorMessage = error?.error?.message || error?.message || 'Failed to move assignment.';
+      this.errorMessage = this.extractBackendError(error, 'Failed to move assignment.');
     } finally {
-      this.saving = false;
+      this.endSave();
     }
   }
 
   async deleteAssignment(assignment: AssignmentRow): Promise<void> {
-    if (!confirm(`Delete assignment for user #${assignment.userId}?`)) {
+    if (!confirm(`Delete assignment for ${this.userLabel(assignment.userId)}?`)) {
       return;
     }
 
-    this.saving = true;
-    this.errorMessage = '';
+    if (this.saving) return;
+    this.startSave();
 
     try {
       const headers = await this.authHeaders();
-      await firstValueFrom(this.http.delete(`${environment.apiBaseUrl}/api/staff-assignments/${assignment.id}`, { headers }));
+      await firstValueFrom(this.withTimeout(this.http.delete(`${environment.apiBaseUrl}/api/staff-assignments/${assignment.id}`, { headers })));
+      this.assignments[assignment.role] = this.assignments[assignment.role].filter((row) => row.id !== assignment.id);
       this.successMessage = 'Assignment deleted.';
+      this.errorMessage = '';
       this.moveState = {};
-      await this.loadAll();
+      this.moveOptionsByAssignmentId = {};
+      await this.refreshCurrentTabData();
     } catch (error: any) {
-      this.errorMessage = error?.error?.message || error?.message || 'Failed to delete assignment.';
+      this.errorMessage = this.extractBackendError(error, 'Failed to delete assignment.');
     } finally {
-      this.saving = false;
+      this.endSave();
     }
   }
 
@@ -234,6 +293,10 @@ export class OfficeAssignmentsComponent implements OnInit {
     return `${option.floorLabel} / ${option.workspaceName} (${option.workspaceCode})`;
   }
 
+  workspaceTypeLabel(workspaceType: string): string {
+    return (workspaceType ?? '').split('_').join(' ');
+  }
+
   canMoveToWorkspace(assignment: AssignmentRow, option: WorkspaceOption): boolean {
     if (assignment.workspaceId === option.workspaceId) {
       return false;
@@ -245,7 +308,7 @@ export class OfficeAssignmentsComponent implements OnInit {
   }
 
   moveOptionsFor(assignment: AssignmentRow): WorkspaceOption[] {
-    return this.tabWorkspaceOptions.filter((option) => this.canMoveToWorkspace(assignment, option));
+    return this.moveOptionsByAssignmentId[assignment.id] ?? [];
   }
 
   canCreateInWorkspace(role: AssignmentRole, option: WorkspaceOption): boolean {
@@ -258,24 +321,36 @@ export class OfficeAssignmentsComponent implements OnInit {
   private async loadRoleData(role: AssignmentRole): Promise<void> {
     const headers = await this.authHeaders();
     const [assignments, workspaceOptions] = await Promise.all([
-      firstValueFrom(this.http.get<AssignmentRow[]>(`${environment.apiBaseUrl}/api/staff-assignments`, {
+      firstValueFrom(this.withTimeout(this.http.get<AssignmentRow[]>(`${environment.apiBaseUrl}/api/staff-assignments`, {
         headers,
         params: { role }
-      })),
-      firstValueFrom(this.http.get<WorkspaceOption[]>(`${environment.apiBaseUrl}/api/staff-assignments/workspaces`, {
+      }))),
+      firstValueFrom(this.withTimeout(this.http.get<WorkspaceOption[]>(`${environment.apiBaseUrl}/api/staff-assignments/workspaces`, {
         headers,
         params: { role }
-      }))
+      })))
     ]);
 
     this.assignments[role] = assignments ?? [];
     this.workspaceOptions[role] = workspaceOptions ?? [];
+    this.recomputeRoleDerived(role);
+  }
+
+  private async refreshCurrentTabData(): Promise<void> {
+    try {
+      await this.loadRoleData(this.activeTab);
+      this.moveState = {};
+      this.moveOptionsByAssignmentId = {};
+    } catch (error: any) {
+      this.errorMessage = this.extractBackendError(error, 'Data refresh failed. Please reload the page.');
+    }
   }
 
   private async loadUsers(): Promise<void> {
     const headers = await this.authHeaders();
-    const allUsers = await firstValueFrom(this.http.get<UserRow[]>(`${environment.apiBaseUrl}/api/users`, { headers }));
+    const allUsers = await firstValueFrom(this.withTimeout(this.http.get<UserRow[]>(`${environment.apiBaseUrl}/api/users`, { headers })));
     this.users = (allUsers ?? []).filter((user) => ['ADMIN', 'HR'].includes(user.role));
+    this.recomputeDerivedCaches();
   }
 
   private availableUsersByRole(role: AssignmentRole): UserRow[] {
@@ -329,5 +404,63 @@ export class OfficeAssignmentsComponent implements OnInit {
     return new HttpHeaders({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' });
   }
 
+  private recomputeDerivedCaches(): void {
+    this.recomputeRoleDerived('ADMIN');
+    this.recomputeRoleDerived('HR');
+  }
+
+  private recomputeRoleDerived(role: AssignmentRole): void {
+    this.workspaceGroupsByRole[role] = this.groupAssignmentsByWorkspace(role);
+    this.availableUsersByRoleCache[role] = this.availableUsersByRole(role);
+  }
+
+  private withTimeout<T>(source$: Observable<T>): Observable<T> {
+    return source$.pipe(timeout(OfficeAssignmentsComponent.REQUEST_TIMEOUT_MS));
+  }
+
+  private startSave(): void {
+    this.saving = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
+  private endSave(): void {
+    this.saving = false;
+  }
+
+  private extractBackendError(error: unknown, fallbackMessage: string): string {
+    if (error instanceof HttpErrorResponse) {
+      const body = error.error;
+      if (body && typeof body === 'object') {
+        if ('message' in body && typeof body.message === 'string' && body.message.trim()) {
+          return body.message;
+        }
+      }
+      return error.message || fallbackMessage;
+    }
+
+    if (error instanceof Error && error.message.trim()) {
+      return error.message;
+    }
+
+    return fallbackMessage;
+  }
+
+  trackByWorkspaceId(_index: number, group: WorkspaceGroup): number {
+    return group.workspaceId;
+  }
+
+  trackByAssignmentId(_index: number, assignment: AssignmentRow): number {
+    return assignment.id;
+  }
+
+  trackByWorkspaceOptionId(_index: number, option: WorkspaceOption): number {
+    return option.workspaceId;
+  }
+
   constructor(private http: HttpClient) {}
 }
+
+
+
+

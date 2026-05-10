@@ -139,11 +139,26 @@
               </div>
             </div>
 
-            <div class="d-flex gap-2 mt-3">
-              <button class="btn btn-primary" type="submit" [disabled]="loading || loadingStaff || f.invalid">
-                {{ loading ? (contractId ? 'UPDATING...' : 'CREATING...') : (contractId ? 'UPDATE CONTRACT' : 'CREATE CONTRACT') }}
+            <div class="icon-action-row mt-3">
+              <button
+                class="btn btn-primary icon-action-btn"
+                type="submit"
+                [disabled]="loading || loadingStaff || f.invalid"
+                [attr.data-ui-tooltip]="loading ? (contractId ? 'Updating' : 'Creating') : (contractId ? 'Update Contract' : 'Create Contract')"
+                [attr.aria-label]="loading ? (contractId ? 'Updating' : 'Creating') : (contractId ? 'Update Contract' : 'Create Contract')"
+              >
+                <img src="assets/backoffice/images/auth/send.png" alt="" />
               </button>
-              <button type="button" class="btn btn-light-brand" [disabled]="loading" (click)="goToBackRoute()">{{ backLabel }}</button>
+              <button
+                type="button"
+                class="btn btn-light-brand icon-action-btn"
+                [disabled]="loading"
+                (click)="goToBackRoute()"
+                [attr.data-ui-tooltip]="modalMode ? 'Cancel' : backLabel"
+                [attr.aria-label]="modalMode ? 'Cancel' : backLabel"
+              >
+                <img src="assets/backoffice/images/auth/back.png" alt="" />
+              </button>
             </div>
           </form>
         </div>
@@ -151,3 +166,5 @@
     </div>
   </div>
 </div>
+
+

@@ -189,6 +189,39 @@
   margin-top: 0;
 }
 
+:host-context(body.np-theme-dark) .guardian-header,
+:host-context(body.np-theme-dark) .header-container {
+  background: rgba(15, 23, 42, 0.94);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:host-context(body.np-theme-dark) .guardian-account-toggle,
+:host-context(body.np-theme-dark) .guardian-account-dropdown {
+  background: #111827;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
+}
+
+:host-context(body.np-theme-dark) .guardian-account-copy strong,
+:host-context(body.np-theme-dark) .guardian-account-meta h6,
+:host-context(body.np-theme-dark) .guardian-menu-item {
+  color: #f8fafc;
+}
+
+:host-context(body.np-theme-dark) .guardian-account-copy small,
+:host-context(body.np-theme-dark) .guardian-account-meta p,
+:host-context(body.np-theme-dark) .menu-item-copy small {
+  color: #b8c7dc;
+}
+
+:host-context(body.np-theme-dark) .guardian-menu-item:hover {
+  background: rgba(233, 30, 99, 0.14);
+}
+
+:host-context(body.np-theme-dark) .guardian-divider {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 #scroll-top {
   cursor: pointer;
 }

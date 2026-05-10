@@ -291,8 +291,33 @@ export class LabRequestsPage implements OnInit {
   statusBadge(status?: string): string {
     if (status === 'COMPLETED') return 'bg-soft-success text-success';
     if (status === 'CANCELLED') return 'bg-soft-danger text-danger';
-    if (status === 'IN_PROGRESS') return 'bg-soft-primary text-primary';
+    if (status === 'IN_PROGRESS' || status === 'CONFIRMED') return 'bg-soft-primary text-primary';
     return 'bg-soft-warning text-warning';
+  }
+
+  statusLabel(status?: string): string {
+    const normalized = String(status || 'OPEN').trim().toUpperCase();
+    switch (normalized) {
+      case 'OPEN':
+      case 'SCHEDULED':
+        return 'Scheduled';
+      case 'IN_PROGRESS':
+      case 'CONFIRMED':
+        return 'In progress';
+      case 'COMPLETED':
+        return 'Concluded';
+      case 'CANCELLED':
+        return 'Cancelled';
+      default:
+        return normalized
+          .toLowerCase()
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+  }
+
+  statusOptionLabel(status: ConsultationStatus | 'ALL'): string {
+    return status === 'ALL' ? 'All statuses' : this.statusLabel(status);
   }
 
   urgencyBadge(urgency: LabUrgency): string {

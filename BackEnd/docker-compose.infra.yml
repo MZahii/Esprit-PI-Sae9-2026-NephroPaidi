@@ -73,6 +73,15 @@ services:
       timeout: 10s
       retries: 5
 
+  ai-pharmacy-service:
+    build:
+      context: ./microservices/ai-pharmacy-service
+    container_name: nephro-ai-pharmacy-service
+    environment:
+      MODEL_PATH: model.joblib
+    ports:
+      - "8093:8093"
+
 volumes:
   keycloak_db:
   rabbitmq_data:

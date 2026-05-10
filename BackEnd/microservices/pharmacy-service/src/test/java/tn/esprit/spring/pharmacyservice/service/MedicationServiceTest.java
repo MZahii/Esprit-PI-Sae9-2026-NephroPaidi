@@ -41,7 +41,7 @@ class MedicationServiceTest {
         med.setMedicationId(1L);
         med.setName("Ibuprofen");
         med.setForm("tablet");
-        med.setPediatricDosage("10mg/kg");
+        med.setStandardDosage("10mg/kg");
         med.setMinimumStock(50);
     }
 
@@ -56,7 +56,7 @@ class MedicationServiceTest {
 
             MedicationDTO dto = new MedicationDTO();
             dto.setName("Ibuprofen"); dto.setForm("tablet");
-            dto.setPediatricDosage("10mg/kg"); dto.setMinimumStock(50);
+            dto.setStandardDosage("10mg/kg"); dto.setMinimumStock(50);
 
             MedicationDTO result = svc.createMedication(dto);
 
@@ -103,7 +103,7 @@ class MedicationServiceTest {
 
             MedicationDTO dto = new MedicationDTO();
             dto.setName("Paracetamol"); dto.setForm("syrup");
-            dto.setPediatricDosage("15mg/kg"); dto.setMinimumStock(30);
+            dto.setStandardDosage("15mg/kg"); dto.setMinimumStock(30);
 
             MedicationDTO result = svc.updateMedication(1L, dto);
 

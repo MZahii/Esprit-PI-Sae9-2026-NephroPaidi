@@ -18,6 +18,7 @@ export interface DiagnosisItem {
 }
 
 export interface LabRequestItem {
+  backendRequestId?: string;
   test: string;
   urgency: 'Routine' | 'Urgent' | 'STAT';
   note?: string;
@@ -25,6 +26,7 @@ export interface LabRequestItem {
 
 export interface PrescriptionItem {
   medication: string;
+  medicationId?: number;
   dosage: string;
   frequency: string;
   durationDays?: number;
@@ -41,6 +43,28 @@ export interface ConsultationMetrics {
   ageYears?: number;
   systolicBpMmHg?: number;
   diastolicBpMmHg?: number;
+  sex?: string;
+  creatinineUmol?: number;
+  serumCreatinineUnit?: string;
+  egfrFormulaUsed?: string;
+  ckdEpiEgfr?: number;
+  egfr?: number;
+  ckdStage?: string;
+  previousEgfr?: number;
+  egfrChange?: number;
+  egfrChangePercent?: number;
+  egfrTrend?: string;
+  egfrQualityIndicator?: string;
+  egfrLastUpdatedAt?: string;
+  alertLowEgfr?: boolean;
+  alertRapidDecline?: boolean;
+  alertMessage?: string;
+  aiRecommendation?: string;
+  aiConfidence?: number;
+  aiSummary?: string;
+  aiRequiresReview?: boolean;
+  aiSourceFileName?: string;
+  aiUpdatedAt?: string;
 }
 
 export interface CarePlanDoseItem {
@@ -80,20 +104,185 @@ export class ConsultationWorkspaceService {
     return of(this.emptyDraft());
   }
 
+  /**
+   * Merge server consultation outcome into local draft when server is newer or local has no timestamp.
+   */
+  mergeServerOutcome(
+    local: ConsultationWorkspaceDraft,
+    outcome: {
+      notes?: string | null;
+      diagnosis?: string | null;
+      prescriptions?: string | null;
+      labRequests?: string | null;
+      treatmentPlan?: string | null;
+      updatedAt?: string | null;
+    } | null
+  ): ConsultationWorkspaceDraft {
+    if (!outcome) {
+      return local;
+    }
+
+    const serverMs = outcome.updatedAt ? new Date(outcome.updatedAt).getTime() : 0;
+    const localMs = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
+    const preferServer = serverMs >= localMs || !local.updatedAt;
+
+    if (!preferServer) {
+      return local;
+    }
+
+    const merged: ConsultationWorkspaceDraft = {
+      ...local,
+      soap: { ...local.soap },
+      diagnosisList: [...(local.diagnosisList || [])],
+      labRequests: [...(local.labRequests || [])],
+      prescriptions: [...(local.prescriptions || [])],
+      carePlanDoses: [...(local.carePlanDoses || [])],
+      metrics: { ...local.metrics }
+    };
+
+    if (outcome.notes) {
+      const soap = this.tryParseJson<SoapNotes>(outcome.notes);
+      if (soap && typeof soap === 'object') {
+        merged.soap = {
+          subjective: soap.subjective ?? '',
+          objective: soap.objective ?? '',
+          assessment: soap.assessment ?? '',
+          plan: soap.plan ?? ''
+        };
+      } else {
+        merged.soap = {
+          ...merged.soap,
+          subjective: outcome.notes
+        };
+      }
+    }
+
+    if (outcome.diagnosis) {
+      const list = this.tryParseJson<DiagnosisItem[]>(outcome.diagnosis);
+      if (Array.isArray(list)) {
+        merged.diagnosisList = list;
+      }
+    }
+
+    if (outcome.prescriptions) {
+      const list = this.tryParseJson<PrescriptionItem[]>(outcome.prescriptions);
+      if (Array.isArray(list)) {
+        merged.prescriptions = list;
+      }
+    }
+
+    if (outcome.labRequests) {
+      const list = this.tryParseJson<LabRequestItem[]>(outcome.labRequests);
+      if (Array.isArray(list)) {
+        merged.labRequests = list;
+      }
+    }
+
+    if (outcome.treatmentPlan) {
+      const tp = this.tryParseJson<{
+        treatmentPlan?: string;
+        guardianInstructions?: string;
+        followUpDate?: string;
+      }>(outcome.treatmentPlan);
+      if (tp) {
+        merged.treatmentPlan = tp.treatmentPlan ?? merged.treatmentPlan;
+        merged.guardianInstructions = tp.guardianInstructions ?? merged.guardianInstructions;
+        merged.followUpDate = tp.followUpDate ?? merged.followUpDate;
+      }
+    }
+
+    if (outcome.updatedAt) {
+      merged.updatedAt = outcome.updatedAt;
+    }
+
+    return merged;
+  }
+
+  mergeServerMetrics(local: ConsultationWorkspaceDraft, metrics: ConsultationMetricsRequest | null): ConsultationWorkspaceDraft {
+    if (!metrics || typeof metrics !== 'object') {
+      return local;
+    }
+    return {
+      ...local,
+      metrics: {
+        ...local.metrics,
+        ...metrics
+      }
+    };
+  }
+
+  /** Persists notes, diagnosis, plan, prescriptions, metrics — not lab orders (use submitLabRequests). */
   saveDraft(consultationId: string, draft: ConsultationWorkspaceDraft): Observable<boolean> {
     const payload = { ...draft, updatedAt: new Date().toISOString() };
 
-    return forkJoin([
-      this.api.updateConsultationNotes(consultationId, this.serializeSoap(draft.soap)),
-      this.api.updateConsultationDiagnosis(consultationId, this.serializeDiagnosis(draft.diagnosisList)),
-      this.api.updateConsultationTreatmentPlan(consultationId, this.serializeTreatmentPlan(draft)),
-      this.api.updateConsultationLabRequests(consultationId, this.serializeLabRequests(draft.labRequests)),
-      this.api.updateConsultationPrescriptions(consultationId, this.serializePrescriptions(draft.prescriptions)),
-      this.api.upsertConsultationMetrics(consultationId, this.normalizeMetrics(draft.metrics))
-    ]).pipe(
-      map(() => {
+    const track = (obs: Observable<any>) =>
+      obs.pipe(
+        map(() => true),
+        catchError(() => of(false))
+      );
+
+    return forkJoin({
+      notes: track(this.api.updateConsultationNotes(consultationId, this.serializeSoap(draft.soap))),
+      diagnosis: track(this.api.updateConsultationDiagnosis(consultationId, this.serializeDiagnosis(draft.diagnosisList))),
+      treatmentPlan: track(this.api.updateConsultationTreatmentPlan(consultationId, this.serializeTreatmentPlan(draft))),
+      prescriptions: track(this.api.updateConsultationPrescriptions(consultationId, this.serializePrescriptions(draft.prescriptions))),
+      metrics: track(this.api.upsertConsultationMetrics(consultationId, this.normalizeMetrics(draft.metrics)))
+    }).pipe(
+      map((r) => {
+        const coreOk = r.notes && r.diagnosis && r.treatmentPlan && r.prescriptions;
         this.saveLocalCopy(consultationId, payload);
-        return true;
+        return coreOk;
+      })
+    );
+  }
+
+  /** Send lab request lines to clinical outcome (explicit action, not part of Save Draft). */
+  submitLabRequests(consultationId: string, patientId: number, draft: ConsultationWorkspaceDraft): Observable<boolean> {
+    const payload = { ...draft, updatedAt: new Date().toISOString() };
+    const normalized = (draft.labRequests ?? [])
+      .map((item) => ({
+        backendRequestId: item.backendRequestId,
+        test: (item?.test ?? '').trim(),
+        urgency: item?.urgency ?? 'Routine',
+        note: (item?.note ?? '').trim()
+      }))
+      .filter((item) => item.test.length > 0);
+
+    const createRequests = normalized
+      .filter((item) => !item.backendRequestId)
+      .map((item) =>
+        this.api.createLabRequest({
+          patientId,
+          consultationId,
+          testType: item.test,
+          urgency: item.urgency.toUpperCase(),
+          notes: item.note
+        }).pipe(
+          map((response) => ({ ...item, backendRequestId: response?.id })),
+          catchError(() => of(item))
+        )
+      );
+
+    return forkJoin({
+      outcome: this.api.updateConsultationLabRequests(consultationId, this.serializeLabRequests(normalized)).pipe(
+        map(() => true),
+        catchError(() => of(false))
+      ),
+      created: createRequests.length ? forkJoin(createRequests) : of([])
+    }).pipe(
+      map(({ outcome, created }) => {
+        if (created.length) {
+          const createdByTest = new Map(created.map((item) => [`${item.test}|${item.note}|${item.urgency}`, item.backendRequestId]));
+          draft.labRequests = normalized.map((item) => ({
+            ...item,
+            backendRequestId: item.backendRequestId ?? createdByTest.get(`${item.test}|${item.note}|${item.urgency}`)
+          }));
+        } else {
+          draft.labRequests = normalized;
+        }
+        payload.labRequests = draft.labRequests;
+        this.saveLocalCopy(consultationId, payload);
+        return outcome;
       }),
       catchError(() => {
         this.saveLocalCopy(consultationId, payload);
@@ -110,6 +299,14 @@ export class ConsultationWorkspaceService {
     localStorage.setItem(this.storageKey(consultationId), JSON.stringify(payload));
   }
 
+  private tryParseJson<T>(raw: string): T | null {
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      return null;
+    }
+  }
+
   private serializeSoap(soap: SoapNotes): string {
     return JSON.stringify({
       subjective: (soap?.subjective ?? '').trim(),
@@ -120,33 +317,47 @@ export class ConsultationWorkspaceService {
   }
 
   private serializeDiagnosis(items: DiagnosisItem[]): string {
-    return JSON.stringify((items ?? []).map((item) => ({
-      label: (item?.label ?? '').trim(),
-      code: (item?.code ?? '').trim(),
-      severity: (item?.severity ?? '').trim(),
-      notes: (item?.notes ?? '').trim()
-    })).filter((item) => item.label.length > 0 || item.code.length > 0));
+    return JSON.stringify(
+      (items ?? [])
+        .map((item) => ({
+          label: (item?.label ?? '').trim(),
+          code: (item?.code ?? '').trim(),
+          severity: (item?.severity ?? '').trim(),
+          notes: (item?.notes ?? '').trim()
+        }))
+        .filter((item) => item.label.length > 0 || item.code.length > 0)
+    );
   }
 
-  private serializeLabRequests(items: LabRequestItem[]): string {
-    return JSON.stringify((items ?? []).map((item) => ({
-      test: (item?.test ?? '').trim(),
-      urgency: item?.urgency ?? 'Routine',
-      note: (item?.note ?? '').trim()
-    })).filter((item) => item.test.length > 0));
+  serializeLabRequests(items: LabRequestItem[]): string {
+    return JSON.stringify(
+      (items ?? [])
+          .map((item) => ({
+            backendRequestId: item.backendRequestId,
+            test: (item?.test ?? '').trim(),
+            urgency: item?.urgency ?? 'Routine',
+            note: (item?.note ?? '').trim()
+          }))
+        .filter((item) => item.test.length > 0)
+    );
   }
 
   private serializePrescriptions(items: PrescriptionItem[]): string {
-    return JSON.stringify((items ?? []).map((item) => ({
-      medication: (item?.medication ?? '').trim(),
-      dosage: (item?.dosage ?? '').trim(),
-      frequency: (item?.frequency ?? '').trim(),
-      durationDays: item?.durationDays,
-      note: (item?.note ?? '').trim(),
-      doseMgPerKg: item?.doseMgPerKg,
-      minDoseMgPerKg: item?.minDoseMgPerKg,
-      maxDoseMgPerKg: item?.maxDoseMgPerKg
-    })).filter((item) => item.medication.length > 0));
+    return JSON.stringify(
+      (items ?? [])
+        .map((item) => ({
+          medication: (item?.medication ?? '').trim(),
+          medicationId: item?.medicationId,
+          dosage: (item?.dosage ?? '').trim(),
+          frequency: (item?.frequency ?? '').trim(),
+          durationDays: item?.durationDays,
+          note: (item?.note ?? '').trim(),
+          doseMgPerKg: item?.doseMgPerKg,
+          minDoseMgPerKg: item?.minDoseMgPerKg,
+          maxDoseMgPerKg: item?.maxDoseMgPerKg
+        }))
+        .filter((item) => item.medication.length > 0 || item.medicationId != null)
+    );
   }
 
   private serializeTreatmentPlan(draft: ConsultationWorkspaceDraft): string {
@@ -166,6 +377,24 @@ export class ConsultationWorkspaceService {
     if (Number.isFinite(Number(metrics?.ageYears))) normalized.ageYears = Number(metrics?.ageYears);
     if (Number.isFinite(Number(metrics?.systolicBpMmHg))) normalized.systolicBpMmHg = Number(metrics?.systolicBpMmHg);
     if (Number.isFinite(Number(metrics?.diastolicBpMmHg))) normalized.diastolicBpMmHg = Number(metrics?.diastolicBpMmHg);
+
+    if (metrics?.sex) normalized.sex = metrics.sex;
+
+    if (Number.isFinite(Number(metrics?.creatinineUmol))) normalized.creatinineUmol = Number(metrics?.creatinineUmol);
+    if (metrics?.serumCreatinineUnit) normalized.serumCreatinineUnit = metrics.serumCreatinineUnit;
+    if (metrics?.egfrFormulaUsed) normalized.egfrFormulaUsed = metrics.egfrFormulaUsed;
+    if (Number.isFinite(Number(metrics?.ckdEpiEgfr))) normalized.ckdEpiEgfr = Number(metrics?.ckdEpiEgfr);
+    if (Number.isFinite(Number(metrics?.egfr))) normalized.egfr = Number(metrics?.egfr);
+    if (metrics?.ckdStage) normalized.ckdStage = metrics.ckdStage;
+    if (Number.isFinite(Number(metrics?.previousEgfr))) normalized.previousEgfr = Number(metrics?.previousEgfr);
+    if (Number.isFinite(Number(metrics?.egfrChange))) normalized.egfrChange = Number(metrics?.egfrChange);
+    if (Number.isFinite(Number(metrics?.egfrChangePercent))) normalized.egfrChangePercent = Number(metrics?.egfrChangePercent);
+    if (metrics?.egfrTrend) normalized.egfrTrend = metrics.egfrTrend;
+    if (metrics?.egfrQualityIndicator) normalized.egfrQualityIndicator = metrics.egfrQualityIndicator;
+    if (metrics?.egfrLastUpdatedAt) normalized.egfrLastUpdatedAt = metrics.egfrLastUpdatedAt;
+    if (typeof metrics?.alertLowEgfr === 'boolean') normalized.alertLowEgfr = metrics.alertLowEgfr;
+    if (typeof metrics?.alertRapidDecline === 'boolean') normalized.alertRapidDecline = metrics.alertRapidDecline;
+    if (metrics?.alertMessage) normalized.alertMessage = metrics.alertMessage;
 
     return normalized;
   }
@@ -191,7 +420,23 @@ export class ConsultationWorkspaceService {
         weightKg: undefined,
         ageYears: undefined,
         systolicBpMmHg: undefined,
-        diastolicBpMmHg: undefined
+        diastolicBpMmHg: undefined,
+        sex: undefined,
+        creatinineUmol: undefined,
+        serumCreatinineUnit: undefined,
+        egfrFormulaUsed: undefined,
+        ckdEpiEgfr: undefined,
+        egfr: undefined,
+        ckdStage: undefined,
+        previousEgfr: undefined,
+        egfrChange: undefined,
+        egfrChangePercent: undefined,
+        egfrTrend: undefined,
+        egfrQualityIndicator: undefined,
+        egfrLastUpdatedAt: undefined,
+        alertLowEgfr: undefined,
+        alertRapidDecline: undefined,
+        alertMessage: undefined
       }
     };
   }

@@ -47,7 +47,7 @@ public class PatientDirectoryClient {
         }
 
         URI uri = UriComponentsBuilder.fromHttpUrl(administrationBase)
-                .path("/patients/batch")
+                .path("/api/patients/batch")
                 .queryParam("ids", joinedIds)
                 .build(true)
                 .toUri();
@@ -55,11 +55,12 @@ public class PatientDirectoryClient {
         try {
             HttpEntity<Void> entity = new HttpEntity<>(authHeaders());
             ResponseEntity<PatientSummary[]> response = restTemplate.exchange(uri, HttpMethod.GET, entity, PatientSummary[].class);
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            PatientSummary[] summaries = response.getBody();
+            if (!response.getStatusCode().is2xxSuccessful() || summaries == null) {
                 return Map.of();
             }
             Map<Long, PatientSummary> result = new HashMap<>();
-            for (PatientSummary summary : response.getBody()) {
+            for (PatientSummary summary : summaries) {
                 if (summary != null && summary.getId() != null) {
                     result.put(summary.getId(), summary);
                 }
@@ -78,7 +79,7 @@ public class PatientDirectoryClient {
         }
 
         URI uri = UriComponentsBuilder.fromHttpUrl(administrationBase)
-                .path("/patients/search")
+                .path("/api/patients/search")
                 .queryParam("q", trimmed)
                 .queryParam("limit", Math.min(Math.max(limit, 1), 20))
                 .build(true)
@@ -87,10 +88,11 @@ public class PatientDirectoryClient {
         try {
             HttpEntity<Void> entity = new HttpEntity<>(authHeaders());
             ResponseEntity<PatientSummary[]> response = restTemplate.exchange(uri, HttpMethod.GET, entity, PatientSummary[].class);
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            PatientSummary[] summaries = response.getBody();
+            if (!response.getStatusCode().is2xxSuccessful() || summaries == null) {
                 return List.of();
             }
-            return Arrays.stream(response.getBody())
+            return Arrays.stream(summaries)
                     .filter(Objects::nonNull)
                     .map(PatientSummary::getId)
                     .filter(Objects::nonNull)
@@ -107,17 +109,18 @@ public class PatientDirectoryClient {
         }
 
         URI uri = UriComponentsBuilder.fromHttpUrl(administrationBase)
-                .path("/patients/guardian/{guardianUserId}")
+                .path("/api/patients/guardian/{guardianUserId}")
                 .buildAndExpand(guardianUserId)
                 .toUri();
 
         try {
             HttpEntity<Void> entity = new HttpEntity<>(authHeaders());
             ResponseEntity<PatientProfileDetails[]> response = restTemplate.exchange(uri, HttpMethod.GET, entity, PatientProfileDetails[].class);
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            PatientProfileDetails[] profiles = response.getBody();
+            if (!response.getStatusCode().is2xxSuccessful() || profiles == null) {
                 return List.of();
             }
-            return Arrays.stream(response.getBody())
+            return Arrays.stream(profiles)
                     .filter(Objects::nonNull)
                     .map(PatientProfileDetails::getId)
                     .filter(Objects::nonNull)
@@ -134,17 +137,18 @@ public class PatientDirectoryClient {
         }
 
         URI uri = UriComponentsBuilder.fromHttpUrl(administrationBase)
-                .path("/patients/{patientId}")
+                .path("/api/patients/{patientId}")
                 .buildAndExpand(patientId)
                 .toUri();
 
         try {
             HttpEntity<Void> entity = new HttpEntity<>(authHeaders());
             ResponseEntity<PatientProfileDetails> response = restTemplate.exchange(uri, HttpMethod.GET, entity, PatientProfileDetails.class);
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            PatientProfileDetails profile = response.getBody();
+            if (!response.getStatusCode().is2xxSuccessful() || profile == null) {
                 return null;
             }
-            return response.getBody().getGuardianUserId();
+            return profile.getGuardianUserId();
         } catch (RestClientException ex) {
             log.warn("Guardian lookup by patient failed: {}", ex.getMessage());
             return null;

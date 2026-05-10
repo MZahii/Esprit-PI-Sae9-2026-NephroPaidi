@@ -4,10 +4,18 @@ server:
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://ep-cool-breeze-agqhhjlc.c-2.eu-central-1.aws.neon.tech/nephros_clinical_service.db?sslmode=require&channel_binding=require}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://ep-cool-breeze-agqhhjlc-pooler.c-2.eu-central-1.aws.neon.tech:5432/nephros_clinical_service.db?sslmode=require&channel_binding=require}
     username: ${DB_USER:neondb_owner}
     password: ${DB_PASSWORD:npg_Zb1Kda5LPlin}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 10000
+      validation-timeout: 5000
+      initialization-fail-timeout: 10000
+      maximum-pool-size: 5
+      minimum-idle: 1
+      keepalive-time: 30000
+      max-lifetime: 600000
 
   jpa:
     hibernate:
@@ -26,6 +34,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/nephrospaidi}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8080/realms/nephrospaidi/protocol/openid-connect/certs}
 
 services:
   administration:
@@ -42,7 +51,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: never

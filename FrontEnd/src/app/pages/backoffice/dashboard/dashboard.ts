@@ -4,11 +4,12 @@ import {
   OnInit
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthStorageService } from '../../../core/auth/auth-storage.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { CountUpDirective } from '../../../shared/directives/count-up.directive';
 import { getValidToken } from '../../../core/auth/keycloak.service';
 
 declare global {
@@ -43,7 +44,7 @@ interface PlacementFloorSummary {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, CountUpDirective],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })
@@ -72,6 +73,22 @@ export class Dashboard implements AfterViewInit, OnInit {
     PHARMACIST: 0,
     RECEPTIONIST: 0
   };
+  assignmentUserIds: Record<string, Set<number>> = {
+    ADMIN: new Set<number>(),
+    HR: new Set<number>(),
+    DOCTOR: new Set<number>(),
+    LAB_AGENT: new Set<number>(),
+    PHARMACIST: new Set<number>(),
+    RECEPTIONIST: new Set<number>()
+  };
+
+  openStaffDetailsPanel(event: MouseEvent, userId: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    window.dispatchEvent(new CustomEvent('open-staff-details-panel', {
+      detail: { userId }
+    }));
+  }
 
   get expiringContractsPreview(): Array<{
     id: number;
@@ -136,6 +153,7 @@ export class Dashboard implements AfterViewInit, OnInit {
 
   constructor(
     private authStorage: AuthStorageService,
+    private router: Router,
     private http: HttpClient
   ) {}
 
@@ -159,6 +177,18 @@ export class Dashboard implements AfterViewInit, OnInit {
     return this.role === 'RECEPTIONIST';
   }
 
+  get isLabAgent(): boolean {
+    return this.role === 'LAB_AGENT';
+  }
+
+  get isNurse(): boolean {
+    return this.role === 'NURSE';
+  }
+
+  get isPharmacist(): boolean {
+    return this.role === 'PHARMACIST';
+  }
+
   get displayName(): string {
     if (this.user?.firstName && this.user?.lastName) {
       return `${this.user.firstName} ${this.user.lastName}`;
@@ -171,13 +201,18 @@ export class Dashboard implements AfterViewInit, OnInit {
   }
 
   get roleBadgeClass(): string {
-    return this.isAdmin ? 'bg-soft-primary text-primary' : 'bg-soft-warning text-warning';
+    if (this.isAdmin) return 'bg-soft-primary text-primary';
+    if (this.isLabAgent) return 'bg-soft-info text-info';
+    if (this.isNurse) return 'bg-soft-success text-success';
+    return 'bg-soft-warning text-warning';
   }
 
   get roleDescription(): string {
     if (this.isAdmin) return 'Global administration and platform supervision';
     if (this.isHr) return 'Human resources and operational management';
     if (this.isReceptionist) return 'Reception and patient onboarding operations';
+    if (this.isLabAgent) return 'Process incoming lab orders, upload results, and trigger clinical AI analysis';
+    if (this.isNurse) return 'Monitor hospitalized patients, execute bedside tasks, and keep shift progress updated';
     return 'Connected backoffice user';
   }
 
@@ -255,8 +290,24 @@ export class Dashboard implements AfterViewInit, OnInit {
     return this.allUsers.filter((user) => user.role === 'HR');
   }
 
+  get adminUsers(): any[] {
+    return this.allUsers.filter((user) => user.role === 'ADMIN');
+  }
+
   get totalHr(): number {
     return this.hrUsers.length;
+  }
+
+  get adminWithoutOffice(): number {
+    return this.adminUsers.filter((user) => !this.assignmentUserIds['ADMIN'].has(Number(user.id))).length;
+  }
+
+  get hrWithoutOffice(): number {
+    return this.hrUsers.filter((user) => !this.assignmentUserIds['HR'].has(Number(user.id))).length;
+  }
+
+  get staffWithoutPlacement(): number {
+    return this.staffUsers.filter((user) => !this.assignmentUserIds[String(user.role)]?.has(Number(user.id))).length;
   }
 
   get activeHr(): number {
@@ -458,6 +509,11 @@ export class Dashboard implements AfterViewInit, OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    if (this.isPharmacist) {
+      await this.router.navigateByUrl('/backoffice/pharmacy/dashboard');
+      return;
+    }
+
     await this.loadGlobalStats();
   }
 
@@ -512,6 +568,14 @@ export class Dashboard implements AfterViewInit, OnInit {
           PHARMACIST: Array.isArray(pharmacistAssignments) ? pharmacistAssignments.length : 0,
           RECEPTIONIST: Array.isArray(receptionistAssignments) ? receptionistAssignments.length : 0
         };
+        this.assignmentUserIds = {
+          ADMIN: this.toAssignmentUserSet(adminAssignments),
+          HR: this.toAssignmentUserSet(hrAssignments),
+          DOCTOR: this.toAssignmentUserSet(doctorAssignments),
+          LAB_AGENT: this.toAssignmentUserSet(labAssignments),
+          PHARMACIST: this.toAssignmentUserSet(pharmacistAssignments),
+          RECEPTIONIST: this.toAssignmentUserSet(receptionistAssignments)
+        };
       }
 
       if (this.isReceptionist || this.isAdmin) {
@@ -554,4 +618,13 @@ export class Dashboard implements AfterViewInit, OnInit {
       this.loadingStats = false;
     }
   }
+
+  private toAssignmentUserSet(assignments: unknown): Set<number> {
+    const rows = Array.isArray(assignments) ? assignments : [];
+    return new Set(rows.map((assignment: any) => Number(assignment?.userId)).filter((id) => Number.isFinite(id)));
+  }
 }
+
+
+
+

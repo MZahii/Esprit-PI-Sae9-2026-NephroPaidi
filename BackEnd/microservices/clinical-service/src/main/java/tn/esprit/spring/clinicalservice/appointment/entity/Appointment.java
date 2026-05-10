@@ -43,6 +43,12 @@ public class Appointment {
     @Column(name = "cancellation_reason")
     private String cancellationReason;
 
+    @Column(name = "started_at")
+    private LocalDateTime startedAt;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
     @Column(name = "archived_at")
     private LocalDateTime archivedAt;
 
