@@ -9,9 +9,13 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.support.TransactionTemplate;
+import tn.esprit.spring.communicationservice.ai.AiTriageClient;
+import tn.esprit.spring.communicationservice.ai.AiTriageResult;
 import tn.esprit.spring.communicationservice.domain.entity.FollowUpMessage;
 import tn.esprit.spring.communicationservice.domain.entity.MessageAuditLog;
 import tn.esprit.spring.communicationservice.domain.entity.MessageReply;
+import tn.esprit.spring.communicationservice.domain.enums.AiTriageStatus;
+import tn.esprit.spring.communicationservice.domain.enums.AiUrgencyLevel;
 import tn.esprit.spring.communicationservice.domain.enums.MessageQueue;
 import tn.esprit.spring.communicationservice.domain.enums.MessageStatus;
 import tn.esprit.spring.communicationservice.domain.enums.MessageType;
@@ -70,12 +74,15 @@ class FollowUpMessageServiceImplTest {
     @Mock
     private TransactionTemplate transactionTemplate;
 
+    @Mock
+    private AiTriageClient aiTriageClient;
+
     @InjectMocks
     private FollowUpMessageServiceImpl service;
 
     @Test
-    @DisplayName("create stores guardian message and audits it")
-    void createStoresGuardianMessageAndAuditsIt() {
+    @DisplayName("create skips AI triage for non-medical messages and audits it")
+    void createSkipsAiTriageForNonMedicalMessages() {
         CreateMessageRequest request = new CreateMessageRequest();
         request.setPatientId(15L);
         request.setMessageType(MessageType.APPOINTMENT);
@@ -91,6 +98,67 @@ class FollowUpMessageServiceImplTest {
         CreateMessageResponse response = service.create(request);
 
         assertEquals(MessageStatus.PENDING, response.getStatus());
+        assertEquals(AiTriageStatus.SKIPPED, response.getAiTriageStatus());
+        verify(messageAuditLogRepository, times(2)).save(any(MessageAuditLog.class));
+        verify(followUpMessageRepository).save(any(FollowUpMessage.class));
+        verify(aiTriageClient, never()).triage(any());
+    }
+
+    @Test
+    @DisplayName("create runs AI triage for medical messages")
+    void createRunsAiTriageForMedicalMessages() {
+        CreateMessageRequest request = new CreateMessageRequest();
+        request.setPatientId(15L);
+        request.setMessageType(MessageType.MEDICAL);
+        request.setPriority(PriorityLevel.NORMAL);
+        request.setSubject("  Follow-up  ");
+        request.setMessageText("  Need a quick answer  ");
+
+        when(currentUserService.getCurrentUserSub()).thenReturn("guardian-sub");
+        when(currentUserService.getSenderRoleOrThrow()).thenReturn(SenderRole.GUARDIAN);
+        doAnswer(invocation -> invocation.getArgument(0)).when(followUpMessageRepository).save(any(FollowUpMessage.class));
+        when(guardianPatientResolverService.resolvePatientIdForMessage(15L)).thenReturn(45L);
+        when(aiTriageClient.triage(any())).thenReturn(AiTriageResult.builder()
+                .urgencyLevel(AiUrgencyLevel.HIGH)
+                .confidence(0.87)
+                .status(AiTriageStatus.SUCCESS)
+                .explanation("Model prediction generated from creation-time message features.")
+                .modelVersion("test-model")
+                .evaluatedAt(Instant.now())
+                .build());
+
+        CreateMessageResponse response = service.create(request);
+
+        assertEquals(MessageStatus.PENDING, response.getStatus());
+        assertEquals(AiUrgencyLevel.HIGH, response.getAiUrgencyLevel());
+        assertEquals(0.87, response.getAiConfidence());
+        assertEquals(AiTriageStatus.SUCCESS, response.getAiTriageStatus());
+        verify(aiTriageClient).triage(any());
+        verify(messageAuditLogRepository, times(2)).save(any(MessageAuditLog.class));
+        verify(followUpMessageRepository).save(any(FollowUpMessage.class));
+    }
+
+    @Test
+    @DisplayName("create continues and preserves routing when AI triage fails")
+    void createContinuesAndPreservesRoutingWhenAiTriageFails() {
+        CreateMessageRequest request = new CreateMessageRequest();
+        request.setPatientId(15L);
+        request.setMessageType(MessageType.MEDICAL);
+        request.setPriority(PriorityLevel.HIGH);
+        request.setSubject("Symptoms");
+        request.setMessageText("My child has concerning symptoms.");
+
+        when(currentUserService.getCurrentUserSub()).thenReturn("guardian-sub");
+        when(currentUserService.getSenderRoleOrThrow()).thenReturn(SenderRole.GUARDIAN);
+        doAnswer(invocation -> invocation.getArgument(0)).when(followUpMessageRepository).save(any(FollowUpMessage.class));
+        when(guardianPatientResolverService.resolvePatientIdForMessage(15L)).thenReturn(45L);
+        when(aiTriageClient.triage(any())).thenReturn(AiTriageResult.failed("AI triage request failed: ResourceAccessException"));
+
+        CreateMessageResponse response = service.create(request);
+
+        assertEquals(MessageStatus.PENDING, response.getStatus());
+        assertEquals(MessageQueue.NURSE, response.getQueue());
+        assertEquals(AiTriageStatus.FAILED, response.getAiTriageStatus());
         verify(messageAuditLogRepository, times(2)).save(any(MessageAuditLog.class));
         verify(followUpMessageRepository).save(any(FollowUpMessage.class));
     }

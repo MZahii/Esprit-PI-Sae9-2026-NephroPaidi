@@ -10,6 +10,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import tn.esprit.spring.communicationservice.domain.enums.AiTriageStatus;
+import tn.esprit.spring.communicationservice.domain.enums.AiUrgencyLevel;
 import tn.esprit.spring.communicationservice.domain.enums.MessageQueue;
 import tn.esprit.spring.communicationservice.domain.enums.MessageStatus;
 import tn.esprit.spring.communicationservice.domain.enums.MessageType;
@@ -71,6 +73,21 @@ public class FollowUpMessage {
 
     @Column(nullable = false)
     private Instant lastUpdatedAt;
+
+    @Enumerated(EnumType.STRING)
+    private AiUrgencyLevel aiUrgencyLevel;
+
+    private Double aiConfidence;
+
+    @Enumerated(EnumType.STRING)
+    private AiTriageStatus aiTriageStatus;
+
+    @Column(length = 1000)
+    private String aiExplanation;
+
+    private String aiModelVersion;
+
+    private Instant aiEvaluatedAt;
 
     private Instant closedAt;
 }

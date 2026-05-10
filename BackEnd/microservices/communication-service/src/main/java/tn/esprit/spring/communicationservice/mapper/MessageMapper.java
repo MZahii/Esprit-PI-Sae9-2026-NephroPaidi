@@ -20,6 +20,12 @@ public class MessageMapper {
                 .status(entity.getStatus())
                 .queue(entity.getQueue())
                 .createdAt(entity.getCreatedAt())
+                .aiUrgencyLevel(entity.getAiUrgencyLevel())
+                .aiConfidence(entity.getAiConfidence())
+                .aiTriageStatus(entity.getAiTriageStatus())
+                .aiExplanation(entity.getAiExplanation())
+                .aiModelVersion(entity.getAiModelVersion())
+                .aiEvaluatedAt(entity.getAiEvaluatedAt())
                 .build();
     }
 
@@ -41,6 +47,12 @@ public class MessageMapper {
                 .readAt(entity.getReadAt())
                 .lastUpdatedAt(entity.getLastUpdatedAt())
                 .closedAt(entity.getClosedAt())
+                .aiUrgencyLevel(entity.getAiUrgencyLevel())
+                .aiConfidence(entity.getAiConfidence())
+                .aiTriageStatus(entity.getAiTriageStatus())
+                .aiExplanation(entity.getAiExplanation())
+                .aiModelVersion(entity.getAiModelVersion())
+                .aiEvaluatedAt(entity.getAiEvaluatedAt())
                 .replies(replies.stream().map(this::toReplyResponse).toList())
                 .build();
     }
