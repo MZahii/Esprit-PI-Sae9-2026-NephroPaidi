@@ -2,6 +2,8 @@ package tn.esprit.spring.clinicalservice.labRequest.dto;
 
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -13,4 +15,5 @@ public class CreateLabRequestRequest {
     private String testType;
     private String urgency;
     private String notes;
+    private List<LabRequestTestItemDto> testItems;
 }

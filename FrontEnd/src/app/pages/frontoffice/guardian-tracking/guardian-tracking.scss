@@ -100,6 +100,81 @@
     text-align: left;
   }
 
+  .ward-filters {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .ward-section-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .section-pill {
+    border: 1px solid rgba(18, 50, 74, 0.12);
+    background: rgba(255, 255, 255, 0.92);
+    color: #12324a;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-weight: 700;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.04);
+  }
+
+  .section-pill.active {
+    background: #12324a;
+    color: #ffffff;
+    border-color: #12324a;
+  }
+
+  .ward-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .ward-profile-card {
+    padding: 18px;
+    border-radius: 22px;
+    background: #fbfdff;
+    border: 1px solid rgba(18, 50, 74, 0.08);
+    display: grid;
+    gap: 14px;
+  }
+
+  .ward-profile-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .ward-profile-head h4 {
+    margin: 4px 0 0;
+    color: #12324a;
+    font-size: 22px;
+    font-weight: 800;
+  }
+
+  .ward-profile-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+    color: #557085;
+    line-height: 1.7;
+  }
+
+  .ward-profile-details strong {
+    color: #12324a;
+  }
+
+  .ward-profile-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
   .empty-actions {
     margin-top: 18px;
     display: flex;
@@ -393,6 +468,106 @@
     font-size: 13px;
   }
 
+  .dossier-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  .reports-section {
+    display: grid;
+    gap: 16px;
+  }
+
+  .subsection-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .subsection-head h4 {
+    margin: 0;
+    color: #12324a;
+    font-size: 20px;
+    font-weight: 800;
+  }
+
+  .subsection-head span {
+    color: #6b7f92;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .report-list {
+    display: grid;
+    gap: 14px;
+  }
+
+  .report-card {
+    padding: 18px;
+    border-radius: 20px;
+    background: #fbfdff;
+    border: 1px solid rgba(18, 50, 74, 0.08);
+    display: grid;
+    gap: 14px;
+  }
+
+  .report-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .report-head strong {
+    color: #12324a;
+    font-size: 18px;
+  }
+
+  .report-summary {
+    margin: 0;
+    color: #557085;
+    line-height: 1.8;
+  }
+
+  .report-badges {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .report-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: #eff8ff;
+    color: #0f5f78;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+  }
+
+  .report-link,
+  .timeline-link {
+    justify-self: start;
+    font-weight: 700;
+  }
+
+  .timeline-link {
+    color: #0f5f78;
+    text-decoration: none;
+  }
+
+  .timeline-link:hover {
+    text-decoration: underline;
+  }
+
   .timeline {
     display: grid;
     gap: 14px;
@@ -566,6 +741,10 @@
     .metrics-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .ward-grid {
+      grid-template-columns: 1fr;
+    }
   }
 }
 
@@ -582,7 +761,10 @@
     }
 
     .overview-grid,
-    .hero-meta {
+    .hero-meta,
+    .dossier-summary-grid,
+    .ward-profile-details,
+    .ward-filters {
       grid-template-columns: 1fr;
     }
   }
@@ -605,7 +787,10 @@
     }
 
     .section-head,
-    .timeline-head {
+    .timeline-head,
+    .report-head,
+    .subsection-head,
+    .ward-profile-head {
       flex-direction: column;
     }
 

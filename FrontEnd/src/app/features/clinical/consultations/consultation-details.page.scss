@@ -116,5 +116,154 @@
       }
     }
   }
+
+  .dossier-section {
+    .dossier-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .dossier-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .dossier-consultation-list {
+      display: grid;
+      gap: 0.875rem;
+      margin-bottom: 1rem;
+    }
+
+    .dossier-consultation-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.9rem;
+      padding: 1rem;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .dossier-consultation-card__head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .dossier-consultation-card__title {
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 0.15rem;
+    }
+
+    .dossier-consultation-card__body {
+      display: grid;
+      gap: 0.75rem;
+
+      strong {
+        display: block;
+        color: #374151;
+        margin-bottom: 0.25rem;
+      }
+
+      p {
+        margin: 0;
+        color: #4b5563;
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
+    }
+
+    .dossier-subgrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .dossier-subcard {
+      background: #f8fafc;
+      border-radius: 0.75rem;
+      border: 1px solid #e2e8f0;
+      padding: 0.85rem;
+
+      h6 {
+        margin-bottom: 0.75rem;
+      }
+    }
+
+    .dossier-document {
+      display: grid;
+      gap: 0.15rem;
+      padding: 0.6rem 0;
+      border-top: 1px solid #e5e7eb;
+
+      &:first-of-type {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      strong {
+        color: #111827;
+      }
+
+      span {
+        color: #4b5563;
+        font-size: 0.875rem;
+      }
+    }
+
+    .dossier-timeline {
+      display: grid;
+      gap: 0.85rem;
+      margin-top: 0.75rem;
+    }
+
+    .dossier-timeline__item {
+      display: grid;
+      grid-template-columns: 0.9rem minmax(0, 1fr);
+      gap: 0.75rem;
+      align-items: start;
+    }
+
+    .dossier-timeline__marker {
+      width: 0.9rem;
+      height: 0.9rem;
+      margin-top: 0.35rem;
+      border-radius: 999px;
+    }
+
+    .dossier-timeline__content {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.85rem;
+      padding: 0.9rem 1rem;
+    }
+
+    .dossier-timeline__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .dossier-timeline__title {
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 0.25rem;
+    }
+
+    .dossier-timeline__details {
+      margin-top: 0.35rem;
+      color: #4b5563;
+      white-space: pre-wrap;
+    }
+  }
 }
 

@@ -16,6 +16,7 @@ import tn.esprit.spring.clinicalservice.consultation.metrics.FollowUpSuggestionS
 import tn.esprit.spring.clinicalservice.consultation.section.ConsultationSectionService;
 import tn.esprit.spring.clinicalservice.consultation.section.ConsultationSectionType;
 import tn.esprit.spring.clinicalservice.consultation.service.ConsultationOutcomeService;
+import tn.esprit.spring.clinicalservice.consultation.service.PatientMedicalDossierService;
 import tn.esprit.spring.clinicalservice.consultation.service.ConsultationService;
 import tn.esprit.spring.clinicalservice.security.DoctorIdResolver;
 
@@ -35,6 +36,7 @@ public class ConsultationController {
     private final MedicationOrderService medicationOrderService;
     private final FollowUpSuggestionService followUpSuggestionService;
     private final ConsultationSectionService consultationSectionService;
+    private final PatientMedicalDossierService patientMedicalDossierService;
     private final DoctorIdResolver doctorIdResolver;
 
     // LOCAL TESTING: pass X-Doctor-Id header
@@ -217,6 +219,16 @@ public class ConsultationController {
     ) {
         UUID resolvedDoctorId = requireDoctorId(doctorId, authentication);
         return ResponseEntity.ok(medicationOrderService.create(id, resolvedDoctorId, request));
+    }
+
+    @GetMapping("/{id}/medical-dossier")
+    public ResponseEntity<PatientMedicalDossierResponse> getMedicalDossier(
+            @PathVariable UUID id,
+            @RequestHeader(value = "X-Doctor-Id", required = false) UUID doctorId,
+            Authentication authentication
+    ) {
+        UUID resolvedDoctorId = requireDoctorId(doctorId, authentication);
+        return ResponseEntity.ok(patientMedicalDossierService.getByConsultationId(id, resolvedDoctorId));
     }
 
     @GetMapping("/{id}/sections")

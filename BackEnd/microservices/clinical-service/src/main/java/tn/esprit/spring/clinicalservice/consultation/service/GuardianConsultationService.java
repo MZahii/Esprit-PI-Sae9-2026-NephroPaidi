@@ -7,11 +7,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tn.esprit.spring.clinicalservice.consultation.dto.ConsultationResponse;
 import tn.esprit.spring.clinicalservice.consultation.dto.GuardianOutcomeResponse;
+import tn.esprit.spring.clinicalservice.consultation.dto.PatientMedicalDossierResponse;
 import tn.esprit.spring.clinicalservice.consultation.entity.Consultation;
 import tn.esprit.spring.clinicalservice.consultation.entity.ConsultationOutcome;
 import tn.esprit.spring.clinicalservice.consultation.entity.ConsultationStatus;
 import tn.esprit.spring.clinicalservice.consultation.repository.ConsultationOutcomeRepository;
 import tn.esprit.spring.clinicalservice.consultation.repository.ConsultationRepository;
+import tn.esprit.spring.clinicalservice.consultation.service.PatientMedicalDossierService;
 import tn.esprit.spring.clinicalservice.patient.PatientDirectoryClient;
 import tn.esprit.spring.clinicalservice.patient.dto.PatientSummary;
 
@@ -30,6 +32,7 @@ public class GuardianConsultationService {
     private final ConsultationRepository consultationRepository;
     private final ConsultationOutcomeRepository outcomeRepository;
     private final PatientDirectoryClient patientDirectoryClient;
+    private final PatientMedicalDossierService patientMedicalDossierService;
 
     public List<ConsultationResponse> listConsultations(Long guardianUserId, Long patientId, ConsultationStatus status) {
         if (guardianUserId == null) {
@@ -91,6 +94,22 @@ public class GuardianConsultationService {
                 .treatmentPlan(outcome.getTreatmentPlan())
                 .updatedAt(outcome.getUpdatedAt())
                 .build();
+    }
+
+    public PatientMedicalDossierResponse getMedicalDossier(Long patientId, Long guardianUserId) {
+        if (guardianUserId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "guardianUserId is required");
+        }
+        if (patientId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "patientId is required");
+        }
+
+        List<Long> guardianPatientIds = patientDirectoryClient.getPatientIdsByGuardianUserId(guardianUserId);
+        if (guardianPatientIds == null || !guardianPatientIds.contains(patientId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden: not your patient");
+        }
+
+        return patientMedicalDossierService.getByPatientId(patientId);
     }
 
     private ConsultationResponse toResponse(Consultation consultation, PatientSummary patientSummary) {

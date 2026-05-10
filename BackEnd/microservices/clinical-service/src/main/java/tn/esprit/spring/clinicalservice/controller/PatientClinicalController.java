@@ -62,7 +62,7 @@ public class PatientClinicalController {
 
     @GetMapping("/{patientId}/medical-dossier")
     public ResponseEntity<List<MedicalDossierEntry>> getMedicalDossier(
-            @PathVariable UUID patientId,
+            @PathVariable Long patientId,
             @RequestParam(required = false) String filters) {
         if (filters == null || filters.isBlank()) {
             return ResponseEntity.ok(medicalDossierRepository.findByPatientIdOrderByCreatedAtDesc(patientId));

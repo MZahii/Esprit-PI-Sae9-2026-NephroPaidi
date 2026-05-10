@@ -3,6 +3,12 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { AuthStorageService } from '../auth/auth-storage.service';
+import {
+  Consultation,
+  ConsultationMedicalDossier,
+  ConsultationOutcomeResponse,
+  PatientProfile
+} from '../../features/clinical/models/clinical.models';
 
 export interface DoctorSearchResult {
   id?: number;
@@ -24,6 +30,10 @@ export interface ConsultationMetricsRequest {
   ageYears?: number;
   systolicBpMmHg?: number;
   diastolicBpMmHg?: number;
+  heartRateBpm?: number;
+  respiratoryRateBpm?: number;
+  temperatureC?: number;
+  oxygenSaturationPct?: number;
   sex?: string;  // 'M' or 'F' - REQUIRED for CKD-EPI formula
   // Response fields (calculated by backend)
   creatinineUmol?: number;  // SI units storage
@@ -55,6 +65,40 @@ export interface ClinicalLabRequestPayload {
   testType: string;
   urgency: string;
   notes?: string;
+  testItems?: ClinicalLabRequestTestItemPayload[];
+}
+
+export interface ClinicalLabRequestTestItemPayload {
+  key: string;
+  label: string;
+  note?: string;
+}
+
+export interface ClinicalLabRequestItemResponse {
+  key?: string;
+  label: string;
+  note?: string;
+}
+
+export interface ClinicalLabRequestResponse {
+  id: string;
+  doctorId: string;
+  patientId: number;
+  consultationId?: string;
+  testType: string;
+  testItems?: ClinicalLabRequestItemResponse[];
+  urgency: string;
+  status: string;
+  notes?: string;
+  latestAiRecommendation?: string;
+  latestAiConfidence?: number;
+  latestAiRequiresDoctorReview?: boolean;
+  latestAiSummary?: string;
+  latestResultAvailable?: boolean;
+  latestResultFileName?: string;
+  latestResultUploadedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface EgfrMlRegressionResponse {
@@ -111,18 +155,18 @@ export class ClinicalApiService {
     );
   }
 
-  getPatient(id: number): Observable<any> {
-    return this.http.get<any>(
+  getPatient(id: number): Observable<PatientProfile> {
+    return this.http.get<PatientProfile>(
       `${this.base}/api/clinical/patients/${id}`,
       { headers: this.doctorHeaders() }
     );
   }
 
-  listMyConsultations(filters?: { patientQuery?: string; status?: string }): Observable<any[]> {
+  listMyConsultations(filters?: { patientQuery?: string; status?: string }): Observable<Consultation[]> {
     let params = new HttpParams();
     if (filters?.patientQuery) params = params.set('patientQuery', filters.patientQuery);
     if (filters?.status && filters.status !== 'ALL') params = params.set('status', filters.status);
-    return this.http.get<any[]>(
+    return this.http.get<Consultation[]>(
       `${this.base}/api/clinical/consultations/mine`,
       { headers: this.doctorHeaders(), params }
     );
@@ -321,16 +365,30 @@ export class ClinicalApiService {
     );
   }
 
-  getConsultation(id: string): Observable<any> {
-    return this.http.get<any>(
+  getGuardianMedicalDossier(patientId: number | string): Observable<ConsultationMedicalDossier> {
+    return this.http.get<ConsultationMedicalDossier>(
+      `${this.base}/api/clinical/guardian/patients/${patientId}/medical-dossier`,
+      { headers: this.guardianHeaders() }
+    );
+  }
+
+  getConsultation(id: string): Observable<Consultation> {
+    return this.http.get<Consultation>(
       `${this.base}/api/clinical/consultations/${id}`,
       { headers: this.doctorHeaders() }
     );
   }
 
-  getConsultationOutcome(id: string): Observable<any> {
-    return this.http.get<any>(
+  getConsultationOutcome(id: string): Observable<ConsultationOutcomeResponse> {
+    return this.http.get<ConsultationOutcomeResponse>(
       `${this.base}/api/clinical/consultations/${id}/outcomes`,
+      { headers: this.doctorHeaders() }
+    );
+  }
+
+  getConsultationMedicalDossier(id: string): Observable<ConsultationMedicalDossier> {
+    return this.http.get<ConsultationMedicalDossier>(
+      `${this.base}/api/clinical/consultations/${id}/medical-dossier`,
       { headers: this.doctorHeaders() }
     );
   }
@@ -347,6 +405,41 @@ export class ClinicalApiService {
     return this.http.post<any>(
       `${this.base}/api/clinical/lab-requests`,
       payload,
+      { headers: this.doctorHeaders() }
+    );
+  }
+
+  getConsultationLabRequests(consultationId: string): Observable<ClinicalLabRequestResponse[]> {
+    return this.http.get<ClinicalLabRequestResponse[]>(
+      `${this.base}/api/clinical/lab-requests/consultation/${consultationId}`,
+      { headers: this.doctorHeaders() }
+    );
+  }
+
+  getPatientLabRequests(patientId: number | string): Observable<ClinicalLabRequestResponse[]> {
+    return this.http.get<ClinicalLabRequestResponse[]>(
+      `${this.base}/api/clinical/lab-requests/patient/${patientId}`,
+      { headers: this.doctorHeaders() }
+    );
+  }
+
+  uploadLabSupportingFile(
+    labRequestId: string,
+    file: File,
+    testItemKey?: string,
+    testItemLabel?: string
+  ): Observable<any> {
+    const form = new FormData();
+    form.append('file', file);
+    if (testItemKey) {
+      form.append('testItemKey', testItemKey);
+    }
+    if (testItemLabel) {
+      form.append('testItemLabel', testItemLabel);
+    }
+    return this.http.post<any>(
+      `${this.base}/api/clinical/lab-requests/${labRequestId}/results`,
+      form,
       { headers: this.doctorHeaders() }
     );
   }

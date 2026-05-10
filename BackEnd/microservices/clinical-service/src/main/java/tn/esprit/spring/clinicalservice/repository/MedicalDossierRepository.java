@@ -16,10 +16,10 @@ public interface MedicalDossierRepository extends JpaRepository<MedicalDossierEn
     /**
      * Find all dossier entries for a patient, ordered by creation date descending
      */
-    List<MedicalDossierEntry> findByPatientIdOrderByCreatedAtDesc(UUID patientId);
+    List<MedicalDossierEntry> findByPatientIdOrderByCreatedAtDesc(Long patientId);
     
     /**
      * Find dossier entries filtered by type for a patient
      */
-    List<MedicalDossierEntry> findByPatientIdAndEntryTypeOrderByCreatedAtDesc(UUID patientId, EntryType entryType);
+    List<MedicalDossierEntry> findByPatientIdAndEntryTypeOrderByCreatedAtDesc(Long patientId, EntryType entryType);
 }

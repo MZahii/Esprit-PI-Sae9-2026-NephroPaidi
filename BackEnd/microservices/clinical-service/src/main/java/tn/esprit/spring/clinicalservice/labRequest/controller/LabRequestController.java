@@ -55,6 +55,24 @@ public class LabRequestController {
         return ResponseEntity.ok(requests);
     }
 
+    @GetMapping("/consultation/{consultationId}")
+    public ResponseEntity<List<LabRequestDto>> getConsultationLabRequests(
+            @PathVariable UUID consultationId,
+            @RequestHeader(value = "X-Doctor-Id", required = false) UUID doctorId,
+            Authentication authentication) {
+        UUID resolvedDoctorId = doctorIdResolver.resolve(doctorId, authentication);
+        return ResponseEntity.ok(labRequestService.getLabRequestsByConsultation(consultationId, resolvedDoctorId));
+    }
+
+    @GetMapping("/patient/{patientId}")
+    public ResponseEntity<List<LabRequestDto>> getPatientLabRequests(
+            @PathVariable Long patientId,
+            @RequestHeader(value = "X-Doctor-Id", required = false) UUID doctorId,
+            Authentication authentication) {
+        UUID resolvedDoctorId = doctorIdResolver.resolve(doctorId, authentication);
+        return ResponseEntity.ok(labRequestService.getLabRequestsByPatient(patientId, resolvedDoctorId));
+    }
+
     @GetMapping("/pending")
     public ResponseEntity<List<LabRequestDto>> getPendingLabRequests() {
         List<LabRequestDto> requests = labRequestService.getPendingLabRequests();
@@ -71,10 +89,12 @@ public class LabRequestController {
     public ResponseEntity<LabRequestDto> uploadLabResult(
             @PathVariable UUID id,
             @RequestPart("file") MultipartFile file,
+            @RequestPart(value = "testItemKey", required = false) String testItemKey,
+            @RequestPart(value = "testItemLabel", required = false) String testItemLabel,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             Authentication authentication) {
         // TODO: Resolve userId from authentication if not provided
-        LabRequestDto response = labRequestService.uploadLabResult(id, file, userId);
+        LabRequestDto response = labRequestService.uploadLabResult(id, file, userId, testItemKey, testItemLabel);
         return ResponseEntity.ok(response);
     }
 

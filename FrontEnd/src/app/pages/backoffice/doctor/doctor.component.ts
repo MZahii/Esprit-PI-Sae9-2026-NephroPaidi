@@ -36,10 +36,10 @@ export class DoctorComponent {
       icon: 'feather-activity'
     },
     {
-      label: 'Patient Summary',
-      description: 'Coming soon',
-      icon: 'feather-user',
-      disabled: true
+      label: 'My Patients',
+      description: 'Open the roster of patients attached to your consultations.',
+      route: '/backoffice/doctor/patients',
+      icon: 'feather-user'
     }
   ];
 

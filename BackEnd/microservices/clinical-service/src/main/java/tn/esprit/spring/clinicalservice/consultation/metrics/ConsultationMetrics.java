@@ -56,6 +56,24 @@ public class ConsultationMetrics {
     @Column(name = "patient_sex", length = 10)
     private String patientSex;
 
+    @Column(name = "systolic_bp_mmhg", columnDefinition = "NUMERIC")
+    private Double systolicBpMmHg;
+
+    @Column(name = "diastolic_bp_mmhg", columnDefinition = "NUMERIC")
+    private Double diastolicBpMmHg;
+
+    @Column(name = "heart_rate_bpm")
+    private Integer heartRateBpm;
+
+    @Column(name = "respiratory_rate_bpm")
+    private Integer respiratoryRateBpm;
+
+    @Column(name = "temperature_c", columnDefinition = "NUMERIC")
+    private Double temperatureC;
+
+    @Column(name = "oxygen_saturation_pct")
+    private Integer oxygenSaturationPct;
+
     @Column(name = "egfr", columnDefinition = "NUMERIC")
     private Double egfr;
 

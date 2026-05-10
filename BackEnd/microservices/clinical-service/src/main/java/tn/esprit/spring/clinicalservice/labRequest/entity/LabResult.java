@@ -31,6 +31,12 @@ public class LabResult {
     @Column(name = "file_name", length = 255)
     private String fileName;
 
+    @Column(name = "test_item_key", length = 120)
+    private String testItemKey;
+
+    @Column(name = "test_item_label", length = 255)
+    private String testItemLabel;
+
     @Column(name = "content_type", length = 100)
     private String contentType;
 

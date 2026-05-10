@@ -29,7 +29,7 @@ public class MedicalDossierEventListener {
         log.info("Received ConsultationClosedEvent for patient: {}", event.getPatientId());
         
         MedicalDossierEntry entry = new MedicalDossierEntry();
-        entry.setPatientId(event.getPatientId());
+        entry.setLegacyPatientUuid(event.getPatientId());
         entry.setEntryType(EntryType.CONSULTATION);
         entry.setSummary(event.getConsultationSummary());
         entry.setCreatedAt(LocalDateTime.now());
@@ -47,7 +47,7 @@ public class MedicalDossierEventListener {
         log.info("Received LabResultUploadedEvent for patient: {}", event.getPatientId());
         
         MedicalDossierEntry entry = new MedicalDossierEntry();
-        entry.setPatientId(event.getPatientId());
+        entry.setLegacyPatientUuid(event.getPatientId());
         entry.setEntryType(EntryType.LAB);
         entry.setSummary(String.format("Lab: %s - %s", event.getLabTestName(), event.getResult()));
         entry.setCreatedAt(LocalDateTime.now());
@@ -65,7 +65,7 @@ public class MedicalDossierEventListener {
         log.info("Received DischargeCreatedEvent for patient: {}", event.getPatientId());
         
         MedicalDossierEntry entry = new MedicalDossierEntry();
-        entry.setPatientId(event.getPatientId());
+        entry.setLegacyPatientUuid(event.getPatientId());
         entry.setEntryType(EntryType.DISCHARGE);
         entry.setSummary(event.getDischargeSummary());
         entry.setCreatedAt(LocalDateTime.now());

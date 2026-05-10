@@ -50,6 +50,7 @@ public class PatientClinicalControllerTest extends BaseIntegrationTest {
     private ClinicalAlertRepository clinicalAlertRepository;
 
     private UUID patientId;
+    private Long dossierPatientId;
 
     @BeforeEach
     void setUp() {
@@ -57,6 +58,7 @@ public class PatientClinicalControllerTest extends BaseIntegrationTest {
         medicalDossierRepository.deleteAll();
         consultationRepository.deleteAll();
         patientId = UUID.randomUUID();
+        dossierPatientId = 1001L;
     }
 
     @Test
@@ -76,10 +78,10 @@ public class PatientClinicalControllerTest extends BaseIntegrationTest {
 
     @Test
     void testGetMedicalDossier_Filtered() throws Exception {
-        medicalDossierRepository.save(buildDossierEntry(patientId, EntryType.CONSULTATION, "Consultation summary", LocalDateTime.of(2026, 5, 8, 10, 0)));
-        medicalDossierRepository.save(buildDossierEntry(patientId, EntryType.LAB, "Lab summary", LocalDateTime.of(2026, 5, 9, 10, 0)));
+        medicalDossierRepository.save(buildDossierEntry(dossierPatientId, EntryType.CONSULTATION, "Consultation summary", LocalDateTime.of(2026, 5, 8, 10, 0)));
+        medicalDossierRepository.save(buildDossierEntry(dossierPatientId, EntryType.LAB, "Lab summary", LocalDateTime.of(2026, 5, 9, 10, 0)));
 
-        mockMvc.perform(get("/api/v1/patients/{patientId}/medical-dossier", patientId)
+        mockMvc.perform(get("/api/v1/patients/{patientId}/medical-dossier", dossierPatientId)
                 .param("filters", "lab"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(1))
@@ -142,8 +144,9 @@ public class PatientClinicalControllerTest extends BaseIntegrationTest {
                 .content(objectMapper.writeValueAsString(payload)))
             .andExpect(status().isCreated());
 
-        assertThat(medicalDossierRepository.findByPatientIdOrderByCreatedAtDesc(patientId))
+        assertThat(medicalDossierRepository.findAll())
             .anyMatch(entry -> entry.getEntryType() == EntryType.CONSULTATION
+                && patientId.equals(entry.getLegacyPatientUuid())
                 && "Edema and fatigue".equals(entry.getSummary()));
     }
 
@@ -173,7 +176,7 @@ public class PatientClinicalControllerTest extends BaseIntegrationTest {
         return consultation;
     }
 
-    private MedicalDossierEntry buildDossierEntry(UUID patientId, EntryType entryType, String summary, LocalDateTime createdAt) {
+    private MedicalDossierEntry buildDossierEntry(Long patientId, EntryType entryType, String summary, LocalDateTime createdAt) {
         MedicalDossierEntry entry = new MedicalDossierEntry();
         entry.setPatientId(patientId);
         entry.setEntryType(entryType);

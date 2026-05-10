@@ -56,6 +56,7 @@ import { ConsultationDetailsPage as ClinicalConsultationDetailsPage } from './fe
 import { ConsultationWorkspacePage } from './features/clinical/consultations/consultation-workspace.page';
 import { ConsultationLabSourcePage } from './features/clinical/consultations/consultation-lab-source.page';
 import { LabRequestsPage } from './features/clinical/consultations/lab-requests.page';
+import { DoctorPatientsPage } from './features/clinical/consultations/doctor-patients.page';
 import { ReceptionistAppointmentsPage } from './features/clinical/appointments/receptionist-appointments.page';
 import { DoctorTodayAppointmentsPage } from './features/clinical/appointments/doctor-today-appointments.page';
 import { HospitalizationCreatePage } from './features/ops/hospitalizations/hospitalization-create.page';
@@ -249,6 +250,12 @@ export const routes: Routes = [
       {
         path: 'doctor/today',
         component: DoctorTodayAppointmentsPage,
+        canActivate: [roleGuard],
+        data: { roles: ['DOCTOR'] }
+      },
+      {
+        path: 'doctor/patients',
+        component: DoctorPatientsPage,
         canActivate: [roleGuard],
         data: { roles: ['DOCTOR'] }
       },

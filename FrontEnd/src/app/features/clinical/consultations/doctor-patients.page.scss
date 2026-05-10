@@ -1,0 +1,107 @@
+.doctor-patients-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.hero-card,
+.filters-card,
+.state-card {
+  border: 1px solid #dbe7f1;
+  border-radius: 24px;
+  padding: 1.25rem;
+  background: #fff;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+}
+
+.hero-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #2f6fde;
+  font-weight: 800;
+}
+
+.hero-card h3 {
+  margin: 0.25rem 0 0.5rem;
+  font-weight: 800;
+  color: #16324f;
+}
+
+.hero-card p,
+.state-card {
+  color: #64748b;
+  margin: 0;
+}
+
+.patient-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.patient-card {
+  border: 1px solid #dbe7f1;
+  border-radius: 24px;
+  padding: 1.2rem;
+  background: linear-gradient(180deg, #ffffff, #f9fbfe);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.card-top h5 {
+  margin: 0;
+  color: #16324f;
+  font-weight: 800;
+}
+
+.card-top p {
+  margin: 0.2rem 0 0;
+  color: #6b7f95;
+}
+
+.status-chip {
+  display: inline-flex;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: #eef6ff;
+  color: #2458b5;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.meta-grid span {
+  display: block;
+  color: #6b7f95;
+  font-size: 0.82rem;
+}
+
+.meta-grid strong {
+  color: #17324b;
+  font-size: 0.95rem;
+}
+
+.actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}

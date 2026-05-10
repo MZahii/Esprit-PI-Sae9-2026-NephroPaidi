@@ -29,6 +29,12 @@ public class ConsultationMetricsResponse {
     private Double weightKg;
     private Integer ageYears;
     private String sex;
+    private Double systolicBpMmHg;
+    private Double diastolicBpMmHg;
+    private Integer heartRateBpm;
+    private Integer respiratoryRateBpm;
+    private Double temperatureC;
+    private Integer oxygenSaturationPct;
     
     // Serum creatinine (both units)
     private Double creatinineMgDl;

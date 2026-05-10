@@ -12,9 +12,10 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "medical_dossier_entries", indexes = {
-    @Index(name = "idx_patient_id", columnList = "patient_id"),
-    @Index(name = "idx_created_at", columnList = "created_at"),
-    @Index(name = "idx_entry_type", columnList = "entry_type")
+    @Index(name = "idx_medical_dossier_patient_id", columnList = "patient_id"),
+    @Index(name = "idx_medical_dossier_legacy_patient_uuid", columnList = "legacy_patient_uuid"),
+    @Index(name = "idx_medical_dossier_created_at", columnList = "created_at"),
+    @Index(name = "idx_medical_dossier_entry_type", columnList = "entry_type")
 })
 @Data
 @NoArgsConstructor
@@ -25,8 +26,11 @@ public class MedicalDossierEntry {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     
-    @Column(nullable = false, name = "patient_id")
-    private UUID patientId;
+    @Column(name = "patient_id")
+    private Long patientId;
+
+    @Column(name = "legacy_patient_uuid")
+    private UUID legacyPatientUuid;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, name = "entry_type")

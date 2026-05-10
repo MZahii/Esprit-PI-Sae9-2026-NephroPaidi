@@ -1,0 +1,57 @@
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">My Patients</h5>
+    </div>
+
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a routerLink="/backoffice/dashboard">Home</a></li>
+      <li class="breadcrumb-item">Clinical Workspace</li>
+      <li class="breadcrumb-item">My Patients</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content doctor-patients-page">
+  <section class="hero-card">
+    <div>
+      <span class="eyebrow">Doctor panel</span>
+      <h3>Children currently under your clinical follow-up</h3>
+      <p>Review only the patients attached to your own consultations, with quick access to their encounter history and active status.</p>
+    </div>
+    <button class="btn btn-light" type="button" (click)="loadPatients()" [disabled]="loading">Refresh</button>
+  </section>
+
+  <div *ngIf="error" class="alert alert-danger mt-3">{{ error }}</div>
+
+  <section class="filters-card mt-3">
+    <label class="form-label">Search within your patient roster</label>
+    <input class="form-control" [(ngModel)]="query" placeholder="Child name, blood type, patient id, or status..." />
+  </section>
+
+  <div *ngIf="loading" class="state-card mt-3">Loading your patients...</div>
+  <div *ngIf="!loading && filteredPatients.length === 0" class="state-card mt-3">No patient is currently linked to your consultation roster.</div>
+
+  <section class="patient-grid mt-3" *ngIf="!loading && filteredPatients.length > 0">
+    <article class="patient-card" *ngFor="let patient of filteredPatients">
+      <div class="card-top">
+        <div>
+          <h5>{{ patient.name }}</h5>
+          <p>Patient #{{ patient.id }}</p>
+        </div>
+        <span class="status-chip">{{ patient.statusSummary }}</span>
+      </div>
+
+      <div class="meta-grid">
+        <div><span>Age</span><strong>{{ patient.ageLabel }}</strong></div>
+        <div><span>Blood Type</span><strong>{{ patient.bloodTypeLabel }}</strong></div>
+        <div><span>Consultations</span><strong>{{ patient.consultationCount }}</strong></div>
+        <div><span>Latest Encounter</span><strong>{{ patient.latestConsultationAt ? (patient.latestConsultationAt | date:'mediumDate') : 'N/A' }}</strong></div>
+      </div>
+
+      <div class="actions">
+        <a class="btn btn-outline-primary btn-sm" [routerLink]="['/backoffice/consultations']" [queryParams]="{ patientQuery: patient.name }">View Consultations</a>
+      </div>
+    </article>
+  </section>
+</div>

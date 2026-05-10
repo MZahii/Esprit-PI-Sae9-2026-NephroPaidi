@@ -23,6 +23,10 @@ public class ConsultationMetricsRequest {
     private String sex;  // 'M' or 'F' - required for CKD-EPI formula
     private Double systolicBpMmHg;
     private Double diastolicBpMmHg;
+    private Integer heartRateBpm;
+    private Integer respiratoryRateBpm;
+    private Double temperatureC;
+    private Integer oxygenSaturationPct;
     private Double creatinineUmol;
     private String serumCreatinineUnit;
     private String egfrFormulaUsed;

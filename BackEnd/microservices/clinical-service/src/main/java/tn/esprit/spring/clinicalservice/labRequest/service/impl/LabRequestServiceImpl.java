@@ -16,6 +16,7 @@ import tn.esprit.spring.clinicalservice.consultation.metrics.ConsultationMetrics
 import tn.esprit.spring.clinicalservice.consultation.metrics.ConsultationMetricsService;
 import tn.esprit.spring.clinicalservice.labRequest.dto.CreateLabRequestRequest;
 import tn.esprit.spring.clinicalservice.labRequest.dto.LabRequestDto;
+import tn.esprit.spring.clinicalservice.labRequest.dto.LabRequestTestItemDto;
 import tn.esprit.spring.clinicalservice.labRequest.entity.LabRequest;
 import tn.esprit.spring.clinicalservice.labRequest.entity.LabResult;
 import tn.esprit.spring.clinicalservice.labRequest.repository.LabRequestRepository;
@@ -27,6 +28,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Locale;
 import java.util.List;
 import java.util.UUID;
 import java.util.Base64;
@@ -51,14 +54,20 @@ public class LabRequestServiceImpl implements LabRequestService {
     @Override
     public LabRequestDto createLabRequest(CreateLabRequestRequest request, UUID doctorId) {
         log.info("Creating lab request for patient {} by doctor {}", request.getPatientId(), doctorId);
-        
+        List<LabRequestTestItemDto> normalizedItems = normalizeTestItems(request);
+        String requestSummary = normalizedItems.stream()
+                .map(LabRequestTestItemDto::getLabel)
+                .filter(label -> label != null && !label.isBlank())
+                .collect(Collectors.joining(", "));
+
         LabRequest labRequest = LabRequest.builder()
                 .id(UUID.randomUUID())
                 .doctorId(doctorId)
                 .patientId(request.getPatientId())
                 .consultationId(request.getConsultationId())
-                .testType(request.getTestType())
-                .urgency(LabRequest.LabUrgency.valueOf(request.getUrgency() != null ? request.getUrgency() : "ROUTINE"))
+                .testType(requestSummary.isBlank() ? "Grouped lab request" : requestSummary)
+                .testItemsJson(writeTestItems(normalizedItems))
+                .urgency(LabRequest.LabUrgency.valueOf((request.getUrgency() != null ? request.getUrgency() : "ROUTINE").trim().toUpperCase(Locale.ROOT)))
                 .status(LabRequest.LabStatus.PENDING)
                 .notes(request.getNotes())
                 .build();
@@ -82,6 +91,26 @@ public class LabRequestServiceImpl implements LabRequestService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<LabRequestDto> getLabRequestsByConsultation(UUID consultationId, UUID doctorId) {
+        return labRequestRepository.findByConsultationIdOrderByCreatedAtDesc(consultationId)
+                .stream()
+                .filter(item -> doctorId.equals(item.getDoctorId()))
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<LabRequestDto> getLabRequestsByPatient(Long patientId, UUID doctorId) {
+        return labRequestRepository.findByPatientIdOrderByCreatedAtDesc(patientId)
+                .stream()
+                .filter(item -> doctorId.equals(item.getDoctorId()))
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<LabRequestDto> getPendingLabRequests() {
         log.info("Fetching pending lab requests");
         return labRequestRepository.findPending(LabRequest.LabStatus.PENDING)
@@ -99,7 +128,7 @@ public class LabRequestServiceImpl implements LabRequestService {
     }
 
     @Override
-    public LabRequestDto uploadLabResult(UUID labRequestId, MultipartFile file, UUID uploadedBy) {
+    public LabRequestDto uploadLabResult(UUID labRequestId, MultipartFile file, UUID uploadedBy, String testItemKey, String testItemLabel) {
         log.info("Uploading lab result for lab request {}", labRequestId);
 
         if (file == null || file.isEmpty()) {
@@ -123,6 +152,8 @@ public class LabRequestServiceImpl implements LabRequestService {
                     .labRequestId(labRequestId)
                     .filePath(targetFile.toString())
                     .fileName(originalName)
+                    .testItemKey(blankToNull(testItemKey))
+                    .testItemLabel(blankToNull(testItemLabel))
                     .contentType(file.getContentType())
                     .fileSizeBytes(file.getSize())
                     .fileData(bytes)
@@ -206,6 +237,7 @@ public class LabRequestServiceImpl implements LabRequestService {
                 .patientId(labRequest.getPatientId())
                 .consultationId(labRequest.getConsultationId())
                 .testType(labRequest.getTestType())
+                .testItems(readTestItems(labRequest.getTestItemsJson()))
                 .urgency(labRequest.getUrgency().toString())
                 .status(labRequest.getStatus().toString())
                 .notes(labRequest.getNotes())
@@ -213,6 +245,9 @@ public class LabRequestServiceImpl implements LabRequestService {
                 .latestAiConfidence(latestResult != null ? latestResult.getAiConfidence() : null)
                 .latestAiRequiresDoctorReview(latestResult != null ? latestResult.getAiRequiresDoctorReview() : null)
                 .latestAiSummary(latestResult != null ? latestResult.getAiSummary() : null)
+                .latestResultAvailable(latestResult != null)
+                .latestResultFileName(latestResult != null ? latestResult.getFileName() : null)
+                .latestResultUploadedAt(latestResult != null ? latestResult.getUploadedAt() : null)
                 .createdAt(labRequest.getCreatedAt())
                 .updatedAt(labRequest.getUpdatedAt())
                 .build();
@@ -259,5 +294,69 @@ public class LabRequestServiceImpl implements LabRequestService {
 
     private String sanitizeFileName(String originalName) {
         return originalName.replaceAll("[^a-zA-Z0-9._-]", "_");
+    }
+
+    private List<LabRequestTestItemDto> normalizeTestItems(CreateLabRequestRequest request) {
+        List<LabRequestTestItemDto> input = request.getTestItems();
+        if (input == null || input.isEmpty()) {
+            String test = request.getTestType() != null ? request.getTestType().trim() : "";
+            if (test.isBlank()) {
+                throw new RuntimeException("At least one lab test must be selected");
+            }
+            return List.of(LabRequestTestItemDto.builder()
+                    .key(toItemKey(test))
+                    .label(test)
+                    .note(request.getNotes())
+                    .build());
+        }
+
+        List<LabRequestTestItemDto> normalized = new ArrayList<>();
+        for (LabRequestTestItemDto item : input) {
+            String label = item != null && item.getLabel() != null ? item.getLabel().trim() : "";
+            if (label.isBlank()) {
+                continue;
+            }
+            normalized.add(LabRequestTestItemDto.builder()
+                    .key(item.getKey() != null && !item.getKey().isBlank() ? item.getKey().trim() : toItemKey(label))
+                    .label(label)
+                    .note(blankToNull(item.getNote()))
+                    .build());
+        }
+        if (normalized.isEmpty()) {
+            throw new RuntimeException("At least one lab test must be selected");
+        }
+        return normalized;
+    }
+
+    private String writeTestItems(List<LabRequestTestItemDto> items) {
+        try {
+            return objectMapper.writeValueAsString(items);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Unable to serialize lab request items", e);
+        }
+    }
+
+    private List<LabRequestTestItemDto> readTestItems(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of();
+        }
+        try {
+            return objectMapper.readerForListOf(LabRequestTestItemDto.class).readValue(raw);
+        } catch (JsonProcessingException e) {
+            log.warn("Unable to deserialize lab request items", e);
+            return List.of();
+        }
+    }
+
+    private String toItemKey(String label) {
+        return label.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
+    }
+
+    private String blankToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isBlank() ? null : trimmed;
     }
 }

@@ -3,11 +3,11 @@
     <div class="tracking-shell">
       <div class="tracking-topbar">
         <div>
-          <span class="tracking-badge">Guardian Care Dashboard</span>
-          <h1>Child Tracking</h1>
+          <span class="tracking-badge">Child Tracking / Ward Tracking</span>
+          <h1>Ward Tracking</h1>
           <p>
-            Follow the care journey, upcoming sessions, recent outcomes and recovery alerts
-            in one calm view.
+            Review linked child profiles, follow the care journey, and track consultation
+            reports in one protected guardian workspace.
           </p>
         </div>
 
@@ -32,6 +32,70 @@
       </div>
 
       <ng-container *ngIf="!loading && hasChildData">
+        <div class="ward-section-nav">
+          <button type="button" class="section-pill" [class.active]="activeWardSection === 'profiles'" (click)="setWardSection('profiles')">Ward Profiles</button>
+          <button type="button" class="section-pill" [class.active]="activeWardSection === 'dossier'" (click)="setWardSection('dossier')">Medical Dossier</button>
+          <button type="button" class="section-pill" [class.active]="activeWardSection === 'journey'" (click)="setWardSection('journey')">Consultation Journey</button>
+          <button type="button" class="section-pill" [class.active]="activeWardSection === 'schedule'" (click)="setWardSection('schedule')">Schedule & Requests</button>
+        </div>
+
+        <div class="info-card ward-card">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Ward tracking</span>
+              <h3>Linked child profiles</h3>
+            </div>
+            <span class="timeline-count">{{ filteredLinkedPatients.length }} profile(s)</span>
+          </div>
+
+          <div class="ward-filters">
+            <input
+              class="form-control"
+              type="text"
+              placeholder="Search by child name, sex, blood type or date of birth..."
+              [(ngModel)]="patientSearchTerm"
+            />
+
+            <select class="form-select" [(ngModel)]="patientSortMode">
+              <option value="name-asc">Name A → Z</option>
+              <option value="name-desc">Name Z → A</option>
+              <option value="youngest-first">Youngest first</option>
+              <option value="oldest-first">Oldest first</option>
+            </select>
+          </div>
+
+          <div *ngIf="filteredLinkedPatients.length === 0" class="tracking-empty compact">
+            No linked child profile matches your current search.
+          </div>
+
+          <div class="ward-grid" *ngIf="filteredLinkedPatients.length > 0 && activeWardSection === 'profiles'">
+            <article class="ward-profile-card" *ngFor="let patient of filteredLinkedPatients">
+              <div class="ward-profile-head">
+                <div>
+                  <span class="panel-label">Child profile</span>
+                  <h4>{{ fullPatientName(patient) }}</h4>
+                </div>
+                <span class="report-badge">PAT-{{ patient.id }}</span>
+              </div>
+
+              <div class="ward-profile-details">
+                <div><strong>Age:</strong> {{ patientAge(patient.dateOfBirth) ?? '-' }}</div>
+                <div><strong>Date of birth:</strong> {{ patient.dateOfBirth || '-' }}</div>
+                <div><strong>Sex:</strong> {{ patient.sex || '-' }}</div>
+                <div><strong>Blood type:</strong> {{ patient.bloodType || '-' }}</div>
+                <div><strong>Allergies:</strong> {{ patient.allergies || '-' }}</div>
+                <div><strong>Chronic conditions:</strong> {{ patient.chronicConditions || '-' }}</div>
+              </div>
+
+              <div class="ward-profile-actions">
+                <a class="btn btn-outline-primary btn-sm" [routerLink]="['/frontoffice/patients', patient.id]">
+                  View full details
+                </a>
+              </div>
+            </article>
+          </div>
+        </div>
+
         <div class="hero-card">
           <div class="hero-copy">
             <span class="hero-kicker">Selected child</span>
@@ -53,7 +117,7 @@
           <div class="hero-side">
             <ng-container *ngIf="hasMultipleChildren; else singleChildBlock">
               <label class="form-label">Child profile</label>
-              <select class="form-select" [(ngModel)]="selectedChildKey">
+              <select class="form-select" [(ngModel)]="selectedChildKey" (ngModelChange)="onChildSelectionChange()">
                 <option *ngFor="let child of childOptions" [value]="child.key">
                   {{ child.label }} {{ child.patientId ? ('| ' + child.patientId) : '' }}
                 </option>
@@ -87,7 +151,96 @@
 
         <div class="row g-4">
           <div class="col-xl-8">
-            <div class="info-card overview-card">
+            <div class="info-card dossier-card" *ngIf="activeWardSection === 'dossier' || activeWardSection === 'journey'">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Medical dossier</span>
+                  <h3>Clinical history and reports</h3>
+                </div>
+                <span class="timeline-count" *ngIf="guardianDossier">
+                  Updated {{ dossierGeneratedLabel }}
+                </span>
+              </div>
+
+              <div *ngIf="dossierLoading" class="tracking-empty compact">
+                Loading medical dossier...
+              </div>
+
+              <div *ngIf="!dossierLoading && dossierError" class="tracking-empty compact">
+                {{ dossierError }}
+              </div>
+
+              <ng-container *ngIf="!dossierLoading && !dossierError && guardianDossier as dossier">
+                <div class="dossier-summary-grid">
+                  <div class="overview-panel">
+                    <span class="panel-label">Consultations</span>
+                    <strong>{{ dossier.summary.consultationCount }}</strong>
+                    <p>Recorded encounters for this child.</p>
+                  </div>
+
+                  <div class="overview-panel">
+                    <span class="panel-label">Lab requests</span>
+                    <strong>{{ dossier.summary.labRequestCount }}</strong>
+                    <p>Ordered investigations in the dossier.</p>
+                  </div>
+
+                  <div class="overview-panel">
+                    <span class="panel-label">Prescriptions</span>
+                    <strong>{{ dossier.summary.prescriptionCount }}</strong>
+                    <p>Medication or treatment items shared after visits.</p>
+                  </div>
+
+                  <div class="overview-panel">
+                    <span class="panel-label">Timeline events</span>
+                    <strong>{{ dossier.timeline.length }}</strong>
+                    <p>Recent-to-old mixed clinical history.</p>
+                  </div>
+                </div>
+
+                <div class="reports-section" *ngIf="activeWardSection === 'dossier' || activeWardSection === 'journey'">
+                  <div class="subsection-head">
+                    <h4>Consultation reports</h4>
+                    <span>{{ consultationReports.length }} report(s)</span>
+                  </div>
+
+                  <div *ngIf="consultationReports.length === 0" class="tracking-empty compact">
+                    No consultation report is available yet for this child.
+                  </div>
+
+                  <div class="report-list" *ngIf="consultationReports.length > 0">
+                    <article class="report-card" *ngFor="let report of recentConsultationReports">
+                      <div class="report-head">
+                        <div>
+                          <span class="panel-label">Consultation</span>
+                          <strong>{{ formatDateTime(report.consultationDate) }}</strong>
+                        </div>
+                        <span class="status-pill neutral">{{ statusLabel(report.status) }}</span>
+                      </div>
+
+                      <p class="report-summary">{{ reportSummary(report) }}</p>
+
+                      <div class="report-badges">
+                        <span class="report-badge" *ngIf="report.labRequests.length">
+                          {{ report.labRequests.length }} lab request(s)
+                        </span>
+                        <span class="report-badge" *ngIf="report.prescriptions.length">
+                          {{ report.prescriptions.length }} prescription item(s)
+                        </span>
+                        <span class="report-badge" *ngIf="report.outcomeUpdatedAt">
+                          Updated {{ formatDateTime(report.outcomeUpdatedAt) }}
+                        </span>
+                      </div>
+
+                      <a class="btn btn-outline-primary btn-sm report-link" [routerLink]="['/frontoffice/consultations', report.consultationId]">
+                        Open detailed report
+                      </a>
+                    </article>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+
+            <div class="info-card overview-card" *ngIf="activeWardSection === 'journey'">
               <div class="section-head">
                 <div>
                   <span class="section-kicker">Overview</span>
@@ -138,7 +291,7 @@
               </div>
             </div>
 
-            <div class="info-card timeline-card">
+            <div class="info-card timeline-card" *ngIf="activeWardSection === 'journey'">
               <div class="section-head">
                 <div>
                   <span class="section-kicker">Timeline</span>
@@ -168,10 +321,92 @@
                 {{ hiddenTimelineCount }} older event(s) are hidden for readability.
               </div>
             </div>
+
+            <div class="info-card dossier-timeline-card" *ngIf="activeWardSection === 'dossier' && !dossierLoading && !dossierError && guardianDossier">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Dossier timeline</span>
+                  <h3>Consultations, labs and prescriptions</h3>
+                </div>
+                <span class="timeline-count">{{ dossierTimeline.length }} event(s)</span>
+              </div>
+
+              <div *ngIf="dossierTimelinePreview.length === 0" class="tracking-empty compact">
+                No medical dossier events are available yet.
+              </div>
+
+              <div class="timeline" *ngIf="dossierTimelinePreview.length > 0">
+                <div class="timeline-item dossier-item" *ngFor="let item of dossierTimelinePreview">
+                  <div class="timeline-dot neutral"></div>
+                  <div class="timeline-content">
+                    <div class="timeline-head">
+                      <strong>{{ dossierKindLabel(item.kind) }}{{ item.title ? ' | ' + item.title : '' }}</strong>
+                      <small>{{ item.occurredAt ? (item.occurredAt | date: 'yyyy-MM-dd HH:mm') : 'No timestamp' }}</small>
+                    </div>
+                    <p>{{ item.summary || item.details || 'Clinical event recorded in the child dossier.' }}</p>
+                    <a
+                      *ngIf="item.consultationId"
+                      class="timeline-link"
+                      [routerLink]="['/frontoffice/consultations', item.consultationId]">
+                      View consultation details
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="dossierHiddenCount > 0" class="timeline-more">
+                {{ dossierHiddenCount }} older dossier event(s) are hidden for readability.
+              </div>
+            </div>
+
+            <div class="info-card schedule-card" *ngIf="activeWardSection === 'schedule'">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Schedule and requests</span>
+                  <h3>Upcoming consultations and booking actions</h3>
+                </div>
+                <span class="timeline-count">{{ selectedAppointmentRequests.length }} item(s)</span>
+              </div>
+
+              <div class="overview-grid">
+                <div class="overview-panel">
+                  <span class="panel-label">Upcoming requests</span>
+                  <strong>{{ upcomingAppointmentRequests.length }}</strong>
+                  <p>Future appointments or pending consultation requests for this child.</p>
+                </div>
+                <div class="overview-panel">
+                  <span class="panel-label">Previous reports</span>
+                  <strong>{{ consultationReports.length }}</strong>
+                  <p>Dated consultation reports already stored in the child dossier.</p>
+                </div>
+              </div>
+
+              <div *ngIf="selectedAppointmentRequests.length === 0" class="tracking-empty compact mt-3">
+                No appointment request has been recorded yet for this child.
+              </div>
+
+              <div class="report-list mt-3" *ngIf="selectedAppointmentRequests.length > 0">
+                <article class="report-card" *ngFor="let item of selectedAppointmentRequests">
+                  <div class="report-head">
+                    <div>
+                      <span class="panel-label">Consultation request</span>
+                      <strong>{{ formatDateTime(item.scheduledDate || item.requestedDate || null) }}</strong>
+                    </div>
+                    <span class="status-pill neutral">{{ appointmentStatusLabel(item.status) }}</span>
+                  </div>
+                  <p class="report-summary">{{ item.reason }}</p>
+                </article>
+              </div>
+
+              <div class="quick-actions mt-3">
+                <a routerLink="/frontoffice/schedule/appointments" class="btn btn-primary">Request Consultation</a>
+                <a routerLink="/frontoffice/consultations" class="btn btn-outline-primary">Open Consultation Records</a>
+              </div>
+            </div>
           </div>
 
           <div class="col-xl-4">
-            <div class="info-card alerts-card">
+            <div class="info-card alerts-card" *ngIf="activeWardSection === 'journey' || activeWardSection === 'schedule'">
               <div class="section-head">
                 <div>
                   <span class="section-kicker">Alerts</span>
@@ -188,7 +423,7 @@
               </ul>
             </div>
 
-            <div class="info-card actions-card">
+            <div class="info-card actions-card" *ngIf="activeWardSection === 'journey' || activeWardSection === 'schedule'">
               <div class="section-head">
                 <div>
                   <span class="section-kicker">Recommended actions</span>
@@ -207,7 +442,7 @@
               </div>
             </div>
 
-            <div class="info-card workflow-card">
+            <div class="info-card workflow-card" *ngIf="activeWardSection === 'dossier' || activeWardSection === 'journey'">
               <div class="section-head">
                 <div>
                   <span class="section-kicker">Clinical summary</span>
