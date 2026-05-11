@@ -238,6 +238,8 @@ export class ClinicalApiService {
     return this.http.get<any[]>(
       `${this.base}/api/users`,
       { headers: this.authHeaders() }
+    ).pipe(
+      catchError(() => of([]))
     );
   }
 

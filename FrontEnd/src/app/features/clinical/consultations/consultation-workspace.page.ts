@@ -2035,6 +2035,10 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
   }
 
   get egfrMlClinicalHint(): string {
+    if (this.egfrMl.error) {
+      return this.egfrMl.error;
+    }
+
     const risk = (this.egfrMl.classification?.risk_label || '').toUpperCase();
     const prob = Number(this.egfrMl.classification?.rapid_decline_probability ?? 0);
     const confidence = Number(this.egfrMl.classification?.confidence_score ?? 0);
@@ -2061,6 +2065,17 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
   }
 
   private runEgfrMlPrediction(force = false): void {
+    const inputError = this.getEgfrMlInputError();
+    if (inputError) {
+      this.egfrMl.payloadPreview = null;
+      this.egfrMl.loading = false;
+      this.egfrMl.available = false;
+      this.egfrMl.regression = null;
+      this.egfrMl.classification = null;
+      this.egfrMl.error = inputError;
+      return;
+    }
+
     const payload = this.buildEgfrMlPayload();
     this.egfrMl.payloadPreview = payload;
     this.egfrMl.error = '';
@@ -2091,9 +2106,44 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
         this.egfrMl.loading = false;
         this.egfrMl.regression = null;
         this.egfrMl.classification = null;
-        this.egfrMl.error = 'Model service unavailable. Check egfr-ml-service container and gateway route.';
+        this.egfrMl.error = 'eGFR AI request failed. Check the entered measurements and egfr-ml-service logs.';
       }
     });
+  }
+
+  private getEgfrMlInputError(): string {
+    const ageYears = this.resolvePatientAgeYears();
+    const heightCm = this.toFiniteNumber(this.draft.metrics.heightCm);
+    const creatinineValue = this.toFiniteNumber(this.draft.metrics.creatinineMgDl);
+    const systolic = this.toFiniteNumber(this.draft.metrics.systolicBpMmHg);
+    const diastolic = this.toFiniteNumber(this.draft.metrics.diastolicBpMmHg);
+    const consultationDate = this.consultation?.dateTime ? new Date(this.consultation.dateTime) : null;
+
+    if (
+      ageYears === null ||
+      heightCm === null ||
+      creatinineValue === null ||
+      systolic === null ||
+      diastolic === null ||
+      !consultationDate ||
+      Number.isNaN(consultationDate.getTime())
+    ) {
+      return 'Missing required inputs: age, height, creatinine, blood pressure, or consultation date.';
+    }
+
+    if (systolic < 40 || systolic > 260) {
+      return 'Systolic BP must be between 40 and 260 mmHg for eGFR AI.';
+    }
+
+    if (diastolic < 20 || diastolic > 160) {
+      return 'Diastolic BP must be between 20 and 160 mmHg for eGFR AI.';
+    }
+
+    if (systolic <= diastolic) {
+      return 'Diastolic BP must be lower than systolic BP for eGFR AI. For your test case, use something like 123/80 instead of 123/123.';
+    }
+
+    return '';
   }
 
   private buildEgfrMlPayload(): Record<string, unknown> | null {

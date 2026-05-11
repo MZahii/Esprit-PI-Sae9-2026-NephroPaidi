@@ -265,32 +265,32 @@ export class ConsultationWorkspaceService {
         category: (item?.category ?? '').trim(),
         urgency: item?.urgency ?? 'Routine',
         note: (item?.note ?? '').trim(),
-        uploadedFileNames: [...(item?.uploadedFileNames ?? [])]
+        uploadedFileNames: [...(item?.uploadedFileNames ?? [])],
+        status: item?.status
       }))
       .filter((item) => item.test.length > 0);
 
-    const existingRequestId = normalized.find((item) => item.backendRequestId)?.backendRequestId;
-    const highestUrgency = this.pickHighestUrgency(normalized.map((item) => item.urgency));
+    const unsubmittedItems = normalized.filter((item) => !this.hasOpenBackendLabRequest(item));
+    const existingRequestId = normalized.find((item) => this.hasOpenBackendLabRequest(item))?.backendRequestId;
     const summaryNotes = normalized
       .map((item) => item.note ? `${item.test}: ${item.note}` : '')
       .filter((value) => value.length > 0)
       .join(' | ');
 
-    const createRequest$ = normalized.length > 0 && !existingRequestId
+    const createRequest$ = unsubmittedItems.length > 0
       ? this.api.createLabRequest({
           patientId,
           consultationId,
-          testType: normalized.map((item) => item.test).join(', '),
-          urgency: highestUrgency.toUpperCase(),
+          testType: unsubmittedItems.map((item) => item.test).join(', '),
+          urgency: this.pickHighestUrgency(unsubmittedItems.map((item) => item.urgency)).toUpperCase(),
           notes: summaryNotes || undefined,
-          testItems: normalized.map((item): ClinicalLabRequestTestItemPayload => ({
+          testItems: unsubmittedItems.map((item): ClinicalLabRequestTestItemPayload => ({
             key: item.key,
             label: item.test,
             note: item.note || undefined
           }))
         }).pipe(
-          map((response) => String(response?.id || '')),
-          catchError(() => of(''))
+          map((response) => String(response?.id || ''))
         )
       : of(existingRequestId || '');
 
@@ -304,7 +304,10 @@ export class ConsultationWorkspaceService {
       map(({ outcome, requestId }) => {
         draft.labRequests = normalized.map((item) => ({
           ...item,
-          backendRequestId: item.backendRequestId || requestId || undefined
+          backendRequestId: this.hasOpenBackendLabRequest(item)
+            ? item.backendRequestId
+            : (unsubmittedItems.some((pending) => pending.key === item.key) ? requestId || undefined : undefined),
+          status: this.hasOpenBackendLabRequest(item) ? item.status : (requestId ? 'PENDING' : item.status)
         }));
         payload.labRequests = draft.labRequests;
         this.saveLocalCopy(consultationId, payload);
@@ -497,5 +500,14 @@ export class ConsultationWorkspaceService {
     if (items.includes('STAT')) return 'STAT';
     if (items.includes('Urgent')) return 'Urgent';
     return 'Routine';
+  }
+
+  private hasOpenBackendLabRequest(item: LabRequestItem): boolean {
+    if (!item.backendRequestId) {
+      return false;
+    }
+
+    const status = String(item.status || 'PENDING').trim().toUpperCase();
+    return status === 'PENDING' || status === 'IN_PROGRESS';
   }
 }
