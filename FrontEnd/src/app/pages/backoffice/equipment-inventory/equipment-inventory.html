@@ -50,9 +50,13 @@
         <option value="ALL">All equipment</option>
       </select>
 
-      <div class="filters-actions">
-        <button class="btn btn-outline-primary" type="button" (click)="search()">Apply</button>
-        <button class="btn btn-primary" type="button" (click)="openCreate()">Add Equipment Batch</button>
+      <div class="filters-actions icon-action-row">
+        <button class="btn btn-light icon-action-btn" type="button" (click)="search()" data-ui-tooltip="Apply Filters" aria-label="Apply Filters">
+          <img src="assets/backoffice/images/auth/recherche.png" alt="" />
+        </button>
+        <button class="btn btn-light-brand icon-action-btn" type="button" (click)="openCreate()" data-ui-tooltip="Add Equipment Batch" aria-label="Add Equipment Batch">
+          <img src="assets/backoffice/images/auth/addHr.png" alt="" />
+        </button>
       </div>
     </div>
   </section>
@@ -92,9 +96,13 @@
         <input class="form-control" placeholder="Optional shared note for this batch" [(ngModel)]="form.description" />
       </label>
 
-      <div class="form-actions">
-        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createBatch()">Create Batch</button>
-        <button class="btn btn-light" type="button" [disabled]="saving" (click)="closeCreate()">Cancel</button>
+      <div class="form-actions icon-action-row">
+        <button class="btn btn-light-brand icon-action-btn" type="button" [disabled]="saving" (click)="createBatch()" data-ui-tooltip="Create Batch" aria-label="Create Batch">
+          <img src="assets/backoffice/images/auth/send.png" alt="" />
+        </button>
+        <button class="btn btn-light icon-action-btn" type="button" [disabled]="saving" (click)="closeCreate()" data-ui-tooltip="Cancel" aria-label="Cancel">
+          <img src="assets/backoffice/images/auth/back.png" alt="" />
+        </button>
       </div>
     </div>
   </section>
@@ -106,7 +114,9 @@
           <div class="group-title">{{ groupLabel(group) }}</div>
           <div class="group-subtitle">{{ group.count }} item(s)</div>
         </div>
-        <button class="btn btn-outline-primary btn-sm" type="button" (click)="openGroupDetails(group)">View Details</button>
+        <button class="btn btn-light icon-action-btn" type="button" (click)="openGroupDetails(group)" data-ui-tooltip="View Details" aria-label="View Details">
+          <img src="assets/backoffice/images/banner/details.png" alt="" />
+        </button>
       </header>
 
       <div class="group-metrics">
@@ -131,7 +141,9 @@
           <h6>{{ groupLabel(selectedGroup) }}</h6>
           <span>{{ selectedGroup.count }} item(s)</span>
         </div>
-        <button class="btn btn-light btn-sm" type="button" (click)="closeGroupDetails()">Close</button>
+        <button class="btn btn-light icon-action-btn" type="button" (click)="closeGroupDetails()" data-ui-tooltip="Close" aria-label="Close">
+          <img src="assets/backoffice/images/banner/close.png" alt="" />
+        </button>
       </div>
 
       <div class="group-modal__body">
@@ -148,7 +160,9 @@
             <select class="form-control form-control-sm" [ngModel]="item.status" (ngModelChange)="updateStatus(item, $event)">
               <option *ngFor="let status of statuses" [value]="status">{{ categoryLabel(status) }}</option>
             </select>
-            <button class="btn btn-outline-danger btn-sm" type="button" (click)="archive(item)">Archive</button>
+            <button class="btn btn-light icon-action-btn" type="button" (click)="archive(item)" data-ui-tooltip="Archive" aria-label="Archive">
+              <img src="assets/backoffice/images/banner/archive.png" alt="" />
+            </button>
           </div>
         </article>
       </div>

@@ -34,13 +34,16 @@ export class DocumentExportService {
   }
 
   private openDocument(config: DocumentExportConfig, autoPrint: boolean): void {
+    const popup = window.open('', '_blank');
+    if (!popup) {
+      window.alert('Please allow pop-ups to print or export this report.');
+      return;
+    }
+
     const html = this.buildDocumentHtml(config, autoPrint);
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const popup = window.open(url, '_blank');
-    if (!popup) return;
-    const cleanup = () => setTimeout(() => URL.revokeObjectURL(url), 10000);
-    popup.addEventListener('load', cleanup, { once: true });
+    popup.document.open();
+    popup.document.write(html);
+    popup.document.close();
   }
 
   private buildDocumentHtml(config: DocumentExportConfig, autoPrint: boolean): string {
@@ -299,7 +302,7 @@ export class DocumentExportService {
                     <img src="${logoUrl}" alt="Clinic Logo" />
                     <div>
                       <h1 class="clinic-name">NephrosPaidi Clinic</h1>
-                      <p class="clinic-meta">Hospital Management Platform • Administrative & Clinical Reports</p>
+                      <p class="clinic-meta">Hospital Management Platform - Administrative & Clinical Reports</p>
                     </div>
                   </div>
                   <h2 class="doc-title">${this.escapeHtml(config.title)}</h2>
@@ -319,7 +322,7 @@ export class DocumentExportService {
 
               <footer class="doc-footer">
                 <div class="footer-left">
-                  <span>NephrosPaidi Clinic • Confidential</span>
+                  <span>NephrosPaidi Clinic - Confidential</span>
                   <span>Prepared for administrative/clinical supervision workflows.</span>
                 </div>
                 <div class="footer-right">
@@ -393,3 +396,4 @@ export class DocumentExportService {
       .replace(/'/g, '&#039;');
   }
 }
+

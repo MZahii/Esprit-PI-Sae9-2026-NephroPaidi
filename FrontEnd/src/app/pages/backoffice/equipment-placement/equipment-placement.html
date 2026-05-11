@@ -83,7 +83,9 @@
             {{ eq.name }} ({{ eq.equipmentCode }})
           </option>
         </select>
-        <button class="btn btn-primary" type="button" [disabled]="saving || !equipmentToPlaceId" (click)="placeEquipment()">Add To Room</button>
+        <button class="btn btn-light-brand icon-action-btn" type="button" [disabled]="saving || !equipmentToPlaceId" (click)="placeEquipment()" data-ui-tooltip="Add To Room" aria-label="Add To Room">
+          <img src="assets/backoffice/images/auth/send.png" alt="" />
+        </button>
       </div>
     </section>
 
@@ -96,7 +98,9 @@
               <div class="group-title">{{ groupLabel(group) }}</div>
               <div class="group-subtitle">{{ group.count }} item(s)</div>
             </div>
-            <button class="btn btn-outline-primary btn-sm" type="button" (click)="openGroupDetails(group)">View Details</button>
+            <button class="btn btn-light icon-action-btn" type="button" (click)="openGroupDetails(group)" data-ui-tooltip="View Details" aria-label="View Details">
+              <img src="assets/backoffice/images/banner/details.png" alt="" />
+            </button>
           </header>
 
           <div class="group-metrics">
@@ -123,7 +127,9 @@
           <h6>{{ groupLabel(selectedGroup) }}</h6>
           <span>{{ selectedGroup.count }} item(s)</span>
         </div>
-        <button class="btn btn-light btn-sm" type="button" (click)="closeGroupDetails()">Close</button>
+        <button class="btn btn-light icon-action-btn" type="button" (click)="closeGroupDetails()" data-ui-tooltip="Close" aria-label="Close">
+          <img src="assets/backoffice/images/banner/close.png" alt="" />
+        </button>
       </div>
 
       <div class="group-modal__body">
@@ -138,14 +144,18 @@
               <option *ngFor="let s of statuses" [value]="s">{{ label(s) }}</option>
             </select>
             <button
-              class="btn btn-outline-warning btn-sm"
+              class="btn btn-light icon-action-btn"
               type="button"
               [disabled]="saving"
               (click)="movingEquipmentId === eq.id ? cancelMove() : startMove(eq.id)"
+              [attr.data-ui-tooltip]="movingEquipmentId === eq.id ? 'Cancel Move' : 'Move'"
+              [attr.aria-label]="movingEquipmentId === eq.id ? 'Cancel Move' : 'Move'"
             >
-              {{ movingEquipmentId === eq.id ? 'Cancel Move' : 'Move' }}
+              <img [src]="movingEquipmentId === eq.id ? 'assets/backoffice/images/auth/back.png' : 'assets/backoffice/images/banner/move.png'" alt="" />
             </button>
-            <button class="btn btn-outline-danger btn-sm" type="button" (click)="removeEquipment(eq.id)">Remove</button>
+            <button class="btn btn-light icon-action-btn" type="button" (click)="removeEquipment(eq.id)" data-ui-tooltip="Remove" aria-label="Remove">
+              <img src="assets/backoffice/images/banner/delete.png" alt="" />
+            </button>
           </div>
 
           <div class="move-inline" *ngIf="movingEquipmentId === eq.id">
@@ -154,12 +164,14 @@
               <option *ngFor="let option of moveTargetOptionsFor(eq)" [ngValue]="option.workspaceId">{{ option.label }}</option>
             </select>
             <button
-              class="btn btn-warning btn-sm"
+              class="btn btn-light-brand icon-action-btn"
               type="button"
               [disabled]="saving || !selectedMoveTargetWorkspaceId || moveTargetOptionsFor(eq).length === 0"
               (click)="confirmMove(eq)"
+              data-ui-tooltip="Confirm Move"
+              aria-label="Confirm Move"
             >
-              Confirm Move
+              <img src="assets/backoffice/images/auth/send.png" alt="" />
             </button>
           </div>
         </article>

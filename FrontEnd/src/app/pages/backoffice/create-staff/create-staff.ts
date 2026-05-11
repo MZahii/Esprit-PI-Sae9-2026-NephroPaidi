@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -23,6 +23,9 @@ interface UserRow {
   styleUrl: './create-staff.scss'
 })
 export class CreateStaff {
+  @Input() modalMode = false;
+  @Output() closeModal = new EventEmitter<void>();
+
   loading = false;
   loadingUsers = false;
   successMessage = '';
@@ -207,6 +210,11 @@ export class CreateStaff {
       this.cdr.detectChanges();
 
       setTimeout(() => {
+        if (this.modalMode) {
+          this.closeModal.emit();
+          return;
+        }
+
         this.router.navigate(['/backoffice/staff']);
       }, 1500);
     } catch (error: unknown) {
@@ -242,5 +250,14 @@ export class CreateStaff {
       this.loading = false;
       this.cdr.detectChanges();
     }
+  }
+
+  cancel(): void {
+    if (this.modalMode) {
+      this.closeModal.emit();
+      return;
+    }
+
+    this.router.navigate(['/backoffice/staff']);
   }
 }

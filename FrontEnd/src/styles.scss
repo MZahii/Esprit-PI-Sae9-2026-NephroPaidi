@@ -2047,6 +2047,33 @@ body.admin-redesign.backoffice-body .create-hr-trigger {
   color: #08243a;
 }
 
+body.admin-redesign.backoffice-body .create-hr-trigger.create-staff-trigger {
+  min-width: 58px;
+  width: 58px;
+  padding: 0;
+}
+
+body.admin-redesign.backoffice-body .role-stats-grid .role-card.visual-stat-card {
+  min-height: 300px !important;
+  display: grid !important;
+  place-items: center !important;
+  align-content: center !important;
+  text-align: center !important;
+  gap: 8px !important;
+}
+
+body.admin-redesign.backoffice-body .role-stats-grid .role-card.visual-stat-card .role-title {
+  order: 2;
+}
+
+body.admin-redesign.backoffice-body .role-stats-grid .role-card.visual-stat-card .role-total {
+  display: none !important;
+}
+
+body.admin-redesign.backoffice-body .role-stats-grid .role-card.visual-stat-card .role-line {
+  order: 3;
+}
+
 body.admin-redesign.backoffice-body .page-action-docked {
   display: inline-flex !important;
   align-items: center !important;
@@ -2261,6 +2288,28 @@ body.admin-redesign.backoffice-body .table .icon-action-btn img,
 body.admin-redesign.backoffice-body .action-stack .icon-action-btn img {
   width: 30px !important;
   height: 30px !important;
+}
+
+body.admin-redesign.backoffice-body .staff-list-page .action-stack {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+}
+
+body.admin-redesign.backoffice-body .staff-list-page .action-stack .icon-action-btn {
+  width: 40px !important;
+  max-width: 40px !important;
+  min-width: 40px !important;
+  height: 40px !important;
+  flex: 0 0 40px !important;
+}
+
+body.admin-redesign.backoffice-body .staff-list-page .action-stack .icon-action-btn img {
+  width: 28px !important;
+  height: 28px !important;
 }
 
 body.admin-redesign.backoffice-body .create-hr-backdrop {
@@ -2793,6 +2842,7 @@ body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-speed .v
 
 body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card .stats-label,
 body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card .metric-label,
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card .role-title,
 body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card.resource-overview-card span,
 body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card.role-card h6,
 body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card.kpi-card span {
@@ -2814,6 +2864,7 @@ body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card .ci
 }
 
 body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card .stats-line,
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card .role-line,
 body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card small,
 body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card p {
   max-width: 92%;
@@ -2821,6 +2872,10 @@ body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card p {
   font-weight: 800 !important;
   line-height: 1.35 !important;
   text-align: center !important;
+}
+
+body.admin-redesign.backoffice-body .statistics-modal-body .visual-stat-card .role-total + .role-line ~ .role-line {
+  display: none !important;
 }
 
 @keyframes visualStatRise {

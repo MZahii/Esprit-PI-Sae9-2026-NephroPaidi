@@ -54,7 +54,9 @@
         </select>
       </label>
 
-      <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createAssignment(activeTab)">Assign</button>
+      <button class="btn btn-light-brand icon-action-btn" type="button" [disabled]="saving" (click)="createAssignment(activeTab)" data-ui-tooltip="Assign" aria-label="Assign">
+        <img src="assets/backoffice/images/auth/send.png" alt="" />
+      </button>
     </div>
 
     <div class="card-footer note" *ngIf="activeTab==='DOCTOR'">
@@ -85,13 +87,17 @@
             <button
               *ngIf="activeTab !== 'DOCTOR'"
               type="button"
-              class="btn btn-outline-warning btn-sm"
+              class="btn btn-light icon-action-btn"
               [disabled]="saving"
               (click)="moveState[assignment.id]?.enabled ? cancelMove(assignment.id) : startMove(assignment.id)"
+              [attr.data-ui-tooltip]="moveState[assignment.id]?.enabled ? 'Cancel Move' : 'Move'"
+              [attr.aria-label]="moveState[assignment.id]?.enabled ? 'Cancel Move' : 'Move'"
             >
-              {{ moveState[assignment.id]?.enabled ? 'Cancel' : 'Move' }}
+              <img [src]="moveState[assignment.id]?.enabled ? 'assets/backoffice/images/auth/back.png' : 'assets/backoffice/images/banner/move.png'" alt="" />
             </button>
-            <button type="button" class="btn btn-outline-danger btn-sm" (click)="deleteAssignment(assignment)">Delete</button>
+            <button type="button" class="btn btn-light icon-action-btn" (click)="deleteAssignment(assignment)" data-ui-tooltip="Delete" aria-label="Delete">
+              <img src="assets/backoffice/images/banner/delete.png" alt="" />
+            </button>
           </div>
 
           <div class="move-inline" *ngIf="activeTab !== 'DOCTOR' && moveState[assignment.id]?.enabled">
@@ -101,7 +107,9 @@
                 {{ workspaceLabel(ws) }}
               </option>
             </select>
-            <button class="btn btn-warning btn-sm" type="button" [disabled]="saving" (click)="confirmMove(assignment)">Confirm Move</button>
+            <button class="btn btn-light-brand icon-action-btn" type="button" [disabled]="saving" (click)="confirmMove(assignment)" data-ui-tooltip="Confirm Move" aria-label="Confirm Move">
+              <img src="assets/backoffice/images/auth/send.png" alt="" />
+            </button>
           </div>
         </div>
       </div>

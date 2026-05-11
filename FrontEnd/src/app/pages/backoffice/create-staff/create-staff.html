@@ -1,4 +1,4 @@
-<div class="page-header">
+<div class="page-header" *ngIf="!modalMode">
   <div class="page-header-left d-flex align-items-center">
     <div class="page-header-title">
       <h5 class="m-b-10">Create Staff Account</h5>
@@ -10,7 +10,7 @@
   </div>
 </div>
 
-<div class="main-content">
+<div class="main-content" [class.modal-form-content]="modalMode">
   <div class="row justify-content-center">
     <div class="col-xxl-8 col-xl-10">
       <div class="card stretch stretch-full">
@@ -167,18 +167,28 @@
 
             </div>
 
-            <div class="d-flex gap-2 mt-3">
+            <div class="icon-action-row mt-3">
               <button
                 type="submit"
-                class="btn btn-primary"
+                class="btn btn-primary icon-action-btn"
                 [disabled]="loading || loadingUsers || staffFormRef.invalid"
+                [attr.data-ui-tooltip]="loading ? 'Creating Staff Account' : 'Create Staff Account'"
+                [attr.aria-label]="loading ? 'Creating Staff Account' : 'Create Staff Account'"
               >
-                {{ loading ? 'CREATING...' : 'CREATE STAFF ACCOUNT' }}
+                <img src="assets/backoffice/images/auth/send.png" alt="" />
+                <span class="visually-hidden">{{ loading ? 'CREATING...' : 'CREATE STAFF ACCOUNT' }}</span>
               </button>
 
-              <a routerLink="/backoffice/staff" class="btn btn-light-brand">
-                BACK TO STAFF LIST
-              </a>
+              <button
+                type="button"
+                class="btn btn-light-brand icon-action-btn"
+                (click)="cancel()"
+                data-ui-tooltip="Back to Staff List"
+                aria-label="Back to Staff List"
+              >
+                <img src="assets/backoffice/images/auth/back.png" alt="" />
+                <span class="visually-hidden">BACK TO STAFF LIST</span>
+              </button>
             </div>
           </form>
         </div>

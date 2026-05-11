@@ -14,10 +14,19 @@
   <div class="card stretch stretch-full">
     <div class="card-header d-flex align-items-center justify-content-between">
       <h5 class="card-title mb-0">My Contract Details</h5>
-      <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-light" type="button" (click)="printContract()">Print</button>
-        <button class="btn btn-sm btn-primary" type="button" (click)="exportContractPdf()">Export PDF</button>
-        <a class="btn btn-sm btn-light" [routerLink]="backRoute">Back</a>
+      <div class="contract-toolbar icon-action-row">
+        <button class="btn btn-sm btn-light icon-action-btn" type="button" (click)="printContract()" data-ui-tooltip="Print" aria-label="Print">
+          <img src="assets/backoffice/images/auth/print.png" alt="" />
+          <span class="visually-hidden">Print</span>
+        </button>
+        <button class="btn btn-sm btn-light-brand icon-action-btn" type="button" (click)="exportContractPdf()" data-ui-tooltip="Export PDF" aria-label="Export PDF">
+          <img src="assets/backoffice/images/auth/pdf.png" alt="" />
+          <span class="visually-hidden">Export PDF</span>
+        </button>
+        <a class="btn btn-sm btn-light icon-action-btn" [routerLink]="backRoute" data-ui-tooltip="Back" aria-label="Back">
+          <img src="assets/backoffice/images/auth/back.png" alt="" />
+          <span class="visually-hidden">Back</span>
+        </a>
       </div>
     </div>
 

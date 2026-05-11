@@ -112,6 +112,13 @@
     justify-content: flex-end;
   }
 
+  .icon-action-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+  }
+
   .create-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(180px, 1fr));
@@ -128,6 +135,21 @@
     display: flex;
     gap: 8px;
     justify-content: flex-end;
+  }
+
+  .icon-action-btn {
+    width: 70px !important;
+    min-width: 70px !important;
+    max-width: 70px !important;
+    height: 46px !important;
+    padding: 3px !important;
+  }
+
+  .icon-action-btn img {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 50%;
+    object-fit: cover;
   }
 
   .grouped-grid {

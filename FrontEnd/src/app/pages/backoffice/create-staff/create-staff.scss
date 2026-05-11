@@ -5,6 +5,28 @@
   margin-bottom: 30px;
 }
 
+.modal-form-content {
+  padding: 0;
+}
+
+.modal-form-content .row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.modal-form-content .col-xxl-8,
+.modal-form-content .col-xl-10 {
+  width: 100%;
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.modal-form-content .card {
+  border: 0;
+  box-shadow: none;
+}
+
 .phone-group {
   display: flex;
   align-items: center;
@@ -28,4 +50,27 @@
   border: none;
   border-radius: 0;
   box-shadow: none;
+}
+
+.icon-action-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
+.icon-action-row .icon-action-btn {
+  width: 70px !important;
+  max-width: 70px !important;
+  min-width: 70px !important;
+  height: 52px !important;
+  padding: 3px !important;
+  border-radius: 10px !important;
+}
+
+.icon-action-row .icon-action-btn img {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 50%;
+  object-fit: cover;
 }

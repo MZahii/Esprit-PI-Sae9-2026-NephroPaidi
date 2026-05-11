@@ -7,6 +7,30 @@
   gap: 12px;
 }
 
+.contract-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.contract-toolbar .icon-action-btn {
+  width: 70px !important;
+  max-width: 70px !important;
+  min-width: 70px !important;
+  height: 52px !important;
+  padding: 3px !important;
+  border-radius: 10px !important;
+}
+
+.contract-toolbar .icon-action-btn img {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .contract-card {
   border: 1px solid #e5e7eb;
   border-radius: 12px;

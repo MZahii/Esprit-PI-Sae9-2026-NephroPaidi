@@ -159,16 +159,30 @@
     font-weight: 700;
   }
 
+  .icon-action-btn {
+    width: 70px !important;
+    min-width: 70px !important;
+    max-width: 70px !important;
+    height: 46px !important;
+    padding: 3px !important;
+    border-radius: 10px !important;
+  }
+
+  .icon-action-btn img {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
   .action-form {
     display: grid;
-    grid-template-columns: minmax(260px, 1fr) 160px;
+    grid-template-columns: minmax(260px, 1fr) 70px;
     gap: 12px;
     align-items: center;
 
-    .btn {
-      min-width: 0;
-      height: 48px;
-      font-weight: 700;
+    .icon-action-btn {
+      justify-self: end;
     }
   }
 
@@ -306,7 +320,7 @@
   .move-inline {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: minmax(220px, 1fr) 150px;
+    grid-template-columns: minmax(220px, 1fr) 70px;
     gap: 10px;
     align-items: center;
     padding: 10px;

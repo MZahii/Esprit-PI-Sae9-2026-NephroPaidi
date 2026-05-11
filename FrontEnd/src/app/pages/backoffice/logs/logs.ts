@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -72,7 +72,7 @@ interface UserLogGroup {
   templateUrl: './logs.html',
   styleUrl: './logs.scss'
 })
-export class LogsComponent implements OnInit {
+export class LogsComponent implements OnInit, AfterViewInit, OnDestroy {
   loading = false;
   errorMessage = '';
   search = '';
@@ -83,16 +83,28 @@ export class LogsComponent implements OnInit {
   pageSize = 5;
   readonly pageSizeOptions = [5, 8, 12, 20];
   expandedGroups = new Set<string>();
+  private readonly nativeGroupToolClick = (event: Event) => this.handleNativeGroupToolClick(event);
+  private lastGroupToolPointerActionAt = 0;
 
   constructor(
     private http: HttpClient,
     private cdr: ChangeDetectorRef,
+    private elementRef: ElementRef<HTMLElement>,
+    private ngZone: NgZone,
     private authStorage: AuthStorageService,
     private documentExportService: DocumentExportService
   ) {}
 
   ngOnInit(): void {
     this.loadLogs();
+  }
+
+  ngAfterViewInit(): void {
+    this.elementRef.nativeElement.addEventListener('click', this.nativeGroupToolClick, true);
+  }
+
+  ngOnDestroy(): void {
+    this.elementRef.nativeElement.removeEventListener('click', this.nativeGroupToolClick, true);
   }
 
   get filteredLogs(): UnifiedLog[] {
@@ -155,12 +167,72 @@ export class LogsComponent implements OnInit {
     return this.expandedGroups.has(groupKey);
   }
 
-  toggleGroup(groupKey: string): void {
-    if (this.expandedGroups.has(groupKey)) {
-      this.expandedGroups.delete(groupKey);
-    } else {
-      this.expandedGroups.add(groupKey);
+  handleGroupToolClick(group: UserLogGroup, event: Event): void {
+    if (Date.now() - this.lastGroupToolPointerActionAt < 450) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
     }
+    this.runGroupToolAction(group, event);
+  }
+
+  handleGroupToolPointerDown(group: UserLogGroup, event: PointerEvent): void {
+    if (event.button !== 0) return;
+    const handled = this.runGroupToolAction(group, event);
+    if (handled) {
+      this.lastGroupToolPointerActionAt = Date.now();
+    }
+  }
+
+  private runGroupToolAction(group: UserLogGroup, event: Event): boolean {
+    const target = event.target as HTMLElement | null;
+    const button = target?.closest<HTMLButtonElement>('button[data-log-action]');
+    if (!button) return false;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const action = button.dataset['logAction'];
+    if (action === 'print') {
+      this.printUserLogs(group);
+      return true;
+    }
+    if (action === 'pdf') {
+      this.exportUserPdf(group);
+      return true;
+    }
+    if (action === 'toggle') {
+      this.toggleGroup(group.key);
+      return true;
+    }
+    return false;
+  }
+
+  private handleNativeGroupToolClick(event: Event): void {
+    const target = event.target as HTMLElement | null;
+    const button = target?.closest<HTMLButtonElement>('button[data-log-action]');
+    if (!button || !this.elementRef.nativeElement.contains(button)) return;
+
+    const groupKey = button.closest<HTMLElement>('.group-tools')?.dataset['groupKey'];
+    const group = this.groupedLogs.find((item) => item.key === groupKey);
+    if (!group) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.ngZone.run(() => this.handleGroupToolClick(group, event));
+  }
+
+  toggleGroup(groupKey: string, event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const nextExpandedGroups = new Set(this.expandedGroups);
+    if (this.expandedGroups.has(groupKey)) {
+      nextExpandedGroups.delete(groupKey);
+    } else {
+      nextExpandedGroups.add(groupKey);
+    }
+    this.expandedGroups = nextExpandedGroups;
+    this.cdr.detectChanges();
   }
 
   get totalPages(): number {
@@ -212,11 +284,13 @@ export class LogsComponent implements OnInit {
   }
 
   printUserLogs(group: UserLogGroup, event?: Event): void {
+    event?.preventDefault();
     event?.stopPropagation();
     this.documentExportService.printDocument(this.buildUserExportConfig(group));
   }
 
   exportUserPdf(group: UserLogGroup, event?: Event): void {
+    event?.preventDefault();
     event?.stopPropagation();
     this.documentExportService.exportPdf(this.buildUserExportConfig(group));
   }

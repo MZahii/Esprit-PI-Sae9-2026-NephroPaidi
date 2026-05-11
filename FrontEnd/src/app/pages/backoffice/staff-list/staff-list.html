@@ -10,7 +10,7 @@
   </div>
 </div>
 
-<div class="main-content">
+<div class="main-content staff-list-page">
   <div class="row">
     <div class="col-12">
       <div class="card stretch stretch-full">
@@ -24,67 +24,6 @@
           </div>
           <div *ngIf="actionMessage" class="alert alert-success mb-3">
             {{ actionMessage }}
-          </div>
-
-          <div class="quick-filters mb-3" *ngIf="!loading">
-            <button type="button" class="btn btn-sm btn-light-brand" (click)="applyQuickFilter('PENDING_WITHOUT_CONTRACT')">
-              Pending Without Contract
-            </button>
-            <button type="button" class="btn btn-sm btn-light" (click)="applyQuickFilter('NO_RUNNING_CONTRACT')">
-              No Running Contract
-            </button>
-            <button type="button" class="btn btn-sm btn-light" (click)="applyQuickFilter('INACTIVE')">
-              Inactive Accounts
-            </button>
-            <button type="button" class="btn btn-sm btn-light" (click)="applyQuickFilter('ARCHIVED')">
-              Archived In Session
-            </button>
-            <button
-              *ngIf="hasActiveFilters"
-              type="button"
-              class="btn btn-sm btn-outline-secondary"
-              (click)="resetFilters()"
-            >
-              Reset Filters
-            </button>
-          </div>
-
-          <div class="hr-summary-grid mb-3" *ngIf="!loading">
-            <div class="hr-summary-card primary">
-              <div>
-                <div class="stats-label">Total Staff</div>
-                <div class="stats-value" appCountUp>{{ totalStaff }}</div>
-              </div>
-              <div class="summary-lines">
-                <span>{{ activeStaff }} active</span>
-                <span>{{ pendingStaff }} pending</span>
-                <span>{{ inactiveStaff }} inactive</span>
-              </div>
-            </div>
-
-            <div class="hr-summary-card chart-card">
-              <div class="stats-label">Account Health</div>
-              <div class="circle-wrap" [style.background]="circleStyle(toPercent(activeStaff, totalStaff), '#2563eb')">
-                <div class="circle-value" appCountUp>{{ toPercent(activeStaff, totalStaff) }}%</div>
-              </div>
-              <div class="chart-legend">Active accounts</div>
-            </div>
-
-            <div class="hr-summary-card chart-card">
-              <div class="stats-label">Contract Coverage</div>
-              <div class="circle-wrap" [style.background]="circleStyle(toPercent(withContractStaff, totalStaff), '#14b8a6')">
-                <div class="circle-value" appCountUp>{{ toPercent(withContractStaff, totalStaff) }}%</div>
-              </div>
-              <div class="chart-legend">{{ withContractStaff }} with / {{ withoutContractStaff }} without</div>
-            </div>
-
-            <div class="hr-summary-card chart-card">
-              <div class="stats-label">Access Enabled</div>
-              <div class="circle-wrap" [style.background]="circleStyle(toPercent(enabledStaff, totalStaff), '#22c55e')">
-                <div class="circle-value" appCountUp>{{ toPercent(enabledStaff, totalStaff) }}%</div>
-              </div>
-              <div class="chart-legend">{{ enabledStaff }} enabled / {{ disabledStaff }} disabled</div>
-            </div>
           </div>
 
           <div class="role-stats-grid mb-3" *ngIf="!loading">
@@ -115,7 +54,7 @@
             <input
               type="text"
               class="form-control"
-              placeholder="Search by username, full name, CIN, email, phone, role, contract reference, job title, or state..."
+              placeholder="Search by username, full name, CIN, phone, role, contract reference, job title, or state..."
               [(ngModel)]="searchTerm"
               (ngModelChange)="onFiltersChanged()"
             />
@@ -174,7 +113,6 @@
               <thead>
                 <tr>
                   <th>Username</th>
-                  <th>Email</th>
                   <th>Role</th>
                   <th>Account Status</th>
                   <th>Enabled</th>
@@ -187,7 +125,6 @@
                 <ng-container *ngFor="let user of paginatedStaff">
                   <tr>
                     <td>{{ user.username }}</td>
-                    <td>{{ user.email || '-' }}</td>
                     <td>{{ user.role }}</td>
                     <td>
                       <span class="status-pill" [ngClass]="statusClass(user.accountStatus)">
@@ -268,7 +205,7 @@
                   </tr>
                 </ng-container>
                 <tr *ngIf="paginatedStaff.length === 0">
-                  <td colspan="9" class="text-center text-muted py-4">
+                  <td colspan="7" class="text-center text-muted py-4">
                     {{ emptyStateMessage }}
                   </td>
                 </tr>

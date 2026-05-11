@@ -55,17 +55,22 @@
               <div class="group-meta">Latest event: {{ group.latestAt | date:'yyyy-MM-dd HH:mm:ss' }}</div>
             </div>
 
-            <div class="group-tools">
+            <div
+              class="group-tools"
+              [attr.data-group-key]="group.key"
+              (pointerdown)="handleGroupToolPointerDown(group, $event)"
+              (click)="handleGroupToolClick(group, $event)"
+            >
               <span class="group-pill">{{ group.totalLogs }} events</span>
               <span class="group-pill source-account">{{ group.accountLogs }} account</span>
               <span class="group-pill source-contract">{{ group.contractLogs }} contract</span>
-              <button class="icon-command icon-command--small" type="button" (click)="printUserLogs(group, $event)" data-ui-tooltip="Print User" aria-label="Print User">
+              <button class="icon-command icon-command--small" type="button" data-log-action="print" data-ui-tooltip="Print User" aria-label="Print User">
                 <img src="assets/backoffice/images/auth/print.png" alt="" />
               </button>
-              <button class="icon-command icon-command--small" type="button" (click)="exportUserPdf(group, $event)" data-ui-tooltip="Export User PDF" aria-label="Export User PDF">
+              <button class="icon-command icon-command--small" type="button" data-log-action="pdf" data-ui-tooltip="Export User PDF" aria-label="Export User PDF">
                 <img src="assets/backoffice/images/auth/pdf.png" alt="" />
               </button>
-              <button class="icon-command icon-command--small" type="button" (click)="toggleGroup(group.key)" [attr.data-ui-tooltip]="isGroupExpanded(group.key) ? 'Hide Details' : 'Show Details'" [attr.aria-label]="isGroupExpanded(group.key) ? 'Hide Details' : 'Show Details'">
+              <button class="icon-command icon-command--small" type="button" data-log-action="toggle" [attr.data-ui-tooltip]="isGroupExpanded(group.key) ? 'Hide Details' : 'Show Details'" [attr.aria-label]="isGroupExpanded(group.key) ? 'Hide Details' : 'Show Details'">
                 <img [src]="isGroupExpanded(group.key) ? 'assets/backoffice/images/banner/hide.png' : 'assets/backoffice/images/banner/show.png'" alt="" />
               </button>
             </div>

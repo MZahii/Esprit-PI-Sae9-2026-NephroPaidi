@@ -26,6 +26,7 @@ import { InterfacePreferencesService } from '../../core/services/interface-prefe
 import { environment } from '../../../environments/environment';
 import { InternalStaffMessagingComponent } from '../../pages/backoffice/internal-staff-messaging/internal-staff-messaging';
 import { CreateHr } from '../../pages/backoffice/create-hr/create-hr';
+import { CreateStaff } from '../../pages/backoffice/create-staff/create-staff';
 import { CreateContract } from '../../pages/backoffice/create-contract/create-contract';
 import { StaffUserDetails } from '../../pages/backoffice/staff-user-details/staff-user-details';
 
@@ -122,7 +123,7 @@ interface FancyDateBinding {
 @Component({
   selector: 'app-backoffice-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, InternalStaffMessagingComponent, CreateHr, CreateContract, StaffUserDetails],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, InternalStaffMessagingComponent, CreateHr, CreateStaff, CreateContract, StaffUserDetails],
   templateUrl: './backoffice-layout.html',
   styleUrls: ['./backoffice-layout.scss']
 })
@@ -239,7 +240,17 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   get showCreateHrTool(): boolean {
-    return this.isAdmin && this.router.url.split('?')[0] === '/backoffice/hr-list';
+    const path = this.router.url.split('?')[0];
+    return (this.isAdmin && path === '/backoffice/hr-list')
+      || (this.isHr && path === '/backoffice/staff');
+  }
+
+  get createAccountToolLabel(): string {
+    return this.isHr ? 'Create Staff Account' : 'Create HR Account';
+  }
+
+  get isCreateStaffTool(): boolean {
+    return this.isHr && this.router.url.split('?')[0] === '/backoffice/staff';
   }
 
   get showPageToolsShell(): boolean {
@@ -367,13 +378,6 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     if (this.isHr) {
       items.push(
         {
-          key: 'createStaff',
-          label: 'Create Staff Account',
-          icon: 'feather-user-plus',
-          route: '/backoffice/create-staff',
-          exact: true
-        },
-        {
           key: 'staffAccounts',
           label: 'Staff Accounts List',
           icon: 'feather-users',
@@ -402,15 +406,6 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
         exact: true
       });
 
-      if (this.isHr) {
-        items.push({
-          key: 'createContract',
-          label: 'Create Contract',
-          icon: 'feather-plus-square',
-          route: '/backoffice/contracts/create',
-          exact: true
-        });
-      }
     }
 
     if (this.isAdmin || this.isHr) {
@@ -1668,6 +1663,26 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     });
   }
 
+  keepStatsVisuals(): void {
+    this.queueStatisticVisualRefresh();
+  }
+
+  private queueStatisticVisualRefresh(): void {
+    window.requestAnimationFrame(() => this.refreshStatisticVisualsNow());
+    [60, 180].forEach((delay) => {
+      window.setTimeout(() => this.refreshStatisticVisualsNow(), delay);
+    });
+  }
+
+  private refreshStatisticVisualsNow(): void {
+    if (this.destroyed) return;
+
+    const statsBody = this.elementRef.nativeElement.querySelector<HTMLElement>('.statistics-modal-body');
+    if (!statsBody) return;
+
+    this.enhanceStatisticVisuals(statsBody);
+  }
+
   private enhanceStatisticCard(card: HTMLElement, index: number): void {
     const label = this.extractStatisticLabel(card);
     const metric = this.extractStatisticMetric(card);
@@ -1751,13 +1766,17 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
   private findStatisticGroups(statsBody: HTMLElement): HTMLElement[] {
     const baseGroups = Array.from(
       document.querySelectorAll<HTMLElement>(
-        '.nxl-content .stats-grid, .nxl-content .kpi-grid, .nxl-content .resource-overview-grid'
+        '.nxl-content .stats-grid, .nxl-content .kpi-grid, .nxl-content .resource-overview-grid, .nxl-content .hr-summary-grid, .nxl-content .role-stats-grid'
       )
     );
 
     const roleRows = Array.from(
       document.querySelectorAll<HTMLElement>('.nxl-content .row')
-    ).filter((node) => !!node.querySelector('.role-card'));
+    ).filter((node) => {
+      const hasDirectRoleCards = !!node.querySelector(':scope > [class*="col"] .role-card');
+      const containsPageContent = !!node.querySelector('.card-body, .filters-panel, .table-responsive, table');
+      return hasDirectRoleCards && !containsPageContent;
+    });
 
     return [...baseGroups, ...roleRows].filter((node, index, all) => {
       if (all.indexOf(node) !== index) return false;
@@ -1825,7 +1844,7 @@ export class BackofficeLayoutComponent implements OnInit, AfterViewInit, OnDestr
     this.staffDetailsPanelOpen = false;
     this.statsPanelOpen = true;
     this.refreshLayoutState();
-    window.requestAnimationFrame(() => this.enhanceStatisticVisuals());
+    this.queueStatisticVisualRefresh();
   }
 
   closeStatsPanel(): void {
