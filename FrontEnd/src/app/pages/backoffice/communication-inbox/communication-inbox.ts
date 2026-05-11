@@ -284,6 +284,51 @@ export class CommunicationInboxComponent implements OnInit {
     return 'Needs doctor review';
   }
 
+  getAiUrgencyClass(item: FollowUpMessage): string {
+    switch (item.aiUrgencyLevel) {
+      case 'CRITICAL':
+        return 'bg-danger';
+      case 'HIGH':
+        return 'bg-warning text-dark';
+      case 'MEDIUM':
+        return 'bg-info text-dark';
+      case 'LOW':
+        return 'bg-success';
+      default:
+        return 'bg-light text-dark';
+    }
+  }
+
+  get showAiColumn(): boolean {
+    return this.queue !== 'RECEPTIONIST';
+  }
+
+  shouldShowAiAdvisory(item: FollowUpMessage): boolean {
+    return this.showAiColumn
+      && item.messageType === 'MEDICAL'
+      && item.aiTriageStatus !== null
+      && item.aiTriageStatus !== undefined
+      && item.aiTriageStatus !== 'SKIPPED';
+  }
+
+  shouldShowAiFailure(item: FollowUpMessage): boolean {
+    return this.shouldShowAiAdvisory(item) && item.aiTriageStatus === 'FAILED';
+  }
+
+  shouldShowAiPrediction(item: FollowUpMessage): boolean {
+    return this.shouldShowAiAdvisory(item)
+      && item.aiTriageStatus !== 'FAILED'
+      && item.aiUrgencyLevel !== null
+      && item.aiUrgencyLevel !== undefined;
+  }
+
+  formatAiConfidence(item: FollowUpMessage): string {
+    if (item.aiConfidence === null || item.aiConfidence === undefined) {
+      return '-';
+    }
+    return `${Math.round(item.aiConfidence * 100)}%`;
+  }
+
   selectTab(tab: InboxTab): void {
     this.activeTab = tab;
     this.page = 1;

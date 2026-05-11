@@ -132,6 +132,46 @@ export class CommunicationDetailsComponent implements OnInit {
     return this.replyForm.value.replyText?.length ?? 0;
   }
 
+  getAiUrgencyClass(message: FollowUpMessage): string {
+    switch (message.aiUrgencyLevel) {
+      case 'CRITICAL':
+        return 'bg-danger';
+      case 'HIGH':
+        return 'bg-warning text-dark';
+      case 'MEDIUM':
+        return 'bg-info text-dark';
+      case 'LOW':
+        return 'bg-success';
+      default:
+        return 'bg-light text-dark';
+    }
+  }
+
+  formatAiConfidence(message: FollowUpMessage): string {
+    if (message.aiConfidence === null || message.aiConfidence === undefined) {
+      return '-';
+    }
+    return `${Math.round(message.aiConfidence * 100)}%`;
+  }
+
+  shouldShowAiAdvisory(message: FollowUpMessage): boolean {
+    return message.messageType === 'MEDICAL'
+      && message.aiTriageStatus !== null
+      && message.aiTriageStatus !== undefined
+      && message.aiTriageStatus !== 'SKIPPED';
+  }
+
+  shouldShowAiFailure(message: FollowUpMessage): boolean {
+    return this.shouldShowAiAdvisory(message) && message.aiTriageStatus === 'FAILED';
+  }
+
+  shouldShowAiPrediction(message: FollowUpMessage): boolean {
+    return this.shouldShowAiAdvisory(message)
+      && message.aiTriageStatus !== 'FAILED'
+      && message.aiUrgencyLevel !== null
+      && message.aiUrgencyLevel !== undefined;
+  }
+
   private loadPatientsDirectory(): void {
     this.communicationApi.getPatientsDirectory().subscribe({
       next: (patients) => {

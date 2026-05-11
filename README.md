@@ -102,6 +102,7 @@ docker compose -p nephropaidi -f docker-compose.full.yml up -d --build eureka ke
 - Config Server: http://localhost:8888
 - Keycloak: http://localhost:8080
 - RabbitMQ Management: http://localhost:15672
+- AI Triage Service: http://localhost:8000
 
 ## 8. Testing after startup
 

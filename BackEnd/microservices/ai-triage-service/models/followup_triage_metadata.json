@@ -1,0 +1,80 @@
+{
+  "modelVersion": "followup-triage-safe-v1",
+  "trainedAt": "2026-05-06T12:53:21.708823+00:00",
+  "sklearnVersion": "1.8.0",
+  "sourceDataset": "C:\\Users\\hp\\Downloads\\data_modeling\\FollowUp_Messages_Cleaned.csv",
+  "trainingRows": 528,
+  "testRows": 133,
+  "safeFeatureContract": [
+    "message_text",
+    "subject",
+    "message_type",
+    "guardian_priority"
+  ],
+  "excludedLeakageFamilies": [
+    "assigned role",
+    "queue",
+    "status",
+    "escalation outcome",
+    "response time",
+    "read state",
+    "staff actions",
+    "previous AI intent/sentiment/confidence outputs"
+  ],
+  "labels": [
+    "LOW",
+    "MEDIUM",
+    "HIGH",
+    "CRITICAL"
+  ],
+  "metrics": {
+    "accuracy": 1.0,
+    "weightedF1": 1.0,
+    "macroF1": 1.0,
+    "classificationReport": {
+      "LOW": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 34.0
+      },
+      "MEDIUM": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 35.0
+      },
+      "HIGH": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 32.0
+      },
+      "CRITICAL": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 32.0
+      },
+      "accuracy": 1.0,
+      "macro avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 133.0
+      },
+      "weighted avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 133.0
+      }
+    }
+  },
+  "notes": [
+    "This artifact intentionally avoids future workflow fields.",
+    "The available dataset lacks the application's exact MessageType field; training uses OTHER.",
+    "The available dataset lacks guardian-submitted priority; training uses UNKNOWN.",
+    "Very high test metrics should be treated cautiously; the dataset may be synthetic, templated, or highly separable."
+  ]
+}

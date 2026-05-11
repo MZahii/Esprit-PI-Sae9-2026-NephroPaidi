@@ -72,6 +72,9 @@ services:
     restart: unless-stopped
     environment:
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
+      AI_TRIAGE_ENABLED: ${AI_TRIAGE_ENABLED:-true}
+      AI_TRIAGE_SERVICE_BASE_URL: ${AI_TRIAGE_SERVICE_BASE_URL:-http://ai-triage-service:8000}
+      AI_TRIAGE_TIMEOUT_MILLIS: ${AI_TRIAGE_TIMEOUT_MILLIS:-1500}
     ports:
       - "8888:8888"
     depends_on:
@@ -245,6 +248,9 @@ services:
       KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/nephrospaidi/protocol/openid-connect/certs
       USER_SERVICE_BASE_URL: http://user-service:8090
       ADMINISTRATION_SERVICE_BASE_URL: http://administration-service:8087
+      AI_TRIAGE_ENABLED: ${AI_TRIAGE_ENABLED:-true}
+      AI_TRIAGE_SERVICE_BASE_URL: ${AI_TRIAGE_SERVICE_BASE_URL:-http://ai-triage-service:8000}
+      AI_TRIAGE_TIMEOUT_MILLIS: ${AI_TRIAGE_TIMEOUT_MILLIS:-1500}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-my-super-secret-internal-key}
       ENVIRONMENT: docker
     ports:
@@ -262,6 +268,26 @@ services:
         condition: service_healthy
     cpus: "0.60"
     mem_limit: "640m"
+    networks:
+      - nephro-net
+
+  ai-triage-service:
+    build:
+      context: ./BackEnd/microservices/ai-triage-service
+    container_name: nephro-ai-triage-service
+    restart: unless-stopped
+    environment:
+      AI_TRIAGE_MODEL_PATH: ${AI_TRIAGE_MODEL_PATH:-/app/models/followup_triage.joblib}
+      AI_TRIAGE_MODEL_VERSION: ${AI_TRIAGE_MODEL_VERSION:-followup-triage-safe-v1}
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    cpus: "0.50"
+    mem_limit: "512m"
     networks:
       - nephro-net
 
@@ -511,8 +537,8 @@ services:
     depends_on:
       api-gateway:
         condition: service_healthy
-    cpus: "0.50"
-    mem_limit: "512m"
+    cpus: "1.0"
+    mem_limit: 2g
     networks:
       - nephro-net
 

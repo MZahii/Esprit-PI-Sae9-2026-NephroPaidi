@@ -7,7 +7,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "duralux-admin": {
+    "nephropaidi-frontend": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -76,10 +76,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "duralux-admin:build:production"
+              "buildTarget": "nephropaidi-frontend:build:production"
             },
             "development": {
-              "buildTarget": "duralux-admin:build:development"
+              "buildTarget": "nephropaidi-frontend:build:development"
             }
           },
           "defaultConfiguration": "development"

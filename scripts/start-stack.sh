@@ -35,7 +35,8 @@ wait_url "http://localhost:8888/actuator/health" 300
 wait_url "http://localhost:8080/realms/master/.well-known/openid-configuration" 300
 
 echo "Step 2/4: starting backend microservices (without gateway/frontend)..."
-docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" up -d --build user-service administration-service communication-service clinical-service ops-service core-ops-service pharmacy-service procedure-service
+docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" up -d --build ai-triage-service user-service administration-service communication-service clinical-service ops-service core-ops-service pharmacy-service procedure-service
+wait_url "http://localhost:8000/health" 300
 wait_url "http://localhost:8090/actuator/health" 300
 wait_url "http://localhost:8087/actuator/health" 300
 

@@ -37,3 +37,9 @@ management:
     web:
       exposure:
         include: health,info,metrics,prometheus
+
+ai:
+  triage:
+    enabled: ${AI_TRIAGE_ENABLED:true}
+    base-url: ${AI_TRIAGE_SERVICE_BASE_URL:http://localhost:8000}
+    timeout-millis: ${AI_TRIAGE_TIMEOUT_MILLIS:1500}
