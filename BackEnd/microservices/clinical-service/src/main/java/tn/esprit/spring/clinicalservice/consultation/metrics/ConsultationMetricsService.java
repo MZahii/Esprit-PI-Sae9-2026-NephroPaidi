@@ -60,6 +60,12 @@ public class ConsultationMetricsService {
             metrics.setWeightKg(request.getWeightKg());
             metrics.setAgeYears(request.getAgeYears());
             metrics.setPatientSex(request.getSex());
+            metrics.setSystolicBpMmHg(request.getSystolicBpMmHg());
+            metrics.setDiastolicBpMmHg(request.getDiastolicBpMmHg());
+            metrics.setHeartRateBpm(request.getHeartRateBpm());
+            metrics.setRespiratoryRateBpm(request.getRespiratoryRateBpm());
+            metrics.setTemperatureC(request.getTemperatureC());
+            metrics.setOxygenSaturationPct(request.getOxygenSaturationPct());
 
             // ============================================================
             // Pediatric-first eGFR calculation
@@ -322,6 +328,12 @@ public class ConsultationMetricsService {
                 .weightKg(metrics.getWeightKg())
                 .ageYears(metrics.getAgeYears())
                 .sex(metrics.getPatientSex())
+                .systolicBpMmHg(metrics.getSystolicBpMmHg())
+                .diastolicBpMmHg(metrics.getDiastolicBpMmHg())
+                .heartRateBpm(metrics.getHeartRateBpm())
+                .respiratoryRateBpm(metrics.getRespiratoryRateBpm())
+                .temperatureC(metrics.getTemperatureC())
+                .oxygenSaturationPct(metrics.getOxygenSaturationPct())
                 
                 // Serum creatinine (both units)
                 .creatinineMgDl(metrics.getCreatinineMgDl())

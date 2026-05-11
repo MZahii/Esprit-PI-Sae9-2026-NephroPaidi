@@ -132,6 +132,45 @@
   padding-bottom: 18px;
 }
 
+.tracking-shortcut-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 24px;
+  border: 1px solid color-mix(in srgb, var(--default-color, #4f5d75) 10%, transparent);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.tracking-shortcut-copy h3 {
+  margin: 8px 0 10px;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--heading-color, #183b56);
+}
+
+.tracking-shortcut-copy p {
+  margin: 0;
+  color: var(--default-color, #4f5d75);
+  line-height: 1.8;
+  max-width: 760px;
+}
+
+.shortcut-kicker {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-color, #e61e62) 8%, white);
+  color: var(--accent-color, #e61e62);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .patient-loading,
 .patient-error,
 .empty-state {
@@ -439,6 +478,11 @@
   .info-box,
   .cta-box {
     padding: 24px;
+  }
+
+  .tracking-shortcut-card {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 

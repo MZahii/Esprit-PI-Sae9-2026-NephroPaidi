@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { ClinicalApiService, ConsultationMetricsRequest } from '../../../core/services/clinical-api.service';
+import { ClinicalApiService, ClinicalLabRequestTestItemPayload, ConsultationMetricsRequest } from '../../../core/services/clinical-api.service';
 
 export interface SoapNotes {
   subjective: string;
@@ -19,9 +19,23 @@ export interface DiagnosisItem {
 
 export interface LabRequestItem {
   backendRequestId?: string;
+  key?: string;
   test: string;
+  category?: string;
   urgency: 'Routine' | 'Urgent' | 'STAT';
   note?: string;
+  uploadedFileNames?: string[];
+  status?: string;
+  latestAiSummary?: string;
+  latestAiRecommendation?: string;
+  latestResultFileName?: string;
+  latestResultUploadedAt?: string;
+  latestResultAvailable?: boolean;
+}
+
+export interface LabRequestSubmitResult {
+  ok: boolean;
+  requestId?: string;
 }
 
 export interface PrescriptionItem {
@@ -43,6 +57,10 @@ export interface ConsultationMetrics {
   ageYears?: number;
   systolicBpMmHg?: number;
   diastolicBpMmHg?: number;
+  heartRateBpm?: number;
+  respiratoryRateBpm?: number;
+  temperatureC?: number;
+  oxygenSaturationPct?: number;
   sex?: string;
   creatinineUmol?: number;
   serumCreatinineUnit?: string;
@@ -237,56 +255,67 @@ export class ConsultationWorkspaceService {
   }
 
   /** Send lab request lines to clinical outcome (explicit action, not part of Save Draft). */
-  submitLabRequests(consultationId: string, patientId: number, draft: ConsultationWorkspaceDraft): Observable<boolean> {
+  submitLabRequests(consultationId: string, patientId: number, draft: ConsultationWorkspaceDraft): Observable<LabRequestSubmitResult> {
     const payload = { ...draft, updatedAt: new Date().toISOString() };
     const normalized = (draft.labRequests ?? [])
       .map((item) => ({
         backendRequestId: item.backendRequestId,
+        key: item?.key?.trim() || this.toItemKey(item?.test ?? ''),
         test: (item?.test ?? '').trim(),
+        category: (item?.category ?? '').trim(),
         urgency: item?.urgency ?? 'Routine',
-        note: (item?.note ?? '').trim()
+        note: (item?.note ?? '').trim(),
+        uploadedFileNames: [...(item?.uploadedFileNames ?? [])]
       }))
       .filter((item) => item.test.length > 0);
 
-    const createRequests = normalized
-      .filter((item) => !item.backendRequestId)
-      .map((item) =>
-        this.api.createLabRequest({
+    const existingRequestId = normalized.find((item) => item.backendRequestId)?.backendRequestId;
+    const highestUrgency = this.pickHighestUrgency(normalized.map((item) => item.urgency));
+    const summaryNotes = normalized
+      .map((item) => item.note ? `${item.test}: ${item.note}` : '')
+      .filter((value) => value.length > 0)
+      .join(' | ');
+
+    const createRequest$ = normalized.length > 0 && !existingRequestId
+      ? this.api.createLabRequest({
           patientId,
           consultationId,
-          testType: item.test,
-          urgency: item.urgency.toUpperCase(),
-          notes: item.note
+          testType: normalized.map((item) => item.test).join(', '),
+          urgency: highestUrgency.toUpperCase(),
+          notes: summaryNotes || undefined,
+          testItems: normalized.map((item): ClinicalLabRequestTestItemPayload => ({
+            key: item.key,
+            label: item.test,
+            note: item.note || undefined
+          }))
         }).pipe(
-          map((response) => ({ ...item, backendRequestId: response?.id })),
-          catchError(() => of(item))
+          map((response) => String(response?.id || '')),
+          catchError(() => of(''))
         )
-      );
+      : of(existingRequestId || '');
 
     return forkJoin({
       outcome: this.api.updateConsultationLabRequests(consultationId, this.serializeLabRequests(normalized)).pipe(
         map(() => true),
         catchError(() => of(false))
       ),
-      created: createRequests.length ? forkJoin(createRequests) : of([])
+      requestId: createRequest$
     }).pipe(
-      map(({ outcome, created }) => {
-        if (created.length) {
-          const createdByTest = new Map(created.map((item) => [`${item.test}|${item.note}|${item.urgency}`, item.backendRequestId]));
-          draft.labRequests = normalized.map((item) => ({
-            ...item,
-            backendRequestId: item.backendRequestId ?? createdByTest.get(`${item.test}|${item.note}|${item.urgency}`)
-          }));
-        } else {
-          draft.labRequests = normalized;
-        }
+      map(({ outcome, requestId }) => {
+        draft.labRequests = normalized.map((item) => ({
+          ...item,
+          backendRequestId: item.backendRequestId || requestId || undefined
+        }));
         payload.labRequests = draft.labRequests;
         this.saveLocalCopy(consultationId, payload);
-        return outcome;
+        return {
+          ok: outcome,
+          requestId: requestId || undefined
+        };
       }),
       catchError(() => {
         this.saveLocalCopy(consultationId, payload);
-        return of(false);
+        return of({ ok: false });
       })
     );
   }
@@ -334,9 +363,12 @@ export class ConsultationWorkspaceService {
       (items ?? [])
           .map((item) => ({
             backendRequestId: item.backendRequestId,
+            key: item?.key?.trim() || this.toItemKey(item?.test ?? ''),
             test: (item?.test ?? '').trim(),
+            category: (item?.category ?? '').trim(),
             urgency: item?.urgency ?? 'Routine',
-            note: (item?.note ?? '').trim()
+            note: (item?.note ?? '').trim(),
+            uploadedFileNames: [...(item?.uploadedFileNames ?? [])]
           }))
         .filter((item) => item.test.length > 0)
     );
@@ -377,6 +409,10 @@ export class ConsultationWorkspaceService {
     if (Number.isFinite(Number(metrics?.ageYears))) normalized.ageYears = Number(metrics?.ageYears);
     if (Number.isFinite(Number(metrics?.systolicBpMmHg))) normalized.systolicBpMmHg = Number(metrics?.systolicBpMmHg);
     if (Number.isFinite(Number(metrics?.diastolicBpMmHg))) normalized.diastolicBpMmHg = Number(metrics?.diastolicBpMmHg);
+    if (Number.isFinite(Number(metrics?.heartRateBpm))) normalized.heartRateBpm = Number(metrics?.heartRateBpm);
+    if (Number.isFinite(Number(metrics?.respiratoryRateBpm))) normalized.respiratoryRateBpm = Number(metrics?.respiratoryRateBpm);
+    if (Number.isFinite(Number(metrics?.temperatureC))) normalized.temperatureC = Number(metrics?.temperatureC);
+    if (Number.isFinite(Number(metrics?.oxygenSaturationPct))) normalized.oxygenSaturationPct = Number(metrics?.oxygenSaturationPct);
 
     if (metrics?.sex) normalized.sex = metrics.sex;
 
@@ -421,6 +457,10 @@ export class ConsultationWorkspaceService {
         ageYears: undefined,
         systolicBpMmHg: undefined,
         diastolicBpMmHg: undefined,
+        heartRateBpm: undefined,
+        respiratoryRateBpm: undefined,
+        temperatureC: undefined,
+        oxygenSaturationPct: undefined,
         sex: undefined,
         creatinineUmol: undefined,
         serumCreatinineUnit: undefined,
@@ -443,5 +483,19 @@ export class ConsultationWorkspaceService {
 
   private storageKey(consultationId: string): string {
     return `clinical_workspace_${consultationId}`;
+  }
+
+  private toItemKey(label: string): string {
+    return String(label ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
+
+  private pickHighestUrgency(items: Array<'Routine' | 'Urgent' | 'STAT'>): 'Routine' | 'Urgent' | 'STAT' {
+    if (items.includes('STAT')) return 'STAT';
+    if (items.includes('Urgent')) return 'Urgent';
+    return 'Routine';
   }
 }

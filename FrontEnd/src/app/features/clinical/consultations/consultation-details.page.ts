@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ClinicalApiService } from '../../../core/services/clinical-api.service';
 import { ConsultationWorkspaceService, ConsultationWorkspaceDraft } from './consultation-workspace.service';
+import { ConsultationMedicalDossier } from '../models/clinical.models';
 
 @Component({
   selector: 'app-consultation-details',
@@ -15,10 +16,13 @@ export class ConsultationDetailsPage implements OnInit {
   consultationId = '';
   consultation: any | null = null;
   draft: ConsultationWorkspaceDraft | null = null;
+  medicalDossier: ConsultationMedicalDossier | null = null;
   returnUrl: string | null = null;
 
   loading = false;
+  dossierLoading = false;
   error = '';
+  dossierError = '';
 
   // Expose Number for template usage
   readonly Number = Number;
@@ -47,12 +51,16 @@ export class ConsultationDetailsPage implements OnInit {
     this.api.getConsultation(this.consultationId).subscribe({
       next: (item) => {
         this.consultation = item;
+        this.loadMedicalDossier();
         this.loadDraft();
       },
       error: () => {
         this.api.listMyConsultations().subscribe({
           next: (items) => {
             this.consultation = (items || []).find(c => c.id === this.consultationId) || null;
+            if (this.consultation) {
+              this.loadMedicalDossier();
+            }
             this.loadDraft();
             if (!this.consultation) {
               this.error = 'Consultation not found.';
@@ -64,6 +72,22 @@ export class ConsultationDetailsPage implements OnInit {
             this.error = 'Failed to load consultation details.';
           }
         });
+      }
+    });
+  }
+
+  private loadMedicalDossier(): void {
+    this.dossierLoading = true;
+    this.dossierError = '';
+    this.api.getConsultationMedicalDossier(this.consultationId).subscribe({
+      next: (dossier) => {
+        this.medicalDossier = dossier;
+        this.dossierLoading = false;
+      },
+      error: () => {
+        this.medicalDossier = null;
+        this.dossierLoading = false;
+        this.dossierError = 'Unable to load the medical dossier timeline.';
       }
     });
   }
@@ -152,6 +176,47 @@ export class ConsultationDetailsPage implements OnInit {
       Number.isFinite(this.draft.metrics.creatinineMgDl) ||
       Number.isFinite(this.draft.metrics.ageYears)
     ));
+  }
+
+  get hasMedicalDossier(): boolean {
+    return !!(this.medicalDossier && (
+      (this.medicalDossier.consultations?.length ?? 0) > 0 ||
+      (this.medicalDossier.timeline?.length ?? 0) > 0
+    ));
+  }
+
+  dossierBadgeClass(kind?: string): string {
+    const normalized = String(kind || '').trim().toUpperCase();
+    if (normalized === 'CONSULTATION') return 'bg-soft-primary text-primary';
+    if (normalized === 'LAB_REQUEST') return 'bg-soft-info text-info';
+    if (normalized === 'PRESCRIPTION') return 'bg-soft-success text-success';
+    return 'bg-soft-warning text-warning';
+  }
+
+  dossierKindLabel(kind?: string): string {
+    const normalized = String(kind || '').trim().toUpperCase();
+    switch (normalized) {
+      case 'CONSULTATION': return 'Consultation';
+      case 'LAB_REQUEST': return 'Lab request';
+      case 'PRESCRIPTION': return 'Prescription';
+      case 'DISCHARGE': return 'Discharge';
+      default:
+        return String(kind || 'Event')
+          .toLowerCase()
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+  }
+
+  consultationBadgeClass(status?: string): string {
+    return this.statusBadge(status);
+  }
+
+  formatSections(value?: string | null): string[] {
+    return (value ?? '')
+      .split(/\s*\|\s*/)
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0);
   }
 
   formatDiagnosis(): string {

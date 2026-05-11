@@ -22,6 +22,16 @@ services:
     volumes:
       - ./BackEnd/keycloak/realm:/opt/keycloak/data/import
       - ./BackEnd/keycloak/themes:/opt/keycloak/themes
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "bash -lc \"exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /realms/master HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '200 OK' <&3\"",
+        ]
+      interval: 20s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
     cpus: "1.00"
     mem_limit: "1g"
     networks:
@@ -60,6 +70,15 @@ services:
       EUREKA_DEFAULT_ZONE: http://eureka:8761/eureka/
     ports:
       - "8761:8761"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8761/"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
     cpus: "0.80"
     mem_limit: "768m"
     networks:
@@ -78,7 +97,8 @@ services:
     ports:
       - "8888:8888"
     depends_on:
-      - eureka
+      eureka:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://127.0.0.1:8888/actuator/health"]
       interval: 10s
@@ -121,17 +141,27 @@ services:
       config-server:
         condition: service_healthy
       eureka:
-        condition: service_started
+        condition: service_healthy
       keycloak:
-        condition: service_started
+        condition: service_healthy
       user-service:
         condition: service_healthy
       administration-service:
         condition: service_healthy
       clinical-service:
         condition: service_healthy
+      communication-service:
+        condition: service_healthy
+      procedure-service:
+        condition: service_healthy
+      pharmacy-service:
+        condition: service_healthy
       ai-pharmacy-service:
         condition: service_healthy
+      ops-service:
+        condition: service_healthy
+      core-ops-service:
+        condition: service_started
       egfr-ml-service:
         condition: service_healthy
     healthcheck:
@@ -183,9 +213,9 @@ services:
       config-server:
         condition: service_healthy
       eureka:
-        condition: service_started
+        condition: service_healthy
       keycloak:
-        condition: service_started
+        condition: service_healthy
     cpus: "0.60"
     mem_limit: "640m"
     networks:
@@ -218,9 +248,9 @@ services:
       config-server:
         condition: service_healthy
       eureka:
-        condition: service_started
+        condition: service_healthy
       keycloak:
-        condition: service_started
+        condition: service_healthy
       user-service:
         condition: service_healthy
     healthcheck:
@@ -259,13 +289,19 @@ services:
       config-server:
         condition: service_healthy
       eureka:
-        condition: service_started
+        condition: service_healthy
       keycloak:
-        condition: service_started
+        condition: service_healthy
       user-service:
         condition: service_healthy
       administration-service:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8085/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
     cpus: "0.60"
     mem_limit: "640m"
     networks:
@@ -333,14 +369,18 @@ services:
       config-server:
         condition: service_healthy
       eureka:
-        condition: service_started
+        condition: service_healthy
       keycloak:
-        condition: service_started
+        condition: service_healthy
       user-service:
         condition: service_healthy
       administration-service:
         condition: service_healthy
       ai-clinical-service:
+        condition: service_healthy
+      communication-service:
+        condition: service_healthy
+      pharmacy-service:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
@@ -434,9 +474,15 @@ services:
       config-server:
         condition: service_healthy
       eureka:
-        condition: service_started
+        condition: service_healthy
       keycloak:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8082/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
     cpus: "0.60"
     mem_limit: "640m"
     networks:
@@ -455,7 +501,8 @@ services:
     ports:
       - "8086:8086"
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     cpus: "0.60"
     mem_limit: "640m"
     networks:
@@ -484,10 +531,24 @@ services:
     ports:
       - "8088:8088"
     depends_on:
-      - config-server
-      - eureka
-      - keycloak
-      - user-service
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "bash -lc \"echo > /dev/tcp/127.0.0.1/8088\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
     cpus: "0.60"
     mem_limit: "640m"
     networks:
@@ -519,9 +580,18 @@ services:
     ports:
       - "8089:8089"
     depends_on:
-      - config-server
-      - eureka
-      - keycloak
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8089/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
     cpus: "0.60"
     mem_limit: "640m"
     networks:

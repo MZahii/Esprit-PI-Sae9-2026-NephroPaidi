@@ -132,8 +132,90 @@
             </div>
           </div>
 
+          <div class="detail-section dossier-section" *ngIf="hasMedicalDossier || dossierLoading || dossierError">
+            <div class="dossier-header">
+              <div>
+                <h6>Medical Dossier Timeline</h6>
+                <p class="text-muted mb-0 small">
+                  Consultation history, lab requests, prescriptions, and dossier events for this patient.
+                </p>
+              </div>
+              <div class="dossier-summary" *ngIf="medicalDossier?.summary">
+                <span class="badge bg-soft-primary text-primary">{{ medicalDossier?.summary?.consultationCount || 0 }} consultations</span>
+                <span class="badge bg-soft-info text-info">{{ medicalDossier?.summary?.labRequestCount || 0 }} lab requests</span>
+                <span class="badge bg-soft-success text-success">{{ medicalDossier?.summary?.prescriptionCount || 0 }} prescriptions</span>
+                <span class="badge bg-soft-warning text-warning">{{ medicalDossier?.summary?.dossierEntryCount || 0 }} dossier events</span>
+              </div>
+            </div>
+
+            <div *ngIf="dossierLoading" class="text-muted">Loading medical dossier...</div>
+            <div *ngIf="dossierError" class="alert alert-warning mb-0">{{ dossierError }}</div>
+
+            <div *ngIf="medicalDossier?.consultations?.length" class="dossier-consultation-list">
+              <div class="dossier-consultation-card" *ngFor="let item of medicalDossier?.consultations">
+                <div class="dossier-consultation-card__head">
+                  <div>
+                    <div class="dossier-consultation-card__title">Consultation {{ item.consultationId }}</div>
+                    <div class="text-muted small">
+                      {{ item.consultationDate | date:'medium' }}
+                      <span *ngIf="item.outcomeUpdatedAt">• updated {{ item.outcomeUpdatedAt | date:'short' }}</span>
+                    </div>
+                  </div>
+                  <span class="badge" [ngClass]="consultationBadgeClass(item.status)">{{ statusLabel(item.status) }}</span>
+                </div>
+
+                <div class="dossier-consultation-card__body">
+                  <div *ngIf="item.notes">
+                    <strong>Notes</strong>
+                    <p>{{ item.notes }}</p>
+                  </div>
+                  <div *ngIf="item.diagnosis">
+                    <strong>Diagnosis</strong>
+                    <p>{{ item.diagnosis }}</p>
+                  </div>
+                  <div *ngIf="item.treatmentPlan">
+                    <strong>Treatment plan</strong>
+                    <p>{{ item.treatmentPlan }}</p>
+                  </div>
+
+                  <div class="dossier-subgrid" *ngIf="item.labRequests?.length || item.prescriptions?.length">
+                    <div class="dossier-subcard" *ngIf="item.labRequests?.length">
+                      <h6>Lab requests</h6>
+                      <div class="dossier-document" *ngFor="let request of item.labRequests">
+                        <strong>{{ request.label }}</strong>
+                        <span>{{ request.details }}</span>
+                      </div>
+                    </div>
+                    <div class="dossier-subcard" *ngIf="item.prescriptions?.length">
+                      <h6>Prescriptions</h6>
+                      <div class="dossier-document" *ngFor="let prescription of item.prescriptions">
+                        <strong>{{ prescription.label }}</strong>
+                        <span>{{ prescription.details }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="medicalDossier?.timeline?.length" class="dossier-timeline">
+              <div class="dossier-timeline__item" *ngFor="let item of medicalDossier?.timeline">
+                <div class="dossier-timeline__marker" [ngClass]="dossierBadgeClass(item.kind)"></div>
+                <div class="dossier-timeline__content">
+                  <div class="dossier-timeline__head">
+                    <span class="badge" [ngClass]="dossierBadgeClass(item.kind)">{{ dossierKindLabel(item.kind) }}</span>
+                    <span class="text-muted small">{{ item.occurredAt | date:'medium' }}</span>
+                  </div>
+                  <div class="dossier-timeline__title">{{ item.title }}</div>
+                  <div class="text-muted small" *ngIf="item.summary">{{ item.summary }}</div>
+                  <div class="dossier-timeline__details" *ngIf="item.details">{{ item.details }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Empty state -->
-          <div *ngIf="!hasDraftData && !hasDiagnosis && !hasTreatmentPlan && !hasMetrics" class="detail-section text-muted">
+          <div *ngIf="!hasDraftData && !hasDiagnosis && !hasTreatmentPlan && !hasMetrics && !hasMedicalDossier" class="detail-section text-muted">
             <p>No clinical data has been recorded for this consultation yet.</p>
           </div>
         </div>

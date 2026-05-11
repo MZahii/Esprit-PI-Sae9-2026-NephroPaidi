@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   ClinicalApiService,
+  ClinicalLabRequestResponse,
   EgfrMlClassificationResponse,
   EgfrMlRegressionResponse
 } from '../../../core/services/clinical-api.service';
@@ -17,8 +18,43 @@ import {
 } from './consultation-workspace.service';
 import { Subscription, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
+import { EncounterHeaderComponent } from './components/encounter-header.component';
+import { PatientSnapshotCardComponent } from './components/patient-snapshot-card.component';
+import { ClinicalAssessmentFormComponent } from './components/clinical-assessment-form.component';
+import { RenalMetricsPanelComponent } from './components/renal-metrics-panel.component';
+import { ClinicalAlertCenterComponent } from './components/clinical-alert-center.component';
+import { DispositionPanelComponent } from './components/disposition-panel.component';
+import { FollowUpRequestDialogComponent } from './components/follow-up-request-dialog.component';
+import { HospitalizationActionDialogComponent } from './components/hospitalization-action-dialog.component';
+import { MedicationReviewPanelComponent } from './components/medication-review-panel.component';
+import { LabOrdersPanelComponent } from './components/lab-orders-panel.component';
+import {
+  ClinicalAlertViewModel,
+  ConsultationSummaryViewModel,
+  DispositionState,
+  FollowUpDecisionDraft,
+  HospitalizationLaunchDraft,
+  LabOrdersViewModel,
+  MedicationReviewViewModel,
+  PatientSnapshotViewModel,
+  RenalMetricsViewModel
+} from './consultation-workspace.models';
+import {
+  Consultation,
+  ConsultationOutcomeResponse,
+  PatientProfile
+} from '../models/clinical.models';
 
-type WorkspaceTab = 'notes' | 'diagnosis' | 'plan' | 'labs' | 'prescriptions' | 'adherence';
+type WorkspaceTab = 'overview' | 'assessment' | 'orders' | 'medications' | 'review';
+type WorkspaceDialog = 'patient-profile' | 'alert-center' | 'follow-up' | 'medication-review' | null;
+type WorkflowSectionKey =
+  | 'patient-context'
+  | 'vitals'
+  | 'nephrology'
+  | 'hospitalization'
+  | 'discharge'
+  | 'alerts'
+  | 'review';
 
 interface EgfrTrendPoint {
   consultationId: string;
@@ -35,6 +71,61 @@ interface EgfrMlPredictionState {
   classification: EgfrMlClassificationResponse | null;
   payloadPreview: Record<string, unknown> | null;
 }
+
+interface WorkflowSection {
+  key: WorkflowSectionKey;
+  label: string;
+  hint: string;
+}
+
+interface LabRequestFileSelection {
+  testKey: string;
+  testLabel: string;
+  files: File[];
+}
+
+interface ClinicalHistoryConsultationItem {
+  id: string;
+  dateTime: string;
+  status?: string;
+  diagnosisSummary: string;
+}
+
+interface ClinicalHistoryLabItem {
+  consultationId?: string;
+  requestId: string;
+  title: string;
+  urgency: string;
+  status: string;
+  createdAt?: string;
+  latestResultFileName?: string;
+  latestResultUploadedAt?: string;
+  latestAiSummary?: string;
+}
+
+type WorkflowIntakeForm = FormGroup<{
+  ageYears: FormControl<number | null>;
+  sex: FormControl<string>;
+  heightCm: FormControl<number | null>;
+  weightKg: FormControl<number | null>;
+  systolicBpMmHg: FormControl<number | null>;
+  diastolicBpMmHg: FormControl<number | null>;
+  heartRateBpm: FormControl<number | null>;
+  respiratoryRateBpm: FormControl<number | null>;
+  temperatureC: FormControl<number | null>;
+  oxygenSaturationPct: FormControl<number | null>;
+  creatinineMgDl: FormControl<number | null>;
+}>;
+
+const WORKFLOW_SECTIONS: WorkflowSection[] = [
+  { key: 'patient-context', label: 'Patient Context', hint: 'Identity, history, allergies, and encounter framing.' },
+  { key: 'vitals', label: 'Vitals', hint: 'Anthropometrics, blood pressure, and immediate measurements.' },
+  { key: 'nephrology', label: 'Nephrology', hint: 'Creatinine, eGFR, CKD stage, and renal findings.' },
+  { key: 'hospitalization', label: 'Hospitalization', hint: 'Escalate when inpatient workflow or nurse handoff is needed.' },
+  { key: 'discharge', label: 'Discharge & Follow-up', hint: 'Plan, prescriptions, follow-up, and home instructions.' },
+  { key: 'alerts', label: 'Alerts', hint: 'Surface renal risk, adherence, and blood-pressure concerns.' },
+  { key: 'review', label: 'Review', hint: 'Generate summary and confirm the consultation is complete.' }
+];
 
 const HEIGHT_MEDIAN_BY_AGE: Record<number, number> = {
   2: 87,
@@ -199,15 +290,32 @@ const DBP_P95_BY_AGE: Record<number, number> = {
 @Component({
   selector: 'app-consultation-workspace',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    RouterLink,
+    EncounterHeaderComponent,
+    PatientSnapshotCardComponent,
+    ClinicalAssessmentFormComponent,
+    RenalMetricsPanelComponent,
+    ClinicalAlertCenterComponent,
+    DispositionPanelComponent,
+    FollowUpRequestDialogComponent,
+    HospitalizationActionDialogComponent,
+    MedicationReviewPanelComponent,
+    LabOrdersPanelComponent
+  ],
   templateUrl: './consultation-workspace.page.html',
   styleUrl: './consultation-workspace.page.scss'
 })
 export class ConsultationWorkspacePage implements OnInit, OnDestroy {
   consultationId = '';
-  consultation: any | null = null;
-  patientProfile: any | null = null;
-  history: any[] = [];
+  consultation: Consultation | null = null;
+  patientProfile: PatientProfile | null = null;
+  history: Consultation[] = [];
+  consultationHistoryCards: ClinicalHistoryConsultationItem[] = [];
+  labHistoryItems: ClinicalHistoryLabItem[] = [];
   previousEgfr: number | null = null;
   previousEgfrDate: string | null = null;
   egfrTrendPoints: EgfrTrendPoint[] = [];
@@ -230,7 +338,26 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
     payloadPreview: null
   };
 
-  activeTab: WorkspaceTab = 'notes';
+  activeTab: WorkspaceTab = 'overview';
+  activeWorkflowSection: WorkflowSectionKey = 'patient-context';
+  workflowSections = WORKFLOW_SECTIONS;
+  workflowIntakeForm: WorkflowIntakeForm;
+  workspaceDialog: WorkspaceDialog = null;
+  followUpDecisionDraftVm: FollowUpDecisionDraft = {
+    enabled: true,
+    offsetAmount: 5,
+    offsetUnit: 'DAYS',
+    previewDate: '',
+    requestSent: false,
+    message: '',
+    treatmentPlanReady: false,
+    guardianInstructionsReady: false
+  };
+  hospitalizationLaunchDraftVm: HospitalizationLaunchDraft = {
+    active: false,
+    carePlanDoses: [],
+    queryParams: {}
+  };
   draft: ConsultationWorkspaceDraft = {
     soap: {
       subjective: '',
@@ -253,6 +380,10 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
       sex: undefined,  // 'M' or 'F' - required for CKD-EPI
       systolicBpMmHg: undefined,
       diastolicBpMmHg: undefined,
+      heartRateBpm: undefined,
+      respiratoryRateBpm: undefined,
+      temperatureC: undefined,
+      oxygenSaturationPct: undefined,
       egfr: undefined,  // Auto-calculated by backend
       egfrQualityIndicator: undefined,  // HIGH_QUALITY, MEDIUM_QUALITY, LOW_QUALITY
       ckdStage: undefined,  // From backend
@@ -272,17 +403,34 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
   doctorFollowUpRequestSent = false;
 
   labSubmitting = false;
+  labRequestFiles: Record<string, File[]> = {};
 
   showHospitalizeModal = false;
 
   medicationSuggestions: Record<number, any[]> = {};
+  private workflowFormSubscription?: Subscription;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private api: ClinicalApiService,
-    private workspace: ConsultationWorkspaceService
-  ) {}
+    private workspace: ConsultationWorkspaceService,
+    private formBuilder: FormBuilder
+  ) {
+    this.workflowIntakeForm = this.formBuilder.group({
+      ageYears: [null as number | null],
+      sex: [''],
+      heightCm: [null as number | null],
+      weightKg: [null as number | null],
+      systolicBpMmHg: [null as number | null],
+      diastolicBpMmHg: [null as number | null],
+      heartRateBpm: [null as number | null],
+      respiratoryRateBpm: [null as number | null],
+      temperatureC: [null as number | null],
+      oxygenSaturationPct: [null as number | null],
+      creatinineMgDl: [null as number | null]
+    }) as WorkflowIntakeForm;
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -292,12 +440,13 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
     }
     this.consultationId = id;
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || null;
+    this.bindWorkflowIntakeForm();
     this.loadConsultation();
     this.loadDraft();
   }
 
   ngOnDestroy(): void {
-    // No polling subscription to clean up.
+    this.workflowFormSubscription?.unsubscribe();
   }
 
   @HostListener('window:beforeunload', ['$event'])
@@ -309,10 +458,49 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
   }
 
   setTab(tab: WorkspaceTab): void {
-    if (tab === 'adherence' && !this.adherenceUnlocked) {
-      return;
-    }
     this.activeTab = tab;
+  }
+
+  openWorkspaceDialog(dialog: Exclude<WorkspaceDialog, null>): void {
+    this.workspaceDialog = dialog;
+  }
+
+  closeWorkspaceDialog(): void {
+    this.workspaceDialog = null;
+  }
+
+  openFollowUpPlanner(): void {
+    this.activeWorkflowSection = 'discharge';
+    this.setTab('review');
+    this.syncFollowUpDraftVm();
+    this.openWorkspaceDialog('follow-up');
+  }
+
+  openMedicationReview(): void {
+    this.activeWorkflowSection = 'alerts';
+    this.setTab('medications');
+    this.openWorkspaceDialog('medication-review');
+  }
+
+  openWorkflowSection(section: WorkflowSectionKey): void {
+    this.activeWorkflowSection = section;
+    switch (section) {
+      case 'patient-context':
+      case 'vitals':
+      case 'nephrology':
+      case 'alerts':
+        this.setTab('overview');
+        break;
+      case 'hospitalization':
+        this.openHospitalizeModal();
+        break;
+      case 'discharge':
+        this.openFollowUpPlanner();
+        break;
+      case 'review':
+        this.setTab('review');
+        break;
+    }
   }
 
   loadConsultation(): void {
@@ -365,54 +553,22 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
       .subscribe((draft) => {
         this.draft = draft;
         this.adherenceUnlocked = (draft.carePlanDoses?.length ?? 0) > 0;
+        this.syncWorkflowIntakeFormFromDraft();
         this.lastSavedSnapshot = this.buildDraftSnapshot();
+        this.loadConsultationLabRequests();
         this.runEgfrMlPrediction();
       });
   }
 
   get followUpPreviewDate(): string {
-    if (!this.consultation?.dateTime) return '';
-    const anchor = new Date(this.consultation.dateTime);
-    const d = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate());
-    const n = Math.max(1, Number(this.followUpOffsetAmount) || 1);
-    if (this.followUpOffsetUnit === 'DAYS') {
-      d.setDate(d.getDate() + n);
-    } else if (this.followUpOffsetUnit === 'WEEKS') {
-      d.setDate(d.getDate() + n * 7);
-    } else {
-      d.setMonth(d.getMonth() + n);
-    }
-    return d.toLocaleDateString();
-  }
-
-  private queueDoctorFollowUpIfNeeded() {
-    if (!this.consultationId || !this.doctorFollowUpEnabled || this.doctorFollowUpRequestSent) {
-      return of(false);
-    }
-
-    return this.api
-      .createDoctorFollowUpRequest(this.consultationId, {
-        offsetAmount: Math.max(1, Number(this.followUpOffsetAmount) || 1),
-        offsetUnit: this.followUpOffsetUnit,
-        notes: this.draft.treatmentPlan?.trim()
-          ? `Plan context: ${this.draft.treatmentPlan.trim().slice(0, 200)}`
-          : undefined
-      })
-      .pipe(
-        map(() => {
-          this.doctorFollowUpRequestSent = true;
-          this.followUpRequestMessage = 'Follow-up request queued for the receptionist.';
-          return true;
-        }),
-        catchError(() => {
-          this.followUpRequestMessage = 'Consultation saved, but the follow-up request could not be queued yet.';
-          return of(false);
-        })
-      );
+    return this.computePreviewDate(this.followUpOffsetAmount, this.followUpOffsetUnit);
   }
 
   submitDoctorFollowUpRequest(): void {
     if (!this.consultationId) return;
+    this.doctorFollowUpEnabled = this.followUpDecisionDraftVm.enabled;
+    this.followUpOffsetAmount = this.followUpDecisionDraftVm.offsetAmount;
+    this.followUpOffsetUnit = this.followUpDecisionDraftVm.offsetUnit;
     this.followUpRequestMessage = '';
     this.followUpRequestSubmitting = true;
     this.api
@@ -426,10 +582,14 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
           this.followUpRequestSubmitting = false;
           this.followUpRequestMessage = 'Follow-up request sent to receptionist queue.';
           this.doctorFollowUpRequestSent = true;
+          this.followUpDecisionDraftVm.requestSent = true;
+          this.followUpDecisionDraftVm.message = this.followUpRequestMessage;
+          this.followUpDecisionDraftVm.previewDate = this.followUpPreviewDate;
         },
         error: () => {
           this.followUpRequestSubmitting = false;
           this.followUpRequestMessage = 'Could not send follow-up request.';
+          this.followUpDecisionDraftVm.message = this.followUpRequestMessage;
         }
       });
   }
@@ -444,25 +604,55 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
     this.labSubmitting = true;
     this.infoMessage = '';
     this.workspace.submitLabRequests(this.consultationId, patientId, this.draft).subscribe({
-      next: (ok) => {
-        if (!ok) {
+      next: (result) => {
+        if (!result.ok) {
           this.labSubmitting = false;
           this.infoMessage = 'Failed to save lab requests.';
           return;
         }
+        const requestId = result.requestId || this.draft.labRequests.find((item) => item.backendRequestId)?.backendRequestId;
+        if (!requestId) {
+          this.labSubmitting = false;
+          this.lastSavedSnapshot = this.buildDraftSnapshot();
+          this.infoMessage = 'Lab requests were saved, but no lab inbox request id was returned.';
+          return;
+        }
 
-        this.queueDoctorFollowUpIfNeeded().subscribe({
-          next: (followUpQueued) => {
-            this.labSubmitting = false;
-            this.lastSavedSnapshot = this.buildDraftSnapshot();
-            this.infoMessage = followUpQueued
-              ? 'Lab requests were sent to the lab inbox and a receptionist follow-up request was queued.'
-              : 'Lab requests were sent to the lab inbox.';
+        const uploads = Object.entries(this.labRequestFiles)
+          .flatMap(([testKey, files]) => {
+            const item = this.draft.labRequests.find((candidate) => (candidate.key || this.toItemKey(candidate.test)) === testKey);
+            if (!item || !files.length) {
+              return [];
+            }
+            return files.map((file) =>
+              this.api.uploadLabSupportingFile(requestId, file, testKey, item.test).pipe(
+                map(() => true),
+                catchError(() => of(false))
+              )
+            );
+          });
+
+        const finishMessage = (uploadedAll: boolean) => {
+          this.labSubmitting = false;
+          this.lastSavedSnapshot = this.buildDraftSnapshot();
+          this.labRequestFiles = {};
+          this.loadConsultationLabRequests();
+          this.infoMessage = uploadedAll
+            ? 'Grouped lab request sent to the lab inbox with test attachments.'
+            : 'Grouped lab request sent, but one or more supporting files could not be uploaded.';
+        };
+
+        if (!uploads.length) {
+          finishMessage(true);
+          return;
+        }
+
+        forkJoin(uploads).subscribe({
+          next: (statuses) => {
+            finishMessage(statuses.every(Boolean));
           },
           error: () => {
-            this.labSubmitting = false;
-            this.lastSavedSnapshot = this.buildDraftSnapshot();
-            this.infoMessage = 'Lab requests were sent, but the follow-up request could not be queued yet.';
+            finishMessage(false);
           }
         });
       },
@@ -476,8 +666,20 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
   openHospitalizeModal(): void {
     this.adherenceUnlocked = true;
     this.prefillCarePlanFromPrescriptions();
-    this.activeTab = 'adherence';
+    this.hospitalizationLaunchDraftVm = {
+      active: true,
+      carePlanDoses: this.draft.carePlanDoses,
+      queryParams: this.hospitalizationQueryParams
+    };
     this.showHospitalizeModal = true;
+  }
+
+  openMedicalDossier(): void {
+    this.router.navigate(['/backoffice/consultations', this.consultationId], {
+      queryParams: {
+        returnUrl: `/backoffice/consultations/${this.consultationId}/workspace`
+      }
+    });
   }
 
   closeHospitalizeModal(): void {
@@ -528,17 +730,8 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
     if (!this.consultationId) return;
     this.saving = true;
     this.infoMessage = '';
-    this.workspace.saveDraft(this.consultationId, this.draft).pipe(
-      switchMap((saved) => {
-        if (!saved) {
-          return of({ saved, followUpQueued: false });
-        }
-        return this.queueDoctorFollowUpIfNeeded().pipe(
-          map((followUpQueued) => ({ saved, followUpQueued }))
-        );
-      })
-    ).subscribe({
-      next: ({ saved, followUpQueued }) => {
+    this.workspace.saveDraft(this.consultationId, this.draft).subscribe({
+      next: (saved) => {
         this.saving = false;
         if (saved) {
           this.lastSavedSnapshot = this.buildDraftSnapshot();
@@ -547,9 +740,7 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
           this.infoMessage = 'Backend save failed. A local backup was kept.';
           return;
         }
-        this.infoMessage = followUpQueued
-          ? 'Draft saved and follow-up request sent to the receptionist queue.'
-          : 'Draft saved to backend.';
+        this.infoMessage = 'Encounter draft saved to backend.';
       },
       error: () => {
         this.saving = false;
@@ -566,17 +757,8 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
     }
     this.saving = true;
     this.infoMessage = '';
-    this.workspace.completeConsultation(this.consultationId, this.draft).pipe(
-      switchMap((saved) => {
-        if (!saved) {
-          return of({ saved, followUpQueued: false });
-        }
-        return this.queueDoctorFollowUpIfNeeded().pipe(
-          map((followUpQueued) => ({ saved, followUpQueued }))
-        );
-      })
-    ).subscribe({
-      next: ({ saved, followUpQueued }) => {
+    this.workspace.completeConsultation(this.consultationId, this.draft).subscribe({
+      next: (saved) => {
         if (!saved) {
           this.saving = false;
           this.infoMessage = 'Cannot complete consultation because backend save failed. Please retry.';
@@ -588,9 +770,7 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
             this.saving = false;
             this.completed = true;
             this.lastSavedSnapshot = this.buildDraftSnapshot();
-            this.infoMessage = followUpQueued
-              ? 'Consultation marked as completed and follow-up request sent to the receptionist queue.'
-              : 'Consultation marked as completed.';
+            this.infoMessage = 'Consultation marked as completed.';
             this.loadConsultation();
           },
           error: () => {
@@ -622,15 +802,41 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
 
   addLabRequest(): void {
     const item: LabRequestItem = {
+      key: '',
       test: '',
+      category: '',
       urgency: 'Routine',
-      note: ''
+      note: '',
+      uploadedFileNames: []
     };
     this.draft.labRequests = [...(this.draft.labRequests || []), item];
   }
 
   removeLabRequest(index: number): void {
+    const item = (this.draft.labRequests || [])[index];
+    if (item?.backendRequestId) {
+      this.infoMessage = 'Submitted lab requests cannot be removed from the workspace draft. Review them in clinical history instead.';
+      return;
+    }
+    const key = item ? (item.key || this.toItemKey(item.test)) : '';
+    if (key) {
+      delete this.labRequestFiles[key];
+    }
     this.draft.labRequests = (this.draft.labRequests || []).filter((_, i) => i !== index);
+  }
+
+  setLabRequestFiles(selection: LabRequestFileSelection): void {
+    const key = selection.testKey || this.toItemKey(selection.testLabel);
+    this.labRequestFiles[key] = [...selection.files];
+    this.draft.labRequests = (this.draft.labRequests || []).map((item) =>
+      (item.key || this.toItemKey(item.test)) === key
+        ? {
+            ...item,
+            key,
+            uploadedFileNames: selection.files.map((file) => file.name)
+          }
+        : item
+    );
   }
 
   addPrescription(): void {
@@ -739,6 +945,205 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
 
   get carePlanMissedCount(): number {
     return (this.draft.carePlanDoses || []).filter((dose) => !dose.taken).length;
+  }
+
+  get quickStatCards(): Array<{ label: string; value: string; accent: string; detail: string }> {
+    return [
+      {
+        label: 'Active alerts',
+        value: `${this.alerts.length}`,
+        accent: this.alerts.length > 0 ? 'critical' : 'calm',
+        detail: this.alerts.length > 0 ? 'Needs clinician review' : 'No urgent warnings'
+      },
+      {
+        label: 'CKD stage',
+        value: this.ckdStage,
+        accent: this.egfrValue !== null && this.egfrValue < 60 ? 'warning' : 'calm',
+        detail: `${this.egfrFormulaLabel} classification`
+      },
+      {
+        label: 'Visit timeline',
+        value: `${this.patientHistory.length + (this.consultation ? 1 : 0)}`,
+        accent: 'sky',
+        detail: 'Consultations in chart'
+      },
+      {
+        label: 'Medication lines',
+        value: `${this.activeMedicationCount}`,
+        accent: this.doseAlerts.length > 0 ? 'warning' : 'calm',
+        detail: this.doseAlerts.length > 0 ? 'Dose review recommended' : 'Dosing profile stable'
+      }
+    ];
+  }
+
+  get activeMedicationCount(): number {
+    return (this.draft.prescriptions || []).filter((item) => (item.medication || '').trim().length > 0).length;
+  }
+
+  get consultationSummaryVm(): ConsultationSummaryViewModel {
+    return {
+      consultationId: this.consultationId,
+      patientName: this.getPatientLabel(this.consultation?.patientId),
+      subtitle: this.patientSnapshotSubtitle,
+      scheduledAt: this.consultation?.dateTime ?? null,
+      statusLabel: this.consultationStatusLabel,
+      statusClass: this.statusBadge(this.consultation?.status),
+      completenessScore: this.completenessScore,
+      completenessLabel: this.completenessLabel,
+      completenessClass: this.completenessClass,
+      hasUnsavedChanges: this.hasUnsavedChanges,
+      renalRiskLabel: this.alerts.length > 0 ? `${this.alerts.length} renal/clinical alert(s)` : 'No urgent renal risk'
+    };
+  }
+
+  get patientSnapshotVm(): PatientSnapshotViewModel {
+    return {
+      patientName: this.getPatientLabel(this.consultation?.patientId),
+      subtitle: this.patientSnapshotSubtitle,
+      allergiesLabel: this.patientAllergiesLabel,
+      ageLabel: this.patientAgeLabel,
+      sexLabel: this.patientSexLabel,
+      growthNarrative: this.growthNarrative,
+      timelineSummary: this.patientTimelineSummary,
+      activeProblemCount: this.activeProblemCount,
+      followUpStatusLabel: this.followUpStatusLabel
+    };
+  }
+
+  get renalMetricsVm(): RenalMetricsViewModel {
+    return {
+      egfrLabel: this.egfrValue !== null ? `${this.egfrValue} mL/min/1.73m2` : 'Awaiting calculation',
+      egfrFormulaLabel: this.egfrFormulaLabel,
+      ckdStage: this.ckdStage,
+      bloodPressurePercentileLabel: this.bloodPressurePercentileLabel,
+      heightPercentileLabel: this.heightPercentileLabel,
+      weightPercentileLabel: this.weightPercentileLabel,
+      trajectoryLabel: this.egfrTrajectoryLabel,
+      previousEgfrLabel: this.previousEgfr !== null ? `${this.previousEgfr} mL/min/1.73m2` : 'N/A',
+      latestDeltaLabel: this.latestEgfrDeltaPct !== null ? `${this.latestEgfrDeltaPct}%` : 'N/A',
+      clinicalAiRecommendationLabel: this.aiRecommendationLabel,
+      clinicalAiConfidencePercent: this.aiConfidencePercent,
+      clinicalAiSummary: this.draft.metrics.aiSummary?.trim() || 'No clinical AI interpretation has been attached to this encounter yet.',
+      egfrAiRiskLabel: this.egfrMlRiskLabel,
+      egfrAiProbabilityLabel: this.egfrMlProbabilityLabel,
+      egfrAiConfidenceLabel: this.egfrMlConfidenceLabel,
+      egfrAiPredicted3mLabel: this.egfrMlPredicted3mLabel,
+      egfrAiPredicted6mLabel: this.egfrMlPredicted6mLabel,
+      egfrAiPredicted12mLabel: this.egfrMlPredicted12mLabel,
+      egfrAiHint: this.egfrMlClinicalHint,
+      latestLabSourceFileName: this.draft.metrics.aiSourceFileName || '',
+      latestLabSourceAvailable: !!this.draft.metrics.aiSourceFileName,
+      trendPoints: this.egfrTrendPoints.map((point) => ({ dateTime: point.dateTime, egfr: point.egfr }))
+    };
+  }
+
+  get clinicalAlertsVm(): ClinicalAlertViewModel[] {
+    return this.alerts.map((title) => ({
+      title,
+      severity: title.toLowerCase().includes('rapid') || title.toLowerCase().includes('hypertension')
+        ? 'critical'
+        : title.toLowerCase().includes('dose') || title.toLowerCase().includes('adherence')
+          ? 'warning'
+          : 'info'
+    }));
+  }
+
+  get dispositionStateVm(): DispositionState {
+    return {
+      followUpStatusLabel: this.followUpStatusLabel,
+      followUpStatusClass: this.followUpStatusClass,
+      followUpPreviewDate: this.followUpPreviewDate,
+      followUpEnabled: this.doctorFollowUpEnabled,
+      followUpQueued: this.doctorFollowUpRequestSent,
+      hospitalizationActive: this.adherenceUnlocked || (this.draft.carePlanDoses?.length ?? 0) > 0,
+      activeMedicationCount: this.activeMedicationCount
+    };
+  }
+
+  get medicationReviewVm(): MedicationReviewViewModel {
+    return {
+      prescriptions: this.draft.prescriptions,
+      suggestions: this.medicationSuggestions,
+      doseAlerts: this.doseAlerts
+    };
+  }
+
+  get labOrdersVm(): LabOrdersViewModel {
+    return {
+      labRequests: this.draft.labRequests,
+      submitting: this.labSubmitting,
+      selectedCount: this.draft.labRequests.length
+    };
+  }
+
+  get recentLabHistory(): ClinicalHistoryLabItem[] {
+    return this.labHistoryItems.slice(0, 6);
+  }
+
+  syncFollowUpDialogPreview(): void {
+    this.followUpDecisionDraftVm.previewDate = this.computePreviewDate(
+      this.followUpDecisionDraftVm.offsetAmount,
+      this.followUpDecisionDraftVm.offsetUnit
+    );
+  }
+
+  get growthNarrative(): string {
+    const parts = [this.heightPercentileLabel, this.weightPercentileLabel].filter((value) => value !== 'N/A');
+    if (parts.length === 0) {
+      return 'Growth data is not complete yet.';
+    }
+    return `Height ${this.heightPercentileLabel} and weight ${this.weightPercentileLabel}.`;
+  }
+
+  get followUpStatusLabel(): string {
+    if (this.doctorFollowUpRequestSent) {
+      return 'Queued for receptionist';
+    }
+    if (this.doctorFollowUpEnabled) {
+      return this.followUpPreviewDate ? `Drafted for ${this.followUpPreviewDate}` : 'Draft follow-up requested';
+    }
+    return 'No follow-up requested';
+  }
+
+  get followUpStatusClass(): string {
+    if (this.doctorFollowUpRequestSent) return 'status-chip status-chip-success';
+    if (this.doctorFollowUpEnabled) return 'status-chip status-chip-warning';
+    return 'status-chip status-chip-neutral';
+  }
+
+  get patientTimelineSummary(): string {
+    if (this.patientHistory.length === 0) {
+      return 'First documented consultation in this workspace.';
+    }
+    const latest = this.patientHistory[0];
+    const latestDate = latest?.dateTime ? new Date(latest.dateTime).toLocaleDateString() : 'prior visit';
+    return `${this.patientHistory.length} prior consultation(s), latest on ${latestDate}.`;
+  }
+
+  get activeProblemCount(): number {
+    return (this.draft.diagnosisList || []).filter((item) => (item.label || item.code || '').trim().length > 0).length;
+  }
+
+  get abnormalClinicalSignals(): string[] {
+    const signals: string[] = [];
+
+    if (this.egfrValue !== null && this.egfrValue < 60) {
+      signals.push(`Reduced renal filtration: eGFR ${this.egfrValue} mL/min/1.73m2.`);
+    }
+
+    if (this.bloodPressurePercentileLabel !== 'N/A' && !this.bloodPressurePercentileLabel.includes('Expected')) {
+      signals.push(`Blood pressure requires review: ${this.bloodPressurePercentileLabel}.`);
+    }
+
+    if (this.carePlanMissedCount > 0) {
+      signals.push(`${this.carePlanMissedCount} scheduled medication dose(s) were missed.`);
+    }
+
+    if (this.doctorFollowUpEnabled && !this.doctorFollowUpRequestSent) {
+      signals.push('Follow-up is prepared but not yet sent to the receptionist queue.');
+    }
+
+    return signals;
   }
 
   get adherenceAlerts(): string[] {
@@ -905,9 +1310,6 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
     );
     if (labsFilled) optionalScore += 10;
 
-    // OPTIONAL: Follow-up Request
-    if ((this.draft.followUpDate || '').trim().length > 0 || this.doctorFollowUpRequestSent) optionalScore += 10;
-
     return requiredScore + optionalScore;
   }
 
@@ -967,6 +1369,23 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
     const treatmentPlanFilled = (this.draft.treatmentPlan || '').trim().length > 0;
 
     return soapFilled && diagnosisFilled && treatmentPlanFilled;
+  }
+
+  workflowSectionStatus(section: WorkflowSectionKey): 'Complete' | 'In progress' | 'Pending' {
+    if (this.isWorkflowSectionComplete(section)) return 'Complete';
+    if (this.isWorkflowSectionStarted(section)) return 'In progress';
+    return 'Pending';
+  }
+
+  workflowSectionBadgeClass(section: WorkflowSectionKey): string {
+    const status = this.workflowSectionStatus(section);
+    if (status === 'Complete') return 'bg-soft-success text-success';
+    if (status === 'In progress') return 'bg-soft-warning text-warning';
+    return 'bg-soft-secondary text-muted';
+  }
+
+  get completedWorkflowSections(): number {
+    return this.workflowSections.filter((section) => this.isWorkflowSectionComplete(section.key)).length;
   }
 
   get hospitalizationQueryParams(): Record<string, string> {
@@ -1089,9 +1508,12 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
     this.api.listMyConsultations().subscribe({
       next: (items) => {
         this.setHistory(items || []);
+        this.loadPatientLabHistory();
       },
       error: () => {
         this.history = [];
+        this.consultationHistoryCards = [];
+        this.labHistoryItems = [];
         this.previousEgfr = null;
         this.previousEgfrDate = null;
       }
@@ -1100,7 +1522,122 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
 
   private setHistory(items: any[]): void {
     this.history = items || [];
+    this.consultationHistoryCards = (this.patientHistory || [])
+      .filter((item) => String(item.id) !== String(this.consultationId))
+      .slice(0, 8)
+      .map((item) => ({
+        id: String(item.id),
+        dateTime: String(item.dateTime || ''),
+        status: item.status,
+        diagnosisSummary: String(item.summary || item.patientName || '').trim()
+      }));
     this.computePreviousEgfr();
+  }
+
+  private loadConsultationLabRequests(): void {
+    if (!this.consultationId) {
+      return;
+    }
+    this.api.getConsultationLabRequests(this.consultationId).subscribe({
+      next: (requests) => {
+        this.mergeLabRequestsFromBackend(requests || []);
+      },
+      error: () => {
+        // Keep draft state if backend lab request fetch fails.
+      }
+    });
+  }
+
+  private loadPatientLabHistory(): void {
+    const patientId = Number(this.consultation?.patientId);
+    if (!Number.isFinite(patientId) || patientId <= 0) {
+      this.labHistoryItems = [];
+      return;
+    }
+    this.api.getPatientLabRequests(patientId).subscribe({
+      next: (requests) => {
+        this.labHistoryItems = (requests || [])
+          .flatMap((request) => {
+            const items = request.testItems?.length
+              ? request.testItems.map((item) => ({
+                  consultationId: request.consultationId,
+                  requestId: request.id,
+                  title: item.label,
+                  urgency: request.urgency,
+                  status: request.status,
+                  createdAt: request.createdAt,
+                  latestResultFileName: request.latestResultFileName,
+                  latestResultUploadedAt: request.latestResultUploadedAt,
+                  latestAiSummary: request.latestAiSummary
+                }))
+              : [{
+                  consultationId: request.consultationId,
+                  requestId: request.id,
+                  title: request.testType,
+                  urgency: request.urgency,
+                  status: request.status,
+                  createdAt: request.createdAt,
+                  latestResultFileName: request.latestResultFileName,
+                  latestResultUploadedAt: request.latestResultUploadedAt,
+                  latestAiSummary: request.latestAiSummary
+                }];
+            return items;
+          })
+          .sort((left, right) => new Date(right.latestResultUploadedAt || right.createdAt || 0).getTime() - new Date(left.latestResultUploadedAt || left.createdAt || 0).getTime())
+          .slice(0, 12);
+      },
+      error: () => {
+        this.labHistoryItems = [];
+      }
+    });
+  }
+
+  private mergeLabRequestsFromBackend(requests: ClinicalLabRequestResponse[]): void {
+    if (!requests.length) {
+      return;
+    }
+    const mergedItems = requests.flatMap((request) => {
+      const base = {
+        backendRequestId: request.id,
+        urgency: this.normalizeUrgencyForDraft(request.urgency),
+        note: request.notes || '',
+        status: request.status,
+        latestAiSummary: request.latestAiSummary,
+        latestAiRecommendation: request.latestAiRecommendation,
+        latestResultFileName: request.latestResultFileName,
+        latestResultUploadedAt: request.latestResultUploadedAt,
+        latestResultAvailable: !!request.latestResultAvailable
+      };
+
+      if (request.testItems?.length) {
+        return request.testItems.map((item) => ({
+          ...base,
+          key: item.key || this.toItemKey(item.label),
+          test: item.label,
+          category: '',
+          note: item.note || request.notes || '',
+          uploadedFileNames: request.latestResultFileName ? [request.latestResultFileName] : []
+        }));
+      }
+
+      return [{
+        ...base,
+        key: this.toItemKey(request.testType),
+        test: request.testType,
+        category: '',
+        uploadedFileNames: request.latestResultFileName ? [request.latestResultFileName] : []
+      }];
+    });
+
+    const currentByKey = new Map((this.draft.labRequests || []).map((item) => [(item.key || this.toItemKey(item.test)), item]));
+    this.draft.labRequests = mergedItems.map((item) => {
+      const current = currentByKey.get(item.key || this.toItemKey(item.test));
+      return {
+        ...current,
+        ...item,
+        uploadedFileNames: item.uploadedFileNames?.length ? item.uploadedFileNames : [...(current?.uploadedFileNames ?? [])]
+      };
+    });
   }
 
   private computePreviousEgfr(): void {
@@ -1173,6 +1710,10 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
     const metricsSummary = [
       Number.isFinite(Number(this.draft.metrics.heightCm)) ? `Height ${this.draft.metrics.heightCm} cm` : '',
       Number.isFinite(Number(this.draft.metrics.weightKg)) ? `Weight ${this.draft.metrics.weightKg} kg` : '',
+      Number.isFinite(Number(this.draft.metrics.heartRateBpm)) ? `HR ${this.draft.metrics.heartRateBpm} bpm` : '',
+      Number.isFinite(Number(this.draft.metrics.respiratoryRateBpm)) ? `RR ${this.draft.metrics.respiratoryRateBpm}/min` : '',
+      Number.isFinite(Number(this.draft.metrics.temperatureC)) ? `Temp ${this.draft.metrics.temperatureC} °C` : '',
+      Number.isFinite(Number(this.draft.metrics.oxygenSaturationPct)) ? `SpO2 ${this.draft.metrics.oxygenSaturationPct}%` : '',
       Number.isFinite(Number(this.draft.metrics.creatinineMgDl)) ? `Creatinine ${this.draft.metrics.creatinineMgDl} mg/dL` : '',
       this.egfrValue !== null ? `eGFR ${this.egfrValue} mL/min/1.73m2 (${this.egfrFormulaLabel})` : '',
       this.ckdStage && this.ckdStage !== 'N/A' ? `CKD ${this.ckdStage}` : ''
@@ -1204,6 +1745,21 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
 
     this.generatedSummary = lines.join('\n');
     this.infoMessage = 'Clinical summary generated below. Review it before sharing or copying.';
+  }
+
+  private toItemKey(label: string): string {
+    return String(label ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
+
+  private normalizeUrgencyForDraft(value?: string | null): 'Routine' | 'Urgent' | 'STAT' {
+    const normalized = String(value || '').trim().toUpperCase();
+    if (normalized === 'STAT') return 'STAT';
+    if (normalized === 'URGENT') return 'Urgent';
+    return 'Routine';
   }
 
   private computePercentileByAge(
@@ -1394,6 +1950,7 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
     this.api.getPatient(patientId).subscribe({
       next: (patient) => {
         this.patientProfile = patient;
+        this.patchWorkflowPatientProfile();
         this.runEgfrMlPrediction();
       },
       error: () => {
@@ -1647,5 +2204,177 @@ export class ConsultationWorkspacePage implements OnInit, OnDestroy {
   private toFiniteNumber(value: unknown): number | null {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  searchMedicationQuery(index: number, query: string): void {
+    const q = (query || '').trim();
+    if (q.length < 2) {
+      this.medicationSuggestions[index] = [];
+      return;
+    }
+    this.api.searchMedications(q, 15).subscribe({
+      next: (list) => {
+        this.medicationSuggestions[index] = list || [];
+      },
+      error: () => {
+        this.medicationSuggestions[index] = [];
+      }
+    });
+  }
+
+  private bindWorkflowIntakeForm(): void {
+    this.workflowFormSubscription = this.workflowIntakeForm.valueChanges.subscribe((value) => {
+      this.draft = {
+        ...this.draft,
+        metrics: {
+          ...this.draft.metrics,
+          ageYears: this.toFiniteNumber(value.ageYears) ?? undefined,
+          sex: value.sex || undefined,
+          heightCm: this.toFiniteNumber(value.heightCm) ?? undefined,
+          weightKg: this.toFiniteNumber(value.weightKg) ?? undefined,
+          systolicBpMmHg: this.toFiniteNumber(value.systolicBpMmHg) ?? undefined,
+          diastolicBpMmHg: this.toFiniteNumber(value.diastolicBpMmHg) ?? undefined,
+          heartRateBpm: this.toFiniteNumber(value.heartRateBpm) ?? undefined,
+          respiratoryRateBpm: this.toFiniteNumber(value.respiratoryRateBpm) ?? undefined,
+          temperatureC: this.toFiniteNumber(value.temperatureC) ?? undefined,
+          oxygenSaturationPct: this.toFiniteNumber(value.oxygenSaturationPct) ?? undefined,
+          creatinineMgDl: this.toFiniteNumber(value.creatinineMgDl) ?? undefined
+        }
+      };
+      this.runEgfrMlPrediction();
+    });
+  }
+
+  private syncWorkflowIntakeFormFromDraft(): void {
+    this.workflowIntakeForm.patchValue({
+      ageYears: this.draft.metrics.ageYears ?? null,
+      sex: this.draft.metrics.sex ?? '',
+      heightCm: this.draft.metrics.heightCm ?? null,
+      weightKg: this.draft.metrics.weightKg ?? null,
+      systolicBpMmHg: this.draft.metrics.systolicBpMmHg ?? null,
+      diastolicBpMmHg: this.draft.metrics.diastolicBpMmHg ?? null,
+      heartRateBpm: this.draft.metrics.heartRateBpm ?? null,
+      respiratoryRateBpm: this.draft.metrics.respiratoryRateBpm ?? null,
+      temperatureC: this.draft.metrics.temperatureC ?? null,
+      oxygenSaturationPct: this.draft.metrics.oxygenSaturationPct ?? null,
+      creatinineMgDl: this.draft.metrics.creatinineMgDl ?? null
+    }, { emitEvent: false });
+  }
+
+  private syncFollowUpDraftVm(): void {
+    this.followUpDecisionDraftVm = {
+      enabled: this.doctorFollowUpEnabled,
+      offsetAmount: this.followUpOffsetAmount,
+      offsetUnit: this.followUpOffsetUnit,
+      previewDate: this.followUpPreviewDate,
+      requestSent: this.doctorFollowUpRequestSent,
+      message: this.followUpRequestMessage,
+      treatmentPlanReady: !!this.draft.treatmentPlan?.trim(),
+      guardianInstructionsReady: !!this.draft.guardianInstructions?.trim()
+    };
+  }
+
+  private computePreviewDate(offsetAmount: number, offsetUnit: 'DAYS' | 'WEEKS' | 'MONTHS'): string {
+    if (!this.consultation?.dateTime) return '';
+    const anchor = new Date(this.consultation.dateTime);
+    const d = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate());
+    const n = Math.max(1, Number(offsetAmount) || 1);
+    if (offsetUnit === 'DAYS') {
+      d.setDate(d.getDate() + n);
+    } else if (offsetUnit === 'WEEKS') {
+      d.setDate(d.getDate() + n * 7);
+    } else {
+      d.setMonth(d.getMonth() + n);
+    }
+    return d.toLocaleDateString();
+  }
+
+  private patchWorkflowPatientProfile(): void {
+    if (!this.patientProfile) {
+      return;
+    }
+
+    const current = this.workflowIntakeForm.getRawValue();
+    const fallbackAge = this.toFiniteNumber(this.patientProfile?.age);
+    const fallbackSex = String(this.patientProfile?.gender ?? this.patientProfile?.sex ?? '').trim();
+
+    if (this.draft.metrics.ageYears === undefined && fallbackAge !== null) {
+      this.draft.metrics.ageYears = fallbackAge;
+    }
+    if (!this.draft.metrics.sex && fallbackSex) {
+      this.draft.metrics.sex = fallbackSex;
+    }
+
+    this.workflowIntakeForm.patchValue({
+      ageYears: current.ageYears ?? fallbackAge,
+      sex: current.sex || fallbackSex
+    }, { emitEvent: false });
+  }
+
+  private hasFiniteMetric(value: unknown): boolean {
+    return this.toFiniteNumber(value) !== null;
+  }
+
+  private isWorkflowSectionComplete(section: WorkflowSectionKey): boolean {
+    switch (section) {
+      case 'patient-context':
+        return !!this.consultationId && this.getPatientLabel(this.consultation?.patientId) !== '-';
+      case 'vitals':
+        return this.hasFiniteMetric(this.draft.metrics.heightCm)
+          && this.hasFiniteMetric(this.draft.metrics.weightKg)
+          && this.hasFiniteMetric(this.draft.metrics.systolicBpMmHg)
+          && this.hasFiniteMetric(this.draft.metrics.diastolicBpMmHg)
+          && this.hasFiniteMetric(this.draft.metrics.heartRateBpm)
+          && this.hasFiniteMetric(this.draft.metrics.respiratoryRateBpm)
+          && this.hasFiniteMetric(this.draft.metrics.temperatureC)
+          && this.hasFiniteMetric(this.draft.metrics.oxygenSaturationPct);
+      case 'nephrology':
+        return this.hasFiniteMetric(this.draft.metrics.creatinineMgDl)
+          && this.egfrValue !== null
+          && !!this.ckdStage
+          && this.ckdStage !== 'N/A';
+      case 'hospitalization':
+        return this.adherenceUnlocked && (this.draft.carePlanDoses?.length ?? 0) > 0;
+      case 'discharge':
+        return !!this.draft.treatmentPlan?.trim()
+          && !!this.draft.guardianInstructions?.trim()
+          && (this.draft.prescriptions || []).some((item) => (item.medication || '').trim().length > 0);
+      case 'alerts':
+        return this.hasFiniteMetric(this.draft.metrics.creatinineMgDl)
+          && this.hasFiniteMetric(this.draft.metrics.systolicBpMmHg)
+          && this.hasFiniteMetric(this.draft.metrics.diastolicBpMmHg);
+      case 'review':
+        return this.canComplete;
+    }
+  }
+
+  private isWorkflowSectionStarted(section: WorkflowSectionKey): boolean {
+    switch (section) {
+      case 'patient-context':
+        return !!this.consultation || !!this.patientProfile;
+      case 'vitals':
+        return this.hasFiniteMetric(this.draft.metrics.heightCm)
+          || this.hasFiniteMetric(this.draft.metrics.weightKg)
+          || this.hasFiniteMetric(this.draft.metrics.systolicBpMmHg)
+          || this.hasFiniteMetric(this.draft.metrics.diastolicBpMmHg)
+          || this.hasFiniteMetric(this.draft.metrics.heartRateBpm)
+          || this.hasFiniteMetric(this.draft.metrics.respiratoryRateBpm)
+          || this.hasFiniteMetric(this.draft.metrics.temperatureC)
+          || this.hasFiniteMetric(this.draft.metrics.oxygenSaturationPct);
+      case 'nephrology':
+        return this.hasFiniteMetric(this.draft.metrics.creatinineMgDl)
+          || this.egfrValue !== null
+          || (!!this.ckdStage && this.ckdStage !== 'N/A');
+      case 'hospitalization':
+        return this.adherenceUnlocked || (this.draft.carePlanDoses?.length ?? 0) > 0;
+      case 'discharge':
+        return !!this.draft.treatmentPlan?.trim()
+          || !!this.draft.guardianInstructions?.trim()
+          || (this.draft.prescriptions || []).some((item) => (item.medication || '').trim().length > 0);
+      case 'alerts':
+        return this.alerts.length > 0 || this.hasFiniteMetric(this.draft.metrics.creatinineMgDl);
+      case 'review':
+        return this.completenessScore > 0 || !!this.generatedSummary;
+    }
   }
 }

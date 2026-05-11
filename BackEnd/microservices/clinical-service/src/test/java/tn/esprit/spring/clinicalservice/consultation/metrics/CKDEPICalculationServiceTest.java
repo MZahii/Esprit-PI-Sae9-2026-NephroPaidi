@@ -70,7 +70,7 @@ class CKDEPICalculationServiceTest {
     // TEST 3: Gender Coefficient Verification
     // ============================================================
     @Test
-    @DisplayName("TC3: Female eGFR should be ~1.018x higher than males for same creatinine")
+    @DisplayName("TC3: Female eGFR should differ from male due to sex-specific CKD-EPI coefficients")
     void testGenderCoefficientDifference() {
         Integer age = 50;
         Double scr = 1.0;
@@ -81,10 +81,10 @@ class CKDEPICalculationServiceTest {
         assertNotNull(maleEgfr, "Male eGFR should not be null");
         assertNotNull(femaleEgfr, "Female eGFR should not be null");
 
-        // Female multiplier is 1.018, so female eGFR should be ~1.018x higher
+        // The formula uses sex-specific kappa and alpha values in addition to the female multiplier.
         double ratio = femaleEgfr / maleEgfr;
-        assertTrue(ratio > 1.015 && ratio < 1.025, 
-                   "Female/Male eGFR ratio should be ~1.018 (got " + ratio + ")");
+        assertTrue(ratio > 0.70 && ratio < 0.80,
+                   "Female/Male eGFR ratio should reflect the implemented CKD-EPI coefficients (got " + ratio + ")");
         System.out.println("✓ TC3 PASSED: Female/Male ratio = " + ratio);
     }
 

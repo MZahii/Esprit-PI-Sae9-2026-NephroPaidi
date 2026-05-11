@@ -61,58 +61,25 @@
 <section class="guardian-patients section">
   <div class="container">
     <div class="section-header">
-      <h2>My Patients Profiles</h2>
-      <p>All child profiles linked to your guardian account.</p>
+      <h2>Ward Tracking</h2>
+      <p>Open the child tracking workspace to review linked child profiles, dossier history, and reports.</p>
     </div>
 
-    <div *ngIf="loadingPatients" class="patient-loading">Loading patient profiles...</div>
-    <div *ngIf="patientsError" class="patient-error">{{ patientsError }}</div>
+    <div class="tracking-shortcut-card">
+      <div class="tracking-shortcut-copy">
+        <span class="shortcut-kicker">Child Tracking</span>
+        <h3>Linked profiles, dossier and consultation history</h3>
+        <p>
+          Move to the dedicated Ward Tracking workspace to view child profiles, consultation reports,
+          prescriptions, lab requests, and the recent-to-old medical timeline.
+        </p>
+      </div>
 
-    <div class="empty-state" *ngIf="!loadingPatients && !patientsError && patientProfiles.length === 0">
-      No linked patient profiles found yet.
-    </div>
-
-    <div class="patient-filters" *ngIf="!loadingPatients && !patientsError && patientProfiles.length > 0">
-      <input
-        class="form-control"
-        type="text"
-        placeholder="Search by child name, sex, blood type or date of birth..."
-        [(ngModel)]="patientSearchTerm"
-        (ngModelChange)="onPatientFiltersChanged()"
-      />
-      
-      <select
-        class="form-control"
-        aria-label="Sort order"
-        [(ngModel)]="patientSortDirection"
-        (ngModelChange)="onPatientFiltersChanged()"
-      >
-        <option value="desc">Descending Z -> A </option>
-        <option value="asc">Ascending A -> Z </option>
-      </select>
-    </div>
-
-    <div class="patient-grid" *ngIf="!loadingPatients && !patientsError && patientProfiles.length > 0">
-      <article class="patient-card" *ngFor="let patient of filteredPatients; trackBy: trackByPatientId">
-        <div class="patient-head">
-          <h3>{{ fullPatientName(patient) }}</h3>
-        </div>
-
-        <div class="patient-details">
-          <div><strong>Age:</strong> {{ patientAge(patient.dateOfBirth) ?? '-' }}</div>
-          <div><strong>Date Of Birth:</strong> {{ patient.dateOfBirth || '-' }}</div>
-          <div><strong>Sex:</strong> {{ patient.sex || '-' }}</div>
-          <div><strong>Blood Type:</strong> {{ patient.bloodType || '-' }}</div>
-          <div><strong>Allergies:</strong> {{ patient.allergies || '-' }}</div>
-          <div><strong>Chronic Conditions:</strong> {{ patient.chronicConditions || '-' }}</div>
-        </div>
-
-        <div class="patient-actions">
-          <a class="btn guardian-btn-outline" [routerLink]="['/frontoffice/patients', patient.id]">
-            View Full Details
-          </a>
-        </div>
-      </article>
+      <div class="tracking-shortcut-actions">
+        <a class="btn guardian-btn-primary" routerLink="/frontoffice/tracking">
+          Open Ward Tracking
+        </a>
+      </div>
     </div>
   </div>
 </section>

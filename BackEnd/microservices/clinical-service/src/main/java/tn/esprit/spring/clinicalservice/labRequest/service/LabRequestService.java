@@ -13,12 +13,16 @@ public interface LabRequestService {
     LabRequestDto createLabRequest(CreateLabRequestRequest request, UUID doctorId);
     
     List<LabRequestDto> getLabRequestsByDoctor(UUID doctorId);
+
+    List<LabRequestDto> getLabRequestsByConsultation(UUID consultationId, UUID doctorId);
+
+    List<LabRequestDto> getLabRequestsByPatient(Long patientId, UUID doctorId);
     
     List<LabRequestDto> getPendingLabRequests();
     
     LabRequestDto getLabRequestById(UUID id);
     
-    LabRequestDto uploadLabResult(UUID labRequestId, MultipartFile file, UUID uploadedBy);
+    LabRequestDto uploadLabResult(UUID labRequestId, MultipartFile file, UUID uploadedBy, String testItemKey, String testItemLabel);
     
     LabRequestDto updateLabRequestStatus(UUID id, LabRequest.LabStatus status);
 

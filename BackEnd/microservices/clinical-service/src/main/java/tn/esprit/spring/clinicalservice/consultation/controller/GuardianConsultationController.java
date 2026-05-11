@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import tn.esprit.spring.clinicalservice.consultation.dto.ConsultationResponse;
 import tn.esprit.spring.clinicalservice.consultation.dto.GuardianOutcomeResponse;
+import tn.esprit.spring.clinicalservice.consultation.dto.PatientMedicalDossierResponse;
 import tn.esprit.spring.clinicalservice.consultation.entity.ConsultationStatus;
 import tn.esprit.spring.clinicalservice.consultation.service.GuardianConsultationService;
 import tn.esprit.spring.clinicalservice.notification.GuardianNotification;
@@ -45,6 +46,15 @@ public class GuardianConsultationController {
     ) {
         Long resolvedGuardianId = requireGuardianId(guardianUserId);
         return ResponseEntity.ok(guardianConsultationService.getOutcome(id, resolvedGuardianId));
+    }
+
+    @GetMapping("/patients/{patientId}/medical-dossier")
+    public ResponseEntity<PatientMedicalDossierResponse> getMedicalDossier(
+            @PathVariable Long patientId,
+            @RequestHeader(value = "X-Guardian-Id", required = false) Long guardianUserId
+    ) {
+        Long resolvedGuardianId = requireGuardianId(guardianUserId);
+        return ResponseEntity.ok(guardianConsultationService.getMedicalDossier(patientId, resolvedGuardianId));
     }
 
     @GetMapping("/notifications")

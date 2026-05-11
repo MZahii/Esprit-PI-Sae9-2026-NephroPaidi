@@ -33,6 +33,9 @@ public class LabRequest {
     @Column(name = "test_type", nullable = false, length = 500)
     private String testType;
 
+    @Column(name = "test_items_json", columnDefinition = "TEXT")
+    private String testItemsJson;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     private LabUrgency urgency;
