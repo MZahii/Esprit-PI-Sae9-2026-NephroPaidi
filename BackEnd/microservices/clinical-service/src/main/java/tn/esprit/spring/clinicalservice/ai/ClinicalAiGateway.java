@@ -16,7 +16,7 @@ public class ClinicalAiGateway {
 
     private final RestClient.Builder restClientBuilder;
 
-    @Value("${services.ai-clinical.base-url:http://ai-clinical-service:8091}")
+    @Value("${services.ai-clinical.base-url:http://core-ops-service:8086/api/ai/biomarker-extraction}")
     private String aiBaseUrl;
 
     public AiLabAnalysisResponse analyzeLabResult(AiLabAnalysisRequest request) {

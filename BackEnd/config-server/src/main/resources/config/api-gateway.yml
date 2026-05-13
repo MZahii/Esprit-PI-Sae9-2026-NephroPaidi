@@ -93,7 +93,7 @@ spring:
 
             # eGFR ML Service - ML prediction endpoint namespace
             - id: egfr-ml-service-api
-              uri: http://egfr-ml-service:8092
+              uri: ${CORE_OPS_SERVICE_URI:http://core-ops-service:8086}
               predicates:
                 - Path=/api/egfr-ml/**
               filters:
@@ -101,7 +101,7 @@ spring:
 
             # AI Pharmacy Service - Pediatric dosing verification
             - id: ai-pharmacy-service-api
-              uri: ${AI_PHARMACY_SERVICE_URI:http://ai-pharmacy-service:8093}
+              uri: ${CORE_OPS_SERVICE_URI:http://core-ops-service:8086}
               predicates:
                 - Path=/api/ai/**
               filters:

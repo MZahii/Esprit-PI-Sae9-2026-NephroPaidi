@@ -41,5 +41,5 @@ management:
 ai:
   triage:
     enabled: ${AI_TRIAGE_ENABLED:true}
-    base-url: ${AI_TRIAGE_SERVICE_BASE_URL:http://localhost:8000}
+    base-url: ${AI_TRIAGE_SERVICE_BASE_URL:http://localhost:8086/api/ai/message-urgency-triage}
     timeout-millis: ${AI_TRIAGE_TIMEOUT_MILLIS:1500}

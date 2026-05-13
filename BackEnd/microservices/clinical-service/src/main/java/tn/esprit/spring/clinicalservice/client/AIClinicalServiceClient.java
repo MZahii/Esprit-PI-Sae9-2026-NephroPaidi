@@ -11,8 +11,8 @@ import tn.esprit.spring.clinicalservice.dto.AIPredictionResponseDTO;
  * Handles prediction requests for clinical alert recommendations
  */
 @FeignClient(
-    name = "ai-clinical-service",
-    url = "${services.ai-clinical.base-url:http://ai-clinical-service:5000}",
+    name = "core-ops-service",
+    url = "${services.ai-clinical.base-url:http://core-ops-service:8086/api/ai/biomarker-extraction}",
     fallback = AIClinicalServiceClientFallback.class
 )
 public interface AIClinicalServiceClient {

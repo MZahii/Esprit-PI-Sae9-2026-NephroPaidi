@@ -92,7 +92,7 @@ services:
     environment:
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
       AI_TRIAGE_ENABLED: ${AI_TRIAGE_ENABLED:-true}
-      AI_TRIAGE_SERVICE_BASE_URL: ${AI_TRIAGE_SERVICE_BASE_URL:-http://ai-triage-service:8000}
+      AI_TRIAGE_SERVICE_BASE_URL: ${AI_TRIAGE_SERVICE_BASE_URL:-http://core-ops-service:8086/api/ai/message-urgency-triage}
       AI_TRIAGE_TIMEOUT_MILLIS: ${AI_TRIAGE_TIMEOUT_MILLIS:-1500}
     ports:
       - "8888:8888"
@@ -131,10 +131,8 @@ services:
       COMMUNICATION_SERVICE_URI: http://communication-service:8085
       PROCEDURE_SERVICE_URI: http://procedure-service:8089
       PHARMACY_SERVICE_URI: http://pharmacy-service:8088
-      AI_PHARMACY_SERVICE_URI: http://ai-pharmacy-service:8093
       OPS_SERVICE_URI: http://ops-service:8082
       CORE_OPS_SERVICE_URI: http://core-ops-service:8086
-      EGFR_ML_SERVICE_URI: http://egfr-ml-service:8092
     ports:
       - "8083:8083"
     depends_on:
@@ -156,13 +154,9 @@ services:
         condition: service_healthy
       pharmacy-service:
         condition: service_healthy
-      ai-pharmacy-service:
-        condition: service_healthy
       ops-service:
         condition: service_healthy
       core-ops-service:
-        condition: service_started
-      egfr-ml-service:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://127.0.0.1:8083/actuator/health"]
@@ -279,7 +273,7 @@ services:
       USER_SERVICE_BASE_URL: http://user-service:8090
       ADMINISTRATION_SERVICE_BASE_URL: http://administration-service:8087
       AI_TRIAGE_ENABLED: ${AI_TRIAGE_ENABLED:-true}
-      AI_TRIAGE_SERVICE_BASE_URL: ${AI_TRIAGE_SERVICE_BASE_URL:-http://ai-triage-service:8000}
+      AI_TRIAGE_SERVICE_BASE_URL: ${AI_TRIAGE_SERVICE_BASE_URL:-http://core-ops-service:8086/api/ai/message-urgency-triage}
       AI_TRIAGE_TIMEOUT_MILLIS: ${AI_TRIAGE_TIMEOUT_MILLIS:-1500}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-my-super-secret-internal-key}
       ENVIRONMENT: docker
@@ -296,6 +290,8 @@ services:
         condition: service_healthy
       administration-service:
         condition: service_healthy
+      core-ops-service:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://127.0.0.1:8085/actuator/health"]
       interval: 15s
@@ -308,6 +304,7 @@ services:
       - nephro-net
 
   ai-triage-service:
+    profiles: ["legacy-ai"]
     build:
       context: ./BackEnd/microservices/ai-triage-service
     container_name: nephro-ai-triage-service
@@ -359,7 +356,7 @@ services:
       ADMIN_SERVICE_URL: http://administration-service:8087
       PHARMACY_SERVICE_URL: http://pharmacy-service:8088
       COMMUNICATION_SERVICE_URL: http://communication-service:8085
-      SERVICES_AI_CLINICAL_BASE_URL: http://ai-clinical-service:8091
+      SERVICES_AI_CLINICAL_BASE_URL: http://core-ops-service:8086/api/ai/biomarker-extraction
       ENVIRONMENT: docker
       LOGGING_LEVEL_ROOT: INFO
       LOGGING_LEVEL_TN_ESPRIT: DEBUG
@@ -376,7 +373,7 @@ services:
         condition: service_healthy
       administration-service:
         condition: service_healthy
-      ai-clinical-service:
+      core-ops-service:
         condition: service_healthy
       communication-service:
         condition: service_healthy
@@ -396,6 +393,7 @@ services:
       - ./BackEnd/runtime/clinical-lab-results:/app/data/lab-results
 
   ai-clinical-service:
+    profiles: ["legacy-ai"]
     build:
       context: ./BackEnd/microservices/ai-clinical-service
     container_name: nephro-ai-clinical-service
@@ -414,6 +412,7 @@ services:
       - nephro-net
 
   egfr-ml-service:
+    profiles: ["legacy-ai"]
     build:
       context: ./BackEnd/microservices/egfr-ml-service
     container_name: nephro-egfr-ml-service
@@ -432,6 +431,7 @@ services:
       - nephro-net
 
   ai-pharmacy-service:
+    profiles: ["legacy-ai"]
     build:
       context: ./BackEnd/microservices/ai-pharmacy-service
     container_name: nephro-ai-pharmacy-service
@@ -503,6 +503,12 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8086/health', timeout=3).read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     cpus: "0.60"
     mem_limit: "640m"
     networks:
