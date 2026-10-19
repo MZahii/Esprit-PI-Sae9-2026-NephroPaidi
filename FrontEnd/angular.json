@@ -30,13 +30,11 @@
             "assets": [
               "src/favicon.ico",
               "src/assets"
-              ],
+            ],
             "styles": [
-             "src/styles.scss"
-              ],
+              "src/styles.scss"
+            ],
             "scripts": []
-            
-
           },
           "configurations": {
             "production": {
@@ -87,7 +85,20 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "tsconfig.spec.json"
+            "tsConfig": "tsconfig.spec.json",
+            "coverageInclude": [
+              "src/app/**/*.ts"
+            ],
+            "coverageExclude": [
+              "src/app/**/*.spec.ts",
+              "src/app/**/*.models.ts",
+              "src/app/**/models/**",
+              "src/app/testing/**"
+            ],
+            "coverageReporters": [
+              "lcov",
+              "text-summary"
+            ]
           }
         }
       }

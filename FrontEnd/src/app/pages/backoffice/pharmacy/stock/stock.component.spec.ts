@@ -36,6 +36,7 @@ describe('StockComponent', () => {
     adjustStock:      vi.fn(),
     smartDispense:    vi.fn(),
     transferStock:    vi.fn(),
+    getPrescriptionsByStatus: vi.fn(),
   };
 
   beforeEach(async () => {
@@ -45,6 +46,7 @@ describe('StockComponent', () => {
     svcMock.getExpiredBatches.mockReturnValue(of([]));
     svcMock.getMedications.mockReturnValue(of(mockMeds));
     svcMock.getBatches.mockReturnValue(of(mockBatches));
+    svcMock.getPrescriptionsByStatus.mockReturnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [StockComponent],
