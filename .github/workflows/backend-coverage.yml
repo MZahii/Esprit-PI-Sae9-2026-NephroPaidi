@@ -1,0 +1,91 @@
+name: Backend coverage (JaCoCo)
+
+on:
+  push:
+    branches: [test/sonar-coverage]
+    paths-ignore: ['coverage-report/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Tests + JaCoCo par service
+        env:
+          JACOCO: org.jacoco:jacoco-maven-plugin:0.8.12
+        run: |
+          mkdir -p coverage-report/backend
+          SERVICES="api-gateway config-server eureka microservices/administration-service microservices/clinical-service microservices/communication-service microservices/core-ops-service microservices/ops-service microservices/pharmacy-service microservices/procedure-service microservices/user-service"
+          for s in $SERVICES; do
+            name=$(basename $s)
+            echo "::group::$name"
+            timeout 900 mvn -B -ntp -f BackEnd/$s/pom.xml \
+              $JACOCO:prepare-agent test $JACOCO:report \
+              -Dmaven.test.failure.ignore=true -Dsurefire.timeout=600 \
+              > coverage-report/backend/$name.log 2>&1 || echo "BUILD_FAILED" >> coverage-report/backend/$name.log
+            tail -40 coverage-report/backend/$name.log
+            if [ -f BackEnd/$s/target/site/jacoco/jacoco.xml ]; then
+              cp BackEnd/$s/target/site/jacoco/jacoco.xml coverage-report/backend/$name.jacoco.xml
+            fi
+            mkdir -p coverage-report/backend/surefire-$name
+            cp BackEnd/$s/target/surefire-reports/*.txt coverage-report/backend/surefire-$name/ 2>/dev/null || true
+            echo "::endgroup::"
+          done
+
+      - name: Synthèse (formule SonarQube)
+        run: |
+          python3 - <<'EOF'
+          import glob, json, os, re, xml.etree.ElementTree as ET
+          rows = []
+          tot = dict(lc=0, lm=0, bc=0, bm=0)
+          for log in sorted(glob.glob('coverage-report/backend/*.log')):
+              name = os.path.basename(log)[:-4]
+              text = open(log, errors='ignore').read()
+              m = re.findall(r'Tests run: (\d+), Failures: (\d+), Errors: (\d+), Skipped: (\d+)\s*$', text, re.M)
+              run, fail, err, skip = map(int, m[-1]) if m else (0, 0, 0, 0)
+              compile_err = re.findall(r'\[ERROR\] (/\S+\.java:\[\d+,\d+\] .*)', text)[:5]
+              r = dict(service=name, tests=run, failures=fail, errors=err, skipped=skip,
+                       build_failed='BUILD_FAILED' in text, compile_errors=compile_err)
+              x = f'coverage-report/backend/{name}.jacoco.xml'
+              if os.path.exists(x):
+                  root = ET.parse(x).getroot()
+                  c = {e.get('type'): (int(e.get('covered')), int(e.get('missed'))) for e in root.findall('counter')}
+                  lc, lm = c.get('LINE', (0, 0)); bc, bm = c.get('BRANCH', (0, 0))
+                  r.update(lines_covered=lc, lines_missed=lm, branches_covered=bc, branches_missed=bm,
+                           sonar_coverage=round(100 * (lc + bc) / max(1, lc + lm + bc + bm), 1))
+                  for k, v in zip(('lc', 'lm', 'bc', 'bm'), (lc, lm, bc, bm)): tot[k] += v
+              rows.append(r)
+          total = dict(lines=round(100 * tot['lc'] / max(1, tot['lc'] + tot['lm']), 1),
+                       branches=round(100 * tot['bc'] / max(1, tot['bc'] + tot['bm']), 1),
+                       sonar_coverage=round(100 * (tot['lc'] + tot['bc']) / max(1, sum(tot.values())), 1), **tot)
+          json.dump(dict(services=rows, total=total), open('coverage-report/backend/summary.json', 'w'), indent=2)
+          print(json.dumps(total))
+          print(f"::notice title=Couverture backend::{total['sonar_coverage']} % (lignes {total['lines']} %, branches {total['branches']} %)")
+          for r in rows:
+              print(f"::notice title={r['service']}::cov={r.get('sonar_coverage','-')} tests={r['tests']} fail={r['failures']} err={r['errors']} build_failed={r['build_failed']}")
+              for e in r['compile_errors']:
+                  print(f"::error title=compile {r['service']}::{e[:300]}")
+          EOF
+
+      - name: Publier le rapport sur la branche
+        if: always()
+        run: |
+          git config user.name "coverage-bot"
+          git config user.email "coverage-bot@users.noreply.github.com"
+          git add -f coverage-report/backend/summary.json coverage-report/backend/*.jacoco.xml coverage-report/backend/surefire-* 2>/dev/null || true
+          for f in coverage-report/backend/*.log; do tail -200 "$f" > "$f.tail"; done
+          git add -f coverage-report/backend/*.log.tail
+          git commit -m "chore: rapport de couverture backend [skip ci]" || exit 0
+          git pull --rebase origin ${GITHUB_REF_NAME} || true
+          git push origin HEAD:${GITHUB_REF_NAME}
