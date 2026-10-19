@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: tn.esprit.spring.apigateway.ApiGatewayApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.163 s -- in tn.esprit.spring.apigateway.ApiGatewayApplicationTests

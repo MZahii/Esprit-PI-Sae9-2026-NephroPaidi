@@ -1,0 +1,152 @@
+{
+  "services": [
+    {
+      "service": "administration-service",
+      "tests": 0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "build_failed": true,
+      "compile_errors": []
+    },
+    {
+      "service": "api-gateway",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "build_failed": false,
+      "compile_errors": [],
+      "lines_covered": 98,
+      "lines_missed": 31,
+      "branches_covered": 0,
+      "branches_missed": 18,
+      "sonar_coverage": 66.7
+    },
+    {
+      "service": "clinical-service",
+      "tests": 0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "build_failed": true,
+      "compile_errors": []
+    },
+    {
+      "service": "communication-service",
+      "tests": 29,
+      "failures": 0,
+      "errors": 1,
+      "skipped": 0,
+      "build_failed": false,
+      "compile_errors": [],
+      "lines_covered": 501,
+      "lines_missed": 743,
+      "branches_covered": 64,
+      "branches_missed": 343,
+      "sonar_coverage": 34.2
+    },
+    {
+      "service": "config-server",
+      "tests": 0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "build_failed": false,
+      "compile_errors": []
+    },
+    {
+      "service": "core-ops-service",
+      "tests": 1,
+      "failures": 0,
+      "errors": 1,
+      "skipped": 0,
+      "build_failed": false,
+      "compile_errors": [],
+      "lines_covered": 0,
+      "lines_missed": 3,
+      "branches_covered": 0,
+      "branches_missed": 0,
+      "sonar_coverage": 0.0
+    },
+    {
+      "service": "eureka",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "build_failed": false,
+      "compile_errors": [],
+      "lines_covered": 0,
+      "lines_missed": 3,
+      "branches_covered": 0,
+      "branches_missed": 0,
+      "sonar_coverage": 0.0
+    },
+    {
+      "service": "ops-service",
+      "tests": 20,
+      "failures": 0,
+      "errors": 1,
+      "skipped": 0,
+      "build_failed": false,
+      "compile_errors": [],
+      "lines_covered": 378,
+      "lines_missed": 785,
+      "branches_covered": 31,
+      "branches_missed": 209,
+      "sonar_coverage": 29.2
+    },
+    {
+      "service": "pharmacy-service",
+      "tests": 59,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "build_failed": false,
+      "compile_errors": [],
+      "lines_covered": 363,
+      "lines_missed": 587,
+      "branches_covered": 57,
+      "branches_missed": 150,
+      "sonar_coverage": 36.3
+    },
+    {
+      "service": "procedure-service",
+      "tests": 20,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "build_failed": false,
+      "compile_errors": [],
+      "lines_covered": 388,
+      "lines_missed": 765,
+      "branches_covered": 50,
+      "branches_missed": 689,
+      "sonar_coverage": 23.2
+    },
+    {
+      "service": "user-service",
+      "tests": 6,
+      "failures": 0,
+      "errors": 1,
+      "skipped": 0,
+      "build_failed": false,
+      "compile_errors": [],
+      "lines_covered": 191,
+      "lines_missed": 882,
+      "branches_covered": 46,
+      "branches_missed": 356,
+      "sonar_coverage": 16.1
+    }
+  ],
+  "total": {
+    "lines": 33.6,
+    "branches": 12.3,
+    "sonar_coverage": 28.0,
+    "lc": 1919,
+    "lm": 3799,
+    "bc": 248,
+    "bm": 1765
+  }
+}

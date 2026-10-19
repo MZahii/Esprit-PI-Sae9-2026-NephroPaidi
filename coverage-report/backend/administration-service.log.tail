@@ -1,0 +1,16 @@
+[INFO] Scanning for projects...
+[INFO] Loaded 24138 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[ERROR] [ERROR] Some problems were encountered while processing the POMs:
+[ERROR] 'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: org.springframework.cloud:spring-cloud-starter-openfeign:jar -> duplicate declaration of version (?) @ line 98, column 15
+ @ 
+[ERROR] The build could not read 1 project -> [Help 1]
+[ERROR]   
+[ERROR]   The project tn.esprit.spring:Administration-service:0.0.1-SNAPSHOT (/home/runner/work/Esprit-PI-Sae9-2026-NephroPaidi/Esprit-PI-Sae9-2026-NephroPaidi/BackEnd/microservices/administration-service/pom.xml) has 1 error
+[ERROR]     'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: org.springframework.cloud:spring-cloud-starter-openfeign:jar -> duplicate declaration of version (?) @ line 98, column 15
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/ProjectBuildingException
+BUILD_FAILED
