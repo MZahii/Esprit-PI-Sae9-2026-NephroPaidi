@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: tn.esprit.spring.userservice.service.impl.UserServiceImplTest
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.713 s -- in tn.esprit.spring.userservice.service.impl.UserServiceImplTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.717 s -- in tn.esprit.spring.userservice.service.impl.UserServiceImplTest

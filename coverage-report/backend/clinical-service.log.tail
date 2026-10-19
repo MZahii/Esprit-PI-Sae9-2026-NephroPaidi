@@ -1,16 +1,200 @@
-[INFO] Scanning for projects...
-[INFO] Loaded 24138 auto-discovered prefixes for remote repository central (prefixes-central.txt)
-[ERROR] [ERROR] Some problems were encountered while processing the POMs:
-[ERROR] 'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: org.projectlombok:lombok:jar -> version (?) vs 1.18.42 @ line 64, column 15
- @ 
-[ERROR] The build could not read 1 project -> [Help 1]
-[ERROR]   
-[ERROR]   The project tn.esprit.spring:clinical-service:0.0.1-SNAPSHOT (/home/runner/work/Esprit-PI-Sae9-2026-NephroPaidi/Esprit-PI-Sae9-2026-NephroPaidi/BackEnd/microservices/clinical-service/pom.xml) has 1 error
-[ERROR]     'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: org.projectlombok:lombok:jar -> version (?) vs 1.18.42 @ line 64, column 15
-[ERROR] 
-[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
-[ERROR] Re-run Maven using the -X switch to enable full debug logging.
-[ERROR] 
-[ERROR] For more information about the errors and possible solutions, please read the following articles:
-[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/ProjectBuildingException
-BUILD_FAILED
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.10)
+
+2026-10-19T13:16:50.985Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.ClinicalServiceApplicationTests  : Starting ClinicalServiceApplicationTests using Java 17.0.20.1 with PID 2758 (started by runner in /home/runner/work/Esprit-PI-Sae9-2026-NephroPaidi/Esprit-PI-Sae9-2026-NephroPaidi/BackEnd/microservices/clinical-service)
+2026-10-19T13:16:50.987Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.ClinicalServiceApplicationTests  : The following 1 profile is active: "test"
+2026-10-19T13:16:53.064Z  INFO 2758 --- [clinical-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-19T13:16:53.316Z  INFO 2758 --- [clinical-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 240 ms. Found 22 JPA repository interfaces.
+2026-10-19T13:16:53.806Z  INFO 2758 --- [clinical-service] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=4906e923-cc71-3620-8aa2-22664eae7b66
+2026-10-19T13:16:54.729Z  INFO 2758 --- [clinical-service] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-10-19T13:16:54.801Z  INFO 2758 --- [clinical-service] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.41.Final
+2026-10-19T13:16:54.850Z  INFO 2758 --- [clinical-service] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-10-19T13:16:55.034Z  INFO 2758 --- [clinical-service] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-19T13:16:55.077Z  WARN 2758 --- [clinical-service] [           main] com.zaxxer.hikari.HikariConfig           : HikariPool-1 - idleTimeout is close to or more than maxLifetime, disabling it.
+2026-10-19T13:16:55.077Z  INFO 2758 --- [clinical-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-19T13:16:55.471Z  INFO 2758 --- [clinical-service] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:testdb user=SA
+2026-10-19T13:16:55.473Z  INFO 2758 --- [clinical-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-19T13:16:55.511Z  WARN 2758 --- [clinical-service] [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-10-19T13:16:55.544Z  INFO 2758 --- [clinical-service] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-19T13:16:57.274Z  INFO 2758 --- [clinical-service] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-19T13:16:57.383Z  INFO 2758 --- [clinical-service] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-19T13:16:58.316Z  INFO 2758 --- [clinical-service] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-10-19T13:16:59.582Z  WARN 2758 --- [clinical-service] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-10-19T13:17:01.426Z  INFO 2758 --- [clinical-service] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-10-19T13:17:02.467Z  INFO 2758 --- [clinical-service] [           main] o.s.b.a.h2.H2ConsoleAutoConfiguration    : H2 console available at '/h2-console'. Database available at 'jdbc:h2:mem:testdb'
+2026-10-19T13:17:02.524Z  INFO 2758 --- [clinical-service] [           main] DiscoveryClientOptionalArgsConfiguration : Eureka HTTP Client uses RestTemplate.
+2026-10-19T13:17:02.599Z  WARN 2758 --- [clinical-service] [           main] iguration$LoadBalancerCaffeineWarnLogger : Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+2026-10-19T13:17:02.718Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.ClinicalServiceApplicationTests  : Started ClinicalServiceApplicationTests in 12.384 seconds (process running for 17.188)
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.43 s -- in tn.esprit.spring.clinicalservice.ClinicalServiceApplicationTests
+[INFO] Running tn.esprit.spring.clinicalservice.controller.PatientClinicalControllerTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.10)
+
+2026-10-19T13:17:02.995Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.c.PatientClinicalControllerTest  : Starting PatientClinicalControllerTest using Java 17.0.20.1 with PID 2758 (started by runner in /home/runner/work/Esprit-PI-Sae9-2026-NephroPaidi/Esprit-PI-Sae9-2026-NephroPaidi/BackEnd/microservices/clinical-service)
+2026-10-19T13:17:02.995Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.c.PatientClinicalControllerTest  : The following 1 profile is active: "test"
+2026-10-19T13:17:03.387Z  INFO 2758 --- [clinical-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-19T13:17:03.425Z  INFO 2758 --- [clinical-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 36 ms. Found 22 JPA repository interfaces.
+2026-10-19T13:17:03.495Z  INFO 2758 --- [clinical-service] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=2308b05d-60d2-3373-8013-b45eba72ed53
+2026-10-19T13:17:03.634Z  INFO 2758 --- [clinical-service] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-10-19T13:17:03.635Z  INFO 2758 --- [clinical-service] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-10-19T13:17:03.644Z  INFO 2758 --- [clinical-service] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-19T13:17:03.645Z  WARN 2758 --- [clinical-service] [           main] com.zaxxer.hikari.HikariConfig           : HikariPool-2 - idleTimeout is close to or more than maxLifetime, disabling it.
+2026-10-19T13:17:03.645Z  INFO 2758 --- [clinical-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-10-19T13:17:03.647Z  INFO 2758 --- [clinical-service] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection conn1: url=jdbc:h2:mem:testdb user=SA
+2026-10-19T13:17:03.647Z  INFO 2758 --- [clinical-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-10-19T13:17:03.647Z  WARN 2758 --- [clinical-service] [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-10-19T13:17:03.648Z  INFO 2758 --- [clinical-service] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-2)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-19T13:17:03.852Z  INFO 2758 --- [clinical-service] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-19T13:17:03.898Z  INFO 2758 --- [clinical-service] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-19T13:17:04.257Z  WARN 2758 --- [clinical-service] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-10-19T13:17:04.941Z  INFO 2758 --- [clinical-service] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-10-19T13:17:05.334Z  INFO 2758 --- [clinical-service] [           main] o.s.b.a.h2.H2ConsoleAutoConfiguration    : H2 console available at '/h2-console'. Database available at 'jdbc:h2:mem:testdb'
+2026-10-19T13:17:05.364Z  INFO 2758 --- [clinical-service] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-10-19T13:17:05.364Z  INFO 2758 --- [clinical-service] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-19T13:17:05.366Z  INFO 2758 --- [clinical-service] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-10-19T13:17:05.396Z  INFO 2758 --- [clinical-service] [           main] DiscoveryClientOptionalArgsConfiguration : Eureka HTTP Client uses RestTemplate.
+2026-10-19T13:17:05.423Z  WARN 2758 --- [clinical-service] [           main] iguration$LoadBalancerCaffeineWarnLogger : Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+2026-10-19T13:17:05.456Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.c.PatientClinicalControllerTest  : Started PatientClinicalControllerTest in 2.532 seconds (process running for 19.927)
+2026-10-19T13:17:06.113Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.service.SchwartzGFRCalculator    : Schwartz calculation: height=125.0cm, creatinine=0.8mg/dL, age=7y, isPremature=false -> k=0.55, eGFR=85.94, stage=STAGE_2
+2026-10-19T13:17:06.114Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.s.ClinicalValidationService      : Rule 2: CKD stage auto-computed. eGFR=85.94, stage=STAGE_2
+2026-10-19T13:17:06.120Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.c.ConsultationController         : Consultation created for patient f5e6c9f4-06fa-4046-91bd-1911e36a3f7b
+2026-10-19T13:17:06.124Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.e.MedicalDossierEventListener    : Received ConsultationClosedEvent for patient: f5e6c9f4-06fa-4046-91bd-1911e36a3f7b
+2026-10-19T13:17:06.126Z  INFO 2758 --- [clinical-service] [         task-1] e.s.c.l.ConsultationCreatedEventListener : Processing consultation created event for patient: f5e6c9f4-06fa-4046-91bd-1911e36a3f7b
+2026-10-19T13:17:06.126Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.e.MedicalDossierEventListener    : Created dossier entry for consultation: 31ed8d53-378d-451e-90f3-39e299bc13a6
+2026-10-19T13:17:06.191Z ERROR 2758 --- [clinical-service] [         task-1] e.s.c.l.ConsultationCreatedEventListener : Error processing consultation created event
+
+feign.RetryableException: core-ops-service executing POST http://core-ops-service:8086/api/ai/biomarker-extraction/predict
+	at feign.FeignException.errorExecuting(FeignException.java:300) ~[feign-core-13.6.jar:na]
+	at feign.SynchronousMethodHandler.executeAndDecode(SynchronousMethodHandler.java:105) ~[feign-core-13.6.jar:na]
+	at feign.SynchronousMethodHandler.invoke(SynchronousMethodHandler.java:53) ~[feign-core-13.6.jar:na]
+	at feign.ReflectiveFeign$FeignInvocationHandler.invoke(ReflectiveFeign.java:104) ~[feign-core-13.6.jar:na]
+	at jdk.proxy2/jdk.proxy2.$Proxy272.predict(Unknown Source) ~[na:na]
+	at tn.esprit.spring.clinicalservice.listener.ConsultationCreatedEventListener.onConsultationCreated(ConsultationCreatedEventListener.java:89) ~[classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360) ~[spring-aop-6.2.15.jar:6.2.15]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196) ~[spring-aop-6.2.15.jar:6.2.15]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-6.2.15.jar:6.2.15]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:380) ~[spring-tx-6.2.15.jar:6.2.15]
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119) ~[spring-tx-6.2.15.jar:6.2.15]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.15.jar:6.2.15]
+	at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecutionInterceptor.java:114) ~[spring-aop-6.2.15.jar:6.2.15]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+Caused by: java.net.UnknownHostException: core-ops-service
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:572) ~[na:na]
+	at java.base/java.net.Socket.connect(Socket.java:633) ~[na:na]
+	at java.base/sun.net.NetworkClient.doConnect(NetworkClient.java:178) ~[na:na]
+	at java.base/sun.net.www.http.HttpClient.openServer(HttpClient.java:541) ~[na:na]
+	at java.base/sun.net.www.http.HttpClient.openServer(HttpClient.java:646) ~[na:na]
+	at java.base/sun.net.www.http.HttpClient.<init>(HttpClient.java:291) ~[na:na]
+	at java.base/sun.net.www.http.HttpClient.New(HttpClient.java:394) ~[na:na]
+	at java.base/sun.net.www.http.HttpClient.New(HttpClient.java:416) ~[na:na]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getNewHttpClient(HttpURLConnection.java:1332) ~[na:na]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(HttpURLConnection.java:1265) ~[na:na]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(HttpURLConnection.java:1151) ~[na:na]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.connect(HttpURLConnection.java:1080) ~[na:na]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getOutputStream0(HttpURLConnection.java:1482) ~[na:na]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getOutputStream(HttpURLConnection.java:1445) ~[na:na]
+	at feign.Client$Default.convertAndSend(Client.java:224) ~[feign-core-13.6.jar:na]
+	at feign.Client$Default.execute(Client.java:109) ~[feign-core-13.6.jar:na]
+	at feign.SynchronousMethodHandler.executeAndDecode(SynchronousMethodHandler.java:92) ~[feign-core-13.6.jar:na]
+	... 19 common frames omitted
+
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.318 s -- in tn.esprit.spring.clinicalservice.controller.PatientClinicalControllerTest
+[INFO] Running tn.esprit.spring.clinicalservice.controller.ConsultationControllerTest
+2026-10-19T13:17:06.290Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.c.ConsultationController         : Consultation 94b08f21-9ec0-47cf-b031-9c3aeac0970a updated
+2026-10-19T13:17:06.373Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.c.ConsultationController         : Consultation a3a776c6-0fe3-4e2d-b862-2b0e475cd23e deleted
+2026-10-19T13:17:06.452Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.c.ConsultationController         : Consultation created for patient de6e0a57-3044-4723-bc45-505487935f7a
+2026-10-19T13:17:06.453Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.e.MedicalDossierEventListener    : Received ConsultationClosedEvent for patient: de6e0a57-3044-4723-bc45-505487935f7a
+2026-10-19T13:17:06.453Z  INFO 2758 --- [clinical-service] [         task-2] e.s.c.l.ConsultationCreatedEventListener : Processing consultation created event for patient: de6e0a57-3044-4723-bc45-505487935f7a
+2026-10-19T13:17:06.455Z  INFO 2758 --- [clinical-service] [           main] t.e.s.c.e.MedicalDossierEventListener    : Created dossier entry for consultation: 99616b4d-74f2-4fdb-98df-b232000f6990
+2026-10-19T13:17:06.459Z ERROR 2758 --- [clinical-service] [         task-2] e.s.c.l.ConsultationCreatedEventListener : Error processing consultation created event
+
+feign.RetryableException: core-ops-service executing POST http://core-ops-service:8086/api/ai/biomarker-extraction/predict
+	at feign.FeignException.errorExecuting(FeignException.java:300) ~[feign-core-13.6.jar:na]
+	at feign.SynchronousMethodHandler.executeAndDecode(SynchronousMethodHandler.java:105) ~[feign-core-13.6.jar:na]
+	at feign.SynchronousMethodHandler.invoke(SynchronousMethodHandler.java:53) ~[feign-core-13.6.jar:na]
+	at feign.ReflectiveFeign$FeignInvocationHandler.invoke(ReflectiveFeign.java:104) ~[feign-core-13.6.jar:na]
+	at jdk.proxy2/jdk.proxy2.$Proxy272.predict(Unknown Source) ~[na:na]
+	at tn.esprit.spring.clinicalservice.listener.ConsultationCreatedEventListener.onConsultationCreated(ConsultationCreatedEventListener.java:89) ~[classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360) ~[spring-aop-6.2.15.jar:6.2.15]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196) ~[spring-aop-6.2.15.jar:6.2.15]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-6.2.15.jar:6.2.15]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:380) ~[spring-tx-6.2.15.jar:6.2.15]
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119) ~[spring-tx-6.2.15.jar:6.2.15]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.15.jar:6.2.15]
+	at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecutionInterceptor.java:114) ~[spring-aop-6.2.15.jar:6.2.15]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+Caused by: java.net.UnknownHostException: core-ops-service
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:572) ~[na:na]
+	at java.base/java.net.Socket.connect(Socket.java:633) ~[na:na]
+	at java.base/sun.net.NetworkClient.doConnect(NetworkClient.java:178) ~[na:na]
+	at java.base/sun.net.www.http.HttpClient.openServer(HttpClient.java:541) ~[na:na]
+	at java.base/sun.net.www.http.HttpClient.openServer(HttpClient.java:646) ~[na:na]
+	at java.base/sun.net.www.http.HttpClient.<init>(HttpClient.java:291) ~[na:na]
+	at java.base/sun.net.www.http.HttpClient.New(HttpClient.java:394) ~[na:na]
+	at java.base/sun.net.www.http.HttpClient.New(HttpClient.java:416) ~[na:na]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getNewHttpClient(HttpURLConnection.java:1332) ~[na:na]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(HttpURLConnection.java:1265) ~[na:na]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(HttpURLConnection.java:1151) ~[na:na]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.connect(HttpURLConnection.java:1080) ~[na:na]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getOutputStream0(HttpURLConnection.java:1482) ~[na:na]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getOutputStream(HttpURLConnection.java:1445) ~[na:na]
+	at feign.Client$Default.convertAndSend(Client.java:224) ~[feign-core-13.6.jar:na]
+	at feign.Client$Default.execute(Client.java:109) ~[feign-core-13.6.jar:na]
+	at feign.SynchronousMethodHandler.executeAndDecode(SynchronousMethodHandler.java:92) ~[feign-core-13.6.jar:na]
+	... 19 common frames omitted
+
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.258 s -- in tn.esprit.spring.clinicalservice.controller.ConsultationControllerTest
+[INFO] Running AppointmentServiceImpl - Appointment Flows
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.102 s -- in AppointmentServiceImpl - Appointment Flows
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 107, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jacoco:0.8.12:report (default-cli) @ clinical-service ---
+[INFO] Loading execution data file /home/runner/work/Esprit-PI-Sae9-2026-NephroPaidi/Esprit-PI-Sae9-2026-NephroPaidi/BackEnd/microservices/clinical-service/target/jacoco.exec
+[INFO] Analyzed bundle 'clinical-service' with 239 classes
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  33.304 s
+[INFO] Finished at: 2026-10-19T13:17:07Z
+[INFO] ------------------------------------------------------------------------

@@ -61,16 +61,16 @@
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
 
-2026-10-19T13:11:55.288Z  INFO 2411 --- [api-gateway] [           main] com.netflix.discovery.DiscoveryClient    : Initial registry fetch from primary servers failed
-2026-10-19T13:11:55.289Z  WARN 2411 --- [api-gateway] [           main] com.netflix.discovery.DiscoveryClient    : Using default backup registry implementation which does not do anything.
-2026-10-19T13:11:55.289Z  INFO 2411 --- [api-gateway] [           main] com.netflix.discovery.DiscoveryClient    : Initial registry fetch from backup servers failed
-2026-10-19T13:11:55.290Z  INFO 2411 --- [api-gateway] [           main] com.netflix.discovery.DiscoveryClient    : Starting heartbeat executor: renew interval is: 30
-2026-10-19T13:11:55.296Z  INFO 2411 --- [api-gateway] [           main] c.n.discovery.InstanceInfoReplicator     : InstanceInfoReplicator onDemand update allowed rate per min is 4
-2026-10-19T13:11:55.298Z  INFO 2411 --- [api-gateway] [           main] com.netflix.discovery.DiscoveryClient    : Discovery Client initialized at timestamp 1792415515298 with initial instances count: 0
-2026-10-19T13:11:55.303Z  INFO 2411 --- [api-gateway] [           main] o.s.c.n.e.s.EurekaServiceRegistry        : Registering application API-GATEWAY with eureka with status UP
-2026-10-19T13:11:55.304Z  INFO 2411 --- [api-gateway] [           main] com.netflix.discovery.DiscoveryClient    : Saw local status change event StatusChangeEvent [timestamp=1792415515304, current=UP, previous=STARTING]
-2026-10-19T13:11:55.307Z  INFO 2411 --- [api-gateway] [foReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_API-GATEWAY/runnervm8k3b6.oxidzkwq25pelahkqzjg5q43me.jx.internal.cloudapp.net:api-gateway:8083: registering service...
-2026-10-19T13:11:55.371Z  INFO 2411 --- [api-gateway] [foReplicator-%d] c.n.d.s.t.d.RedirectingEurekaHttpClient  : Request execution error. endpoint=DefaultEndpoint{ serviceUrl='http://eureka:8761/eureka/}, exception=I/O error on POST request for "http://eureka:8761/eureka/apps/API-GATEWAY": eureka stacktrace=org.springframework.web.client.ResourceAccessException: I/O error on POST request for "http://eureka:8761/eureka/apps/API-GATEWAY": eureka
+2026-10-19T13:15:59.461Z  INFO 2191 --- [api-gateway] [           main] com.netflix.discovery.DiscoveryClient    : Initial registry fetch from primary servers failed
+2026-10-19T13:15:59.461Z  WARN 2191 --- [api-gateway] [           main] com.netflix.discovery.DiscoveryClient    : Using default backup registry implementation which does not do anything.
+2026-10-19T13:15:59.462Z  INFO 2191 --- [api-gateway] [           main] com.netflix.discovery.DiscoveryClient    : Initial registry fetch from backup servers failed
+2026-10-19T13:15:59.463Z  INFO 2191 --- [api-gateway] [           main] com.netflix.discovery.DiscoveryClient    : Starting heartbeat executor: renew interval is: 30
+2026-10-19T13:15:59.465Z  INFO 2191 --- [api-gateway] [           main] c.n.discovery.InstanceInfoReplicator     : InstanceInfoReplicator onDemand update allowed rate per min is 4
+2026-10-19T13:15:59.467Z  INFO 2191 --- [api-gateway] [           main] com.netflix.discovery.DiscoveryClient    : Discovery Client initialized at timestamp 1792415759467 with initial instances count: 0
+2026-10-19T13:15:59.471Z  INFO 2191 --- [api-gateway] [           main] o.s.c.n.e.s.EurekaServiceRegistry        : Registering application API-GATEWAY with eureka with status UP
+2026-10-19T13:15:59.472Z  INFO 2191 --- [api-gateway] [           main] com.netflix.discovery.DiscoveryClient    : Saw local status change event StatusChangeEvent [timestamp=1792415759472, current=UP, previous=STARTING]
+2026-10-19T13:15:59.475Z  INFO 2191 --- [api-gateway] [foReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_API-GATEWAY/runnervm8k3b6.drhoi2nbjkse1ck2abdqzbxyjc.dx.internal.cloudapp.net:api-gateway:8083: registering service...
+2026-10-19T13:15:59.549Z  INFO 2191 --- [api-gateway] [foReplicator-%d] c.n.d.s.t.d.RedirectingEurekaHttpClient  : Request execution error. endpoint=DefaultEndpoint{ serviceUrl='http://eureka:8761/eureka/}, exception=I/O error on POST request for "http://eureka:8761/eureka/apps/API-GATEWAY": eureka stacktrace=org.springframework.web.client.ResourceAccessException: I/O error on POST request for "http://eureka:8761/eureka/apps/API-GATEWAY": eureka
 	at org.springframework.web.client.RestTemplate.createResourceAccessException(RestTemplate.java:926)
 	at org.springframework.web.client.RestTemplate.doExecute(RestTemplate.java:906)
 	at org.springframework.web.client.RestTemplate.execute(RestTemplate.java:841)
@@ -132,8 +132,8 @@ Caused by: java.net.UnknownHostException: eureka
 	at org.springframework.web.client.RestTemplate.doExecute(RestTemplate.java:900)
 	... 22 more
 
-2026-10-19T13:11:55.371Z  WARN 2411 --- [api-gateway] [foReplicator-%d] c.n.d.s.t.d.RetryableEurekaHttpClient    : Request execution failed with message: I/O error on POST request for "http://eureka:8761/eureka/apps/API-GATEWAY": eureka
-2026-10-19T13:11:55.372Z  WARN 2411 --- [api-gateway] [foReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_API-GATEWAY/runnervm8k3b6.oxidzkwq25pelahkqzjg5q43me.jx.internal.cloudapp.net:api-gateway:8083 - registration failed Cannot execute request on any known server
+2026-10-19T13:15:59.550Z  WARN 2191 --- [api-gateway] [foReplicator-%d] c.n.d.s.t.d.RetryableEurekaHttpClient    : Request execution failed with message: I/O error on POST request for "http://eureka:8761/eureka/apps/API-GATEWAY": eureka
+2026-10-19T13:15:59.551Z  WARN 2191 --- [api-gateway] [foReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_API-GATEWAY/runnervm8k3b6.drhoi2nbjkse1ck2abdqzbxyjc.dx.internal.cloudapp.net:api-gateway:8083 - registration failed Cannot execute request on any known server
 
 com.netflix.discovery.shared.transport.TransportException: Cannot execute request on any known server
 	at com.netflix.discovery.shared.transport.decorator.RetryableEurekaHttpClient.execute(RetryableEurekaHttpClient.java:112) ~[eureka-client-2.0.5.jar:2.0.5]
@@ -151,7 +151,7 @@ com.netflix.discovery.shared.transport.TransportException: Cannot execute reques
 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
 	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
 
-2026-10-19T13:11:55.378Z  WARN 2411 --- [api-gateway] [foReplicator-%d] c.n.discovery.InstanceInfoReplicator     : There was a problem with the instance info replicator
+2026-10-19T13:15:59.562Z  WARN 2191 --- [api-gateway] [foReplicator-%d] c.n.discovery.InstanceInfoReplicator     : There was a problem with the instance info replicator
 
 com.netflix.discovery.shared.transport.TransportException: Cannot execute request on any known server
 	at com.netflix.discovery.shared.transport.decorator.RetryableEurekaHttpClient.execute(RetryableEurekaHttpClient.java:112) ~[eureka-client-2.0.5.jar:2.0.5]
@@ -169,8 +169,8 @@ com.netflix.discovery.shared.transport.TransportException: Cannot execute reques
 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
 	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
 
-2026-10-19T13:11:55.503Z  INFO 2411 --- [api-gateway] [           main] t.e.s.a.ApiGatewayApplicationTests       : Started ApiGatewayApplicationTests in 6.206 seconds (process running for 8.963)
-2026-10-19T13:11:55.512Z  WARN 2411 --- [api-gateway] [           main] o.s.b.c.p.m.PropertiesMigrationListener  : 
+2026-10-19T13:15:59.614Z  INFO 2191 --- [api-gateway] [           main] t.e.s.a.ApiGatewayApplicationTests       : Started ApiGatewayApplicationTests in 5.575 seconds (process running for 7.752)
+2026-10-19T13:15:59.621Z  WARN 2191 --- [api-gateway] [           main] o.s.b.c.p.m.PropertiesMigrationListener  : 
 The use of configuration keys that have been renamed was found in the environment:
 
 Property source 'Config resource 'class path resource [application.yml]' via location 'optional:classpath:/'':
@@ -182,7 +182,7 @@ Property source 'Config resource 'class path resource [application.yml]' via loc
 Each configuration key has been temporarily mapped to its replacement for your convenience. To silence this warning, please update your configuration to use the new keys.
 
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.163 s -- in tn.esprit.spring.apigateway.ApiGatewayApplicationTests
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.165 s -- in tn.esprit.spring.apigateway.ApiGatewayApplicationTests
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -195,6 +195,6 @@ OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader clas
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  26.712 s
-[INFO] Finished at: 2026-10-19T13:11:59Z
+[INFO] Total time:  24.570 s
+[INFO] Finished at: 2026-10-19T13:16:03Z
 [INFO] ------------------------------------------------------------------------

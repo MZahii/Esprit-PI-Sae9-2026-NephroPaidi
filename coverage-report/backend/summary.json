@@ -2,12 +2,17 @@
   "services": [
     {
       "service": "administration-service",
-      "tests": 0,
+      "tests": 16,
       "failures": 0,
-      "errors": 0,
+      "errors": 1,
       "skipped": 0,
-      "build_failed": true,
-      "compile_errors": []
+      "build_failed": false,
+      "compile_errors": [],
+      "lines_covered": 79,
+      "lines_missed": 1393,
+      "branches_covered": 0,
+      "branches_missed": 412,
+      "sonar_coverage": 4.2
     },
     {
       "service": "api-gateway",
@@ -25,12 +30,17 @@
     },
     {
       "service": "clinical-service",
-      "tests": 0,
+      "tests": 107,
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "build_failed": true,
-      "compile_errors": []
+      "build_failed": false,
+      "compile_errors": [],
+      "lines_covered": 1446,
+      "lines_missed": 3798,
+      "branches_covered": 336,
+      "branches_missed": 1458,
+      "sonar_coverage": 25.3
     },
     {
       "service": "communication-service",
@@ -141,12 +151,12 @@
     }
   ],
   "total": {
-    "lines": 33.6,
-    "branches": 12.3,
-    "sonar_coverage": 28.0,
-    "lc": 1919,
-    "lm": 3799,
-    "bc": 248,
-    "bm": 1765
+    "lines": 27.7,
+    "branches": 13.8,
+    "sonar_coverage": 24.2,
+    "lc": 3444,
+    "lm": 8990,
+    "bc": 584,
+    "bm": 3635
   }
 }

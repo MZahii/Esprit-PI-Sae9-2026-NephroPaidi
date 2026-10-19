@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: tn.esprit.spring.communicationservice.service.impl.InternalStaffMessagingServiceImplTest
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.031 s -- in tn.esprit.spring.communicationservice.service.impl.InternalStaffMessagingServiceImplTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.807 s -- in tn.esprit.spring.communicationservice.service.impl.InternalStaffMessagingServiceImplTest

@@ -182,7 +182,7 @@
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.5.4.jar:3.5.4]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.5.4.jar:3.5.4]
 
-[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.991 s -- in StockController — Integration Tests
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.099 s -- in StockController — Integration Tests
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -195,6 +195,6 @@
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  29.142 s
-[INFO] Finished at: 2026-10-19T13:13:43Z
+[INFO] Total time:  28.130 s
+[INFO] Finished at: 2026-10-19T13:18:24Z
 [INFO] ------------------------------------------------------------------------

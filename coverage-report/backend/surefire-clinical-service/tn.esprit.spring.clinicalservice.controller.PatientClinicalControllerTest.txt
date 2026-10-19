@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: tn.esprit.spring.clinicalservice.controller.PatientClinicalControllerTest
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.318 s -- in tn.esprit.spring.clinicalservice.controller.PatientClinicalControllerTest
