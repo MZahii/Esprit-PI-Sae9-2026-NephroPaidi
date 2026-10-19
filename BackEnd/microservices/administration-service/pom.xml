@@ -95,10 +95,6 @@
 		</dependency>
 
 		<!-- OpenFeign for inter-microservice communication -->
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-openfeign</artifactId>
-		</dependency>
 
 		<!-- Resilience4j Circuit Breaker -->
 		<dependency>
